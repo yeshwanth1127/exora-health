@@ -37,7 +37,7 @@ echo "Pulling images for $release_tag"
 IMAGE_TAG="$release_tag" "${compose[@]}" pull backend webpage voice
 
 echo "Applying database migrations"
-IMAGE_TAG="$release_tag" "${compose[@]}" up -d postgres redis
+IMAGE_TAG="$release_tag" "${compose[@]}" up -d postgres redis ollama
 IMAGE_TAG="$release_tag" "${compose[@]}" run --rm backend alembic upgrade head
 
 echo "Starting release $release_tag"
@@ -45,9 +45,9 @@ IMAGE_TAG="$release_tag" "${compose[@]}" up -d --remove-orphans backend webpage 
 
 healthy=0
 for _ in $(seq 1 36); do
-  if curl -fsS http://10.0.0.1:18004/api/health/live >/dev/null \
-      && curl -fsS http://10.0.0.1:15567/healthz >/dev/null \
-      && curl -fsS http://10.0.0.1:18765/api/health/live >/dev/null; then
+  if curl -fsS -H 'Host: avocado.exora.solutions' http://10.0.0.1:18004/api/health/live >/dev/null \
+      && curl -fsS -H 'Host: avocado.exora.solutions' http://10.0.0.1:15567/healthz >/dev/null \
+      && curl -fsS -H 'Host: avocado.exora.solutions' http://10.0.0.1:18765/api/health/live >/dev/null; then
     healthy=1
     break
   fi

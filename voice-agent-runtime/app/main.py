@@ -77,14 +77,14 @@ async def seed_demo():
     startup_state['demo'] = 'failed — use Load demo from Knowledge after models are ready'
 
 
-def apply_openrouter_defaults():
-    """When an OpenRouter key is present, prefer cloud with local Ollama fallback."""
-    if not OPENROUTER_API_KEY:
-        return
+def apply_provider_defaults():
+    """Select a usable provider when persisted settings outlive environment changes."""
     current = store.settings()
-    if current.get('llm_provider') == 'openrouter' and current.get('fallback_provider') == 'local':
+    if not OPENROUTER_API_KEY and current.get('llm_provider') == 'openrouter':
+        store.save_settings({**current, 'llm_provider': 'local', 'fallback_provider': 'none'})
         return
-    store.save_settings({**current, 'llm_provider': 'openrouter', 'fallback_provider': 'local'})
+    if OPENROUTER_API_KEY and current.get('llm_provider') != 'openrouter':
+        store.save_settings({**current, 'llm_provider': 'openrouter', 'fallback_provider': 'local'})
 
 
 def migrate_demo_brand():
@@ -103,7 +103,7 @@ def migrate_demo_brand():
 @asynccontextmanager
 async def lifespan(app):
     migrate_demo_brand()
-    apply_openrouter_defaults()
+    apply_provider_defaults()
     speech_task = asyncio.create_task(engine.load_speech())
     demo_task = asyncio.create_task(seed_demo())
     yield

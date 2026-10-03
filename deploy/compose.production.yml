@@ -28,6 +28,12 @@ services:
       retries: 20
     restart: unless-stopped
 
+  ollama:
+    image: ollama/ollama:0.12.3
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
   backend:
     image: ${IMAGE_REGISTRY:-ghcr.io/yeshwanth1127/exora-health}-backend:${IMAGE_TAG:?IMAGE_TAG is required}
     environment:
@@ -79,8 +85,8 @@ services:
       LLM_PROVIDER: ${LLM_PROVIDER:-openrouter}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
-      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
-      CHAT_MODEL: ${CHAT_MODEL:-qwen3:8b}
+      OLLAMA_URL: http://ollama:11434
+      CHAT_MODEL: ${CHAT_MODEL:-qwen3:1.7b}
       EMBED_MODEL: ${EMBED_MODEL:-nomic-embed-text}
       WHISPER_MODEL: ${WHISPER_MODEL:-base.en}
       HOSPITAL_API_URL: http://backend:8000
@@ -99,8 +105,10 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+      ollama:
+        condition: service_started
     mem_limit: 3g
-    cpus: 4
+    cpus: 2
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     restart: unless-stopped
@@ -110,3 +118,4 @@ volumes:
   redis_data:
   media_uploads:
   voice_data:
+  ollama_data:
