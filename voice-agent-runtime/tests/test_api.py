@@ -12,9 +12,9 @@ def test_origin_and_host_guard():
     assert client.get('/api/settings', headers={'Origin': 'http://localhost:8765'}).status_code == 200
 
 
-def test_default_llm_provider_is_openrouter_with_local_fallback():
-    assert DEFAULT_SETTINGS['llm_provider'] == 'openrouter'
-    assert DEFAULT_SETTINGS['fallback_provider'] == 'local'
+def test_default_llm_provider_is_usable_without_cloud_credentials():
+    assert DEFAULT_SETTINGS['llm_provider'] == 'local'
+    assert DEFAULT_SETTINGS['fallback_provider'] == 'none'
 
 
 def test_settings_validation_and_safe_headers():
