@@ -1,0 +1,112 @@
+name: exora-health
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-avocado}
+      POSTGRES_USER: ${POSTGRES_USER:-avocado}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-avocado} -d ${POSTGRES_DB:-avocado}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  backend:
+    image: ${IMAGE_REGISTRY:-ghcr.io/yeshwanth1127/exora-health}-backend:${IMAGE_TAG:?IMAGE_TAG is required}
+    environment:
+      APP_ENV: production
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-avocado}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-avocado}
+      REDIS_URL: redis://redis:6379/0
+      ALLOWED_ORIGINS: https://${PUBLIC_HOST:-avocado.exora.solutions}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:?ADMIN_API_KEY is required}
+      VOICE_SERVICE_API_KEY: ${VOICE_SERVICE_API_KEY:?VOICE_SERVICE_API_KEY is required}
+      WHATSAPP_SERVICE_API_KEY: ${WHATSAPP_SERVICE_API_KEY:?WHATSAPP_SERVICE_API_KEY is required}
+      WHATSAPP_OWNER_SECRET: ${WHATSAPP_OWNER_SECRET:?WHATSAPP_OWNER_SECRET is required}
+      MEDIA_DIR: /app/uploads
+      SESSION_COOKIE_NAME: exora_session
+      SESSION_HOURS: ${SESSION_HOURS:-12}
+      SECURE_COOKIES: "true"
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:?BOOTSTRAP_ADMIN_EMAIL is required}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:?BOOTSTRAP_ADMIN_PASSWORD is required}
+      JITSI_DOMAIN: ${JITSI_DOMAIN:-meet.jit.si}
+      JITSI_APP_ID: ${JITSI_APP_ID:?JITSI_APP_ID is required}
+      JITSI_ISSUER: ${JITSI_ISSUER:?JITSI_ISSUER is required}
+      JITSI_SECRET: ${JITSI_SECRET:?JITSI_SECRET is required}
+      DEFAULT_HOSPITAL_SLUG: ${DEFAULT_HOSPITAL_SLUG:-exora-demo}
+      SARVAM_API_KEY: ${SARVAM_API_KEY:-}
+      SARVAM_ORG_ID: ${SARVAM_ORG_ID:-}
+      SARVAM_WORKSPACE_ID: ${SARVAM_WORKSPACE_ID:-}
+      SARVAM_AGENT_ID: ${SARVAM_AGENT_ID:-}
+    volumes:
+      - media_uploads:/app/uploads
+    ports:
+      - "${REMOTE_BIND_IP:-10.0.0.1}:18004:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  webpage:
+    image: ${IMAGE_REGISTRY:-ghcr.io/yeshwanth1127/exora-health}-webpage:${IMAGE_TAG:?IMAGE_TAG is required}
+    ports:
+      - "${REMOTE_BIND_IP:-10.0.0.1}:15567:8080"
+    restart: unless-stopped
+
+  voice:
+    image: ${IMAGE_REGISTRY:-ghcr.io/yeshwanth1127/exora-health}-voice:${IMAGE_TAG:?IMAGE_TAG is required}
+    environment:
+      DATA_DIR: /data
+      MODEL_DIR: /models
+      LLM_PROVIDER: ${LLM_PROVIDER:-openrouter}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      CHAT_MODEL: ${CHAT_MODEL:-qwen3:8b}
+      EMBED_MODEL: ${EMBED_MODEL:-nomic-embed-text}
+      WHISPER_MODEL: ${WHISPER_MODEL:-base.en}
+      HOSPITAL_API_URL: http://backend:8000
+      HOSPITAL_SERVICE_KEY: ${VOICE_SERVICE_API_KEY:?VOICE_SERVICE_API_KEY is required}
+      ALLOWED_ORIGINS: https://${PUBLIC_HOST:-avocado.exora.solutions}
+      TRUSTED_HOSTS: ${PUBLIC_HOST:-avocado.exora.solutions},localhost,127.0.0.1
+      HF_HUB_OFFLINE: "1"
+      HF_HUB_DISABLE_TELEMETRY: "1"
+    volumes:
+      - voice_data:/data
+      - ./models:/models:ro
+    ports:
+      - "${REMOTE_BIND_IP:-10.0.0.1}:18765:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      backend:
+        condition: service_healthy
+    mem_limit: 3g
+    cpus: 4
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  media_uploads:
+  voice_data:

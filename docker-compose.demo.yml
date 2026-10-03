@@ -1,0 +1,27 @@
+services:
+  exora-demo:
+    build:
+      context: .
+      args:
+        VITE_API_URL: http://localhost:8000
+        VITE_HOSPITAL_SLUG: exora-demo
+    ports:
+      - "8080:8080"
+      - "8000:8000"
+    environment:
+      DATABASE_URL: sqlite:////data/avocado.db
+      APP_ENV: development
+      ALLOWED_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
+      VOICE_SERVICE_API_KEY: ${VOICE_SERVICE_API_KEY:-dev-voice-service-key}
+      DEFAULT_HOSPITAL_SLUG: exora-demo
+      JITSI_DOMAIN: meet.jit.si
+      JITSI_APP_ID: exora-demo
+      JITSI_SECRET: demo-jitsi-secret-change-me
+      TELECONSULTATION_JOIN_EARLY_MINUTES: 10080
+      SARVAM_API_KEY: ${SARVAM_API_KEY:-}
+      SARVAM_ORG_ID: ${SARVAM_ORG_ID:-019f7b91-eaca-7818-8fc0-25d1ff90fbfe}
+      SARVAM_WORKSPACE_ID: ${SARVAM_WORKSPACE_ID:-019f7b91-eade-7262-9caf-22133694b2d5}
+      SARVAM_AGENT_ID: ${SARVAM_AGENT_ID:-Conversatio-47382521-7c72}
+    volumes:
+      - ./demo-data:/data
+    restart: unless-stopped

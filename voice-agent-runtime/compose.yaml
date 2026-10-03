@@ -1,0 +1,35 @@
+name: local-voice-studio
+services:
+  studio:
+    build: .
+    init: true
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8765:8000"
+    environment:
+      DATA_DIR: /data
+      MODEL_DIR: /models
+      OLLAMA_URL: http://host.docker.internal:11434
+      CHAT_MODEL: qwen3:8b
+      EMBED_MODEL: nomic-embed-text
+      WHISPER_MODEL: base.en
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
+      HF_HUB_OFFLINE: "1"
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      ALLOWED_ORIGINS: http://localhost:8765,http://127.0.0.1:8765
+      HOSPITAL_API_URL: ${HOSPITAL_API_URL:-http://host.docker.internal:8000}
+      HOSPITAL_SERVICE_KEY: ${HOSPITAL_SERVICE_KEY:-change-this-voice-service-key}
+    volumes:
+      - ./data:/data
+      - ./models:/models
+    mem_limit: 3g
+    cpus: 4
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/live')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s

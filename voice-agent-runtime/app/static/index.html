@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Avocado Health Voice</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%230f766e'/%3E%3Cpath d='M20 9v22M9 20h22' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/voice-static/style.css?v=3"><link rel="stylesheet" href="/voice-static/audit.css?v=2"><link rel="stylesheet" href="/voice-static/simple.css?v=1"><script defer src="/voice-static/app.js?v=6"></script>
+</head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="/talk/"><span class="logo"><i></i><i></i><i></i><i></i></span><span>care<span class="brand-light">voice</span><small>HOSPITAL WORKSPACE</small></span></a>
+  <div class="workspace"><span class="workspace-icon">A</span><div><strong>Avocado Health</strong><small>Exora HMS demo</small></div><span class="chevron">⌄</span></div>
+  <div class="nav-label">PATIENT ACCESS</div>
+  <nav>
+    <button data-page="conversation" class="nav active"><span>◉</span>Patient conversation<span class="nav-dot"></span></button>
+    <button data-page="knowledge" class="nav"><span>▤</span>Hospital knowledge</button>
+    <button data-page="retrieval" class="nav"><span>⌕</span>Retrieval lab</button>
+    <button data-page="audit" class="nav"><span>≣</span>Audit log</button>
+    <button data-page="sessions" class="nav"><span>◷</span>Session history</button>
+  </nav>
+  <div class="nav-label second-label">CONFIGURE</div>
+  <nav>
+    <button data-page="settings" class="nav"><span>⚙</span>Agent settings</button>
+    <button data-page="system" class="nav"><span>▦</span>System & architecture</button>
+  </nav>
+  <div class="local-card"><span class="status-dot green"></span><strong>Private by design.</strong><p>Speech, intelligence, and hospital knowledge stay on this machine.</p><span>LOCAL CARE STACK ↗</span></div>
+  <div class="sidebar-footer"><div class="avatar">M</div><div><strong>Patient access</strong><small>Single-user demo</small></div></div>
+</aside>
+<main>
+  <header class="topbar"><div><span class="breadcrumb">Avocado Health</span><span class="slash">/</span><span id="page-title">Voice assistant</span></div><div class="topbar-right"><span class="pill backend-pill" id="backend-pill"><span class="status-dot amber"></span>Checking hospital backend</span><span class="pill" id="health-pill"><span class="status-dot amber"></span>Checking voice</span></div></header>
+  <section class="page active" id="page-conversation">
+    <div class="page-heading"><div><div class="eyebrow">PATIENT ACCESS ASSISTANT</div><h1>Talk to Maya</h1><p>Find doctors, check live schedules, and book an appointment using the hospital backend.</p></div><button class="button secondary" id="new-session">＋ New conversation</button></div>
+    <div class="conversation-grid">
+      <div class="agent-panel card">
+        <div class="panel-top"><span class="eyebrow">PATIENT ACCESS VOICE</span><span class="tiny-pill"><span class="status-dot green"></span>English</span></div>
+        <div class="orb-space"><div class="orb-ring ring-one"></div><div class="orb-ring ring-two"></div><div class="orb" id="orb"><div class="wave"><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div></div><span class="orb-caption" id="orb-caption">READY TO CONNECT</span></div>
+        <h2 id="agent-name">Maya</h2><div class="agent-role" id="business-name">Avocado Health assistant</div>
+        <div class="agent-state" id="agent-state">Calm guidance. Clear hospital information.</div>
+        <button class="button primary call-button" id="call-button"><span>◉</span> Start conversation</button>
+        <div class="call-controls hidden" id="call-controls"><button class="button secondary" id="mute-button">Mute mic</button></div>
+        <button class="button danger hidden" id="stop-speech" type="button">Stop talking</button>
+        <div class="call-tip" id="call-tip">Allow microphone access when prompted.<br>Click Stop talking, press Esc, or speak over the agent to interrupt.</div>
+        <div class="panel-bottom"><span><span class="status-dot" id="connection-dot"></span> <span id="connection-label">Not connected</span></span><span class="timer" id="timer">00:00</span></div>
+      </div>
+      <div class="transcript-panel card">
+        <div class="panel-top"><div><span class="panel-title">Patient conversation</span><span class="tag">LIVE TRANSCRIPT</span></div><button class="icon-button" id="export-session" title="Download this session">↓</button></div>
+        <div class="transcript" id="transcript"><div class="empty-transcript" id="transcript-empty"><div class="empty-icon">＋</div><h3>How can I help?</h3><p>Speak naturally or type a message.</p><div class="suggestions"><button data-prompt="Which cardiology doctors are available?">Find a cardiology doctor</button><button data-prompt="What are your opening hours?">Check opening hours</button><button data-prompt="I would like to book an appointment.">Book an appointment</button></div></div></div>
+        <div class="typing-line" id="typing-line"><span class="status-dot"></span> Waiting for a conversation</div>
+        <form id="message-form" class="message-form"><input id="message-input" maxlength="2000" placeholder="Type a message to test the agent…" aria-label="Message the agent"><button type="submit" aria-label="Send message">↑</button></form>
+        <div class="transcript-foot"><span>Audio is processed locally and is not saved.</span><span id="turn-count">0 turns</span></div>
+      </div>
+    </div>
+    <div class="simple-footnote"><span class="status-dot green"></span> Non-clinical assistant · Live hospital schedules · Local speech processing</div>
+  </section>
+  <section class="page" id="page-knowledge">
+    <div class="page-heading"><div><div class="eyebrow">HOSPITAL SOURCE OF TRUTH</div><h1>Hospital knowledge</h1><p>Index approved policies, department information, and patient guidance while keeping every answer traceable.</p></div><button class="button secondary" id="load-demo">Load hospital demo</button></div>
+    <div class="stats-grid"><div class="card stat"><span>Documents</span><strong id="doc-count">0</strong></div><div class="card stat"><span>Indexed passages</span><strong id="chunk-count">0</strong></div><div class="card stat"><span>Retrieval</span><strong class="small-stat">Keyword + semantic</strong></div><div class="card stat"><span>Storage</span><strong class="small-stat">On this Mac</strong></div></div>
+    <label class="upload-zone" id="upload-zone"><input id="file-input" type="file" multiple accept=".pdf,.docx,.txt,.md,.html,.htm,.csv"><span class="upload-icon">↑</span><strong>Drop documents here, or browse files</strong><span>Text PDFs, DOCX, Markdown, TXT, HTML, CSV · 15 MB per file</span><small>Pages and headings are preserved. Scanned PDFs require OCR before upload.</small></label>
+    <div id="upload-progress" class="hidden notice"></div>
+    <div class="card document-card"><div class="panel-top"><span class="panel-title">Your documents</span><span class="tag">ATOMIC INDEXING</span></div><div id="document-list"></div></div>
+  </section>
+  <section class="page" id="page-retrieval">
+    <div class="page-heading"><div><div class="eyebrow">INSPECT BEFORE YOU TRUST</div><h1>Retrieval lab</h1><p>See exactly what a question retrieves, without generating an answer.</p></div></div>
+    <form class="card search-form" id="search-form"><span>⌕</span><input id="search-input" maxlength="1000" placeholder="Try: What are the visiting hours?" aria-label="Knowledge search query"><button class="button primary" type="submit">Search hospital knowledge</button></form>
+    <div class="retrieval-method"><span class="tiny-pill">BM25 keyword search</span><span>+</span><span class="tiny-pill">Nomic semantic search</span><span>→</span><span class="tiny-pill">Reciprocal rank fusion</span><p>Similarity scores are ranking signals, not probabilities of correctness.</p></div>
+    <div id="search-results"><div class="large-empty"><span>⌕</span><h3>Follow the evidence.</h3><p>Search the knowledge base to inspect source passages and relevance.</p></div></div>
+  </section>
+  <section class="page" id="page-sessions">
+    <div class="page-heading"><div><div class="eyebrow">PATIENT ACCESS REVIEW</div><h1>Session history</h1><p>Review transcripts, citations, timing, and evidence-backed appointment enquiry details.</p></div><button class="button secondary" id="refresh-sessions">Refresh</button></div>
+    <div class="history-grid"><div class="card" id="session-list"></div><div class="card session-detail" id="session-detail"><div class="large-empty"><span>◷</span><h3>Select a conversation</h3><p>Completed and interrupted turns are saved locally.</p></div></div></div>
+  </section>
+  <section class="page" id="page-audit">
+    <div class="page-heading"><div><div class="eyebrow">RETRIEVAL TRACE</div><h1>RAG audit log</h1><p>Every hospital-knowledge query is recorded locally with its origin, timing, result count, and retrieved evidence.</p></div><button class="button secondary" id="refresh-audit">Refresh</button></div>
+    <div class="stats-grid audit-stats"><div class="card stat"><span>Logged queries</span><strong id="audit-count">0</strong></div><div class="card stat"><span>Conversation searches</span><strong id="audit-conversation-count">0</strong></div><div class="card stat"><span>Retrieval Lab searches</span><strong id="audit-lab-count">0</strong></div><div class="card stat"><span>Failed searches</span><strong id="audit-error-count">0</strong></div></div>
+    <div class="card audit-list" id="audit-list"><div class="large-empty"><span>≣</span><h3>No RAG queries yet</h3><p>Conversation and Retrieval Lab searches will appear here.</p></div></div>
+  </section>
+  <section class="page" id="page-settings">
+    <div class="page-heading"><div><div class="eyebrow">MAKE IT YOURS</div><h1>Agent settings</h1><p>Configure the voice, style, and retrieval behaviour. Changes apply to new sessions.</p></div></div>
+    <form id="settings-form" class="card settings-form"><div class="form-grid"><label>Assistant name<input name="agent_name" required maxlength="50"></label><label>Hospital name<input name="business_name" required maxlength="120"></label></div><label>Conversation style<textarea name="instructions" rows="3" maxlength="2000"></textarea><small>Style preferences cannot enable clinical advice, real bookings, or override patient-safety rules.</small></label><div class="form-grid"><label>Voice<select name="voice"><option value="af_heart">Heart · American English</option><option value="af_sarah">Sarah · American English</option><option value="af_bella">Bella · American English</option><option value="am_adam">Adam · American English</option><option value="am_michael">Michael · American English</option></select></label><label>Speaking speed<input name="speed" type="number" min="0.75" max="1.5" step="0.05"></label><label>End-of-turn silence (milliseconds)<input name="silence_ms" type="number" min="400" max="1600" step="50"><small>Longer pauses are more forgiving; shorter pauses respond sooner.</small></label><label>Language model<select name="llm_provider"><option value="openrouter">OpenRouter</option><option value="local">Local Ollama</option></select></label><label>OpenRouter model<input name="openrouter_model" maxlength="120" placeholder="openai/gpt-4o-mini"></label><label>Local model<input name="local_model" maxlength="120" placeholder="qwen3:8b"></label><label>If the primary model fails<select name="fallback_provider"><option value="local">Fall back to local Ollama</option><option value="openrouter">Fall back to OpenRouter</option><option value="none">No fallback</option></select><small>OpenRouter needs OPENROUTER_API_KEY in the environment. The key is never stored in hospital knowledge.</small></label><label>Source passages per query<input name="top_k" type="number" min="1" max="6"></label><label>Minimum semantic similarity<input name="retrieval_threshold" type="number" min="0.2" max="0.85" step="0.01"><small>Used when the assistant searches approved hospital content. Tune in the retrieval lab.</small></label><label class="checkbox-label"><input name="demo" type="checkbox"> Show fictional hospital demo label</label></div><div class="form-actions"><span id="settings-result"></span><button class="button primary" type="submit">Save settings</button></div></form>
+  </section>
+  <section class="page" id="page-system">
+    <div class="page-heading"><div><div class="eyebrow">BUILT FOR YOUR MAC</div><h1>System & architecture</h1><p>A compact local stack, with visible readiness and clear boundaries.</p></div><button class="button secondary" id="refresh-system">Refresh status</button></div>
+    <div id="service-cards" class="service-grid"></div>
+    <div class="card architecture-card"><h2>How a voice turn works</h2><div class="architecture-flow"><div><b>01</b><strong>Hear</strong><p>16 kHz microphone audio<br>Echo cancellation + speech detection</p></div><div><b>02</b><strong>Understand</strong><p>Whisper transcription<br>The model reads intent first</p></div><div><b>03</b><strong>Act</strong><p>Search or capture only if needed<br>Otherwise just talk</p></div><div><b>04</b><strong>Speak</strong><p>Kokoro sentence audio<br>Interruptible local playback</p></div></div></div>
+    <div class="system-notes"><div class="card"><h3>Local speech, flexible intelligence</h3><p>The dashboard, Whisper, Kokoro, and SQLite hospital knowledge store run on this machine. Conversation can use a local Ollama model or OpenRouter. Speech never leaves this Mac.</p><p>Model downloads need internet once. Transcripts are saved; microphone recordings are not. OpenRouter keys stay in the process environment.</p></div><div class="card"><h3>What this hospital demo supports</h3><p>Natural patient-access conversations, document-grounded hospital information, live doctor and availability lookup, and confirmed appointment booking through the hospital backend.</p><p>Clinical advice, diagnosis, medical-record access, ambulance dispatch, payment, and live transfer remain intentionally unavailable.</p></div></div>
+    <div class="card status-detail"><h3>Runtime details</h3><pre id="system-json">Checking services…</pre></div>
+  </section>
+</main>
+<div id="toast" class="toast hidden" role="status"></div>
+<dialog id="document-modal"><div class="modal-header"><h2 id="modal-title">Document</h2><button class="icon-button" id="close-modal" aria-label="Close document">×</button></div><div id="modal-body"></div></dialog>
+</body></html>

@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+:root {
+  --clr-0: rgba(0, 0, 0, 0.1);
+  --clr-1: #343433;
+  --clr-2: rgba(0, 0, 0, 0.04);
+  --clr-3: rgba(0, 0, 0, 0);
+  --clr-4: #848281;
+  --clr-5: #f6f4ef;
+  --clr-6: #171717;
+  --clr-16: #e5e2dc;
+  --clr-20: #575554;
+  --clr-22: #ff5310;
+  --clr-23: #fbfaf9;
+  --clr-24: #848281;
+  --clr-26: #ffffff;
+  --color-002: #121212;
+}
+
+@theme inline {
+  --color-clr-0: var(--clr-0);
+  --color-clr-1: var(--clr-1);
+  --color-clr-2: var(--clr-2);
+  --color-clr-3: var(--clr-3);
+  --color-clr-4: var(--clr-4);
+  --color-clr-5: var(--clr-5);
+  --color-clr-6: var(--clr-6);
+  --color-clr-16: var(--clr-16);
+  --color-clr-20: var(--clr-20);
+  --color-clr-22: var(--clr-22);
+  --color-clr-23: var(--clr-23);
+  --color-clr-24: var(--clr-24);
+  --color-clr-26: var(--clr-26);
+  --color-color-002: var(--color-002);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 84px;
+  }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #f6f4ef;
+    color: #121212;
+  }
+}
+
+.font-serif-logo {
+  font-family: 'Playfair Display', Georgia, serif;
+}

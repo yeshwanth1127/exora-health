@@ -1,0 +1,47 @@
+import { ArrowRight, ArrowUpRight, MapPin, MonitorPlay } from 'lucide-react';
+import { Breadcrumbs } from '../common/Breadcrumbs';
+import { branches, physicalBranches } from '../../data/branches';
+import { doctors } from '../../data/doctors';
+
+interface LocationsPageProps {
+  selectedBranchId?: string;
+  onBackToHome: () => void;
+  onBackToLocations: () => void;
+  onSelectBranch: (id: string) => void;
+  onSelectDoctor: (id: string) => void;
+  onExploreDepartments: () => void;
+  onOpenBooking: () => void;
+}
+
+const branchImages: Record<string, string> = {
+  indiranagar: '/images/avocado-hero-bg.jpg',
+  koramangala: '/images/primary-care-consultation.jpg',
+  whitefield: '/images/cardiology-consultation.jpg',
+  jayanagar: '/images/avocado-hero-bg.jpg',
+  virtual: '/images/primary-care-consultation.jpg',
+};
+
+export function LocationsPage({ selectedBranchId, onBackToHome, onBackToLocations, onSelectBranch, onSelectDoctor, onExploreDepartments, onOpenBooking }: LocationsPageProps) {
+  const branch = branches.find(item => item.id === selectedBranchId);
+  if (branch) {
+    const team = doctors.filter(doctor => branch.virtual ? doctor.acceptsVirtual : doctor.roomNumber.includes(branch.name));
+    return <div className="bg-[#fbfaf6] text-[#17372b]">
+      <div className="mx-auto max-w-[1400px] px-5 pt-7 sm:px-10 lg:px-16"><Breadcrumbs items={[{ label: 'Home', onClick: onBackToHome }, { label: 'Locations', onClick: onBackToLocations }, { label: branch.area }]} /></div>
+      <section className="mx-auto grid max-w-[1400px] items-center gap-12 px-5 py-16 sm:px-10 lg:grid-cols-[1fr_1fr] lg:px-16 lg:py-24">
+        <div><p className="mb-5 text-xs font-bold tracking-[.19em] text-[#65816a]">{branch.virtual ? 'VIRTUAL CARE' : 'BENGALURU CLINIC'}</p><h1 className="text-[clamp(3.4rem,6vw,6.5rem)] font-medium leading-[1] tracking-[-.055em]">{branch.area}</h1><p className="mt-6 max-w-xl text-lg leading-relaxed text-[#5a6d60]">{branch.virtual ? 'Speak with a doctor from wherever you are, with a visit that fits into your day.' : `Explore care in ${branch.area}, meet the clinicians listed for this location, and plan your visit.`}</p><div className="mt-8 flex flex-wrap gap-3"><button onClick={onOpenBooking} className="inline-flex items-center gap-2 rounded-full bg-[#214f38] px-6 py-3.5 text-sm font-semibold text-white hover:bg-[#173d2b]">Book a visit <ArrowRight size={17} /></button><button onClick={onExploreDepartments} className="inline-flex items-center gap-2 rounded-full border border-[#9ab29e] px-6 py-3.5 text-sm font-semibold">Explore care <ArrowUpRight size={17} /></button></div></div>
+        <div className="aspect-[1.16] overflow-hidden rounded-[1.8rem] bg-[#e5eee2]"><img src={branchImages[branch.id]} alt="A welcoming care environment" className="h-full w-full object-cover" /></div>
+      </section>
+      <section className="bg-[#e8f0e5] py-16 sm:py-20"><div className="mx-auto grid max-w-[1400px] gap-10 px-5 sm:px-10 lg:grid-cols-[.8fr_1.2fr] lg:px-16"><div><p className="mb-4 text-xs font-bold tracking-[.18em] text-[#617f66]">PLAN YOUR VISIT</p><h2 className="text-4xl font-medium tracking-[-.04em] sm:text-5xl">Care in a place that works for you.</h2></div><div className="grid gap-3 sm:grid-cols-2"><div className="rounded-2xl bg-white p-6"><MapPin className="mb-5 text-[#477456]" /><h3 className="text-lg font-semibold">Location</h3><p className="mt-2 text-sm leading-relaxed text-[#607166]">{branch.virtual ? 'Video visit' : `${branch.area}, Bengaluru`}</p><p className="mt-3 text-xs leading-relaxed text-[#79877d]">{branch.virtual ? 'Availability shown during booking.' : 'Street address and directions will be added when the clinic details are confirmed.'}</p></div><div className="rounded-2xl bg-white p-6"><MonitorPlay className="mb-5 text-[#477456]" /><h3 className="text-lg font-semibold">Visit options</h3><p className="mt-2 text-sm leading-relaxed text-[#607166]">{branch.virtual ? 'Remote consultations with participating doctors.' : 'In-person consultations, with virtual options where available.'}</p><p className="mt-3 text-xs leading-relaxed text-[#79877d]">Hours and appointment availability are confirmed during booking.</p></div></div></div></section>
+      <section className="mx-auto max-w-[1400px] px-5 py-20 sm:px-10 lg:px-16"><div className="mb-9 flex flex-wrap items-end justify-between gap-5"><div><p className="mb-3 text-xs font-bold tracking-[.18em] text-[#617f66]">YOUR CARE TEAM</p><h2 className="text-4xl font-medium tracking-[-.04em] sm:text-5xl">Meet the people here</h2></div><span className="text-sm text-[#627469]">{team.length} {team.length === 1 ? 'doctor' : 'doctors'} listed</span></div>{team.length ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{team.map(doctor => <button key={doctor.id} onClick={() => onSelectDoctor(doctor.id)} className="group overflow-hidden rounded-2xl border border-[#e2e9df] bg-[#f4f7f0] text-left"><div className="aspect-[1.1] overflow-hidden bg-[#dce9df]"><img src={doctor.image} alt={doctor.name} className="h-full w-full object-cover object-top transition-transform group-hover:scale-[1.035]" /></div><div className="p-6"><p className="text-xs font-bold tracking-[.1em] text-[#628069]">{doctor.departmentName.toUpperCase()}</p><h3 className="mt-3 text-2xl font-medium">{doctor.name}</h3><p className="mt-2 text-sm text-[#627469]">{doctor.title}</p><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold">View profile <ArrowUpRight size={16} /></span></div></button>)}</div> : <p className="rounded-2xl bg-[#f3f6f0] p-8 text-[#5d7062]">Clinician profiles for this location will appear here when confirmed.</p>}</section>
+      <section className="bg-[#dcead8] px-5 py-16 text-center sm:px-10"><h2 className="text-3xl font-medium tracking-[-.03em] sm:text-4xl">Ready to find your care?</h2><button onClick={onOpenBooking} className="mt-6 rounded-full bg-[#214f38] px-7 py-3.5 text-sm font-semibold text-white">Book a visit</button></section>
+    </div>;
+  }
+
+  return <div className="bg-[#fbfaf6] text-[#17372b]">
+    <div className="mx-auto max-w-[1400px] px-5 pt-7 sm:px-10 lg:px-16"><Breadcrumbs items={[{ label: 'Home', onClick: onBackToHome }, { label: 'Locations' }]} /></div>
+    <section className="mx-auto max-w-[1400px] px-5 pb-14 pt-16 sm:px-10 lg:px-16 lg:pt-24"><p className="mb-5 text-xs font-bold tracking-[.19em] text-[#65816a]">FIND YOUR PLACE</p><h1 className="max-w-4xl text-[clamp(3.4rem,6.5vw,7rem)] font-medium leading-[.98] tracking-[-.055em]">Find an Avocado clinic near you.</h1><p className="mt-6 max-w-2xl text-lg leading-relaxed text-[#5c6e61]">Explore our Bengaluru locations and virtual care. Choose a place to see the doctors listed there and learn how to plan a visit.</p></section>
+    <section className="mx-auto max-w-[1400px] px-5 pb-20 sm:px-10 lg:px-16"><div className="grid gap-5 sm:grid-cols-2">{physicalBranches.map(item => <button key={item.id} onClick={() => onSelectBranch(item.id)} className="group overflow-hidden rounded-[1.3rem] border border-[#e2e9df] bg-white text-left transition-all hover:-translate-y-1 hover:shadow-lg"><div className="h-60 overflow-hidden bg-[#e4eee2]"><img src={branchImages[item.id]} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" /></div><div className="p-6 sm:p-7"><span className="text-[11px] font-bold tracking-[.18em] text-[#68836d]">BENGALURU</span><h2 className="mt-3 text-3xl font-medium tracking-[-.035em]">{item.name}</h2><p className="mt-2 flex items-center gap-1.5 text-sm text-[#607368]"><MapPin size={15} /> {item.area}, Bengaluru</p><span className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-[#275c40]">See clinic details <ArrowUpRight size={16} /></span></div></button>)}</div>
+      <button onClick={() => onSelectBranch('virtual')} className="mt-5 flex w-full flex-col justify-between gap-8 rounded-[1.3rem] bg-[#dcead8] p-7 text-left sm:flex-row sm:items-center sm:p-9"><div><span className="text-[11px] font-bold tracking-[.18em] text-[#5b7b61]">CARE WHERE YOU ARE</span><h2 className="mt-2 text-3xl font-medium tracking-[-.035em]">Virtual care</h2><p className="mt-2 max-w-lg text-sm leading-relaxed text-[#526c59]">Connect with a participating doctor from home.</p></div><span className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold">Explore virtual care <ArrowUpRight size={17} /></span></button>
+    </section>
+  </div>;
+}

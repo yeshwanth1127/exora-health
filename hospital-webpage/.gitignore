@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+**/node_modules/
+/.pnp
+.pnp.js
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+.next/
+**/.next/
+out/
+
+# Reference / auxiliary folders excluded as requested
+cloned_pages/
+omw-website/
+scratch/
+
+# Local & OS files
+.DS_Store
+**/.DS_Store
+.claude/
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.*
+!.env.example

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 70" fill="none">
+  <!-- AHPI Shield & Cross Emblem -->
+  <g transform="translate(10, 8)">
+    <path d="M26 4L44 11V26C44 37 36 45 26 48C16 45 8 37 8 26V11L26 4Z" stroke="#222222" stroke-width="2.5" fill="none"/>
+    <path d="M26 15V37M15 26H37" stroke="#222222" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="64" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="25" font-weight="900" fill="#222222" letter-spacing="1.5">AHPI</text>
+  <text x="65" y="48" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="7.5" font-weight="700" fill="#444444" letter-spacing="1">HEALTHCARE EXCELLENCE</text>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 70" fill="none">
+  <!-- QAI Rosette Emblem -->
+  <g transform="translate(8, 8)">
+    <circle cx="26" cy="22" r="16" stroke="#222222" stroke-width="2.5" fill="none"/>
+    <path d="M20 34L16 46L26 41L36 46L32 34" stroke="#222222" stroke-width="2" stroke-linejoin="round" fill="none"/>
+    <path d="M19 22L24 27L33 17" stroke="#222222" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="64" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="26" font-weight="900" fill="#222222" letter-spacing="1.5">QAI</text>
+  <text x="65" y="48" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="7.5" font-weight="700" fill="#444444" letter-spacing="0.8">HEALTHCARE QUALITY</text>
+</svg>

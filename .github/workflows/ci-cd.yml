@@ -1,0 +1,121 @@
+name: CI and production deployment
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: exora-health-production
+  cancel-in-progress: false
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hospital-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e '.[dev]'
+      - run: pytest
+      - name: Verify migrations
+        run: |
+          test "$(alembic heads | wc -l | tr -d ' ')" = "1"
+          DATABASE_URL=sqlite:////tmp/exora-ci.db alembic upgrade head
+
+  webpage:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hospital-webpage
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: hospital-webpage/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  voice:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: voice-agent-runtime
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: pytest
+
+  images:
+    if: github.event_name != 'pull_request'
+    needs: [backend, webpage, voice]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: backend
+            context: hospital-backend
+          - name: webpage
+            context: hospital-webpage
+          - name: voice
+            context: voice-agent-runtime
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ghcr.io/${{ github.repository }}-${{ matrix.name }}:${{ github.sha }}
+            ghcr.io/${{ github.repository }}-${{ matrix.name }}:main
+          build-args: |
+            VITE_API_URL=
+            VITE_HOSPITAL_SLUG=exora-demo
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: images
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Configure deployment SSH key
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 0700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 0600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Deploy exact commit
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: >-
+          ssh "$DEPLOY_USER@$DEPLOY_HOST"
+          "ssh qlix-agent /opt/exora-health/remote-deploy.sh '${{ github.sha }}'"
