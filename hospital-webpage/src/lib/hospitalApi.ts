@@ -1,4 +1,10 @@
-export const API_BASE = (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_API_URL || 'http://127.0.0.1:8000';
+const configuredApiBase = (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_API_URL;
+
+// An explicitly empty production value means "use this website's origin".
+// Only fall back to localhost when the variable is absent during local development.
+export const API_BASE = configuredApiBase === undefined
+  ? 'http://127.0.0.1:8000'
+  : configuredApiBase.replace(/\/+$/, '');
 export const HOSPITAL_SLUG = (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_HOSPITAL_SLUG || 'exora-demo';
 
 export interface ApiBranch { id: string; slug: string; name: string; area: string; timezone: string; is_virtual: boolean }

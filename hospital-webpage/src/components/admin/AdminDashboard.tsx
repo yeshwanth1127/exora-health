@@ -5,7 +5,7 @@ import {
   Mic2, Stethoscope, Trash2, TrendingUp, Users, Video, X,
 } from 'lucide-react';
 
-const API_BASE = (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_API_URL || 'http://127.0.0.1:8000';
+import { API_BASE } from '../../lib/hospitalApi';
 
 type Section = 'overview' | 'appointments' | 'virtual-opd' | 'doctors' | 'schedules' | 'voice' | 'catalogue' | 'operations';
 
