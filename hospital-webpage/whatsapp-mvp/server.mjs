@@ -176,6 +176,7 @@ function startFromEnvironment() {
     baseUrl: process.env.BACKEND_URL,
     serviceKey: process.env.BACKEND_WHATSAPP_SERVICE_KEY,
   }) : null;
+  const durableInbound = Boolean(backend) && process.env.WA_DURABLE_INBOUND !== 'false';
   const engine = backend ? createLiveEngine({
     backend, downloadMedia: sendText.downloadMedia,
     welcomeImagePath: process.env.WA_WELCOME_IMAGE_PATH || undefined,
@@ -184,9 +185,9 @@ function startFromEnvironment() {
   }) : createDemoEngine();
   let wakeWorker = () => {};
   const app = createWebhookServer({ ...config, sendText, engine,
-    enqueueInbound: backend?.enqueueInbound,
+    enqueueInbound: durableInbound ? backend.enqueueInbound : undefined,
     onEnqueued: () => wakeWorker(),
-    checkReady: backend ? backend.inboundReady : undefined,
+    checkReady: durableInbound ? backend.inboundReady : undefined,
   });
   const port = Number(process.env.WA_LOCAL_PORT ?? 8787);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('WA_LOCAL_PORT must be a valid port');
@@ -203,7 +204,7 @@ function startFromEnvironment() {
     console.log(`WhatsApp ${mode} webhook listening on http://${host}:${port}/webhook`);
     if (mode === 'demo') console.log('Type “followup” here to send one demo check-in to the most recent tester.');
   });
-  if (backend) {
+  if (durableInbound) {
     const processOne = createInboundWorker({ backend, engine, sendText });
     let busy = false;
     let retryAfter = 0;

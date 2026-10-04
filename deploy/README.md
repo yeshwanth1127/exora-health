@@ -38,3 +38,6 @@ the public Nginx server proxies the exact callback path. Put Meta credentials in
 `/opt/exora-health/.env` on the Docker host, never in Git. `WA_VERIFY_TOKEN` is
 the value entered beside the callback URL in Meta. Subscribe the WhatsApp
 Business Account webhook to the `messages` field after `/health/ready` passes.
+The deployed single bot uses inline signed-webhook processing because the
+current backend does not expose the optional durable inbound queue. Booking and
+conversation state remain persisted in PostgreSQL; keep exactly one bot replica.

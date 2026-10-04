@@ -28,8 +28,10 @@ export async function runPreflight(env, fetchImpl = fetch) {
   const root = env.BACKEND_URL.replace(/\/$/, '');
   const auth = { 'X-Service-Key': env.BACKEND_WHATSAPP_SERVICE_KEY };
   const base = `${root}/api/v1/integrations/whatsapp`;
-  const ready = await getJson(`${base}/inbound/ready`, auth, fetchImpl);
-  if (ready.ready !== true) throw new Error('Backend inbound queue is not ready');
+  if (env.WA_DURABLE_INBOUND !== 'false') {
+    const ready = await getJson(`${base}/inbound/ready`, auth, fetchImpl);
+    if (ready.ready !== true) throw new Error('Backend inbound queue is not ready');
+  }
   const catalogue = await getJson(`${base}/catalogue`, auth, fetchImpl);
   const branches = catalogue.branches?.filter((item) => !item.is_virtual) ?? [];
   if (!branches.length || !catalogue.departments?.length) throw new Error('Active clinic branches and specialties are required');

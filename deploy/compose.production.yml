@@ -87,6 +87,9 @@ services:
       WA_LOCAL_PORT: 8787
       WA_CLINIC_READY: "true"
       WA_LIVE_NUMBER_CONFIRMED: "true"
+      # The current backend persists conversation/booking state but does not yet
+      # expose the optional durable inbound queue used for multi-replica bots.
+      WA_DURABLE_INBOUND: "false"
       WA_VERIFY_TOKEN: ${WA_VERIFY_TOKEN:?WA_VERIFY_TOKEN is required}
       WA_APP_SECRET: ${WA_APP_SECRET:?WA_APP_SECRET is required}
       WA_PHONE_NUMBER_ID: ${WA_PHONE_NUMBER_ID:?WA_PHONE_NUMBER_ID is required}
