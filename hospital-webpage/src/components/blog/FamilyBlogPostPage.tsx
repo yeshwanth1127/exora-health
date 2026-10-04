@@ -51,6 +51,7 @@ export const FamilyBlogPostPage: React.FC<FamilyBlogPostPageProps> = ({
         <div className="text-[14px] text-stone-500 font-normal mb-4 select-none">
           {post.date} by <span className="text-stone-900 font-medium">{post.author}</span> / {post.tags.join(', ')}
         </div>
+        <p className="mb-7 border-l-2 border-[#6b9876] pl-4 text-sm text-[#4f6756]">Draft article. This article has not been medically reviewed yet.</p>
 
         {/* Main H1 Title */}
         <h1 className="text-3xl sm:text-[42px] font-bold text-stone-950 leading-[1.18] tracking-tight mb-12">

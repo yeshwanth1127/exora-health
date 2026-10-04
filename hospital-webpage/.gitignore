@@ -16,6 +16,7 @@ out/
 cloned_pages/
 omw-website/
 scratch/
+tmp/
 
 # Local & OS files
 .DS_Store

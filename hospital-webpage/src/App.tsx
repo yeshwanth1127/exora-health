@@ -27,7 +27,6 @@ import { DoctorShowcaseSection } from './components/sections/DoctorShowcaseSecti
 import { Footer } from './components/common/Footer';
 import { WhatsAppFloatingWidget } from './components/contact/WhatsAppFloatingWidget';
 import { SettingsModal, type ComponentVariants, type ComponentVariantKey } from './components/common/SettingsModal';
-import { AaveLoginFlow } from './components/auth/AaveLoginFlow';
 import { FamilyFaqPage } from './components/faq/FamilyFaqPage';
 import { FamilyBlogListPage } from './components/blog/FamilyBlogListPage';
 import { FamilyBlogPostPage } from './components/blog/FamilyBlogPostPage';
@@ -87,13 +86,15 @@ export function App() {
     matchedDoctor: Doctor;
     clinicalReasoning: string;
   } | null>(null);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [user, setUser] = useState<{ name: string; identifier: string } | null>(null);
   useEffect(() => {
     authApi.me().then((actor) => {
       if (actor.role === 'patient') setUser({ name: actor.display_name, identifier: actor.user_id });
     }).catch(() => undefined);
   }, []);
+  const openPatientPortal = () => {
+    window.location.href = '/portal';
+  };
   const [activeTestimonialOption, setActiveTestimonialOption] = useState<'option1' | 'option2'>('option2');
   const [activeServicesOption, setActiveServicesOption] = useState<'option1' | 'option2'>('option1');
   const [heroBookingPosition, setHeroBookingPosition] = useState<'top' | 'bottom'>('top');
@@ -162,7 +163,6 @@ export function App() {
         setSelectedBranchId(params.get('id') || 'indiranagar');
       } else if (pageParam === 'insurance') {
         setCurrentView('insurance');
-        setIsLoginOpen(true);
       } else if (pageParam === 'insurance-pricing') {
         setCurrentView('insurance-pricing');
       } else if (pageParam === 'how-it-works') {
@@ -206,7 +206,7 @@ export function App() {
       }
 
       if (params.get('login') === 'true' || window.location.hash === '#login') {
-        setIsLoginOpen(true);
+        openPatientPortal();
       }
     };
 
@@ -312,7 +312,7 @@ export function App() {
     }
     if (section === 'locations') { navigateToPage('locations'); return; }
     if (section.startsWith('location-')) { navigateToPage('location', section.replace('location-', '')); return; }
-    if (section === 'insurance') { navigateToPage('insurance'); setIsLoginOpen(true); return; }
+    if (section === 'insurance') { navigateToPage('insurance'); return; }
     if (section === 'insurance-pricing' || section === 'packages') { navigateToPage('insurance-pricing'); return; }
     if (section === 'how-it-works') { navigateToPage('how-it-works'); return; }
     if (section === 'contact' || section === 'contact-page') { navigateToPage('contact-page'); return; }
@@ -628,7 +628,7 @@ export function App() {
         return <ContactPage {...props} />;
       }
       case 'insurance':
-        return <InsuranceAccessPage user={user} onBackToHome={() => navigateToPage('home')} onOpenLogin={() => setIsLoginOpen(true)} onViewPricing={() => navigateToPage('insurance-pricing')} />;
+        return <InsuranceAccessPage user={user} onBackToHome={() => navigateToPage('home')} onOpenLogin={openPatientPortal} onViewPricing={() => navigateToPage('insurance-pricing')} />;
       // Render dedicated Doctor Search Results Page
       case 'search-results': {
         const ResultsPage = componentVariants['search-results'] === 'original' ? OriginalSearchResultsPage : SearchResultsPage;
@@ -653,7 +653,7 @@ export function App() {
               navigateToPage('doctor-detail', doctorId);
             }}
             onOpenBooking={() => startBooking()}
-            onOpenLogin={() => setIsLoginOpen(true)}
+            onOpenLogin={openPatientPortal}
             user={user}
           />
         );
@@ -670,7 +670,7 @@ export function App() {
               setScheduleReturnView('doctor-detail');
               navigateToPage('schedule-appointment', docId, step);
             }}
-            onOpenLogin={() => setIsLoginOpen(true)}
+            onOpenLogin={openPatientPortal}
             user={user}
           />
         );
@@ -687,7 +687,7 @@ export function App() {
             initialSlot={schedulePrefillSlot}
             onBackToSearch={() => navigateToPage(scheduleReturnView, scheduleReturnView === 'department' ? selectedDepartmentId : scheduleReturnView === 'doctor-detail' ? scheduleDoctorId : scheduleReturnView === 'location' ? selectedBranchId : undefined)}
             onBackToHome={() => navigateToPage('home')}
-            onOpenLogin={() => setIsLoginOpen(true)}
+            onOpenLogin={openPatientPortal}
             onSelectSimilarDoctor={(similarId) => {
               setScheduleDoctorId(similarId);
               setScheduleInitialStep(1);
@@ -726,12 +726,12 @@ export function App() {
       {!embeddedHeader && (componentVariants.header === 'light' ? <TiaInspiredHeader
         onNavigate={handleNavigate}
         onOpenBooking={() => startBooking()}
-        onOpenLogin={() => { window.location.href = '/portal'; }}
+        onOpenLogin={openPatientPortal}
         user={user}
       /> : <StickyEmergencyHeader
         onNavigate={handleNavigate}
         onOpenBooking={() => startBooking()}
-        onOpenLogin={() => { window.location.href = '/portal'; }}
+        onOpenLogin={openPatientPortal}
         user={user}
         showAnnouncement={!innerPage}
         forceScrolledStyle={!!innerPage}
@@ -754,7 +754,7 @@ export function App() {
           <AvocadoHero
             onGetStarted={() => startBooking()}
             onOpenBooking={() => startBooking()}
-            onOpenLogin={() => setIsLoginOpen(true)}
+            onOpenLogin={openPatientPortal}
             user={user}
             onNavigate={handleNavigate}
             bookingBarPosition={heroBookingPosition}
@@ -883,17 +883,6 @@ export function App() {
         onChangeComponentVariant={changeComponentVariant}
       />
 
-      {/* Patient portal login & onboarding flow */}
-      <AaveLoginFlow
-        isOpen={isLoginOpen}
-        onClose={() => setIsLoginOpen(false)}
-        brandTitle={currentView === 'insurance' ? 'Avocado Insurance' : undefined}
-        welcomeDescription={currentView === 'insurance' ? 'Log in to continue to the insurance area.' : undefined}
-        welcomeNote={currentView === 'insurance' ? 'Online eligibility is not connected in this preview.' : undefined}
-        onLoginSuccess={(userData) => {
-          setUser(userData);
-        }}
-      />
     </div>
   );
 }

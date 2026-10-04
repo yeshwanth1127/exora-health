@@ -391,6 +391,9 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
       {/* ── MAIN CONTENT CONTAINER ── */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
+          <p role="status" className="rounded-xl border border-[#dce9df] bg-[#eef5eb] px-4 py-3 text-sm text-[#315943]">
+            Sample walkthrough: dates, time slots, verification and confirmation are examples. No appointment is reserved and no message is sent. Use the standard booking view for live availability and Virtual OPD bookings.
+          </p>
           {/* ══════════════════════════════════════════════════════════════
               3-STEP PROGRESS STEPPER (Matching media_1790071475424.png & media_1790071408155.png)
               ══════════════════════════════════════════════════════════════ */}
@@ -1290,23 +1293,16 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
 
                 <div className="space-y-1.5">
                   <h2 className="text-2xl font-extrabold text-neutral-950">
-                    Appointment Successfully Scheduled!
+                    Walkthrough complete
                   </h2>
                   <p className="text-xs sm:text-sm text-neutral-600">
-                    A confirmation SMS and calendar invitation have been sent to <strong>{phone}</strong>
-                    {email ? (
-                      <>
-                        {' '}
-                        and <strong>{email}</strong>
-                      </>
-                    ) : null}
-                    .
+                    This sample did not reserve an appointment or send an SMS or calendar invitation. Contact reception or use the standard booking view to confirm availability.
                   </p>
                 </div>
 
                 {/* Confirmation Code Pill */}
                 <div className="inline-block bg-[#f4f3f8] px-5 py-2.5 rounded-xl border border-purple-200">
-                  <span className="text-xs text-neutral-500 block font-medium">Confirmation Code</span>
+                  <span className="text-xs text-neutral-500 block font-medium">Sample reference</span>
                   <span className="text-xl font-mono font-extrabold text-[#3d117a]">{confirmationCode}</span>
                 </div>
 

@@ -35,6 +35,7 @@ export const FamilyBlogListPage: React.FC<FamilyBlogListPageProps> = ({
             <p className="text-stone-500 mt-2 text-[15px]">
               The latest medical research, physician drafts, and wellness guides from Avocado Health
             </p>
+            <p className="mt-3 text-sm text-[#4f6756]">Draft articles · Awaiting clinical review before publication.</p>
           </div>
 
           {/* Category Filter Pills */}
@@ -83,7 +84,7 @@ export const FamilyBlogListPage: React.FC<FamilyBlogListPageProps> = ({
                 </div>
               </div>
 
-              {/* Column 3: Excerpt preview */}
+              {/* Column 3: Excerpt */}
               <div className="text-[14px] sm:text-[15px] text-stone-600 leading-relaxed font-normal">
                 {post.excerpt}
               </div>
