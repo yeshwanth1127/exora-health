@@ -12,7 +12,7 @@ from .models import (
     VoiceToolCall, VoiceTranscriptTurn, utcnow,
 )
 from .schemas import (
-    AppointmentCreate, AppointmentOut, AvailabilityResponse, DoctorOut, HoldCreate, HoldOut,
+    AppointmentCreate, AppointmentOut, AvailabilityResponse, BranchOut, DoctorOut, HoldCreate, HoldOut,
     SarvamCallEnd, VoiceBranchMetaOut, VoiceDepartmentMetaOut, VoiceDoctorOut,
     VoiceSessionCreate, VoiceSessionEnd, VoiceSessionEvent,
 )
@@ -114,10 +114,29 @@ def branch_vocabulary(_: str = Depends(require_voice_service), db: Session = Dep
     ) for item in items]
 
 
+@router.get("/branches")
+def voice_branches(_: str = Depends(require_voice_service), db: Session = Depends(get_db)):
+    """Named response envelope for voice platforms and their response templates."""
+    items = db.scalars(
+        select(Branch).where(Branch.is_active.is_(True)).order_by(Branch.name)
+    ).all()
+    branches = [BranchOut.model_validate(item).model_dump(mode="json") for item in items]
+    return {"branches": branches, "count": len(branches)}
+
+
 @router.get("/availability", response_model=AvailabilityResponse)
 def get_availability(doctor_id: str, branch_id: str, start_date: date, end_date: date,
-                     consultation_type: str = Query("in_person", pattern="^(in_person|virtual)$"),
+                     consultation_type: str | None = Query(default=None),
                      _: str = Depends(require_voice_service), db: Session = Depends(get_db)):
+    # Some voice platforms serialize an omitted optional parameter as an empty
+    # query value. Treat that as the documented in-person default.
+    consultation_type = (consultation_type or "in_person").strip() or "in_person"
+    if consultation_type not in {"in_person", "virtual"}:
+        raise DomainError(
+            "INVALID_CONSULTATION_TYPE",
+            "consultation_type must be in_person or virtual.",
+            422,
+        )
     slots, timezone_name = availability(db, doctor_id, branch_id, start_date, end_date, consultation_type)
     return AvailabilityResponse(slots=slots, timezone=timezone_name)
 

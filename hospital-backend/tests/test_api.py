@@ -391,6 +391,13 @@ def test_voice_catalogue_filters_are_forgiving_and_discoverable():
         )
         assert branches.status_code == 200
         branch = next(item for item in branches.json() if item["slug"] == "indiranagar")
+
+        voice_branches = client.get(
+            "/api/v1/integrations/voice/branches", headers=headers,
+        )
+        assert voice_branches.status_code == 200
+        assert voice_branches.json()["count"] == len(voice_branches.json()["branches"])
+        assert any(item["slug"] == branch["slug"] for item in voice_branches.json()["branches"])
         assert branch["area"] == "Indiranagar"
         assert "Indiranagar" in branch["synonyms"]
 
