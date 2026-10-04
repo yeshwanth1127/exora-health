@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 release_tag="${1:?usage: remote-deploy.sh <image-tag>}"
 app_dir="${EXORA_DEPLOY_DIR:-/opt/exora-health}"
-compose_file="$app_dir/compose.production.yml"
+compose_file="${EXORA_COMPOSE_FILE:-$app_dir/compose.production.yml}"
 env_file="$app_dir/.env"
 backup_dir="$app_dir/backups"
 lock_file="$app_dir/deploy.lock"

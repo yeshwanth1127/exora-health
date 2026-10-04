@@ -103,6 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
+      - uses: actions/checkout@v4
       - name: Configure deployment SSH key
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
@@ -112,10 +113,43 @@ jobs:
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 0600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
-      - name: Deploy exact commit
+      - name: Stage configuration and deploy exact commit
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-        run: >-
-          ssh "$DEPLOY_USER@$DEPLOY_HOST"
-          "ssh qlix-agent /opt/exora-health/remote-deploy.sh '${{ github.sha }}'"
+        run: |
+          set -Eeuo pipefail
+          archive="exora-health-deploy-${GITHUB_SHA}.tar.gz"
+          tar -C deploy -czf "$archive" compose.production.yml remote-deploy.sh
+          scp "$archive" "$DEPLOY_USER@$DEPLOY_HOST:/tmp/$archive"
+          rm -f "$archive"
+
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" bash -s -- "$GITHUB_SHA" <<'JUMP_HOST'
+          set -Eeuo pipefail
+          release_tag="$1"
+          archive="exora-health-deploy-${release_tag}.tar.gz"
+          scp "/tmp/$archive" "qlix-agent:/tmp/$archive"
+          rm -f "/tmp/$archive"
+
+          ssh qlix-agent bash -s -- "$release_tag" <<'APP_HOST'
+          set -Eeuo pipefail
+          release_tag="$1"
+          app_dir="/opt/exora-health"
+          archive="/tmp/exora-health-deploy-${release_tag}.tar.gz"
+          stage_dir="$(mktemp -d /tmp/exora-health-config.XXXXXX)"
+          trap 'rm -rf "$stage_dir" "$archive"' EXIT
+
+          tar -xzf "$archive" -C "$stage_dir"
+          bash -n "$stage_dir/remote-deploy.sh"
+          IMAGE_TAG="$release_tag" docker-compose \
+            --env-file "$app_dir/.env" \
+            -f "$stage_dir/compose.production.yml" config -q
+
+          EXORA_DEPLOY_DIR="$app_dir" \
+          EXORA_COMPOSE_FILE="$stage_dir/compose.production.yml" \
+            bash "$stage_dir/remote-deploy.sh" "$release_tag"
+
+          install -m 0644 "$stage_dir/compose.production.yml" "$app_dir/compose.production.yml"
+          install -m 0755 "$stage_dir/remote-deploy.sh" "$app_dir/remote-deploy.sh"
+          APP_HOST
+          JUMP_HOST
