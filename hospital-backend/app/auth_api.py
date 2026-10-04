@@ -10,7 +10,6 @@ from .config import settings
 from .db import get_db
 from .models import Hospital, HospitalMembership, Patient, User, UserSession
 from .services import DomainError
-from . import audit
 
 router = APIRouter(prefix="/api/v1/auth", tags=["authentication"])
 
@@ -47,8 +46,6 @@ def login(body: LoginRequest, response: Response, db: Session = Depends(get_db))
                                                      Patient.user_id == user.id))
     actor = Actor(user.id, memberships[0].id, memberships[0].hospital_id, memberships[0].role,
                   user.display_name, patient_id, session.id)
-    audit.actor("staff" if actor.role in {"hospital_admin", "hospital_staff"} else actor.role,
-                actor.user_id, actor.display_name, actor.hospital_id)
     return actor_payload(db, actor)
 
 
@@ -70,10 +67,8 @@ def patient_code_login(body: PatientCodeLoginRequest, response: Response, db: Se
         raise DomainError("ACCESS_REVOKED", "This patient account is not active.", 403)
     raw, session = create_session(db, user, membership)
     set_session_cookie(response, raw)
-    actor = Actor(user.id, membership.id, patient.hospital_id, "patient",
-                  user.display_name, patient.id, session.id)
-    audit.actor("patient", actor.user_id, actor.display_name, actor.hospital_id)
-    return actor_payload(db, actor)
+    return actor_payload(db, Actor(user.id, membership.id, patient.hospital_id, "patient",
+                                   user.display_name, patient.id, session.id))
 
 
 @router.get("/me")

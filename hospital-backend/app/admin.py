@@ -13,13 +13,11 @@ from .db import get_db
 from .models import (
     Appointment, AppointmentStatusHistory, Branch, Department, Doctor, Hospital, OutboxEvent,
     Reservation, ScheduleRule, Teleconsultation, TeleconsultationConsent,
-    User, VoiceSession, VoiceTranscriptTurn,
+    User, VoiceSession,
 )
 from .schemas import AppointmentCreate, AppointmentStatusUpdate, DoctorAdminUpdate, ScheduleRuleCreate, ScheduleRuleOut
 from .services import DomainError, confirm_appointment
 from .auth import Actor, optional_actor
-from . import audit
-from .permissions import require_capability
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
@@ -37,14 +35,12 @@ class VirtualOpdCreate(BaseModel):
 
 def require_admin(x_admin_key: str | None = Header(default=None, alias="X-Admin-Key"),
                   actor: Actor | None = Depends(optional_actor), db: Session = Depends(get_db)) -> Actor:
-    if actor and actor.role in {"hospital_admin", "hospital_staff"}:
+    if actor and actor.role == "hospital_admin":
         return actor
-    if settings.app_env != "production" and x_admin_key and secrets.compare_digest(x_admin_key, settings.admin_api_key):
+    if x_admin_key and secrets.compare_digest(x_admin_key, settings.admin_api_key):
         hospital = db.scalar(select(Hospital).order_by(Hospital.created_at).limit(1))
         if hospital:
-            result = Actor("break-glass-admin", "break-glass", hospital.id, "hospital_admin", "Break-glass administrator")
-            audit.actor("staff", result.user_id, result.display_name, result.hospital_id)
-            return result
+            return Actor("break-glass-admin", "break-glass", hospital.id, "hospital_admin", "Break-glass administrator")
     raise DomainError("ADMIN_AUTH_REQUIRED", "A valid administrator session is required.", 401)
 
 
@@ -142,7 +138,7 @@ def virtual_opd_appointments(limit: int = Query(200, ge=1, le=500),
 
 
 @router.post("/virtual-opd", status_code=201)
-def create_virtual_opd(body: VirtualOpdCreate, actor: Actor = Depends(require_capability("appointments.manage")),
+def create_virtual_opd(body: VirtualOpdCreate, actor: Actor = Depends(require_admin),
                        db: Session = Depends(get_db)):
     doctor = db.scalar(select(Doctor).where(Doctor.id == body.doctor_id,
                                             Doctor.hospital_id == actor.hospital_id,
@@ -185,15 +181,12 @@ def create_virtual_opd(body: VirtualOpdCreate, actor: Actor = Depends(require_ca
     except IntegrityError as exc:
         db.rollback()
         raise DomainError("SLOT_NO_LONGER_AVAILABLE", "The doctor already has an appointment at that time.", 409) from exc
-    audit.note(target_type="appointment", target_id=appointment.id,
-               target_text=appointment.confirmation_code,
-               changes={"created": True, "consultation_type": "virtual"})
     return _appointment_row(db, appointment)
 
 
 @router.patch("/appointments/{appointment_id}/status")
 def appointment_status(appointment_id: str, body: AppointmentStatusUpdate,
-                       actor: Actor = Depends(require_capability("appointments.manage")), db: Session = Depends(get_db)):
+                       actor: Actor = Depends(require_admin), db: Session = Depends(get_db)):
     item = db.scalar(select(Appointment).where(Appointment.id == appointment_id,
                                                Appointment.hospital_id == actor.hospital_id))
     if not item:
@@ -221,8 +214,6 @@ def appointment_status(appointment_id: str, body: AppointmentStatusUpdate,
                        payload={"appointment_id": item.id, "confirmation_code": item.confirmation_code}))
     db.commit()
     db.refresh(item)
-    audit.note(target_type="appointment", target_id=item.id, target_text=item.confirmation_code,
-               changes={"status": {"from": previous, "to": body.status}})
     return _appointment_row(db, item)
 
 
@@ -241,18 +232,13 @@ def admin_doctors(actor: Actor = Depends(require_admin), db: Session = Depends(g
 
 @router.patch("/doctors/{doctor_id}")
 def update_doctor(doctor_id: str, body: DoctorAdminUpdate,
-                  actor: Actor = Depends(require_capability("doctors.manage")), db: Session = Depends(get_db)):
+                  actor: Actor = Depends(require_admin), db: Session = Depends(get_db)):
     item = db.scalar(select(Doctor).where(Doctor.id == doctor_id, Doctor.hospital_id == actor.hospital_id))
     if not item:
         raise DomainError("DOCTOR_NOT_FOUND", "Doctor was not found.", 404)
-    values = body.model_dump(exclude_unset=True)
-    if actor.role != "hospital_admin" and "consultation_fee" in values:
-        raise DomainError("FEE_ADMIN_ONLY", "Only a hospital administrator can change consultation fees.", 403)
-    changes = {key: {"from": getattr(item, key), "to": value} for key, value in values.items()}
-    for key, value in values.items():
+    for key, value in body.model_dump(exclude_unset=True).items():
         setattr(item, key, value)
     db.commit()
-    audit.note(target_type="doctor", target_id=item.id, target_text=item.name, changes=changes)
     return {"id": item.id, "is_active": item.is_active, "consultation_fee": item.consultation_fee,
             "accepts_virtual": item.accepts_virtual}
 
@@ -266,7 +252,7 @@ def schedules(doctor_id: str | None = None, actor: Actor = Depends(require_admin
 
 
 @router.post("/schedules", response_model=ScheduleRuleOut, status_code=201)
-def create_schedule(body: ScheduleRuleCreate, actor: Actor = Depends(require_capability("schedules.manage")), db: Session = Depends(get_db)):
+def create_schedule(body: ScheduleRuleCreate, actor: Actor = Depends(require_admin), db: Session = Depends(get_db)):
     if body.ends_at_local <= body.starts_at_local:
         raise DomainError("INVALID_SCHEDULE", "Schedule end time must be after start time.", 422)
     doctor = db.scalar(select(Doctor).where(Doctor.id == body.doctor_id, Doctor.hospital_id == actor.hospital_id))
@@ -277,18 +263,15 @@ def create_schedule(body: ScheduleRuleCreate, actor: Actor = Depends(require_cap
     db.add(item)
     db.commit()
     db.refresh(item)
-    audit.note(target_type="schedule", target_id=item.id, target_text=doctor.name,
-               changes={"created": True, "date": str(item.schedule_date)})
     return item
 
 
 @router.delete("/schedules/{schedule_id}", status_code=204)
-def delete_schedule(schedule_id: str, actor: Actor = Depends(require_capability("schedules.manage")), db: Session = Depends(get_db)):
+def delete_schedule(schedule_id: str, actor: Actor = Depends(require_admin), db: Session = Depends(get_db)):
     item = db.scalar(select(ScheduleRule).where(ScheduleRule.id == schedule_id,
                                                 ScheduleRule.hospital_id == actor.hospital_id))
     if not item:
         raise DomainError("SCHEDULE_NOT_FOUND", "Schedule rule was not found.", 404)
-    audit.note(target_type="schedule", target_id=item.id, changes={"deleted": True})
     db.delete(item)
     db.commit()
 
@@ -320,27 +303,5 @@ def voice_sessions(limit: int = Query(100, ge=1, le=500), _: str = Depends(requi
         "id": item.id, "runtime_session_id": item.runtime_session_id, "status": item.status,
         "channel": item.channel, "turn_count": item.turn_count, "tool_call_count": item.tool_call_count,
         "last_intent": item.last_intent, "appointment_id": item.appointment_id,
-        "call_disposition": item.call_disposition, "call_summary": item.call_summary,
-        "duration_seconds": item.duration_seconds, "provider_app_version": item.provider_app_version,
         "started_at": item.started_at, "ended_at": item.ended_at,
     } for item in items]
-
-
-@router.get("/voice-sessions/{session_id}")
-def voice_session_detail(session_id: str, _: Actor = Depends(require_admin), db: Session = Depends(get_db)):
-    item = db.get(VoiceSession, session_id)
-    if not item:
-        raise DomainError("VOICE_SESSION_NOT_FOUND", "Voice session was not found.", 404)
-    turns = db.scalars(select(VoiceTranscriptTurn).where(
-        VoiceTranscriptTurn.voice_session_id == item.id).order_by(VoiceTranscriptTurn.turn_index)).all()
-    return {
-        "id": item.id, "runtime_session_id": item.runtime_session_id, "status": item.status,
-        "channel": item.channel, "caller_phone": item.caller_phone, "agent_phone": item.agent_phone,
-        "duration_seconds": item.duration_seconds, "call_summary": item.call_summary,
-        "call_disposition": item.call_disposition, "appointment_id": item.appointment_id,
-        "provider_app_id": item.provider_app_id, "provider_app_version": item.provider_app_version,
-        "deployment_id": item.deployment_id, "started_at": item.started_at, "ended_at": item.ended_at,
-        "transcript": [{"index": turn.turn_index, "role": turn.role,
-                        "english_text": turn.english_text, "original_text": turn.original_text}
-                       for turn in turns],
-    }

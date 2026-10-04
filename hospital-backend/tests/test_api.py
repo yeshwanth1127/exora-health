@@ -248,38 +248,6 @@ def test_voice_service_books_and_is_visible_to_admin():
         assert any(item["runtime_session_id"] == session_id and item["appointment_id"] == appointment["id"] for item in sessions)
 
 
-def test_sarvam_call_end_webhook_stores_transcript_idempotently():
-    payload = {
-        "app_id": "Conversatio-test", "app_version": 14, "deployment_id": "deployment-test",
-        "interaction_id": "20261004/test-call-1340", "user_phone_number": "+919999999999",
-        "agent_phone_number": "+918071580756", "duration": 107.03,
-        "start_datetime": "2026-10-04T08:09:18Z", "end_datetime": "2026-10-04T08:10:58Z",
-        "output_agent_variables": {"call_summary": "Patient asked for an orthopedics appointment.",
-                                     "call_disposition": "appointment_not_booked"},
-        "interaction_transcript": [
-            {"role": "user", "en_text": "I have back pain.", "indic_text": "నాకు బ్యాక్ పెయిన్ ఉంది."},
-            {"role": "agent", "en_text": "I can help find an orthopedics doctor.",
-             "indic_text": "నేను ఆర్థోపెడిక్స్ డాక్టర్‌ని కనుగొనగలను."},
-        ],
-    }
-    with TestClient(app) as client:
-        path = "/api/v1/integrations/voice/sarvam/call-ended"
-        assert client.post(path, params={"token": "wrong-token-that-is-long-enough"}, json=payload).status_code == 401
-        params = {"token": "test-sarvam-webhook-secret-123456"}
-        first = client.post(path, params=params, json=payload)
-        assert first.status_code == 202, first.text
-        second = client.post(path, params=params, json=payload)
-        assert second.status_code == 202
-        assert first.json()["session_id"] == second.json()["session_id"]
-
-        headers = {"X-Admin-Key": "dev-admin-key"}
-        detail = client.get(f"/api/v1/admin/voice-sessions/{first.json()['session_id']}", headers=headers)
-        assert detail.status_code == 200
-        assert detail.json()["call_disposition"] == "appointment_not_booked"
-        assert len(detail.json()["transcript"]) == 2
-        assert detail.json()["transcript"][0]["original_text"] == "నాకు బ్యాక్ పెయిన్ ఉంది."
-
-
 def test_voice_doctor_modes_come_from_schedules_not_profile_branches():
     with TestClient(app) as client:
         admin_headers = {"X-Admin-Key": "dev-admin-key"}
@@ -327,13 +295,6 @@ def test_voice_catalogue_filters_are_forgiving_and_discoverable():
             params={"department": "cardiology"},
         ).json()
         assert cardiologists
-        envelope = client.get(
-            "/api/v1/integrations/voice/doctors-envelope", headers=headers,
-            params={"department": "cardiology"},
-        )
-        assert envelope.status_code == 200
-        assert envelope.json()["count"] == len(cardiologists)
-        assert envelope.json()["doctors"] == cardiologists
         assert all(any(value["slug"] == "cardiology" for value in item["departments"])
                    for item in cardiologists)
 

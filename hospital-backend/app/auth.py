@@ -91,12 +91,8 @@ def current_actor(session_token: str | None = Cookie(default=None, alias=setting
         raise DomainError("ACCESS_REVOKED", "Your access is no longer active.", 403)
     patient_id = db.scalar(select(Patient.id).where(Patient.hospital_id == membership.hospital_id,
                                                      Patient.user_id == user.id))
-    result = Actor(user.id, membership.id, membership.hospital_id, membership.role, user.display_name,
-                   patient_id, session.id)
-    from . import audit
-    audit.actor("staff" if result.role in {"hospital_admin", "hospital_staff"} else result.role,
-                result.user_id, result.display_name, result.hospital_id)
-    return result
+    return Actor(user.id, membership.id, membership.hospital_id, membership.role, user.display_name,
+                 patient_id, session.id)
 
 
 def optional_actor(session_token: str | None = Cookie(default=None, alias=settings.session_cookie_name),

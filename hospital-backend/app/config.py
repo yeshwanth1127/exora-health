@@ -19,7 +19,6 @@ class Settings(BaseSettings):
     session_cookie_name: str = "exora_session"
     session_hours: int = 12
     secure_cookies: bool = False
-    rate_limits_enabled: bool = True
     bootstrap_admin_email: str = "admin@example.com"
     bootstrap_admin_password: str = "change-me-in-production"
     jitsi_domain: str = "meet.exora.local"
@@ -37,7 +36,6 @@ class Settings(BaseSettings):
     sarvam_agent_id: str = "Conversatio-47382521-7c72"
     sarvam_agent_name: str = "Avocado Health Front Desk"
     sarvam_runtime_url: str = "https://apps.sarvam.ai/api/app-runtime/"
-    sarvam_webhook_secret: str = ""
 
     @property
     def origins(self) -> list[str]:

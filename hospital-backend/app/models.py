@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime, time, timezone
 
-from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Index, Integer, String, Table, Text, Time, Column, UniqueConstraint, text
+from sqlalchemy import JSON, Boolean, Date, DateTime, ForeignKey, Index, Integer, String, Table, Text, Time, Column, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -342,14 +342,6 @@ class VoiceSession(Base):
     tool_call_count: Mapped[int] = mapped_column(Integer, default=0)
     last_intent: Mapped[str | None] = mapped_column(String(120), nullable=True)
     appointment_id: Mapped[str | None] = mapped_column(ForeignKey("appointments.id"), nullable=True, index=True)
-    provider_app_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    provider_app_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    deployment_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
-    caller_phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    agent_phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    duration_seconds: Mapped[float | None] = mapped_column(Float, nullable=True)
-    call_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
-    call_disposition: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
@@ -362,41 +354,3 @@ class VoiceToolCall(Base):
     outcome: Mapped[str] = mapped_column(String(24), default="success")
     appointment_id: Mapped[str | None] = mapped_column(ForeignKey("appointments.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-
-
-class VoiceTranscriptTurn(Base):
-    __tablename__ = "voice_transcript_turns"
-    __table_args__ = (UniqueConstraint("voice_session_id", "turn_index", name="uq_voice_transcript_turn"),)
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
-    voice_session_id: Mapped[str] = mapped_column(ForeignKey("voice_sessions.id", ondelete="CASCADE"), index=True)
-    turn_index: Mapped[int] = mapped_column(Integer)
-    role: Mapped[str] = mapped_column(String(16))
-    english_text: Mapped[str] = mapped_column(Text)
-    original_text: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-
-
-class AuditEvent(Base):
-    __tablename__ = "audit_events"
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
-    hospital_id: Mapped[str | None] = mapped_column(ForeignKey("hospitals.id"), nullable=True, index=True)
-    actor_type: Mapped[str] = mapped_column(String(32), index=True)
-    actor_id: Mapped[str | None] = mapped_column(String(160), nullable=True, index=True)
-    actor_label: Mapped[str | None] = mapped_column(String(160), nullable=True)
-    action: Mapped[str] = mapped_column(String(160), index=True)
-    target_type: Mapped[str | None] = mapped_column(String(80), nullable=True)
-    target_id: Mapped[str | None] = mapped_column(String(160), nullable=True)
-    target_text: Mapped[str | None] = mapped_column(String(320), nullable=True, index=True)
-    changes_json: Mapped[dict] = mapped_column(JSON, default=dict)
-    status_code: Mapped[int] = mapped_column(Integer)
-    request_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
-    ip_address: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
-
-
-class StaffPermission(Base):
-    __tablename__ = "staff_permissions"
-    hospital_id: Mapped[str] = mapped_column(ForeignKey("hospitals.id", ondelete="CASCADE"), primary_key=True)
-    key: Mapped[str] = mapped_column(String(80), primary_key=True)
-    allowed: Mapped[bool] = mapped_column(Boolean, default=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
