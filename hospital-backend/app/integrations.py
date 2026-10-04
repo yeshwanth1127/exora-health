@@ -86,6 +86,14 @@ def doctors(department: str | None = None, branch: str | None = None,
     return result
 
 
+@router.get("/doctors-envelope")
+def doctors_envelope(department: str | None = None, branch: str | None = None,
+                     _: str = Depends(require_voice_service), db: Session = Depends(get_db)):
+    """Backward-compatible response for voice platforms that require named template fields."""
+    result = doctors(department=department, branch=branch, _=_, db=db)
+    return {"doctors": [item.model_dump(mode="json") for item in result], "count": len(result)}
+
+
 @router.get("/meta/departments", response_model=list[VoiceDepartmentMetaOut])
 def department_vocabulary(_: str = Depends(require_voice_service), db: Session = Depends(get_db)):
     items = db.scalars(

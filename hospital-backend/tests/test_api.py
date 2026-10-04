@@ -295,6 +295,13 @@ def test_voice_catalogue_filters_are_forgiving_and_discoverable():
             params={"department": "cardiology"},
         ).json()
         assert cardiologists
+        envelope = client.get(
+            "/api/v1/integrations/voice/doctors-envelope", headers=headers,
+            params={"department": "cardiology"},
+        )
+        assert envelope.status_code == 200
+        assert envelope.json()["count"] == len(cardiologists)
+        assert envelope.json()["doctors"] == cardiologists
         assert all(any(value["slug"] == "cardiology" for value in item["departments"])
                    for item in cardiologists)
 
