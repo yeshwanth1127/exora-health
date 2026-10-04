@@ -3,10 +3,12 @@ set -Eeuo pipefail
 
 release_tag="${1:?usage: remote-deploy.sh <image-tag>}"
 app_dir="${EXORA_DEPLOY_DIR:-/opt/exora-health}"
-compose_file="${EXORA_COMPOSE_FILE:-$app_dir/compose.production.yml}"
+compose_file="$app_dir/compose.production.yml"
 env_file="$app_dir/.env"
 backup_dir="$app_dir/backups"
 lock_file="$app_dir/deploy.lock"
+config_stage=""
+asset_container=""
 
 require_file() {
   [[ -f "$1" ]] || { echo "missing required file: $1" >&2; exit 1; }
@@ -22,9 +24,36 @@ cd "$app_dir"
 compose=(docker-compose --env-file "$env_file" -f "$compose_file")
 previous_tag="$(sed -n 's/^IMAGE_TAG=//p' "$env_file" | tail -1)"
 candidate_env="$(mktemp "$app_dir/.env.next.XXXXXX")"
-trap 'rm -f "$candidate_env"' EXIT
+cleanup() {
+  [[ -z "$asset_container" ]] || docker rm -f "$asset_container" >/dev/null 2>&1 || true
+  [[ -z "$config_stage" ]] || rm -rf "$config_stage"
+  rm -f "$candidate_env"
+}
+trap cleanup EXIT
 sed '/^IMAGE_TAG=/d' "$env_file" > "$candidate_env"
 printf 'IMAGE_TAG=%s\n' "$release_tag" >> "$candidate_env"
+
+# The candidate backend image carries the deployment files from the same Git
+# commit. Extract and validate them before using them, so Compose changes travel
+# through the existing restricted deployment command without granting CI an
+# arbitrary shell or file-transfer channel.
+echo "Loading deployment configuration from $release_tag"
+IMAGE_TAG="$release_tag" "${compose[@]}" pull backend
+image_registry="$(sed -n 's/^IMAGE_REGISTRY=//p' "$env_file" | tail -1)"
+image_registry="${image_registry:-ghcr.io/yeshwanth1127/exora-health}"
+backend_image="${image_registry}-backend:${release_tag}"
+config_stage="$(mktemp -d /tmp/exora-health-config.XXXXXX)"
+asset_container="$(docker create "$backend_image")"
+docker cp "$asset_container:/opt/exora-deploy/." "$config_stage/"
+docker rm "$asset_container" >/dev/null
+asset_container=""
+require_file "$config_stage/compose.production.yml"
+require_file "$config_stage/remote-deploy.sh"
+bash -n "$config_stage/remote-deploy.sh"
+IMAGE_TAG="$release_tag" docker-compose --env-file "$env_file" \
+  -f "$config_stage/compose.production.yml" config -q
+compose_file="$config_stage/compose.production.yml"
+compose=(docker-compose --env-file "$env_file" -f "$compose_file")
 
 if "${compose[@]}" ps -q postgres >/dev/null 2>&1 && [[ -n "$("${compose[@]}" ps -q postgres)" ]]; then
   timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -65,5 +94,7 @@ if [[ "$healthy" != 1 ]]; then
 fi
 
 install -m 0600 "$candidate_env" "$env_file"
+install -m 0644 "$config_stage/compose.production.yml" "$app_dir/compose.production.yml"
+install -m 0755 "$config_stage/remote-deploy.sh" "$app_dir/remote-deploy.sh"
 find "$backup_dir" -type f -name '*.sql.gz' -mtime +14 -delete
 echo "Release $release_tag is healthy"

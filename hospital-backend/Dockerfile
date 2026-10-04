@@ -3,10 +3,11 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
 
-COPY pyproject.toml README.md ./
-COPY app ./app
-COPY alembic.ini ./
-COPY migrations ./migrations
+COPY hospital-backend/pyproject.toml hospital-backend/README.md ./
+COPY hospital-backend/app ./app
+COPY hospital-backend/alembic.ini ./
+COPY hospital-backend/migrations ./migrations
+COPY deploy/compose.production.yml deploy/remote-deploy.sh /opt/exora-deploy/
 RUN pip install --no-cache-dir .
 
 EXPOSE 8000
