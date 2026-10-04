@@ -42,6 +42,12 @@ test('preflight checks backend queue, approved catalogue media, and a live Meta 
       ? { display_phone_number: '+1 555-138-6019' }
       : fetchImpl(url).then((response) => response.json()),
   })), /test number/);
+  assert.equal((await runPreflight({ ...valid, WA_LIVE_NUMBER_CONFIRMED: 'false',
+    WA_ALLOW_META_TEST_NUMBER: 'true' }, async (url) => ({ ok: true,
+    json: async () => new URL(url).hostname === 'graph.facebook.com'
+      ? { display_phone_number: '+1 555-138-6019' }
+      : fetchImpl(url).then((response) => response.json()),
+  }))).phoneEnding, '6019');
 });
 
 test('signed webhook persists an inbound message before acknowledging Meta', async (context) => {

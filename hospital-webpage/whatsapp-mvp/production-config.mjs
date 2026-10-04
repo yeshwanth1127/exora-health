@@ -9,7 +9,9 @@ export function assertProductionConfig(env) {
   const fail = (reason) => { throw new Error(`Unsafe production WhatsApp configuration: ${reason}`); };
   if (env.WA_MODE !== 'backend') fail('WA_MODE must be backend');
   if (env.WA_CLINIC_READY !== 'true') fail('WA_CLINIC_READY must be true after clinic data approval');
-  if (env.WA_LIVE_NUMBER_CONFIRMED !== 'true') fail('WA_LIVE_NUMBER_CONFIRMED must be true after checking the registered phone');
+  if (env.WA_LIVE_NUMBER_CONFIRMED !== 'true' && env.WA_ALLOW_META_TEST_NUMBER !== 'true') {
+    fail('confirm a registered phone or explicitly allow the Meta test number');
+  }
   if (!/^https:\/\/[^/]+/.test(env.BACKEND_URL ?? '')) fail('BACKEND_URL must use HTTPS');
   for (const name of ['WA_VERIFY_TOKEN', 'WA_APP_SECRET', 'WA_ACCESS_TOKEN', 'BACKEND_WHATSAPP_SERVICE_KEY']) {
     const value = env[name] ?? '';

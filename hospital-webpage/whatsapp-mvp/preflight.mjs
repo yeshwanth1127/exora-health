@@ -49,7 +49,7 @@ export async function runPreflight(env, fetchImpl = fetch) {
     { authorization: `Bearer ${env.WA_ACCESS_TOKEN}` }, fetchImpl,
   );
   if (!number.display_phone_number) throw new Error('Meta did not return a registered phone number');
-  if (/^\+1[\s()-]*555\b/.test(number.display_phone_number)) {
+  if (/^\+1[\s()-]*555\b/.test(number.display_phone_number) && env.WA_ALLOW_META_TEST_NUMBER !== 'true') {
     throw new Error('Meta test number cannot be used for production');
   }
   return { branches: branches.length, specialties: catalogue.departments.length,

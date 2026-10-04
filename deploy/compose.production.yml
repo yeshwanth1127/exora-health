@@ -86,7 +86,10 @@ services:
       WA_BIND_HOST: 0.0.0.0
       WA_LOCAL_PORT: 8787
       WA_CLINIC_READY: "true"
-      WA_LIVE_NUMBER_CONFIRMED: "true"
+      WA_LIVE_NUMBER_CONFIRMED: "false"
+      # This Meta phone-number ID currently resolves to Meta's test number.
+      # Replace it with the registered clinic number and remove this override.
+      WA_ALLOW_META_TEST_NUMBER: "true"
       # The current backend persists conversation/booking state but does not yet
       # expose the optional durable inbound queue used for multi-replica bots.
       WA_DURABLE_INBOUND: "false"

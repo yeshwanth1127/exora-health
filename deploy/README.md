@@ -41,3 +41,7 @@ Business Account webhook to the `messages` field after `/health/ready` passes.
 The deployed single bot uses inline signed-webhook processing because the
 current backend does not expose the optional durable inbound queue. Booking and
 conversation state remain persisted in PostgreSQL; keep exactly one bot replica.
+The current configured Meta phone-number ID is a Meta test number, so the bot is
+reachable only by recipients allowed in Meta's test console. Replace it with the
+registered clinic phone-number ID and set `WA_ALLOW_META_TEST_NUMBER=false` for
+public production use.
