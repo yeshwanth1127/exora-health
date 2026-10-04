@@ -22,14 +22,22 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Configure read-only frontend key
+        env:
+          SYNC_KEY: ${{ secrets.FRONTEND_SYNC_KEY }}
+        run: |
+          install -d -m 0700 ~/.ssh
+          printf '%s\n' "$SYNC_KEY" > ~/.ssh/hospital_webpage_sync
+          ssh-keyscan github.com > ~/.ssh/known_hosts
+          chmod 0600 ~/.ssh/hospital_webpage_sync ~/.ssh/known_hosts
+
       - name: Fetch standalone frontend
         id: source
-        env:
-          GH_TOKEN: ${{ secrets.FRONTEND_SYNC_TOKEN }}
         run: |
-          gh repo clone Sachinskz/hospital-webpage \
+          GIT_SSH_COMMAND="ssh -i $HOME/.ssh/hospital_webpage_sync -o IdentitiesOnly=yes" \
+          git clone git@github.com:Sachinskz/hospital-webpage.git \
             "$RUNNER_TEMP/hospital-webpage-source" \
-            -- --depth=1 --branch main
+            --depth=1 --branch main
           printf 'sha=%s\n' "$(git -C "$RUNNER_TEMP/hospital-webpage-source" rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Protect production integration surface
