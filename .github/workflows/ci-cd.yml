@@ -121,14 +121,16 @@ jobs:
           set -Eeuo pipefail
           archive="exora-health-deploy-${GITHUB_SHA}.tar.gz"
           tar -C deploy -czf "$archive" compose.production.yml remote-deploy.sh
-          scp "$archive" "$DEPLOY_USER@$DEPLOY_HOST:/tmp/$archive"
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" \
+            "umask 077; cat > '/tmp/$archive'" < "$archive"
           rm -f "$archive"
 
           ssh "$DEPLOY_USER@$DEPLOY_HOST" bash -s -- "$GITHUB_SHA" <<'JUMP_HOST'
           set -Eeuo pipefail
           release_tag="$1"
           archive="exora-health-deploy-${release_tag}.tar.gz"
-          scp "/tmp/$archive" "qlix-agent:/tmp/$archive"
+          ssh qlix-agent \
+            "umask 077; cat > '/tmp/$archive'" < "/tmp/$archive"
           rm -f "/tmp/$archive"
 
           ssh qlix-agent bash -s -- "$release_tag" <<'APP_HOST'
