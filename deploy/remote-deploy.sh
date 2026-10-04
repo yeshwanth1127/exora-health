@@ -63,20 +63,21 @@ if "${compose[@]}" ps -q postgres >/dev/null 2>&1 && [[ -n "$("${compose[@]}" ps
 fi
 
 echo "Pulling images for $release_tag"
-IMAGE_TAG="$release_tag" "${compose[@]}" pull backend webpage voice
+IMAGE_TAG="$release_tag" "${compose[@]}" pull backend webpage voice whatsapp
 
 echo "Applying database migrations"
 IMAGE_TAG="$release_tag" "${compose[@]}" up -d postgres redis ollama
 IMAGE_TAG="$release_tag" "${compose[@]}" run --rm backend alembic upgrade head
 
 echo "Starting release $release_tag"
-IMAGE_TAG="$release_tag" "${compose[@]}" up -d --remove-orphans backend webpage voice
+IMAGE_TAG="$release_tag" "${compose[@]}" up -d --remove-orphans backend webpage voice whatsapp
 
 healthy=0
 for _ in $(seq 1 36); do
   if curl -fsS -H 'Host: avocado.exora.solutions' http://10.0.0.1:18004/api/health/live >/dev/null \
       && curl -fsS -H 'Host: avocado.exora.solutions' http://10.0.0.1:15567/healthz >/dev/null \
-      && curl -fsS -H 'Host: avocado.exora.solutions' http://10.0.0.1:18765/api/health/live >/dev/null; then
+      && curl -fsS -H 'Host: avocado.exora.solutions' http://10.0.0.1:18765/api/health/live >/dev/null \
+      && curl -fsS http://10.0.0.1:18787/health/ready >/dev/null; then
     healthy=1
     break
   fi
@@ -88,7 +89,7 @@ if [[ "$healthy" != 1 ]]; then
   "${compose[@]}" ps >&2 || true
   if [[ -n "$previous_tag" && "$previous_tag" != "$release_tag" ]]; then
     echo "Rolling application containers back to $previous_tag" >&2
-    IMAGE_TAG="$previous_tag" "${compose[@]}" up -d backend webpage voice || true
+    IMAGE_TAG="$previous_tag" "${compose[@]}" up -d backend webpage voice whatsapp || true
   fi
   exit 1
 fi

@@ -7,7 +7,7 @@ lives in `/opt/exora-health` on the Docker host.
 ## One-time provisioning
 
 1. Copy `compose.production.yml`, `remote-deploy.sh`, and the voice model
-   directory to `/opt/exora-health` on `10.0.0.1`.
+directory to `/opt/exora-health` on `10.0.0.1`.
 2. Copy `.env.production.example` to `/opt/exora-health/.env`, replace every
    placeholder, and set mode `0600`.
 3. Authenticate Docker to GHCR with a read-only package token.
@@ -17,7 +17,7 @@ lives in `/opt/exora-health` on the Docker host.
    `DEPLOY_USER`, `DEPLOY_SSH_KEY`, and `DEPLOY_KNOWN_HOSTS`.
 
 The deployment script backs up PostgreSQL, applies Alembic migrations, replaces
-the three application containers, checks their health, and restores the prior
+the application containers, checks their health, and restores the prior
 application image tags if the new release is unhealthy. Database migrations
 must remain backward compatible because application rollback does not reverse
 database schema changes.
@@ -29,3 +29,12 @@ server `.env`, deploys with the staged Compose file, and promotes the files only
 after all health checks pass. Updating the installed script to a version with
 this bootstrap logic is a one-time provisioning step; later configuration and
 script changes require no manual server copy.
+
+## WhatsApp Cloud API
+
+The public Meta callback is `https://avocado.exora.solutions/whatsapp/webhook`.
+The WhatsApp container listens only on the private Docker host at port 18787;
+the public Nginx server proxies the exact callback path. Put Meta credentials in
+`/opt/exora-health/.env` on the Docker host, never in Git. `WA_VERIFY_TOKEN` is
+the value entered beside the callback URL in Meta. Subscribe the WhatsApp
+Business Account webhook to the `messages` field after `/health/ready` passes.

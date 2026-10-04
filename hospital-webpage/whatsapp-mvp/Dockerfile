@@ -7,7 +7,7 @@ ENV NODE_ENV=production \
     WA_LOCAL_PORT=8787
 
 WORKDIR /app
-COPY --chown=node:node *.mjs catalog.json welcome.png ./
+COPY --chown=node:node *.mjs catalog.json welcome.png clinic-welcome.png ./
 USER node
 EXPOSE 8787
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \

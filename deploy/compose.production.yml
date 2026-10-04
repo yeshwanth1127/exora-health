@@ -78,6 +78,35 @@ services:
       - "${REMOTE_BIND_IP:-10.0.0.1}:15567:8080"
     restart: unless-stopped
 
+  whatsapp:
+    image: ${IMAGE_REGISTRY:-ghcr.io/yeshwanth1127/exora-health}-whatsapp:${IMAGE_TAG:?IMAGE_TAG is required}
+    environment:
+      WA_ENV: production
+      WA_MODE: backend
+      WA_BIND_HOST: 0.0.0.0
+      WA_LOCAL_PORT: 8787
+      WA_CLINIC_READY: "true"
+      WA_LIVE_NUMBER_CONFIRMED: "true"
+      WA_VERIFY_TOKEN: ${WA_VERIFY_TOKEN:?WA_VERIFY_TOKEN is required}
+      WA_APP_SECRET: ${WA_APP_SECRET:?WA_APP_SECRET is required}
+      WA_PHONE_NUMBER_ID: ${WA_PHONE_NUMBER_ID:?WA_PHONE_NUMBER_ID is required}
+      WA_ACCESS_TOKEN: ${WA_ACCESS_TOKEN:?WA_ACCESS_TOKEN is required}
+      WA_GRAPH_VERSION: ${WA_GRAPH_VERSION:?WA_GRAPH_VERSION is required}
+      WA_WELCOME_IMAGE_PATH: /app/clinic-welcome.png
+      BACKEND_URL: https://${PUBLIC_HOST:-avocado.exora.solutions}
+      BACKEND_WHATSAPP_SERVICE_KEY: ${WHATSAPP_SERVICE_API_KEY:?WHATSAPP_SERVICE_API_KEY is required}
+      WA_REMINDER_TEMPLATE_NAME: ${WA_REMINDER_TEMPLATE_NAME:-}
+      WA_REMINDER_TEMPLATE_LANGUAGE: ${WA_REMINDER_TEMPLATE_LANGUAGE:-en}
+      WA_BOOKING_CONFIRMED_TEMPLATE: ${WA_BOOKING_CONFIRMED_TEMPLATE:-}
+      WA_RESCHEDULED_TEMPLATE: ${WA_RESCHEDULED_TEMPLATE:-}
+      WA_CANCELLED_TEMPLATE: ${WA_CANCELLED_TEMPLATE:-}
+    ports:
+      - "${REMOTE_BIND_IP:-10.0.0.1}:18787:8787"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
   voice:
     image: ${IMAGE_REGISTRY:-ghcr.io/yeshwanth1127/exora-health}-voice:${IMAGE_TAG:?IMAGE_TAG is required}
     environment:
