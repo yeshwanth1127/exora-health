@@ -1,0 +1,93 @@
+name: Import hospital webpage changes
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: hospital-webpage-upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Fetch standalone frontend
+        id: source
+        run: |
+          git clone --depth=1 --branch main \
+            https://github.com/Sachinskz/hospital-webpage.git \
+            "$RUNNER_TEMP/hospital-webpage-source"
+          printf 'sha=%s\n' "$(git -C "$RUNNER_TEMP/hospital-webpage-source" rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Protect production integration surface
+        run: |
+          source_dir="$RUNNER_TEMP/hospital-webpage-source"
+          test -f "$source_dir/src/lib/hospitalApi.ts"
+          test -f "$source_dir/src/lib/teleconsultationApi.ts"
+          test -f "$source_dir/src/components/voice/VoiceAgentLauncher.tsx"
+          test -f "$source_dir/src/components/virtual-opd/VirtualOpdPortal.tsx"
+          test -f "$source_dir/src/components/virtual-opd/JitsiConsultation.tsx"
+          test -f "$source_dir/src/components/portal/RoleAccessPortal.tsx"
+          test -f "$source_dir/Dockerfile"
+          test -f "$source_dir/nginx.conf"
+
+      - name: Import frontend working tree
+        id: import
+        run: |
+          rsync -a --delete \
+            --exclude='.git/' \
+            --exclude='node_modules/' \
+            --exclude='dist/' \
+            "$RUNNER_TEMP/hospital-webpage-source/" hospital-webpage/
+          if [[ -z "$(git status --porcelain -- hospital-webpage)" ]]; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.import.outputs.changed == 'true'
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: hospital-webpage/package-lock.json
+
+      - name: Validate imported frontend
+        if: steps.import.outputs.changed == 'true'
+        working-directory: hospital-webpage
+        run: |
+          npm ci
+          VITE_API_URL= npm run build
+
+      - name: Update integration pull request
+        if: steps.import.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+        run: |
+          branch='sync/hospital-webpage'
+          git config user.name 'exora-health-sync[bot]'
+          git config user.email 'exora-health-sync[bot]@users.noreply.github.com'
+          git switch -C "$branch"
+          git add -A -- hospital-webpage
+          git commit -m "Sync hospital webpage from ${SOURCE_SHA}"
+          git fetch origin "$branch" || true
+          git push --force-with-lease origin "HEAD:$branch"
+          if [[ -z "$(gh pr list --state open --head "$branch" --json number --jq '.[0].number')" ]]; then
+            gh pr create \
+              --base main \
+              --head "$branch" \
+              --title 'Sync hospital webpage changes' \
+              --body "Automated import of hospital-webpage main at ${SOURCE_SHA}. The frontend production build passed. Review this PR; merging it triggers the normal production CI/CD deployment."
+          fi
