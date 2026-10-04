@@ -716,6 +716,12 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#f6f4ef] text-[#121212] flex flex-col">
+      <div
+        role="status"
+        className="fixed bottom-4 left-1/2 z-[60] -translate-x-1/2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-center text-xs font-semibold tracking-wide text-emerald-800 shadow-lg shadow-emerald-900/10"
+      >
+        CI/CD test · deployed from my local machine
+      </div>
       {/* Sticky Top Header with Emergency Pill (Always On during scroll) */}
       {!embeddedHeader && (componentVariants.header === 'light' ? <TiaInspiredHeader
         onNavigate={handleNavigate}
