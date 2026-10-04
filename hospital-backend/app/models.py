@@ -354,3 +354,29 @@ class VoiceToolCall(Base):
     outcome: Mapped[str] = mapped_column(String(24), default="success")
     appointment_id: Mapped[str | None] = mapped_column(ForeignKey("appointments.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class AuditEvent(Base):
+    __tablename__ = "audit_events"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    hospital_id: Mapped[str | None] = mapped_column(ForeignKey("hospitals.id"), nullable=True, index=True)
+    actor_type: Mapped[str] = mapped_column(String(32), index=True)
+    actor_id: Mapped[str | None] = mapped_column(String(160), nullable=True, index=True)
+    actor_label: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    action: Mapped[str] = mapped_column(String(160), index=True)
+    target_type: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    target_id: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    target_text: Mapped[str | None] = mapped_column(String(320), nullable=True, index=True)
+    changes_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    status_code: Mapped[int] = mapped_column(Integer)
+    request_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class StaffPermission(Base):
+    __tablename__ = "staff_permissions"
+    hospital_id: Mapped[str] = mapped_column(ForeignKey("hospitals.id", ondelete="CASCADE"), primary_key=True)
+    key: Mapped[str] = mapped_column(String(80), primary_key=True)
+    allowed: Mapped[bool] = mapped_column(Boolean, default=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

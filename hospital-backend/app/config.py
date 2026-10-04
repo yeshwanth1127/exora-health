@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     session_cookie_name: str = "exora_session"
     session_hours: int = 12
     secure_cookies: bool = False
+    rate_limits_enabled: bool = True
     bootstrap_admin_email: str = "admin@example.com"
     bootstrap_admin_password: str = "change-me-in-production"
     jitsi_domain: str = "meet.exora.local"

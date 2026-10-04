@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy import text
 
 from .api import router
@@ -18,6 +19,10 @@ from .config import settings
 from .db import Base, SessionLocal, engine
 from .seed import seed_catalogue
 from .services import DomainError, expire_holds
+from . import audit
+from .audit import router as audit_router
+from .limits import LimitsMiddleware
+from .permissions import router as permissions_router
 
 
 @asynccontextmanager
@@ -50,10 +55,23 @@ app.add_middleware(CORSMiddleware, allow_origins=settings.origins, allow_credent
 async def request_context(request: Request, call_next):
     request_id = request.headers.get("X-Request-ID") or f"req_{uuid.uuid4().hex}"
     request.state.request_id = request_id
-    response = await call_next(request)
+    should_audit = request.method in {"POST", "PUT", "PATCH", "DELETE"}
+    if should_audit:
+        audit.begin()
+    try:
+        response = await call_next(request)
+    except Exception:
+        if should_audit:
+            await run_in_threadpool(audit.record, request, 500)
+        raise
+    if should_audit:
+        await run_in_threadpool(audit.record, request, response.status_code)
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["X-Frame-Options"] = "DENY"
+    if settings.app_env == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 
 
@@ -85,3 +103,6 @@ app.include_router(whatsapp_router)
 app.include_router(whatsapp_admin_router)
 app.include_router(whatsapp_page_router)
 app.include_router(sarvam_router)
+app.include_router(audit_router)
+app.include_router(permissions_router)
+app.add_middleware(LimitsMiddleware)
