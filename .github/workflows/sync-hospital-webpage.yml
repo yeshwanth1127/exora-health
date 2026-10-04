@@ -24,10 +24,12 @@ jobs:
 
       - name: Fetch standalone frontend
         id: source
+        env:
+          GH_TOKEN: ${{ secrets.FRONTEND_SYNC_TOKEN }}
         run: |
-          git clone --depth=1 --branch main \
-            https://github.com/Sachinskz/hospital-webpage.git \
-            "$RUNNER_TEMP/hospital-webpage-source"
+          gh repo clone Sachinskz/hospital-webpage \
+            "$RUNNER_TEMP/hospital-webpage-source" \
+            -- --depth=1 --branch main
           printf 'sha=%s\n' "$(git -C "$RUNNER_TEMP/hospital-webpage-source" rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Protect production integration surface

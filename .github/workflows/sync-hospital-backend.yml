@@ -1,0 +1,106 @@
+name: Import hospital backend changes
+
+on:
+  schedule:
+    - cron: "2-59/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: hospital-backend-upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure read-only backend key
+        env:
+          SYNC_KEY: ${{ secrets.BACKEND_SYNC_KEY }}
+        run: |
+          install -d -m 0700 ~/.ssh
+          printf '%s\n' "$SYNC_KEY" > ~/.ssh/hms_backend_sync
+          ssh-keyscan github.com > ~/.ssh/known_hosts
+          chmod 0600 ~/.ssh/hms_backend_sync ~/.ssh/known_hosts
+
+      - name: Fetch standalone backend
+        id: source
+        run: |
+          GIT_SSH_COMMAND="ssh -i $HOME/.ssh/hms_backend_sync -o IdentitiesOnly=yes" \
+          git clone git@github.com:yeshwanth1127/hms-backend.git \
+            "$RUNNER_TEMP/hospital-backend-source" \
+            --depth=1 --branch main
+          printf 'sha=%s\n' "$(git -C "$RUNNER_TEMP/hospital-backend-source" rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Protect production integration surface
+        run: |
+          source_dir="$RUNNER_TEMP/hospital-backend-source"
+          test -f "$source_dir/app/auth.py"
+          test -f "$source_dir/app/auth_api.py"
+          test -f "$source_dir/app/jitsi.py"
+          test -f "$source_dir/app/sarvam.py"
+          test -f "$source_dir/app/teleconsultation_api.py"
+          test -f "$source_dir/app/teleconsultation_service.py"
+          test -f "$source_dir/tests/test_virtual_opd.py"
+          test -f "$source_dir/Dockerfile"
+          test -f "$source_dir/alembic.ini"
+
+      - name: Import backend working tree
+        id: import
+        run: |
+          rsync -a --delete \
+            --exclude='.git/' \
+            --exclude='.venv/' \
+            --exclude='__pycache__/' \
+            --exclude='.pytest_cache/' \
+            "$RUNNER_TEMP/hospital-backend-source/" hospital-backend/
+          if [[ -z "$(git status --porcelain -- hospital-backend)" ]]; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.import.outputs.changed == 'true'
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Validate imported backend
+        if: steps.import.outputs.changed == 'true'
+        working-directory: hospital-backend
+        run: |
+          pip install -e '.[dev]'
+          pytest
+          test "$(alembic heads | wc -l | tr -d ' ')" = "1"
+          DATABASE_URL=sqlite:////tmp/exora-sync-ci.db alembic upgrade head
+
+      - name: Update integration pull request
+        if: steps.import.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+        run: |
+          branch='sync/hospital-backend'
+          git config user.name 'exora-health-sync[bot]'
+          git config user.email 'exora-health-sync[bot]@users.noreply.github.com'
+          git switch -C "$branch"
+          git add -A -- hospital-backend
+          git commit -m "Sync hospital backend from ${SOURCE_SHA}"
+          git fetch origin "$branch" || true
+          git push --force-with-lease origin "HEAD:$branch"
+          if [[ -z "$(gh pr list --state open --head "$branch" --json number --jq '.[0].number')" ]]; then
+            gh pr create \
+              --base main \
+              --head "$branch" \
+              --title 'Sync hospital backend changes' \
+              --body "Automated import of hms-backend main at ${SOURCE_SHA}. Backend tests and the complete migration upgrade passed. Review this PR; merging it triggers the normal production CI/CD deployment."
+          fi
