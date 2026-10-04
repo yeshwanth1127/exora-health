@@ -13,7 +13,7 @@ from .db import get_db
 from .models import (
     Appointment, AppointmentStatusHistory, Branch, Department, Doctor, Hospital, OutboxEvent,
     Reservation, ScheduleRule, Teleconsultation, TeleconsultationConsent,
-    User, VoiceSession,
+    User, VoiceSession, VoiceTranscriptTurn,
 )
 from .schemas import AppointmentCreate, AppointmentStatusUpdate, DoctorAdminUpdate, ScheduleRuleCreate, ScheduleRuleOut
 from .services import DomainError, confirm_appointment
@@ -320,5 +320,27 @@ def voice_sessions(limit: int = Query(100, ge=1, le=500), _: str = Depends(requi
         "id": item.id, "runtime_session_id": item.runtime_session_id, "status": item.status,
         "channel": item.channel, "turn_count": item.turn_count, "tool_call_count": item.tool_call_count,
         "last_intent": item.last_intent, "appointment_id": item.appointment_id,
+        "call_disposition": item.call_disposition, "call_summary": item.call_summary,
+        "duration_seconds": item.duration_seconds, "provider_app_version": item.provider_app_version,
         "started_at": item.started_at, "ended_at": item.ended_at,
     } for item in items]
+
+
+@router.get("/voice-sessions/{session_id}")
+def voice_session_detail(session_id: str, _: Actor = Depends(require_admin), db: Session = Depends(get_db)):
+    item = db.get(VoiceSession, session_id)
+    if not item:
+        raise DomainError("VOICE_SESSION_NOT_FOUND", "Voice session was not found.", 404)
+    turns = db.scalars(select(VoiceTranscriptTurn).where(
+        VoiceTranscriptTurn.voice_session_id == item.id).order_by(VoiceTranscriptTurn.turn_index)).all()
+    return {
+        "id": item.id, "runtime_session_id": item.runtime_session_id, "status": item.status,
+        "channel": item.channel, "caller_phone": item.caller_phone, "agent_phone": item.agent_phone,
+        "duration_seconds": item.duration_seconds, "call_summary": item.call_summary,
+        "call_disposition": item.call_disposition, "appointment_id": item.appointment_id,
+        "provider_app_id": item.provider_app_id, "provider_app_version": item.provider_app_version,
+        "deployment_id": item.deployment_id, "started_at": item.started_at, "ended_at": item.ended_at,
+        "transcript": [{"index": turn.turn_index, "role": turn.role,
+                        "english_text": turn.english_text, "original_text": turn.original_text}
+                       for turn in turns],
+    }

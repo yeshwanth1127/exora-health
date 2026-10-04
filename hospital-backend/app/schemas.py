@@ -208,6 +208,30 @@ class VoiceSessionEnd(BaseModel):
     status: Literal["completed", "abandoned", "error"] = "completed"
 
 
+class SarvamTranscriptTurn(BaseModel):
+    role: Literal["user", "agent"]
+    en_text: str
+    indic_text: str | None = None
+
+
+class SarvamCallEnd(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    app_id: str
+    app_version: int
+    deployment_id: str
+    interaction_id: str
+    user_phone_number: str
+    agent_phone_number: str
+    duration: float = 0
+    recording_url: str | None = None
+    start_datetime: datetime | None = None
+    end_datetime: datetime | None = None
+    final_agent_variables: dict | None = None
+    output_agent_variables: dict | None = None
+    interaction_transcript: list[SarvamTranscriptTurn] | None = None
+    metadata: dict | None = None
+
+
 class WhatsAppHoldCreate(BaseModel):
     sender_id: str = Field(pattern=r"^[0-9]{7,20}$")
     doctor_id: str

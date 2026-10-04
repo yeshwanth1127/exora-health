@@ -9,12 +9,12 @@ from .config import settings
 from .db import get_db
 from .models import (
     Appointment, Branch, Department, Doctor, Reservation, ScheduleRule, VoiceSession,
-    VoiceToolCall, utcnow,
+    VoiceToolCall, VoiceTranscriptTurn, utcnow,
 )
 from .schemas import (
     AppointmentCreate, AppointmentOut, AvailabilityResponse, DoctorOut, HoldCreate, HoldOut,
-    VoiceBranchMetaOut, VoiceDepartmentMetaOut, VoiceDoctorOut, VoiceSessionCreate,
-    VoiceSessionEnd, VoiceSessionEvent,
+    SarvamCallEnd, VoiceBranchMetaOut, VoiceDepartmentMetaOut, VoiceDoctorOut,
+    VoiceSessionCreate, VoiceSessionEnd, VoiceSessionEvent,
 )
 from .services import DomainError, availability, confirm_appointment, create_hold
 from .voice_vocabulary import best_matches, branch_synonyms, department_synonyms
@@ -162,6 +162,54 @@ def appointment_lookup(patient_phone: str = Query(min_length=7, max_length=32),
             Appointment.confirmation_code == confirmation_code.strip().upper()
         )
     return db.scalars(statement).unique().all()
+
+
+@router.post("/sarvam/call-ended", status_code=202)
+def sarvam_call_ended(body: SarvamCallEnd, token: str = Query(min_length=24, max_length=200),
+                      db: Session = Depends(get_db)):
+    """Idempotently mirror a completed Sarvam call and its transcript into the HMS."""
+    if not settings.sarvam_webhook_secret:
+        raise DomainError("WEBHOOK_NOT_CONFIGURED", "Sarvam call logging is not configured.", 503)
+    if not secrets.compare_digest(token, settings.sarvam_webhook_secret):
+        raise DomainError("WEBHOOK_AUTH_REQUIRED", "A valid webhook credential is required.", 401)
+
+    item = db.scalar(select(VoiceSession).where(VoiceSession.runtime_session_id == body.interaction_id))
+    if not item:
+        item = VoiceSession(runtime_session_id=body.interaction_id, channel="phone")
+        db.add(item)
+        db.flush()
+
+    variables = body.output_agent_variables or body.final_agent_variables or {}
+    confirmation_code = str(variables.get("confirmation_code") or "").strip().upper()
+    appointment = db.scalar(select(Appointment).where(
+        Appointment.confirmation_code == confirmation_code)) if confirmation_code else None
+    item.status = "completed"
+    item.provider_app_id = body.app_id
+    item.provider_app_version = body.app_version
+    item.deployment_id = body.deployment_id
+    item.caller_phone = body.user_phone_number
+    item.agent_phone = body.agent_phone_number
+    item.duration_seconds = body.duration
+    item.call_summary = str(variables.get("call_summary") or "") or None
+    item.call_disposition = str(variables.get("call_disposition") or "") or None
+    item.last_intent = item.call_disposition
+    item.appointment_id = appointment.id if appointment else item.appointment_id
+    item.started_at = body.start_datetime or item.started_at
+    item.ended_at = body.end_datetime or utcnow()
+    transcript = body.interaction_transcript or []
+    item.turn_count = len(transcript)
+
+    for existing in db.scalars(select(VoiceTranscriptTurn).where(
+            VoiceTranscriptTurn.voice_session_id == item.id)).all():
+        db.delete(existing)
+    db.flush()
+    for index, turn in enumerate(transcript):
+        db.add(VoiceTranscriptTurn(
+            voice_session_id=item.id, turn_index=index, role=turn.role,
+            english_text=turn.en_text, original_text=turn.indic_text,
+        ))
+    db.commit()
+    return {"accepted": True, "session_id": item.id, "transcript_turns": len(transcript)}
 
 
 @router.post("/sessions", status_code=201)

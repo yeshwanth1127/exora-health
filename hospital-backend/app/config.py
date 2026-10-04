@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     sarvam_agent_id: str = "Conversatio-47382521-7c72"
     sarvam_agent_name: str = "Avocado Health Front Desk"
     sarvam_runtime_url: str = "https://apps.sarvam.ai/api/app-runtime/"
+    sarvam_webhook_secret: str = ""
 
     @property
     def origins(self) -> list[str]:

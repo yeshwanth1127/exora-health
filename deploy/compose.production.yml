@@ -60,6 +60,7 @@ services:
       SARVAM_ORG_ID: ${SARVAM_ORG_ID:-}
       SARVAM_WORKSPACE_ID: ${SARVAM_WORKSPACE_ID:-}
       SARVAM_AGENT_ID: ${SARVAM_AGENT_ID:-Conversatio-47382521-7c72}
+      SARVAM_WEBHOOK_SECRET: ${SARVAM_WEBHOOK_SECRET:-}
     volumes:
       - media_uploads:/app/uploads
     ports:

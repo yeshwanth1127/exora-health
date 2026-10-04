@@ -7,3 +7,4 @@ if DB_PATH.exists():
 os.environ["APP_ENV"] = "test"
 os.environ["DATABASE_URL"] = f"sqlite:///{DB_PATH}"
 os.environ["RATE_LIMITS_ENABLED"] = "false"
+os.environ["SARVAM_WEBHOOK_SECRET"] = "test-sarvam-webhook-secret-123456"
