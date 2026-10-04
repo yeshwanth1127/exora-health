@@ -22,7 +22,7 @@ const specialties = [
 
 export const HeroBookingBar: React.FC<HeroBookingBarProps> = ({ onSearch, className = '' }) => {
   const [selectedSpecialty, setSelectedSpecialty] = useState('general');
-  const [location, setLocation] = useState('Indiranagar, Bengaluru');
+  const [location, setLocation] = useState('KR Puram, Bengaluru');
   const [date, setDate] = useState(
     new Date(Date.now() + 86400000).toISOString().split('T')[0]
   );

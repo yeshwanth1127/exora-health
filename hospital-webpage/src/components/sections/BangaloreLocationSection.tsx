@@ -19,7 +19,7 @@ export const BangaloreLocationSection: React.FC<BangaloreLocationSectionProps> =
           <div className="relative flex items-center justify-center p-2 sm:p-6">
             <img
               src="/images/bangalore_real_map.svg"
-              alt="Real Map of Bangalore Clinics"
+              alt="Bangalore hospital location map"
               className="w-full max-w-[520px] h-auto drop-shadow-sm select-none"
             />
           </div>
@@ -27,7 +27,7 @@ export const BangaloreLocationSection: React.FC<BangaloreLocationSectionProps> =
           {/* Right Column: Clean Content matching Tia Reference with Unified Font */}
           <div className="flex flex-col items-start max-w-xl">
             <h2 className="block text-color-002 [font-family:Family,_-apple-system,_'system-ui',_'Segoe_UI',_Helvetica,_'Apple_Color_Emoji',_Arial,_sans-serif,_'Segoe_UI_Emoji',_'Segoe_UI_Symbol'] text-[2.75rem] font-medium leading-12 tracking-[-1.35px] [-webkit-text-stroke:0.001px_var(--clr-3)] max-md:text-[2rem] max-md:leading-[2.1875rem] max-md:tracking-[-0.69px] mb-4">
-              Find an Avocado clinic near you
+              Find a Sri Lakshmi hospital near you
             </h2>
 
             <p className="block text-[#343433] text-[1.1875rem] leading-[1.6875rem] tracking-[-0.3px] mb-3">
@@ -35,14 +35,14 @@ export const BangaloreLocationSection: React.FC<BangaloreLocationSectionProps> =
             </p>
 
             <p className="block text-[#6a6866] text-[0.9375rem] font-normal leading-5.5 tracking-[-0.13px] mb-9">
-              Virtual visits available across Karnataka and pan-India.
+              Main hospital: #301, Old Extension, KR Puram, Bengaluru 560036.
             </p>
 
             {/* Action Buttons matching Tia reference */}
             <div className="flex flex-wrap items-center gap-4">
               <button
                 onClick={onOpenBooking}
-                className="bg-[#f05a46] hover:bg-[#e04a36] text-white font-medium text-sm sm:text-base px-8 py-3.5 rounded-full shadow-sm hover:shadow transition-all cursor-pointer"
+                className="bg-[#24553c] hover:bg-[#173f2d] text-white font-medium text-sm sm:text-base px-8 py-3.5 rounded-full shadow-sm hover:shadow transition-all cursor-pointer"
               >
                 Find a clinic near you
               </button>
@@ -50,7 +50,7 @@ export const BangaloreLocationSection: React.FC<BangaloreLocationSectionProps> =
                 onClick={onBookVirtual || onOpenBooking}
                 className="bg-[#fbfaf9] hover:bg-white text-[#121212] border border-black/10 font-medium text-sm sm:text-base px-8 py-3.5 rounded-full shadow-sm hover:shadow transition-all cursor-pointer"
               >
-                Book a virtual visit
+                Contact KR Puram
               </button>
             </div>
 

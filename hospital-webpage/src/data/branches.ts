@@ -1,22 +1,46 @@
-// Single source of truth for clinic locations. Map (public/images/bangalore_real_map.svg) pins: IND, KOR, WFD, JYN.
+// Source: https://slsshospitals.com/our-locations/. Group locations are not a shared booking roster.
 export interface Branch {
   id: string;
-  name: string;      // full name used in footer/cards
-  area: string;      // neighbourhood used in nav, pickers, prose
+  name: string;
+  area: string;
   virtual?: boolean;
+  address?: string;
+  phone?: string;
+  image?: string;
 }
-
 export const branches: Branch[] = [
-  { id: 'indiranagar', name: 'Indiranagar Flagship Clinic', area: 'Indiranagar' },
-  { id: 'koramangala', name: 'Koramangala Care Center', area: 'Koramangala' },
-  { id: 'whitefield', name: 'Whitefield Technology Hub', area: 'Whitefield' },
-  { id: 'jayanagar', name: 'Jayanagar Specialty OPD', area: 'Jayanagar' },
-  { id: 'virtual', name: 'Virtual Care (Telehealth)', area: 'Virtual Care', virtual: true },
+  {
+    "id": "kr-puram",
+    "name": "Sri Lakshmi Super Speciality Hospital, KR Puram",
+    "area": "KR Puram",
+    "address": "301, 3rd Main Rd, near Indane Gas, V B Layout, Old Extension, Krishnarajapuram, Bengaluru 560036",
+    "phone": "+91 99017 11716",
+    "image": "/clients/sri-lakshmi/7e984e74-3-1.png"
+  },
+  {
+    "id": "kaggadasapura",
+    "name": "Sri Lakshmi Super Specialty Hospital, Kaggadasapura",
+    "area": "Kaggadasapura",
+    "address": "No. 5,6,7, 1st Cross, Kaggadasapura Main Rd, Nagappareddy Layout, C V Raman Nagar, Bengaluru 560093",
+    "phone": "080 4167 6336",
+    "image": "/clients/sri-lakshmi/3c32590a-1-1.png"
+  },
+  {
+    "id": "koramangala",
+    "name": "Sri Lakshmi Global Hospital, Koramangala",
+    "area": "Koramangala",
+    "address": "86, Hosur Rd, Zuzuvadi, Madiwala, 1st Stage, BTM Layout, Bengaluru 560068",
+    "phone": "+91 90083 18003",
+    "image": "/clients/sri-lakshmi/24ad95cb-2-1.png"
+  },
+  {
+    "id": "mother-child",
+    "name": "Sri Lakshmi Mother and Children Hospital, KR Puram",
+    "area": "KR Puram (Mother & Children)",
+    "address": "849/678, katha, No. 145, Old Extension, Krishnarajapuram, Bengaluru 560036",
+    "phone": "+91 99008 00533",
+    "image": "/clients/sri-lakshmi/003b67f5-4-1.png"
+  }
 ];
-
-export const physicalBranches = branches.filter((b) => !b.virtual);
-
-/** "Indiranagar, Koramangala, Whitefield, and Jayanagar" */
-export const branchAreaList = physicalBranches
-  .map((b) => b.area)
-  .reduce((acc, area, i, arr) => (i === 0 ? area : i === arr.length - 1 ? `${acc}, and ${area}` : `${acc}, ${area}`), '');
+export const physicalBranches = branches.filter(b => !b.virtual);
+export const branchAreaList = 'KR Puram, Kaggadasapura and Koramangala';

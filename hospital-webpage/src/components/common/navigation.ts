@@ -42,7 +42,7 @@ export const NAV_ITEMS: NavItem[] = [
     id: 'why-choose-us',
     label: 'About',
     children: [
-      { id: 'why-choose-us', label: 'Why Avocado' },
+      { id: 'why-choose-us', label: 'Why Sri Lakshmi' },
       { id: 'testimonials', label: 'Patient Stories' },
       { id: 'blogs', label: 'Blog & Guides' },
       { id: 'faq', label: 'FAQ' },

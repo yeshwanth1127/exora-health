@@ -6,7 +6,7 @@ This repository is a frontend prototype. Routes, filters, bookings, sign-in, doc
 
 | Journey | Screen and URL | Current state | Design reference |
 | --- | --- | --- | --- |
-| Discover care | Home `/` | Existing homepage restored as default; ten lighter sections selectable in Display Settings | Original Avocado components; [Tia homepage](https://asktia.com/) for optional light treatment |
+| Discover care | Home `/` | Original homepage is the default; Light Green is a complete alternate homepage selected in Display Settings | Original Avocado components; [Tia homepage](https://asktia.com/) for light treatment |
 | Browse care | Departments `/?page=departments` | Searchable specialty cards | [Tia services](https://asktia.com/) |
 | Understand a specialty | Department `/?page=department&id=cardiology` | Services, clinicians, questions, related care | [Tia primary care](https://asktia.com/services/primary-care/) |
 | Find a clinician | Doctors `/?page=doctors` | Name, specialty and clinic filters | [Tia virtual care team](https://asktia.com/locations/tia-virtual-clinic/) |
@@ -24,9 +24,9 @@ This repository is a frontend prototype. Routes, filters, bookings, sign-in, doc
 
 ## Design options
 
-The gear is available on every screen and opens Display Settings. Ten homepage component slots and four existing journey screens have **Original** and **Light/Updated** options. Original is the default for homepage sections and the department detail. The updated doctor profile, search results, and appointment screens are the default because their earlier versions still contain unrelated reference copy. The lighter homepage files live separately in `src/components/variants/`. The original department detail, doctor profile, doctor search, and appointment screens are preserved as `Original*Page.tsx` files beside the newer implementations. Selection is saved locally in the browser. The existing hero, services, testimonial, and pricing layout choices remain available.
+The gear is available on every screen and offers two sitewide modes: **Original** and **Light Green**. The selected mode is saved locally in the browser. Original uses the preserved homepage, search results, and appointment layouts. Light Green uses their updated counterparts. The pictured navigation, compact Light Green footer, preview and emergency announcement, department pages, and doctor pages are shared in both modes. The original component files remain in place; old mixed per-section choices are no longer applied. Original-only homepage sections are shown only in Original mode.
 
-The optional navigation follows the supplied Tia screenshot's arrangement: text links with small menus, a solid Book now button, and an outlined Log in button. It uses the site's Inter typography and preserves the existing Avocado logo.
+Shared navigation follows the supplied Tia screenshot's arrangement: text links with small menus on desktop, a solid Book now button, and an outlined Log in button. Narrow screens use a horizontal link row instead of a hamburger menu. The announcement includes the preview disclosure and emergency number. The footer is limited to useful navigation and legal links.
 
 ## Backend and content handoff
 

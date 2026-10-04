@@ -40,10 +40,10 @@ export const EmergencyPill: React.FC<{
   phoneNumber?: string;
   className?: string;
   isScrolled?: boolean;
-}> = ({ phoneNumber = '080 4968 2800', className = '', isScrolled = false }) => {
+}> = ({ phoneNumber = '99017 11716', className = '', isScrolled = false }) => {
   return (
     <a
-      href="tel:+918049682800"
+      href="tel:+919901711716"
       className={`group inline-flex items-center gap-1.5 sm:gap-2 rounded-full px-3 sm:px-3.5 py-1.5 text-xs sm:text-[13px] font-semibold text-[#b91c1c] shadow-xs hover:shadow-md transition-all duration-200 active:scale-95 cursor-pointer select-none shrink-0 ${
         isScrolled
           ? 'bg-white border border-red-100/90 hover:bg-neutral-50'
@@ -156,7 +156,7 @@ export const StickyEmergencyHeader: React.FC<StickyEmergencyHeaderProps> = ({
             ? 'backdrop-blur-xl bg-white/85 supports-[backdrop-filter]:bg-white/75 border-b border-stone-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] py-2 sm:py-2.5'
             : 'backdrop-blur-xl bg-slate-950/40 supports-[backdrop-filter]:bg-slate-950/30 border-b border-white/15 py-3 sm:py-3.5 shadow-xs'
         }`}
-        aria-label="Avocado Health navigation"
+        aria-label="Sri Lakshmi Hospital navigation"
       >
         <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 flex items-center justify-between gap-3 lg:gap-4 xl:gap-6">
           {/* 1. Brand Logo (Left) */}
@@ -183,11 +183,11 @@ export const StickyEmergencyHeader: React.FC<StickyEmergencyHeaderProps> = ({
             </span>
           </div>
 
-        {/* 2. Frosted Glass Navigation Pill (Center - Hidden on < lg to eliminate collision) */}
+        {/* 2. Frosted Glass Navigation Pill (only where every control fits) */}
         <nav
           aria-label="Section navigation"
           onMouseLeave={() => setOpenGroupId(null)}
-          className={`hidden lg:flex items-center gap-0.5 p-1 rounded-full transition-all shrink-0 ${
+          className={`hidden 2xl:flex items-center gap-0.5 p-1 rounded-full transition-all shrink-0 ${
             effectiveScrolled
               ? 'bg-stone-100/90 border border-stone-200/80 shadow-2xs'
               : 'backdrop-blur-md bg-white/20 border border-white/25 shadow-sm'
@@ -267,7 +267,7 @@ export const StickyEmergencyHeader: React.FC<StickyEmergencyHeaderProps> = ({
         {/* 3. Right Action Group (Responsive & Collision Proof) */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Emergency Helpline Pill */}
-          <EmergencyPill phoneNumber="080 4968 2800" isScrolled={effectiveScrolled} />
+          <EmergencyPill phoneNumber="99017 11716" isScrolled={effectiveScrolled} />
 
           {/* User Account / Login Button */}
           {user ? (
@@ -287,7 +287,7 @@ export const StickyEmergencyHeader: React.FC<StickyEmergencyHeaderProps> = ({
           ) : (
             <button
               onClick={onOpenLogin}
-              aria-label="Portal login"
+              aria-label="Log in"
               className={`hidden sm:inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-semibold px-2.5 xl:px-3 py-1.5 rounded-full transition cursor-pointer ${
                 effectiveScrolled
                   ? 'text-stone-700 hover:text-stone-950 hover:bg-stone-100'
@@ -296,7 +296,7 @@ export const StickyEmergencyHeader: React.FC<StickyEmergencyHeaderProps> = ({
             >
               <UserRound className="size-4 lg:inline xl:hidden hidden" />
               {/* Icon-only between lg and xl so Book never gets pushed off the bar */}
-              <span className="lg:hidden xl:inline">Portal login</span>
+              <span className="lg:hidden xl:inline">Log in</span>
             </button>
           )}
 
@@ -312,12 +312,12 @@ export const StickyEmergencyHeader: React.FC<StickyEmergencyHeaderProps> = ({
             Book
           </button>
 
-          {/* Mobile Hamburger Toggle (< lg) */}
+          {/* Compact navigation */}
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle navigation menu"
-            className={`inline-flex lg:hidden p-1.5 rounded-full transition cursor-pointer ${
+            className={`inline-flex 2xl:hidden p-1.5 rounded-full transition cursor-pointer ${
               effectiveScrolled
                 ? 'text-stone-700 hover:text-stone-950 hover:bg-stone-100'
                 : 'text-white hover:bg-white/15'
@@ -329,7 +329,7 @@ export const StickyEmergencyHeader: React.FC<StickyEmergencyHeaderProps> = ({
       </div>
     </div>
 
-      {/* Mobile Drawer Navigation (< lg) */}
+      {/* Compact navigation drawer */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -337,7 +337,7 @@ export const StickyEmergencyHeader: React.FC<StickyEmergencyHeaderProps> = ({
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.22, ease: 'easeInOut' }}
-            className="overflow-hidden border-t border-stone-200/50 bg-white/95 backdrop-blur-xl shadow-2xl lg:hidden"
+            className="overflow-hidden border-t border-stone-200/50 bg-white/95 backdrop-blur-xl shadow-2xl 2xl:hidden"
           >
             <div className="max-w-[1440px] mx-auto px-4 py-3 flex flex-col gap-1 max-h-[calc(100dvh-72px)] overflow-y-auto overscroll-contain">
               {NAV_ITEMS.map((item) => {

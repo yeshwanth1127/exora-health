@@ -3,16 +3,12 @@ import {
   Award,
   GraduationCap,
   Building2,
-  Star,
-  CheckCircle2,
-  Languages,
   Microscope,
   ShieldCheck,
   Stethoscope,
-  Globe,
 } from 'lucide-react';
 import { DoctorScheduleProfile } from '../booking/ScheduleAppointmentPage';
-import { DOCTOR_PROFILES } from '../search/SearchResultsPage';
+import { DOCTOR_PROFILES } from '../../data/doctorProfiles';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 import { doctors } from '../../data/doctors';
 import { departments } from '../../data/departments';
@@ -38,7 +34,6 @@ const PROFILE_SECTIONS: NavSectionItem[] = [
   { id: 'field-of-expertise', label: 'Field of Expertise', shortLabel: 'Expertise' },
   { id: 'credentials', label: 'Credentials', shortLabel: 'Credentials' },
   { id: 'languages-spoken', label: 'Languages Spoken', shortLabel: 'Languages' },
-  { id: 'reviews', label: 'Patient Reviews', shortLabel: 'Reviews' },
 ];
 
 export function DoctorDetailPage({
@@ -48,12 +43,22 @@ export function DoctorDetailPage({
   onScheduleAppointment,
 }: DoctorDetailPageProps) {
   const doctor: DoctorScheduleProfile =
-    DOCTOR_PROFILES.find((p) => p.id === doctorId) || DOCTOR_PROFILES[0];
-  const dept = departments.find((d) => d.id === doctors.find((x) => x.id === doctor.id)?.departmentId);
-  const languages =
-    doctor.decisionChips?.find((c) => c.startsWith('Speaks '))?.slice(7).split(/, | & /) ?? ['English', 'Hindi'];
-  const surname = doctor.name.split(' ').pop();
-  const interests = [...(doctor.nicheExpertise?.split(/,\s*/) ?? []), ...(doctor.clinicalInterests ?? [])];
+    DOCTOR_PROFILES.find((p) => p.id === doctorId) ||
+    DOCTOR_PROFILES[0] || {
+      id: doctorId || 'doc-1',
+      name: 'Clinical Specialist',
+      specialty: 'Specialist Care',
+      photo: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=800',
+      rating: 0,
+      reviewCount: 0,
+      boardCertified: 'Credentials not published',
+      practiceName: 'Sri Lakshmi Hospital Main Clinic',
+      addressLine1: 'KR Puram',
+      addressLine2: 'Bengaluru, Karnataka',
+      phone: '+91 99017 11716',
+    };
+  const dept = departments.find((d) => d.id === doctors.find((x) => x.id === doctor?.id)?.departmentId);
+  const interests = [...(doctor?.nicheExpertise?.split(/,\s*/) ?? []), ...(doctor?.clinicalInterests ?? [])];
 
   const [activeSection, setActiveSection] = useState<string>('overview');
   const navContainerRef = useRef<HTMLDivElement>(null);
@@ -184,10 +189,6 @@ export function DoctorDetailPage({
                 <span className="font-bold text-white">Practice:</span>{' '}
                 <span className="text-stone-200 font-normal">{doctor.practiceName}</span>
               </div>
-              <div>
-                <span className="font-bold text-white">Language:</span>{' '}
-                <span className="text-stone-200 font-normal">{languages.join(', ')}</span>
-              </div>
               <div className="flex items-center gap-2 pt-0.5">
                 <span className="font-bold text-white">Phone:</span>{' '}
                 <a
@@ -214,7 +215,7 @@ export function DoctorDetailPage({
       </section>
 
       {/* MOBILE STICKY NAVIGATION BAR (Clean minimal tabs) */}
-      <div className="lg:hidden sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b border-stone-100 overflow-x-auto scrollbar-none py-2.5 px-4">
+      <div className="lg:hidden sticky top-[var(--site-header-offset)] z-30 bg-white/95 backdrop-blur-md border-b border-stone-100 overflow-x-auto scrollbar-none py-2.5 px-4">
         <div className="flex items-center gap-5 min-w-max text-xs">
           {PROFILE_SECTIONS.map((sec) => {
             const isActive = activeSection === sec.id;
@@ -250,7 +251,6 @@ export function DoctorDetailPage({
 
               <div className="prose prose-neutral max-w-none text-base sm:text-lg text-stone-700 leading-relaxed space-y-4">
                 <p>{doctor.bio}</p>
-                {doctor.bedsideManner && <p>{doctor.bedsideManner}</p>}
               </div>
 
             </section>
@@ -351,165 +351,17 @@ export function DoctorDetailPage({
               </div>
             </section>
 
-            {/* SECTION 4: LANGUAGES SPOKEN (Strictly no insurance!) */}
-            <section id="languages-spoken" className="scroll-mt-28 space-y-6 pt-6 border-t border-stone-200">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight">
-                  Languages Spoken
-                </h2>
-                <p className="text-stone-600 text-sm sm:text-base mt-2">
-                  Direct physician fluency and hospital-certified interpretation support.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {languages.map((lang, idx) => (
-                  <div key={lang} className="p-5 rounded-xl border border-stone-200 bg-stone-50 space-y-2">
-                    <div className="flex items-center gap-2 text-stone-900 font-bold text-base">
-                      <Languages className="size-5 text-[#1e6b4c]" />
-                      <span>{lang}</span>
-                    </div>
-                    <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-[#dcefe4] text-[#154734]">
-                      {idx === 0 ? 'Primary' : 'Fluent'}
-                    </span>
-                  </div>
-                ))}
-
-                <div className="p-5 rounded-xl border border-stone-200 bg-stone-50 space-y-2">
-                  <div className="flex items-center gap-2 text-stone-900 font-bold text-base">
-                    <Globe className="size-5 text-[#1e6b4c]" />
-                    <span>Interpreter Support</span>
-                  </div>
-                  <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-[#eef7f2] text-[#154734]">
-                    On Request
-                  </span>
-                  <p className="text-xs text-stone-600 pt-1">
-                    Let the front desk know when booking and we'll arrange an interpreter for other languages.
-                  </p>
-                </div>
-              </div>
+            <section id="languages-spoken" className="scroll-mt-28 space-y-4 border-t border-stone-200 pt-6">
+              <h2 className="text-2xl font-bold tracking-tight text-stone-900 sm:text-3xl">Languages &amp; accessibility</h2>
+              <p className="max-w-2xl text-sm leading-relaxed text-stone-600 sm:text-base">
+                Tell the clinic about your language or accessibility needs when requesting an appointment so the team can confirm available support.
+              </p>
             </section>
 
-            {/* SECTION 6: PATIENT REVIEWS & TESTIMONIALS (Adapted from TestimonialsSection) */}
-            <section id="reviews" className="scroll-mt-28 space-y-8 pt-6 border-t border-stone-200">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight">
-                  Patient Reviews &amp; Ratings
-                </h2>
-                <p className="text-stone-600 text-sm sm:text-base mt-2">
-                  Verified feedback from patients treated under {doctor.name}'s care.
-                </p>
-              </div>
-
-              {/* Rating Summary Card */}
-              <div className="p-6 sm:p-8 rounded-2xl bg-[#fcfbf9] border border-[#e5e2dc] grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                {/* Overall Score */}
-                <div className="md:col-span-4 text-center md:text-left space-y-1">
-                  <div className="text-5xl sm:text-6xl font-black text-stone-900">{doctor.rating.toFixed(1)}</div>
-                  <div className="flex items-center justify-center md:justify-start gap-1 text-amber-400">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="size-5 fill-amber-400" />
-                    ))}
-                  </div>
-                  <div className="text-xs text-stone-500 font-medium">
-                    Based on {doctor.reviewCount} verified patient surveys
-                  </div>
-                </div>
-
-                {/* Metric Breakdown Bars */}
-                <div className="md:col-span-8 space-y-2.5">
-                  {[
-                    { label: 'Bedside Manner & Empathy', score: '99%', val: '4.95' },
-                    { label: 'Clear Explanation of Conditions & Plans', score: '98%', val: '4.92' },
-                    { label: 'Un-hurried Consultation Time', score: '97%', val: '4.88' },
-                    { label: 'Minimal Wait Time (< 10 min)', score: '95%', val: '4.82' },
-                  ].map((metric, idx) => (
-                    <div key={idx} className="space-y-1">
-                      <div className="flex justify-between text-xs font-semibold text-stone-700">
-                        <span>{metric.label}</span>
-                        <span className="font-mono text-[#12231b]">{metric.val} / 5.0</span>
-                      </div>
-                      <div className="h-2 w-full bg-stone-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-[#1e6b4c] rounded-full transition-all duration-700"
-                          style={{ width: metric.score }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Verified Patient Review Cards (Reusing High-End Testimonial Cards) */}
-              <div className="space-y-4">
-                {[
-                  {
-                    author: 'Priya S., Koramangala',
-                    date: 'September 14, 2026',
-                    verified: true,
-                    condition: dept?.commonProcedures[0] ?? doctor.specialty,
-                    rating: 5,
-                    quote: `Dr. ${surname} took the time to explain every result in plain language and never rushed the consultation. The follow-up plan was simple to stick to.`,
-                  },
-                  {
-                    author: 'Arun & Meera K.',
-                    date: 'August 28, 2026',
-                    verified: true,
-                    condition: dept?.commonProcedures[1] ?? doctor.specialty,
-                    rating: 5,
-                    quote: `We came in anxious and left with a clear plan. Dr. ${surname}'s team followed up on WhatsApp between visits to check on progress.`,
-                  },
-                  {
-                    author: 'Rahul M., Whitefield',
-                    date: 'July 19, 2026',
-                    verified: true,
-                    condition: dept?.commonProcedures[2] ?? doctor.specialty,
-                    rating: 5,
-                    quote: `Booking was easy, the wait was short, and Dr. ${surname} listened properly. I'd recommend the clinic to family without hesitation.`,
-                  },
-                ].map((rev, idx) => (
-                  <div
-                    key={idx}
-                    className="p-6 rounded-xl border border-stone-200 bg-white hover:border-[#154734]/40 hover:shadow-xs transition-all space-y-3"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-stone-900 text-sm sm:text-base">
-                            {rev.author}
-                          </span>
-                          {rev.verified && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#154734] bg-[#eef7f2] px-2 py-0.5 rounded-full border border-[#dcefe4]">
-                              <CheckCircle2 className="size-3 text-[#154734]" />
-                              <span>Verified Patient</span>
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-xs text-stone-500 font-medium">
-                          Treated for: <strong className="text-stone-700">{rev.condition}</strong> •{' '}
-                          {rev.date}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1 text-amber-400">
-                        {[...Array(rev.rating)].map((_, i) => (
-                          <Star key={i} className="size-4 fill-amber-400" />
-                        ))}
-                      </div>
-                    </div>
-
-                    <p className="text-xs sm:text-sm text-stone-700 leading-relaxed italic">
-                      "{rev.quote}"
-                    </p>
-
-                  </div>
-                ))}
-              </div>
-            </section>
           </main>
 
           {/* RIGHT COLUMN: "I" INDICATOR ON PALE LINE */}
-          <aside className="hidden lg:block lg:col-span-4 xl:col-span-3 sticky top-28 select-none">
+          <aside className="hidden lg:block lg:col-span-4 xl:col-span-3 sticky top-[150px] xl:top-28 select-none">
             <nav ref={navContainerRef} className="relative pl-6 space-y-4" aria-label="Page sections">
               {/* THE PALE LINE */}
               <div className="absolute left-1.5 -translate-x-1/2 top-1.5 bottom-1.5 w-[1.5px] bg-stone-200 rounded-full" />

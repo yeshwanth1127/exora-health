@@ -1,51 +1,71 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import { lockActiveSection, type NavItem } from '../common/navigation';
+import { ClinicAnnouncement } from '../common/ClinicAnnouncement';
 import { departments } from '../../data/departments';
 import { branches } from '../../data/branches';
+import { HospitalLogo } from '../common/HospitalLogo';
 
 const TIA_NAV_ITEMS: NavItem[] = [
   { id: 'services', label: 'Services & Symptoms', children: departments.map(department => ({ id: `department-${department.id}`, label: department.name })) },
   { id: 'locations', label: 'Locations', children: branches.map(branch => ({ id: `location-${branch.id}`, label: branch.name })) },
   { id: 'insurance', label: 'Insurance', children: [{ id: 'insurance-pricing', label: 'Coverage & pricing' }, { id: 'packages', label: 'Care packages' }] },
-  { id: 'how-it-works', label: 'How It Works', children: [{ id: 'how-it-works', label: 'Your care journey' }, { id: 'doctors', label: 'Meet our doctors' }] },
-  { id: 'blog', label: 'Resources', children: [{ id: 'blog', label: 'Articles & guides' }, { id: 'faq', label: 'FAQs' }, { id: 'contact-page', label: 'Contact' }] },
+  { id: 'about', label: 'About Us', children: [{ id: 'about', label: 'Our hospital' }, { id: 'founder', label: 'From the founder' }, { id: 'facilities', label: 'Facilities & technology' }, { id: 'doctors', label: 'Meet our doctors' }] },
+  { id: 'blog', label: 'Resources', children: [{ id: 'community', label: 'Community & media' }, { id: 'blog', label: 'Articles & guides' }, { id: 'faq', label: 'FAQs' }, { id: 'contact-page', label: 'Contact' }] },
 ];
 
 interface TiaInspiredHeaderProps {
   onNavigate?: (section: string) => void;
   onOpenBooking?: () => void;
   onOpenLogin?: () => void;
+  onOpenSettings?: () => void;
   user?: { name: string; identifier: string } | null;
   showAnnouncement?: boolean;
   forceScrolledStyle?: boolean;
 }
 
-export function TiaInspiredHeader({ onNavigate, onOpenBooking, onOpenLogin, user }: TiaInspiredHeaderProps) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+export function TiaInspiredHeader({ onNavigate, onOpenBooking, onOpenLogin, onOpenSettings, user }: TiaInspiredHeaderProps) {
+  const menuRef = useRef<HTMLDialogElement>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const menu = menuRef.current;
+    const previousOverflow = document.body.style.overflow;
+    menu?.showModal();
+    document.body.style.overflow = 'hidden';
+    const desktop = window.matchMedia('(min-width: 1280px)');
+    const closeOnDesktop = () => { if (desktop.matches) setIsMenuOpen(false); };
+    desktop.addEventListener('change', closeOnDesktop);
+    return () => {
+      const restoreFocus = menu?.contains(document.activeElement) || document.activeElement === document.body;
+      menu?.close();
+      if (restoreFocus && !desktop.matches) menuTriggerRef.current?.focus();
+      document.body.style.overflow = previousOverflow;
+      desktop.removeEventListener('change', closeOnDesktop);
+    };
+  }, [isMenuOpen]);
+
   const [openGroupId, setOpenGroupId] = useState<string | null>(null);
 
   const go = (id: string) => {
     if (id !== 'legal') lockActiveSection(id);
+    setIsMenuOpen(false);
     onNavigate?.(id);
     setOpenGroupId(null);
-    setIsMobileMenuOpen(false);
   };
 
   return <header className="fixed inset-x-0 top-0 z-50 border-t-[3px] border-[#17372b] bg-[#fffaf4] text-[#24382c] shadow-[0_3px_20px_rgba(25,56,38,.06)]">
-    <div className="h-7 border-b border-[#e9e6db] bg-[#f2f4eb]">
-      <div className="mx-auto flex h-full max-w-[1360px] items-center justify-between px-5 sm:px-8 lg:px-12">
-        <span className="hidden sm:block text-[11px] font-medium tracking-[.08em] text-[#647768]">CARE ACROSS BENGALURU</span>
-        <a href="tel:+918049682800" className="ml-auto text-[11px] sm:text-xs font-semibold text-[#315c40] hover:underline underline-offset-2">
-          <span className="font-normal text-[#63786a]">24/7 emergency&nbsp; </span>080 4968 2800
-        </a>
-      </div>
-    </div>
-    <div className="mx-auto flex h-[66px] lg:h-[78px] max-w-[1360px] items-center justify-between gap-4 px-5 sm:px-8 lg:px-12">
-      <button type="button" onClick={() => go('home')} aria-label="Avocado Health home" className="shrink-0 text-left leading-none">
-        <span className="block font-serif-logo text-[30px] lg:text-[36px] font-bold lowercase tracking-[-.06em] text-[#17372b]">avocado</span>
-        <span className="block pl-0.5 mt-0.5 text-[9px] lg:text-[10px] font-bold tracking-[.37em] text-[#315b41]">HEALTH</span>
+    <ClinicAnnouncement />
+    <div className="mx-auto flex h-[66px] xl:h-[78px] w-full max-w-[1360px] items-center justify-between gap-2 sm:gap-4 px-5 sm:px-8 lg:px-12">
+      <button type="button" onClick={() => go('home')} aria-label="Sri Lakshmi Hospital home" className="flex shrink-0 items-center gap-1.5 sm:gap-2.5 text-left leading-none">
+        <HospitalLogo className="size-7 sm:size-10 lg:size-11" />
+        <span>
+        <span className="block font-serif-logo text-[23px] sm:text-[30px] lg:text-[36px] font-bold lowercase tracking-[-.06em] text-[#17372b]">sri lakshmi</span>
+        <span className="block pl-0.5 mt-0.5 text-[9px] lg:text-[10px] font-bold tracking-[.37em] text-[#315b41]">HOSPITAL</span>
+        </span>
       </button>
 
       <nav aria-label="Main navigation" className="hidden xl:flex items-center gap-4 2xl:gap-6 h-full">
@@ -69,24 +89,30 @@ export function TiaInspiredHeader({ onNavigate, onOpenBooking, onOpenLogin, user
       </nav>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-        <button type="button" onClick={onOpenBooking} className="hidden sm:inline-flex min-h-11 items-center justify-center rounded-xl bg-[#24553c] px-5 lg:px-6 text-sm font-semibold text-white hover:bg-[#173f2d] transition-colors">Book now</button>
-        <button type="button" onClick={onOpenLogin} className="hidden sm:inline-flex min-h-11 items-center justify-center rounded-xl border border-[#95a69a] px-5 lg:px-6 text-sm font-medium text-[#24382c] hover:border-[#24553c] hover:bg-[#f0f4ec] transition-colors">{user ? user.name : 'Portal login'}</button>
-        <button type="button" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={isMobileMenuOpen} aria-controls="mobile-navigation" className="inline-flex xl:hidden size-11 items-center justify-center rounded-xl border border-[#d9e2d7] text-[#24382c] hover:bg-[#f1f5ed]">{isMobileMenuOpen ? <X size={21} /> : <Menu size={21} />}</button>
+        <button type="button" onClick={() => { setIsMenuOpen(false); onOpenBooking?.(); }} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#24553c] px-3.5 sm:min-h-11 sm:px-5 lg:px-6 text-xs sm:text-sm font-semibold text-white hover:bg-[#173f2d] transition-colors">Book now</button>
+        {onOpenLogin && <button type="button" onClick={onOpenLogin} className="hidden sm:inline-flex min-h-11 items-center justify-center rounded-xl border border-[#95a69a] px-5 lg:px-6 text-sm font-medium text-[#24382c] hover:border-[#24553c] hover:bg-[#f0f4ec] transition-colors">{user ? user.name : 'Log in'}</button>}
+        <button ref={menuTriggerRef} type="button" onClick={() => setIsMenuOpen(true)} aria-label="Open navigation menu" aria-haspopup="dialog" aria-expanded={isMenuOpen} className="xl:hidden grid size-11 place-items-center rounded-xl border border-[#c8d5c8] hover:bg-[#edf3e9]"><Menu size={22} /></button>
       </div>
     </div>
-    <AnimatePresence>
-      {isMobileMenuOpen && <motion.nav id="mobile-navigation" aria-label="Mobile navigation" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: .2 }} className="xl:hidden overflow-hidden border-t border-[#e4e9dd] bg-[#fffefa] shadow-xl">
-        <div className="mx-auto max-h-[calc(100dvh-100px)] max-w-[1360px] overflow-y-auto px-5 sm:px-8 py-4">
-          {TIA_NAV_ITEMS.map(item => <div key={item.id} className="border-b border-[#e8ede4]">
-            <div className="flex items-center justify-between gap-3">
-              <button onClick={() => go(item.id)} className="flex-1 py-3.5 text-left text-base font-medium text-[#24382c]">{item.label}</button>
-              {item.children && <button aria-label={`Show ${item.label} links`} aria-expanded={openGroupId === item.id} onClick={() => setOpenGroupId(openGroupId === item.id ? null : item.id)} className="size-10 flex items-center justify-center text-[#53695a]"><ChevronDown size={18} className={`transition-transform ${openGroupId === item.id ? 'rotate-180' : ''}`} /></button>}
-            </div>
-            {item.children && openGroupId === item.id && <div className="grid sm:grid-cols-2 gap-1 pb-3">{item.children.map(child => <button key={child.label} onClick={() => go(child.id)} className="rounded-lg px-3 py-2 text-left text-sm text-[#526858] hover:bg-[#f1f5ed]">{child.label}</button>)}</div>}
-          </div>)}
-          <div className="flex gap-3 pt-5 sm:hidden"><button onClick={() => { onOpenBooking?.(); setIsMobileMenuOpen(false); }} className="flex-1 rounded-xl bg-[#24553c] py-3 text-sm font-semibold text-white">Book now</button><button onClick={() => { onOpenLogin?.(); setIsMobileMenuOpen(false); }} className="flex-1 rounded-xl border border-[#95a69a] py-3 text-sm font-medium">Portal login</button></div>
-        </div>
-      </motion.nav>}
-    </AnimatePresence>
+    <dialog ref={menuRef} aria-labelledby="mobile-menu-title" onCancel={() => setIsMenuOpen(false)} onClose={() => setIsMenuOpen(false)} className="mobile-navigation m-0 h-dvh max-h-dvh w-full max-w-none bg-[#fffaf4] text-[#24382c]">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#dce6d8] bg-[#fffaf4] px-5 py-4">
+        <h2 id="mobile-menu-title" className="flex items-center gap-2 text-xl font-semibold"><HospitalLogo className="size-8" />Explore Sri Lakshmi</h2>
+        <button type="button" autoFocus onClick={() => setIsMenuOpen(false)} aria-label="Close navigation menu" className="grid size-11 place-items-center rounded-xl border border-[#c8d5c8]"><X size={22} /></button>
+      </div>
+      <nav aria-label="Mobile navigation" className="px-5 py-4">
+        <button type="button" onClick={() => go('home')} className="mobile-nav-link">Home</button>
+        <button type="button" onClick={() => go('doctors')} className="mobile-nav-link">Find a doctor</button>
+        {TIA_NAV_ITEMS.map(item => <details key={item.id} className="border-b border-[#dce6d8]">
+          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 text-base font-semibold">{item.label}<ChevronDown size={18} /></summary>
+          <div className="pb-3 pl-3">
+            <button type="button" onClick={() => go(item.id)} className="mobile-nav-link text-[#24553c]">Explore {item.label}</button>
+            {item.children?.map(child => <button key={child.id} type="button" onClick={() => go(child.id)} className="mobile-nav-link font-normal">{child.label}</button>)}
+          </div>
+        </details>)}
+        {onOpenLogin && <button type="button" onClick={() => { setIsMenuOpen(false); onOpenLogin(); }} className="mobile-nav-link">{user ? user.name : 'Log in'}</button>}
+        {onOpenSettings && <button type="button" onClick={() => { setIsMenuOpen(false); onOpenSettings(); }} className="mobile-nav-link">Display settings</button>}
+        <button type="button" onClick={() => { setIsMenuOpen(false); onOpenBooking?.(); }} className="mt-5 flex min-h-12 w-full items-center justify-center rounded-xl bg-[#24553c] text-base font-semibold text-white">Book an appointment</button>
+      </nav>
+    </dialog>
   </header>;
 }

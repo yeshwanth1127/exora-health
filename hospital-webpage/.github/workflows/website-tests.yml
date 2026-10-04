@@ -1,0 +1,52 @@
+name: Website and appointment browser tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: website-tests-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: yeshwanth1127/hms-backend
+          # Pin the compatible backend rather than silently testing another release.
+          ref: cf0f009e308ca2b219867b1275b0e79c846ad0b1
+          path: .e2e-backend
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install and build both applications
+        run: |
+          python -m pip install uv
+          uv sync --directory .e2e-backend --locked --extra dev
+          npm ci
+          npm --prefix .e2e-backend/staff-web ci
+          npm test
+          npm run test:e2e:types
+          npm run build
+          npm --prefix .e2e-backend/staff-web run build
+          npm run test:e2e:install
+      - name: Real browser to persisted appointment tests
+        env:
+          HMS_E2E_BACKEND_PATH: ${{ github.workspace }}/.e2e-backend
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: fictional-clinic-browser-failures
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 3

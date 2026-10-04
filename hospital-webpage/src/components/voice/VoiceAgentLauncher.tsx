@@ -21,6 +21,7 @@ interface TranscriptLine {
 
 interface VoiceAgentLauncherProps {
   user?: { name: string; identifier: string } | null;
+  inline?: boolean;
 }
 
 function browserCallerId() {
@@ -50,7 +51,7 @@ function isCallActive(value: VoiceState): boolean {
   return value === 'connected' || value === 'listening' || value === 'speaking';
 }
 
-export function VoiceAgentLauncher({ user }: VoiceAgentLauncherProps) {
+export function VoiceAgentLauncher({ user, inline = false }: VoiceAgentLauncherProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [config, setConfig] = useState<VoiceAgentConfig | null>(null);
   const [state, setState] = useState<VoiceState>('idle');
@@ -163,10 +164,12 @@ export function VoiceAgentLauncher({ user }: VoiceAgentLauncherProps) {
 
   return <>
     <button type="button" onClick={() => setIsOpen(true)}
-      className="fixed bottom-24 right-5 sm:right-7 z-40 flex items-center gap-3 rounded-full bg-[#154734] text-white shadow-[0_12px_35px_rgba(21,71,52,.28)] px-4 py-3 hover:bg-[#0e3929] hover:-translate-y-0.5 transition"
+      className={inline
+        ? 'flex min-h-12 w-full items-center gap-3 rounded-xl bg-[#154734] p-3 text-white hover:bg-[#0e3929] transition'
+        : 'fixed bottom-24 right-5 sm:right-7 z-40 flex items-center gap-3 rounded-full bg-[#154734] text-white shadow-[0_12px_35px_rgba(21,71,52,.28)] px-4 py-3 hover:bg-[#0e3929] hover:-translate-y-0.5 transition'}
       aria-label="Open voice booking assistant">
       <span className="size-9 rounded-full bg-white/12 grid place-items-center"><Mic2 className="size-5" /></span>
-      <span className="text-left hidden sm:block"><span className="block text-xs text-white/65">Powered by Sarvam</span><span className="block text-sm font-semibold">Talk to Aanya</span></span>
+      <span className={`text-left ${inline ? 'block' : 'hidden sm:block'}`}><span className="block text-xs text-white/65">Powered by Sarvam</span><span className="block text-sm font-semibold">Talk to Aanya</span></span>
     </button>
 
     {isOpen && <div className="fixed inset-0 z-[80] bg-[#0b2119]/55 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-5" role="dialog" aria-modal="true" aria-labelledby="voice-agent-title">

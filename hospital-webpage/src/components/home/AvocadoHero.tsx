@@ -29,8 +29,8 @@ export const AvocadoHero: React.FC<AvocadoHeroProps> = ({
       
       {/* Edge-to-Edge Photorealistic Telehealth Doctor Background */}
       <img
-        src="/images/avocado-hero-bg.jpg"
-        alt="Avocado Health Telemedicine Doctor"
+        src="/clients/sri-lakshmi/f22f9b39-1-1.png"
+        alt="Sri Lakshmi Hospital Telemedicine Doctor"
         className="absolute inset-0 w-full h-full object-cover object-[center_28%] pointer-events-none"
       />
 
@@ -51,7 +51,7 @@ export const AvocadoHero: React.FC<AvocadoHeroProps> = ({
           )}
 
           <h1 className="text-white font-bold text-4xl sm:text-5xl md:text-[3.75rem] lg:text-[4.25rem] xl:text-[4.75rem] leading-[1.08] tracking-[-1.5px] drop-shadow-md">
-            Avocado Health: Your<br />
+            Sri Lakshmi Hospital: Your<br />
             Wellness, Our Digital Care
           </h1>
 

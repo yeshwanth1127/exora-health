@@ -1,3 +1,4 @@
+import { doctors } from '../../data/doctors';
 import React from 'react';
 
 interface DoctorItem {
@@ -7,47 +8,27 @@ interface DoctorItem {
   image: string;
 }
 
-const TOP_DOCTORS: DoctorItem[] = [
-  {
-    id: 'doc-1',
-    name: 'Dr. Vikram Rao',
-    specialty: 'Consultant - Interventional Cardiology & Heart Care',
-    image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=800&q=85',
-  },
-  {
-    id: 'doc-2',
-    name: 'Dr. Ananya Sharma',
-    specialty: 'Consultant - Internal Medicine & Preventative Care',
-    image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=800&q=85',
-  },
-  {
-    id: 'doc-3',
-    name: 'Dr. Siddharth Mukherjee',
-    specialty: 'Consultant - Minimally Invasive & Robotic Surgery',
-    image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=800&q=85',
-  },
-  {
-    id: 'doc-4',
-    name: 'Dr. Radhika Iyer',
-    specialty: 'Consultant - Obstetrics, Gynecology & Women\'s Health',
-    image: 'https://images.unsplash.com/photo-1651008376811-b90baee60c1f?auto=format&fit=crop&w=800&q=85',
-  },
-];
+const TOP_DOCTORS: DoctorItem[] = ['doc-2', 'doc-6', 'doc-3', 'doc-4'].map(id => {
+  const doctor = doctors.find(item => item.id === id)!;
+  return { id: doctor.id, name: doctor.name, specialty: doctor.title, image: doctor.image };
+});
 
 interface LightDoctorsGridSectionProps {
   onBookDoctor?: (doctorId?: string) => void;
+  onViewDoctor?: (doctorId: string) => void;
   onViewAll?: () => void;
 }
 
 export const LightDoctorsGridSection: React.FC<LightDoctorsGridSectionProps> = ({
   onBookDoctor,
+  onViewDoctor,
   onViewAll,
 }) => {
   return (
     <section
       className="w-full bg-[#f2f6ee] py-20 sm:py-28 [font-family:Family,_-apple-system,_'system-ui',_'Segoe_UI',_Helvetica,_'Apple_Color_Emoji',_Arial,_sans-serif]"
       id="doctors"
-      aria-label="Top Specialists at Avocado Health"
+      aria-label="Top Specialists at Sri Lakshmi Hospital"
     >
       <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16">
         {/* ── Section Header matching media_1789993820491.png ── */}
@@ -85,19 +66,19 @@ export const LightDoctorsGridSection: React.FC<LightDoctorsGridSectionProps> = (
             >
               <div>
                 {/* Doctor Portrait on clean light background */}
-                <div className="relative w-full aspect-[4/5] rounded-2xl overflow-hidden bg-[#e2e9de] mb-4.5 transition-transform duration-300 group-hover:-translate-y-1">
+                <button type="button" onClick={() => onViewDoctor?.(doctor.id)} aria-label={`View ${doctor.name}'s profile`} className="relative block w-full aspect-[4/5] rounded-2xl overflow-hidden bg-[#e2e9de] mb-4.5 transition-transform duration-300 group-hover:-translate-y-1 cursor-pointer">
                   <img
                     src={doctor.image}
-                    alt={doctor.name}
+                    alt=""
                     className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
                   />
                   {/* Subtle vignette for crisp clean studio feel */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none" />
-                </div>
+                </button>
 
                 {/* Doctor Name */}
                 <h3 className="text-lg sm:text-xl font-medium tracking-tight text-[#17372b] mb-1">
-                  {doctor.name}
+                  <button type="button" onClick={() => onViewDoctor?.(doctor.id)} className="text-left hover:text-[#24553c]">{doctor.name}</button>
                 </h3>
 
                 {/* Specialty */}

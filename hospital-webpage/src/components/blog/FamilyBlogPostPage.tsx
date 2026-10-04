@@ -9,7 +9,7 @@ interface FamilyBlogPostPageProps {
 }
 
 export const FamilyBlogPostPage: React.FC<FamilyBlogPostPageProps> = ({
-  postId = 'fragmented-healthcare-problem',
+  postId = 'before-your-first-specialist-visit',
   onBackToBlog,
   onBackToHome,
 }) => {
@@ -18,6 +18,7 @@ export const FamilyBlogPostPage: React.FC<FamilyBlogPostPageProps> = ({
 
   const post: BlogPost =
     BLOG_POSTS.find((p) => p.id === postId) || BLOG_POSTS[0];
+  const pageUrl = typeof window === 'undefined' ? `/?page=blog-post&id=${post.id}` : new URL(`/?page=blog-post&id=${post.id}`, window.location.origin).href;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -35,7 +36,7 @@ export const FamilyBlogPostPage: React.FC<FamilyBlogPostPageProps> = ({
   };
 
   return (
-    <div className="bg-[#fcfbf9] text-[#121212] [font-family:-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,Helvetica,Arial,sans-serif]">
+    <div className="bg-[#fcfbf9] text-[#121212]">
 
       {/* Article Container matching layout 1:1 */}
       <main className="max-w-[820px] mx-auto px-6 pt-14 pb-24">
@@ -49,7 +50,7 @@ export const FamilyBlogPostPage: React.FC<FamilyBlogPostPageProps> = ({
 
         {/* Article Meta Header */}
         <div className="text-[14px] text-stone-500 font-normal mb-4 select-none">
-          {post.date} by <span className="text-stone-900 font-medium">{post.author}</span> / {post.tags.join(', ')}
+          Editorial draft · {post.readingMinutes} min read / {post.tags.join(', ')}
         </div>
         <p className="mb-7 border-l-2 border-[#6b9876] pl-4 text-sm text-[#4f6756]">Draft article. This article has not been medically reviewed yet.</p>
 
@@ -82,7 +83,7 @@ export const FamilyBlogPostPage: React.FC<FamilyBlogPostPageProps> = ({
         {/* Divider */}
         <hr className="my-14 border-stone-200" />
 
-        {/* Share & About Sections (Matching layout 1:1 with authentic clinic info) */}
+        {/* Share and reading tools */}
         <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-10 sm:gap-14 pt-2">
           {/* Left Column: Share Article & Resources */}
           <div className="flex flex-col gap-8">
@@ -94,7 +95,7 @@ export const FamilyBlogPostPage: React.FC<FamilyBlogPostPageProps> = ({
               <div className="flex items-center gap-3 text-stone-600">
                 {/* Facebook */}
                 <a
-                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
+                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`}
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-stone-950 transition"
@@ -107,7 +108,7 @@ export const FamilyBlogPostPage: React.FC<FamilyBlogPostPageProps> = ({
 
                 {/* X */}
                 <a
-                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(window.location.href)}`}
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(pageUrl)}`}
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-stone-950 transition"
@@ -120,7 +121,7 @@ export const FamilyBlogPostPage: React.FC<FamilyBlogPostPageProps> = ({
 
                 {/* Mail */}
                 <a
-                  href={`mailto:?subject=${encodeURIComponent(post.title)}&body=${encodeURIComponent(window.location.href)}`}
+                  href={`mailto:?subject=${encodeURIComponent(post.title)}&body=${encodeURIComponent(pageUrl)}`}
                   className="hover:text-stone-950 transition"
                   aria-label="Share by Email"
                 >
@@ -158,24 +159,17 @@ export const FamilyBlogPostPage: React.FC<FamilyBlogPostPageProps> = ({
             </div>
           </div>
 
-          {/* Right Column: About Avocado Health & About Clinical Network */}
+          {/* Right Column: more reading */}
           <div className="flex flex-col gap-6">
             <div>
               <h4 className="text-[14px] font-bold text-stone-900 mb-2">
-                About Avocado Health
+                Read next
               </h4>
-              <p className="text-[14px] text-stone-600 leading-relaxed">
-                Avocado Health is Bengaluru’s premier multispecialty clinical network, combining state-of-the-art diagnostic laboratories, day-surgery suites, and proactive family physician memberships across Indiranagar, Koramangala, Whitefield, and HSR Layout.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="text-[14px] font-bold text-stone-900 mb-2">
-                About Avocado Care Network
-              </h4>
-              <p className="text-[14px] text-stone-600 leading-relaxed">
-                Founded by leading cardiologists and health technologists, Avocado Care Network operates NABH-accredited outpatient centers, automated pathology processing, and emergency pediatric rapid-response units. Our mission is patient-centered healthcare delivered with transparency and dignity.
-              </p>
+              <ul className="space-y-3">
+                {BLOG_POSTS.filter(item => item.id !== post.id).slice(0, 3).map(item => (
+                  <li key={item.id}><a className="text-[15px] text-[#285a3c] underline underline-offset-3" href={`/?page=blog-post&id=${item.id}`}>{item.title}</a></li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
@@ -183,24 +177,16 @@ export const FamilyBlogPostPage: React.FC<FamilyBlogPostPageProps> = ({
         {/* Divider */}
         <hr className="my-14 border-stone-200" />
 
-        {/* Bottom Banner: "Want to stay updated? Stay Updated >" */}
+        {/* Honest draft status */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 py-4">
           <div className="max-w-[480px]">
             <h3 className="text-xl sm:text-2xl font-bold text-stone-950 mb-2">
-              Want to stay updated on family health?
+              About these guides
             </h3>
             <p className="text-[14px] sm:text-[15px] text-stone-600 leading-relaxed">
-              Medical science and wellness guidelines are constantly evolving. Subscribe to our monthly clinical health dispatch and preventative care research.
+              These are draft editorial articles. The clinic should assign an accountable author, complete clinical review where needed, and add a publication date before making them searchable.
             </p>
           </div>
-
-          <button
-            onClick={() => alert('Thank you for subscribing to Avocado Health Medical Dispatch!')}
-            className="inline-flex items-center gap-2 bg-black hover:bg-stone-800 text-white font-medium text-[14px] px-5 py-2.5 rounded-full transition shadow-xs shrink-0 cursor-pointer"
-          >
-            <span>Subscribe to Dispatch</span>
-            <span className="text-xs">&gt;</span>
-          </button>
         </div>
 
         {/* Return to hospital link */}
@@ -211,7 +197,7 @@ export const FamilyBlogPostPage: React.FC<FamilyBlogPostPageProps> = ({
           >
             <ArrowLeft className="size-4" /> Back to Hospital Home
           </button>
-          <span>&copy; {new Date().getFullYear()} Avocado Health, Inc. Bengaluru, Karnataka.</span>
+          <span>Sri Lakshmi Hospital</span>
         </div>
       </main>
     </div>

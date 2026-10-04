@@ -1,0 +1,26 @@
+import { test, expect, openBooking, verify, book, timeButtons, control, type Snapshot } from './fixtures';
+test('C1/C2: reschedule changes saved time; cancellation releases it across reloads', async ({ page, clinic }) => {
+  await openBooking(page, clinic);
+  await verify(page);
+  const original = await book(page);
+  await page.getByRole('button', { name: 'Reschedule', exact: true }).click();
+  await page.getByLabel('Date', { exact: true }).fill(clinic.next_day);
+  await timeButtons(page).first().click();
+  await page.getByRole('button', { name: 'Confirm replacement', exact: true }).click();
+  await expect(page.getByText('Test booking saved', { exact: true })).toBeVisible();
+  const moved = (await control<Snapshot>('snapshot')).appointments[0];
+  expect(moved.id).toBe(original.id);
+  expect(moved.starts_at).not.toBe(original.starts_at);
+  expect(moved.starts_at.slice(0, 10)).toBe(clinic.next_day);
+  await page.getByRole('button', { name: 'Cancel visit', exact: true }).click();
+  await page.getByRole('button', { name: 'Keep current state' }).click();
+  expect((await control<Snapshot>('snapshot')).appointments[0].status).toBe('confirmed');
+  await page.getByRole('button', { name: 'Cancel visit', exact: true }).click();
+  await page.getByRole('button', { name: 'Confirm', exact: true }).click();
+  await expect(page.getByText('Visit cancelled. Its time is available again.')).toBeVisible();
+  await page.reload();
+  await expect(page.getByText(/Dr. Vikram Rao · cancelled/)).toBeVisible();
+  const cancelled = (await control<Snapshot>('snapshot')).appointments[0];
+  expect(cancelled.status).toBe('cancelled');
+  expect(cancelled.reservation_status).toBe('released');
+});

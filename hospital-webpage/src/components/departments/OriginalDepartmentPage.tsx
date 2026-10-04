@@ -33,7 +33,8 @@ interface OriginalDepartmentPageProps {
   onSelectDepartment: (deptId: string) => void;
   onBookDoctor: (doctorId: string, prefillReason?: string) => void;
   onOpenBooking: () => void;
-  onOpenLogin: () => void;
+  onOpenLogin?: () => void;
+  onOpenLegal?: (docId?: string) => void;
   user: { name: string; identifier: string } | null;
 }
 
@@ -46,6 +47,7 @@ export const OriginalDepartmentPage: React.FC<OriginalDepartmentPageProps> = ({
   onBookDoctor,
   onOpenBooking,
   onOpenLogin,
+  onOpenLegal,
   user,
 }) => {
   const currentDept =
@@ -131,7 +133,7 @@ export const OriginalDepartmentPage: React.FC<OriginalDepartmentPageProps> = ({
                   <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-neutral-600 pt-1">
                     <span className="flex items-center gap-1.5 text-[#154734]">
                       <CheckCircle2 className="size-4" />
-                      Zero waiting triage guarantee
+                      Contact the hospital for consultation times
                     </span>
                     <span className="flex items-center gap-1.5 text-[#154734]">
                       <ShieldCheck className="size-4" />
@@ -281,11 +283,11 @@ export const OriginalDepartmentPage: React.FC<OriginalDepartmentPageProps> = ({
                   </div>
                   <div className="flex items-center gap-2">
                     <MapPin className="size-3.5 text-neutral-400" />
-                    <span>Indiranagar • Koramangala • Whitefield</span>
+                    <span>KR Puram • Kaggadasapura • Koramangala</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <PhoneCall className="size-3.5 text-neutral-400" />
-                    <span>Emergency Hotline: 080 4968 2800</span>
+                    <span>Emergency Hotline: 99017 11716</span>
                   </div>
                 </div>
 
@@ -435,7 +437,7 @@ export const OriginalDepartmentPage: React.FC<OriginalDepartmentPageProps> = ({
              ════════════════════════════════════════════════════════════════ */}
           <section className="space-y-4 pt-6">
             <h3 className="text-lg font-bold text-neutral-900">
-              Other Specialized Departments at Avocado
+              Other Specialized Departments at Sri Lakshmi
             </h3>
             <div className="flex flex-wrap gap-2">
               {departments
@@ -462,7 +464,7 @@ export const OriginalDepartmentPage: React.FC<OriginalDepartmentPageProps> = ({
       {/* Footer */}
       <Footer
         onOpenBooking={onOpenBooking}
-        onOpenLegal={() => {}}
+        onOpenLegal={onOpenLegal}
       />
     </div>
   );

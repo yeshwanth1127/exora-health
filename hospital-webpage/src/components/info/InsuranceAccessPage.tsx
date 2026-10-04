@@ -1,10 +1,11 @@
 import { ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { CashlessGuide } from './CashlessGuide';
 
 interface Props {
   user: { name: string; identifier: string } | null;
   onBackToHome: () => void;
-  onOpenLogin: () => void;
+  onOpenLogin?: () => void;
   onViewPricing: () => void;
 }
 
@@ -14,10 +15,11 @@ export function InsuranceAccessPage({ user, onBackToHome, onOpenLogin, onViewPri
     <section className="mx-auto grid max-w-[1240px] gap-12 px-5 pb-20 pt-14 sm:px-10 lg:grid-cols-[1fr_.82fr] lg:items-center lg:gap-20 lg:px-14 lg:pb-28 lg:pt-20">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[.2em] text-[#67846a]">Insurance & care</p>
-        <h1 className="mt-6 max-w-[670px] text-[clamp(3.5rem,6.3vw,6.4rem)] font-medium leading-[.99] tracking-[-.06em]">Start with your account.</h1>
-        <p className="mt-7 max-w-xl text-lg leading-relaxed text-[#5c6e60]">Log in to continue to the insurance area. You can also review general pricing information before you book.</p>
+        <h1 className="mt-6 max-w-[670px] text-[clamp(3.5rem,6.3vw,6.4rem)] font-medium leading-[.99] tracking-[-.06em]">Cashless care, explained.</h1>
+        <p className="mt-7 max-w-xl text-lg leading-relaxed text-[#5c6e60]">Understand how insurance approvals, paperwork and settlement work before you plan a hospital stay. Our insurance desk can help you check your cover and expected costs.</p>
         <div className="mt-9 flex flex-wrap items-center gap-6">
-          <button onClick={onOpenLogin} className="inline-flex min-h-12 items-center gap-3 bg-[#1f5037] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#153d2a] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#1f5037]">{user ? 'Open account login' : 'Log in to continue'} <ArrowRight size={17} /></button>
+          {onOpenLogin ? <button onClick={onOpenLogin} className="inline-flex min-h-12 items-center gap-3 bg-[#1f5037] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#153d2a] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#1f5037]">{user ? 'Open account login' : 'Log in to continue'} <ArrowRight size={17} /></button>
+            : <a href="tel:+919901711716" className="inline-flex min-h-12 items-center gap-3 bg-[#1f5037] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#153d2a] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#1f5037]">Call reception <ArrowRight size={17} /></a>}
           <button onClick={onViewPricing} className="border-b border-[#315b40] pb-1 text-sm font-semibold hover:text-[#5c8663] focus-visible:outline-2 focus-visible:outline-offset-4">View pricing information</button>
         </div>
       </div>
@@ -28,6 +30,7 @@ export function InsuranceAccessPage({ user, onBackToHome, onOpenLogin, onViewPri
         <div className="mt-8 border-t border-[#dce5da] pt-6"><p className="text-xs font-semibold uppercase tracking-[.15em] text-[#748c78]">Have these ready</p><ul className="mt-4 space-y-3 text-sm text-[#496050]"><li>Insurer and policy information</li><li>The service or consultation you need</li><li>Any referral or prior report you have</li></ul></div>
       </aside>
     </section>
-    <div className="border-t border-[#dce5da] bg-[#eef3eb]"><div className="mx-auto flex max-w-[1240px] flex-col gap-4 px-5 py-7 text-sm text-[#5a705f] sm:flex-row sm:items-center sm:justify-between sm:px-10 lg:px-14"><p>Online insurance eligibility is not connected in this preview.</p><button onClick={onBackToHome} className="inline-flex items-center gap-2 self-start font-semibold text-[#29573b] hover:underline"><ArrowLeft size={16} /> Back to home</button></div></div>
+    <CashlessGuide />
+    <div className="border-t border-[#dce5da] bg-[#eef3eb]"><div className="mx-auto flex max-w-[1240px] flex-col gap-4 px-5 py-7 text-sm text-[#5a705f] sm:flex-row sm:items-center sm:justify-between sm:px-10 lg:px-14"><p>Online insurance eligibility checks are not available yet.</p><button onClick={onBackToHome} className="inline-flex items-center gap-2 self-start font-semibold text-[#29573b] hover:underline"><ArrowLeft size={16} /> Back to home</button></div></div>
   </div>;
 }

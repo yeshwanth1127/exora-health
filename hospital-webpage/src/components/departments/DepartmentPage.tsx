@@ -1,8 +1,16 @@
-import { ArrowRight, ArrowUpRight, MapPin, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  MapPin,
+  Sparkles,
+  ArrowUpRight,
+  ArrowRight,
+} from 'lucide-react';
 import { departments } from '../../data/departments';
-import { departmentPresentation } from '../../data/departmentPresentation';
-import { departmentEditorial } from '../../data/departmentEditorial';
 import { doctors } from '../../data/doctors';
+import { getDepartmentTiaContent } from '../../data/departmentTiaData';
 import type { Doctor } from '../../types';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 
@@ -14,74 +22,554 @@ interface Props {
   onSelectDepartment: (id: string) => void;
   onViewDoctor: (id: string) => void;
   onBookDoctor: (id: string, reason?: string) => void;
-  onOpenBooking: () => void;
+  onOpenBooking: (placement?: string) => void;
 }
 
-const shell = 'mx-auto max-w-[1320px] px-5 sm:px-10 lg:px-14';
+export function DepartmentPage({
+  departmentId,
+  aiRecommendation,
+  onBackToHome,
+  onBackToDepartments,
+  onSelectDepartment,
+  onViewDoctor,
+  onBookDoctor,
+  onOpenBooking,
+}: Props) {
+  const department = departments.find((d) => d.id === departmentId) || departments[0] || {
+    id: departmentId || 'general-medicine',
+    name: 'Clinical Care',
+    description: 'Comprehensive medical specialties and personalized patient care.',
+  };
+  const team = doctors.filter((d) => d.departmentId === department.id);
+  const content = getDepartmentTiaContent(department.id);
 
-export function DepartmentPage({ departmentId, aiRecommendation, onBackToHome, onBackToDepartments, onSelectDepartment, onViewDoctor, onBookDoctor, onOpenBooking }: Props) {
-  const department = departments.find(d => d.id === departmentId) || departments[0];
-  const presentation = departmentPresentation[department.id];
-  const editorial = departmentEditorial[department.id];
-  const team = doctors.filter(d => d.departmentId === department.id);
-  const index = departments.findIndex(d => d.id === department.id) + 1;
-  const related = departments.filter(d => d.id !== department.id).slice(0, 3);
+  // Interactive Symptom Carousel State with defensive defaults
+  const slides = Array.isArray(content?.symptoms?.slides) ? content.symptoms.slides : [];
+  const totalSlides = slides.length;
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+  const activeSlide = slides[activeSlideIndex] || slides[0] || {
+    title: department?.name || 'Comprehensive Care',
+    description: 'Expert, compassionate care tailored to your specific clinical needs.',
+    image: '',
+    imageAlt: '',
+  };
 
-  return <div className="bg-[#fbfaf6] text-[#203a2c]">
-    <div className={`${shell} pt-7`}><Breadcrumbs items={[{ label: 'Home', onClick: onBackToHome }, { label: 'Specialties', onClick: onBackToDepartments }, { label: department.name }]} /></div>
+  useEffect(() => setActiveSlideIndex(0), [department.id]);
 
-    {aiRecommendation && <section className={`${shell} pt-7`}>
-      <div className="flex flex-col gap-5 border-l-4 border-[#547761] bg-[#eaf0e8] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7">
-        <div className="max-w-3xl"><p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.13em] text-[#4b7458]"><Sparkles size={15} /> Your care search</p><h2 className="mt-2 text-xl font-semibold">A possible place to start for “{aiRecommendation.query}”</h2><p className="mt-2 text-sm leading-relaxed text-[#566e5d]">{aiRecommendation.clinicalReasoning}</p></div>
-        <button onClick={() => onViewDoctor(aiRecommendation.matchedDoctor.id)} className="inline-flex shrink-0 items-center gap-2 self-start border-b border-[#1e4a34] pb-1 text-sm font-semibold hover:text-[#467559] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1e4a34]">Meet {aiRecommendation.matchedDoctor.name} <ArrowUpRight size={16} /></button>
+  const handlePrevSlide = () => {
+    if (totalSlides <= 1) return;
+    setActiveSlideIndex((prev) => (prev === 0 ? totalSlides - 1 : prev - 1));
+  };
+
+  const handleNextSlide = () => {
+    if (totalSlides <= 1) return;
+    setActiveSlideIndex((prev) => (prev === totalSlides - 1 ? 0 : prev + 1));
+  };
+
+  const departmentIndex = Math.max(0, departments.findIndex((d) => d.id === department.id));
+  const related = departments.length > 0
+    ? Array.from({ length: Math.min(4, departments.length - 1) }, (_, offset) => departments[(departmentIndex + offset + 1) % departments.length])
+    : [];
+
+  return (
+    <div className="min-h-screen bg-[#FBFAF6] text-[#17372B] selection:bg-[#24553C]/20 selection:text-[#24553C]">
+      {/* ── BREADCRUMBS BAR ── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-2">
+        <Breadcrumbs
+          items={[
+            { label: 'Home', onClick: onBackToHome },
+            { label: 'Specialties', onClick: onBackToDepartments },
+            { label: department.name },
+          ]}
+        />
       </div>
-    </section>}
 
-    <section className={`${shell} pb-16 pt-10 lg:pb-24 lg:pt-14`}>
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,.92fr)] lg:gap-12">
-        <div className="flex flex-col justify-between border-t border-[#bdcabd] pt-7 lg:pb-5">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[.2em] text-[#55735d]">Specialty {String(index).padStart(2, '0')} / {String(departments.length).padStart(2, '0')}</p>
-            <h1 className="mt-8 max-w-[740px] text-[clamp(3.25rem,6.8vw,7rem)] font-medium leading-[.98] tracking-[-.065em] [text-wrap:balance]">{department.name}</h1>
-            <p className="mt-7 max-w-[610px] text-lg leading-[1.65] text-[#536458] sm:text-xl">{editorial.intro}</p>
-          </div>
-          <div className="mt-9 flex flex-wrap items-center gap-x-7 gap-y-5">
-            <button onClick={onOpenBooking} className="inline-flex min-h-12 items-center gap-3 rounded-sm bg-[#1f5037] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#153d2a] active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#1f5037]">Request an appointment <ArrowUpRight size={17} /></button>
-            <a href="#care-team" className="inline-flex items-center gap-2 border-b border-[#376347] pb-1 text-sm font-semibold hover:text-[#4d8059] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1f5037]">Find a specialist <ArrowRight size={16} /></a>
+      {/* ── AI RECOMMENDATION BANNER (If referred from AI search) ── */}
+      {aiRecommendation && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white/90 border border-[#24553C]/30 rounded-2xl shadow-xs">
+            <div className="space-y-1">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#24553C]">
+                <Sparkles className="size-3.5" /> AI Recommended Care
+              </span>
+              <p className="text-sm font-semibold text-[#17372B]">
+                Matched for "{aiRecommendation.query}": {aiRecommendation.clinicalReasoning}
+              </p>
+            </div>
+            <button
+              onClick={() => onViewDoctor(aiRecommendation.matchedDoctor.id)}
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-[#24553C] hover:underline shrink-0"
+            >
+              Meet {aiRecommendation.matchedDoctor.name} <ArrowUpRight className="size-4" />
+            </button>
           </div>
         </div>
-        <figure className="relative min-h-[330px] overflow-hidden bg-[#e5ebe2] sm:min-h-[470px] lg:min-h-[560px]" style={{ backgroundColor: presentation.tint }}>
-          <img src={presentation.image} alt={presentation.imageAlt} className="h-full w-full object-cover" />
-          <figcaption className="absolute bottom-0 left-0 max-w-[85%] bg-[#fbfaf6] px-5 py-4 text-xs font-medium leading-relaxed text-[#4f6656] sm:px-7">{presentation.eyebrow} <span className="mx-2 text-[#a2b5a4]">/</span> Illustrative photo</figcaption>
-        </figure>
-      </div>
-    </section>
+      )}
 
-    <nav aria-label={`${department.name} sections`} className="border-y border-[#d4ddd1] bg-[#f3f5ef]"><div className={`${shell} flex gap-7 overflow-x-auto whitespace-nowrap py-4 text-sm font-semibold text-[#496451] sm:gap-10`}><a href="#when-to-visit" className="hover:text-[#173f2b] focus-visible:outline-2">When to visit</a><a href="#specialty-services" className="hover:text-[#173f2b] focus-visible:outline-2">Services</a><a href="#care-team" className="hover:text-[#173f2b] focus-visible:outline-2">Care team</a><a href="#your-visit" className="hover:text-[#173f2b] focus-visible:outline-2">Your visit</a></div></nav>
+      {/* ── 1. HERO SECTION (1:1 with media_1790783755327.png) ── */}
+      <section className="relative overflow-hidden pt-8 pb-16 sm:py-16 lg:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+            {/* Left Column: Editorial Headline, 3 Checkmark Bullets, Dual CTAs */}
+            <div className="lg:col-span-7 space-y-7">
+              <h1 className="text-3xl sm:text-4xl lg:text-[46px] font-medium tracking-tight text-[#17372B] leading-[1.14]">
+                {content.hero.title}
+              </h1>
 
-    <section id="when-to-visit" className={`${shell} scroll-mt-28 grid gap-10 py-20 lg:grid-cols-[.7fr_1.3fr] lg:gap-24 lg:py-28`}>
-      <div><p className="text-xs font-semibold uppercase tracking-[.2em] text-[#6b8b70]">01 / When to visit</p><h2 className="mt-5 max-w-sm text-4xl font-medium leading-[1.08] tracking-[-.045em] sm:text-5xl">What brings people here</h2><p className="mt-6 max-w-sm leading-relaxed text-[#617164]">You do not need to have a diagnosis before you book. These are some reasons to begin with this team.</p></div>
-      <div className="border-t border-[#aabcae]">{editorial.concerns.map((concern, i) => <div key={concern} className="grid grid-cols-[2.5rem_1fr] gap-4 border-b border-[#d1dcd0] py-5 sm:py-7"><span className="pt-1 text-xs font-semibold tabular-nums text-[#849d88]">0{i + 1}</span><p className="text-xl font-medium leading-snug tracking-[-.025em] sm:text-2xl">{concern}</p></div>)}</div>
-    </section>
+              {/* Three care highlights */}
+              <div className="space-y-3.5 pt-1">
+                {content.hero.bullets.map((bullet, idx) => (
+                  <div key={idx} className="flex items-start gap-3 text-sm sm:text-base text-[#435B4A] leading-snug">
+                    <div className="size-5 rounded-full bg-[#24553C] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                      <Check className="size-3 stroke-[3]" />
+                    </div>
+                    <span>{bullet}</span>
+                  </div>
+                ))}
+              </div>
 
-    <section id="specialty-services" className="scroll-mt-28 bg-[#eaf0e7] py-20 lg:py-28"><div className={`${shell} grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:gap-24`}>
-      <div><p className="text-xs font-semibold uppercase tracking-[.2em] text-[#56785d]">02 / Care available</p><h2 className="mt-5 max-w-md text-4xl font-medium leading-[1.08] tracking-[-.045em] sm:text-5xl">Services in this specialty</h2><p className="mt-6 max-w-md leading-relaxed text-[#5e7162]">{department.description}</p><p className="mt-5 max-w-md text-sm leading-relaxed text-[#6e7d70]">Your clinician will discuss which services are appropriate for your situation.</p></div>
-      <div className="border-t border-[#9db6a1]">{department.commonProcedures.map(service => <div key={service} className="flex items-center justify-between gap-5 border-b border-[#bfcfc0] py-5 sm:py-6"><h3 className="text-lg font-medium tracking-[-.02em] sm:text-xl">{service}</h3><span aria-hidden="true" className="text-[#6c9173]">↗</span></div>)}<button onClick={onOpenBooking} className="mt-8 inline-flex items-center gap-2 border-b border-[#28583b] pb-1 text-sm font-semibold hover:text-[#4a7b56] focus-visible:outline-2 focus-visible:outline-offset-4">Ask about a service <ArrowUpRight size={16} /></button></div>
-    </div></section>
+              {/* Action Buttons: Coral Pill & Outline Pill */}
+              <div className="flex flex-wrap items-center gap-4 pt-3">
+                <button
+                  onClick={() => onOpenBooking('department_hero')}
+                  className="px-7 py-3.5 rounded-full bg-[#24553C] hover:bg-[#173F2D] text-white font-semibold text-sm shadow-sm transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                >
+                  Book an appointment
+                </button>
+                <a
+                  href="#specialists-section"
+                  className="px-7 py-3.5 rounded-full border border-[#24553C] hover:bg-[#E8F0E5] text-[#17372B] font-semibold text-sm transition-colors cursor-pointer"
+                >
+                  Meet the care team
+                </a>
+              </div>
+            </div>
 
-    <section id="care-team" className={`${shell} scroll-mt-28 py-20 lg:py-28`}>
-      <div className="mb-11 flex flex-col justify-between gap-6 border-b border-[#ccd8ca] pb-8 md:flex-row md:items-end"><div><p className="text-xs font-semibold uppercase tracking-[.2em] text-[#6b8b70]">03 / Your care team</p><h2 className="mt-5 text-4xl font-medium tracking-[-.045em] sm:text-5xl">Meet the specialists</h2></div><p className="max-w-sm text-sm leading-relaxed text-[#647468]">Read about the clinicians and choose who you would like to see.</p></div>
-      {team.length ? <div className="grid gap-7 md:grid-cols-2">{team.map(doctor => <article key={doctor.id} className="group grid overflow-hidden border border-[#d9e2d6] bg-white sm:grid-cols-[38%_1fr]"><div className="aspect-[4/3] overflow-hidden bg-[#e1e9e0] sm:aspect-auto"><img src={doctor.image} alt={doctor.name} loading="lazy" className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.025]" /></div><div className="flex flex-col p-6 sm:p-7"><p className="text-[11px] font-semibold uppercase tracking-[.15em] text-[#6b8b70]">{department.name}</p><h3 className="mt-3 text-2xl font-medium tracking-[-.035em] sm:text-3xl">{doctor.name}</h3><p className="mt-2 text-sm text-[#627467]">{doctor.title}</p><p className="mt-4 flex items-center gap-1.5 text-xs text-[#6d7d71]"><MapPin size={13} /> {doctor.roomNumber.split(', ').slice(1).join(', ') || doctor.roomNumber}</p><div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-3 pt-7"><button onClick={() => onViewDoctor(doctor.id)} className="inline-flex items-center gap-1 border-b border-[#245c3c] pb-1 text-sm font-semibold hover:text-[#4f805c] focus-visible:outline-2 focus-visible:outline-offset-4">View profile <ArrowUpRight size={15} /></button><button onClick={() => onBookDoctor(doctor.id)} className="text-sm font-semibold text-[#55735c] hover:text-[#1f5037] focus-visible:outline-2">Book visit</button></div></div></article>)}</div> : <div className="border-l-4 border-[#b5ccb7] bg-[#f2f5ee] p-8"><p className="text-lg font-medium">We can help you find the right clinician.</p><button onClick={onOpenBooking} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold underline underline-offset-4">Ask about an appointment <ArrowUpRight size={16} /></button></div>}
-    </section>
+            {/* Right Column: Warm Lifestyle Consultation Photo */}
+            <div className="lg:col-span-5">
+              <div className="relative rounded-[32px] overflow-hidden shadow-sm aspect-[4/3] bg-[#E5EEE2] border border-[#DCE7DA]/50">
+                <img
+                  src={content.hero.image}
+                  alt={content.hero.imageAlt}
+                  className="w-full h-full object-cover object-center"
+                  onError={(e) => {
+                    const image = e.currentTarget;
+                    if (!image.src.endsWith('/clients/sri-lakshmi/36f2a4cf-home-page-banner.png')) image.src = '/clients/sri-lakshmi/36f2a4cf-home-page-banner.png';
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
-    <section id="your-visit" className="scroll-mt-28 border-y border-[#d4e1d1] bg-[#f2f5ed] py-20 lg:py-28"><div className={shell}>
-      <div className="grid gap-8 lg:grid-cols-[.85fr_1.15fr] lg:gap-20"><div><p className="text-xs font-semibold uppercase tracking-[.2em] text-[#6b8b70]">04 / Your visit</p><h2 className="mt-5 max-w-md text-4xl font-medium leading-[1.08] tracking-[-.045em] sm:text-5xl">What to expect</h2></div><ol className="border-t border-[#9fb6a2]">{editorial.visit.map((step, i) => <li key={step} className="flex gap-7 border-b border-[#c8d6c8] py-6"><span className="font-medium tabular-nums text-[#6d9275]">0{i + 1}</span><span className="text-lg leading-snug">{step}</span></li>)}</ol></div>
-      <div className="mt-16 grid gap-5 border-t border-[#bccdbb] pt-9 lg:grid-cols-[.85fr_1.15fr] lg:gap-20"><h3 className="text-2xl font-medium tracking-[-.03em]">{editorial.question}</h3><p className="max-w-2xl leading-relaxed text-[#5c6d5f]">{editorial.answer}</p></div>
-    </div></section>
+        {/* Subtle Organic Background Wave Contour */}
+        <div className="w-full overflow-hidden leading-none mt-12 pointer-events-none text-[#E8F0E5]" aria-hidden="true">
+          <svg viewBox="0 0 1440 40" fill="none" className="w-full h-8 sm:h-10 text-current" preserveAspectRatio="none">
+            <path
+              d="M0,20 C320,40 480,0 720,20 C960,40 1200,0 1440,20 L1440,40 L0,40 Z"
+              fill="currentColor"
+            />
+          </svg>
+        </div>
+      </section>
 
-    <section className={`${shell} py-20 lg:py-24`}><div className="flex flex-col gap-6 bg-[#204c36] p-8 text-white sm:p-12 md:flex-row md:items-end md:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-[#b9d4bc]">Ready when you are</p><h2 className="mt-4 max-w-xl text-3xl font-medium leading-tight tracking-[-.035em] sm:text-4xl">Start with a conversation about your care.</h2></div><button onClick={onOpenBooking} className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 self-start bg-[#f7f5ed] px-5 text-sm font-semibold text-[#204c36] hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Request an appointment <ArrowUpRight size={16} /></button></div>
-      <div className="mt-16 flex items-end justify-between gap-6"><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-[#6b8b70]">Explore care</p><h2 className="mt-3 text-3xl font-medium tracking-[-.035em]">Other specialties</h2></div><button onClick={onBackToDepartments} className="hidden border-b border-[#245c3c] pb-1 text-sm font-semibold sm:inline-flex">View all specialties</button></div>
-      <div className="mt-7 grid border-t border-[#d2ded0] md:grid-cols-3">{related.map(d => <button key={d.id} onClick={() => onSelectDepartment(d.id)} className="flex min-h-28 items-end justify-between gap-4 border-b border-[#d2ded0] py-6 text-left text-xl font-medium tracking-[-.025em] hover:text-[#5f9068] focus-visible:outline-2 md:border-r md:px-5 md:first:pl-0 md:last:border-r-0"><span>{d.name}</span><ArrowUpRight size={18} className="shrink-0" /></button>)}</div>
-    </section>
-  </div>;
+      {/* ── 2. SERVICES OFFERED 6-CARD GRID (1:1 with media_1790783755314.png) ── */}
+      <section className="bg-[#E8F0E5] py-16 sm:py-20 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl sm:text-4xl font-medium text-[#17372B] mb-10 text-left leading-tight">
+            {content.services.heading}
+          </h2>
+
+          {/* 3-Column Grid of Clean White Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
+            {content.services.items.map((item, idx) => (
+              <div
+                key={idx}
+                className="bg-white rounded-2xl p-7 sm:p-8 flex flex-col justify-between shadow-2xs hover:shadow-md transition-all duration-300 border border-[#E8EFE6]"
+              >
+                <div>
+                  {/* Category Pill Tag (e.g. Primary Care, Gynecology) */}
+                  <span className="inline-block bg-[#24553C] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-sm uppercase tracking-wider mb-4">
+                    {item.category}
+                  </span>
+
+                  {/* Card Title */}
+                  <h3 className="text-xl font-bold text-[#17372B] leading-snug mb-3">
+                    {item.title}
+                  </h3>
+
+                  {/* Description Paragraph */}
+                  <p className="text-sm leading-relaxed text-[#5D7163] mb-6">
+                    {item.description}
+                  </p>
+                </div>
+
+                {/* Booking action */}
+                <div className="pt-2 border-t border-[#E8EFE6]/60 mt-auto">
+                  <button
+                    onClick={() => onOpenBooking('department_services_grid')}
+                    className="font-bold text-sm text-[#17372B] underline underline-offset-4 hover:text-[#24553C] transition-colors cursor-pointer block text-left"
+                  >
+                    Book appointment
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Wave Divider to Next Section */}
+        <div className="w-full overflow-hidden leading-none mt-16 pointer-events-none text-[#FBFAF6]" aria-hidden="true">
+          <svg viewBox="0 0 1440 40" fill="none" className="w-full h-8 sm:h-10 text-current" preserveAspectRatio="none">
+            <path
+              d="M0,20 C360,0 720,40 1080,10 C1260,-5 1380,25 1440,20 L1440,40 L0,40 Z"
+              fill="currentColor"
+            />
+          </svg>
+        </div>
+      </section>
+
+      {/* ── 3. "SYMPTOMS WE CAN HELP WITH" CAROUSEL (1:1 with media_1790783755319.png) ── */}
+      <section className="py-16 sm:py-20 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl sm:text-4xl font-medium text-[#17372B] mb-8">
+            {content.symptoms.heading}
+          </h2>
+
+          {/* Featured symptom card */}
+          <div className="bg-[#24553C] rounded-3xl overflow-hidden shadow-lg grid grid-cols-1 lg:grid-cols-12 min-h-[380px]">
+            {/* Left content area */}
+            <div className="lg:col-span-7 p-8 sm:p-12 lg:p-14 flex flex-col justify-between text-white">
+              <div>
+                <h3 className="text-3xl sm:text-4xl font-normal text-white mb-4 leading-snug">
+                  {activeSlide.title}
+                </h3>
+                <p className="text-white/85 text-base sm:text-lg leading-relaxed max-w-xl mb-8">
+                  {activeSlide.description}
+                </p>
+
+                {/* CTAs */}
+                <div className="flex flex-wrap items-center gap-4 mb-8">
+                  <button
+                    onClick={() => onOpenBooking('department_symptoms_slider')}
+                    className="px-6 py-2.5 rounded-full bg-[#E8F0E5] hover:bg-white text-[#17372B] font-semibold text-sm shadow-sm transition-colors cursor-pointer"
+                  >
+                    Book appointment
+                  </button>
+                  <a
+                    href="#specialists-section"
+                    className="px-6 py-2.5 rounded-full border border-white/60 hover:bg-white/10 text-white font-semibold text-sm transition-colors cursor-pointer"
+                  >
+                    Learn more
+                  </a>
+                </div>
+              </div>
+
+              {/* Carousel Navigation: Arrow Left, Dots, Arrow Right */}
+              <div className="flex items-center gap-4 pt-4 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={handlePrevSlide}
+                  aria-label="Previous symptom"
+                  className="text-white hover:text-white/80 p-1.5 transition-transform active:scale-90 cursor-pointer"
+                >
+                  <ChevronLeft className="size-5" />
+                </button>
+
+                <div className="flex items-center gap-2">
+                  {content.symptoms.slides.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setActiveSlideIndex(i)}
+                      aria-label={`Go to slide ${i + 1}`}
+                      className={`size-2 rounded-full transition-all cursor-pointer ${
+                        i === activeSlideIndex
+                          ? 'bg-white scale-125'
+                          : 'bg-white/40 hover:bg-white/70'
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleNextSlide}
+                  aria-label="Next symptom"
+                  className="text-white hover:text-white/80 p-1.5 transition-transform active:scale-90 cursor-pointer"
+                >
+                  <ChevronRight className="size-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Right Contextual Photograph */}
+            <div className="lg:col-span-5 relative min-h-[320px] lg:min-h-full h-full bg-[#1D4833] overflow-hidden">
+              <img
+                src={activeSlide.image}
+                alt={activeSlide.imageAlt}
+                className="absolute inset-0 w-full h-full object-cover object-center"
+                onError={(e) => {
+                  const image = e.currentTarget;
+                  if (!image.src.endsWith(content.hero.image)) image.src = content.hero.image;
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 4. "WHY [SPECIALTY] MATTERS" 3-CARD SECTION (1:1 with media_1790783755331.png) ── */}
+      <section className="py-16 sm:py-20 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl sm:text-4xl font-medium text-[#17372B] mb-10 text-left leading-tight">
+            {content.whyMatters.heading}
+          </h2>
+
+          {/* 3 Value Cards with Signature Wavy Zigzag Divider Lines */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-7">
+            {content.whyMatters.pillars.map((pillar, idx) => (
+              <div
+                key={idx}
+                className="bg-[#F4F7F0] sm:bg-white/90 rounded-2xl p-7 sm:p-8 border border-[#DCE7DA]/60 shadow-2xs flex flex-col justify-start"
+              >
+                {/* Bold Heading */}
+                <h3 className="text-xl font-bold text-[#17372B] leading-snug mb-3">
+                  {pillar.title}
+                </h3>
+
+                {/* Signature Wavy Zigzag SVG Divider (media_1790783755331.png) */}
+                <div className="w-full overflow-hidden my-3 text-[#17372B]" aria-hidden="true">
+                  <svg viewBox="0 0 300 12" fill="none" className="w-full h-3">
+                    <path
+                      d="M0,6 Q 7.5,0 15,6 T 30,6 T 45,6 T 60,6 T 75,6 T 90,6 T 105,6 T 120,6 T 135,6 T 150,6 T 165,6 T 180,6 T 195,6 T 210,6 T 225,6 T 240,6 T 255,6 T 270,6 T 285,6 T 300,6"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      fill="none"
+                    />
+                  </svg>
+                </div>
+
+                {/* Empathetic Description */}
+                <p className="text-[#435B4A] text-sm leading-relaxed mt-2">
+                  {pillar.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 5. SPECIALISTS & CARE TEAM SECTION ── */}
+      <section id="specialists-section" className="py-16 sm:py-20 bg-white/70 border-t border-[#DCE7DA]/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#24553C]">
+                Clinical Excellence
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-medium text-[#17372B] mt-1">
+                Meet the {department.name} care team
+              </h2>
+            </div>
+            <button
+              onClick={() => onOpenBooking('department_team_section')}
+              className="text-sm font-semibold text-[#24553C] hover:underline self-start sm:self-auto cursor-pointer"
+            >
+              View all consultation slots &rarr;
+            </button>
+          </div>
+
+          {team.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {team.map((doctor) => (
+                <div
+                  key={doctor.id}
+                  className="bg-white rounded-2xl border border-[#DCE7DA]/70 p-6 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="size-16 rounded-xl overflow-hidden bg-[#EDF3EC] shrink-0 border border-[#DCE7DA]">
+                        <img
+                          src={doctor.image}
+                          alt={doctor.name}
+                          className="w-full h-full object-cover object-top"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-lg text-[#17372B] leading-snug">
+                          {doctor.name}
+                        </h3>
+                        <p className="text-xs text-[#5D7163] line-clamp-1">{doctor.title}</p>
+                        <p className="mt-1 text-xs font-medium text-[#587462]">{department.name}</p>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-[#5D7163] line-clamp-3 leading-relaxed mb-4">
+                      {doctor.bio}
+                    </p>
+
+                    <div className="text-xs text-[#6B7D70] flex items-center gap-1.5 mb-5">
+                      <MapPin className="size-3.5 text-[#859889] shrink-0" />
+                      <span className="truncate">{doctor.roomNumber}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-3 border-t border-[#E8EFE6]">
+                    <button
+                      onClick={() => onViewDoctor(doctor.id)}
+                      className="flex-1 py-2 px-3 rounded-full border border-[#24553C] text-[#17372B] hover:bg-[#E8F0E5] text-xs font-semibold text-center transition-colors cursor-pointer"
+                    >
+                      View profile
+                    </button>
+                    <button
+                      onClick={() => onBookDoctor(doctor.id)}
+                      className="flex-1 py-2 px-3 rounded-full bg-[#24553C] hover:bg-[#173F2D] text-white text-xs font-semibold text-center shadow-2xs transition-colors cursor-pointer"
+                    >
+                      Book visit
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl p-8 border border-[#DCE7DA] text-center space-y-3">
+              <p className="text-[#435B4A] font-medium">
+                Our care coordinators can match you with the ideal specialist in {department.name}.
+              </p>
+              <button
+                onClick={() => onOpenBooking('department_specialists_unmatched')}
+                className="px-6 py-2.5 rounded-full bg-[#24553C] text-white font-semibold text-sm hover:bg-[#173F2D] transition-colors cursor-pointer"
+              >
+                Request an appointment
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── 6. BOOK AN APPOINTMENT ── */}
+      <section className="py-16 sm:py-20 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-[#1F5037] rounded-3xl p-8 sm:p-12 lg:p-14 text-white relative overflow-hidden grid grid-cols-1 lg:grid-cols-12 items-center gap-8 shadow-xl">
+            {/* Left Content */}
+            <div className="lg:col-span-8 z-10 space-y-5">
+              <h2 className="text-3xl sm:text-4xl font-normal text-white leading-snug">
+                {content.cta.heading}
+              </h2>
+              <p className="text-white/85 text-sm sm:text-base leading-relaxed max-w-2xl">
+                {content.cta.description}
+              </p>
+
+              {/* Dual Action Buttons */}
+              <div className="flex flex-wrap items-center gap-4 pt-2">
+                <button
+                  onClick={() => onOpenBooking('department_charcoal_banner')}
+                  className="px-7 py-3 rounded-full bg-[#E8F0E5] hover:bg-white text-[#17372B] font-semibold text-sm shadow-sm transition-colors cursor-pointer"
+                >
+                  Book an appointment
+                </button>
+                <a
+                  href="#specialists-section"
+                  className="px-7 py-3 rounded-full border border-white/60 hover:bg-white/10 text-white font-semibold text-sm transition-colors cursor-pointer"
+                >
+                  Learn more about care
+                </a>
+              </div>
+            </div>
+
+            {/* Right contour line art */}
+            <div className="lg:col-span-4 relative flex justify-center lg:justify-end items-center pointer-events-none select-none">
+              <svg
+                viewBox="0 0 200 240"
+                fill="none"
+                className="w-44 sm:w-56 h-auto stroke-[#A9C9AE] stroke-[2.5] stroke-linecap-round opacity-90"
+              >
+                <path d="M 120,10 C 95,45 85,65 112,95 C 138,125 156,145 120,190 C 88,230 100,238 126,240" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 7. ADDITIONAL RESOURCES (1:1 with media_1790783775609.png) ── */}
+      {content.resources?.articles && content.resources.articles.length > 0 && (
+        <section className="bg-[#E8F0E5] text-[#17372B] py-16 sm:py-20 relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl sm:text-3xl font-medium text-[#17372B] mb-8">
+              {content.resources.heading}
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+              {content.resources.articles.map((article, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white rounded-2xl overflow-hidden border border-[#DCE7DA] hover:border-[#9FBEA4] transition-all flex flex-col justify-between"
+                >
+                  <div className="p-7 sm:p-8 space-y-3">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#24553C]">
+                      {article.tag}
+                    </span>
+                    <h3 className="text-xl font-bold text-[#17372B] leading-snug">
+                      {article.title}
+                    </h3>
+                    <p className="text-sm text-[#5D7163] leading-relaxed pt-1">
+                      {article.snippet}
+                    </p>
+                  </div>
+                  <div className="p-7 sm:p-8 pt-0">
+                    <button
+                      onClick={() => onOpenBooking('department_resources')}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[#24553C] hover:text-[#17372B] transition-colors cursor-pointer"
+                    >
+                      Plan a visit <ArrowRight className="size-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── 8. EXPLORE OTHER SPECIALTIES ── */}
+      <section className="py-16 sm:py-20 bg-[#FBFAF6]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between gap-6 mb-8">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#24553C]">
+                Comprehensive Hospital Network
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-medium text-[#17372B] mt-1">
+                Explore other specialties
+              </h2>
+            </div>
+            <button
+              onClick={onBackToDepartments}
+              className="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-[#17372B] hover:text-[#24553C] transition-colors cursor-pointer"
+            >
+              View all specialties &rarr;
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {related.map((dept) => (
+              <button
+                key={dept.id}
+                onClick={() => onSelectDepartment(dept.id)}
+                className="bg-white rounded-2xl p-5 text-left border border-[#DCE7DA]/60 hover:border-[#9FBEA4] shadow-2xs hover:shadow-sm transition-all group cursor-pointer flex flex-col justify-between h-32"
+              >
+                <span className="font-bold text-sm text-[#17372B] group-hover:text-[#24553C] transition-colors line-clamp-2">
+                  {dept.name}
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs text-[#6B7D70] font-semibold group-hover:text-[#24553C]">
+                  Learn more <ArrowUpRight className="size-3" />
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }

@@ -15,14 +15,14 @@ export function DepartmentsOverviewPage({ onBackToHome, onSelectDepartment, onVi
   const filtered = useMemo(() => departments.filter((department) =>
     `${department.name} ${department.tagline} ${department.commonProcedures.join(' ')}`.toLowerCase().includes(query.trim().toLowerCase())
   ), [query]);
-  const featured = departments[0];
+  const featured = departments.find((department) => department.id === 'general-medicine') || departments[0];
   const presentation = departmentPresentation[featured.id];
 
   return <div className="bg-[#f8f7f2] text-[#17372b]">
     <div className="max-w-[1440px] mx-auto px-5 sm:px-10 lg:px-16 pt-7"><Breadcrumbs items={[{ label: 'Home', onClick: onBackToHome }, { label: 'Departments' }]} /></div>
     <section className="max-w-[1440px] mx-auto px-5 sm:px-10 lg:px-16 pt-16 pb-20 lg:pt-24 lg:pb-28 grid lg:grid-cols-[1.05fr_.95fr] gap-10 lg:gap-16 items-center">
       <div>
-        <p className="text-xs font-bold tracking-[.22em] text-[#4d7657] mb-7">AVOCADO CARE</p>
+        <p className="text-xs font-bold tracking-[.22em] text-[#4d7657] mb-7">SRI LAKSHMI CARE</p>
         <h1 className="max-w-[780px] font-medium text-[clamp(3.5rem,7vw,7.5rem)] leading-[.97] tracking-[-.055em]">Care for all the ways you live.</h1>
         <p className="max-w-xl text-lg sm:text-xl leading-relaxed text-[#53645a] mt-8">From your first question to more specialised support, explore care that meets you where you are.</p>
         <a href="#explore-departments" className="inline-flex items-center gap-3 mt-9 rounded-full bg-[#194d38] px-7 py-4 text-sm font-semibold text-white hover:bg-[#123c2c] transition-colors">Explore departments <ArrowRight size={18} /></a>

@@ -10,7 +10,7 @@
   --clr-6: #171717;
   --clr-16: #e5e2dc;
   --clr-20: #575554;
-  --clr-22: #ff5310;
+  --clr-22: #24553c;
   --clr-23: #fbfaf9;
   --clr-24: #848281;
   --clr-26: #ffffff;
@@ -37,7 +37,12 @@
 @layer base {
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 84px;
+    scroll-padding-top: calc(var(--site-header-offset) + 16px);
+  }
+  @media (min-width: 1280px) {
+    html {
+      scroll-padding-top: calc(var(--site-header-offset) + 16px);
+    }
   }
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -48,4 +53,61 @@
 
 .font-serif-logo {
   font-family: 'Playfair Display', Georgia, serif;
+}
+
+/* shadcn semantic tokens, scoped to the staff desk. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+.staff-ui {
+  --background: #ffffff; --foreground: #202922;
+  --card: #ffffff; --card-foreground: #202922;
+  --popover: #ffffff; --popover-foreground: #202922;
+  --primary: #154734; --primary-foreground: #ffffff;
+  --secondary: #f1f4f2; --secondary-foreground: #283b30;
+  --muted: #f5f7f5; --muted-foreground: #617068;
+  --accent: #edf3ef; --accent-foreground: #154734;
+  --destructive: #b42318; --border: #dfe5e0;
+  --input: #d5ddd7; --ring: #708e7d;
+}
+.staff-ui *, .staff-ui { border-color: var(--border); }
+
+/* Shared fixed-header spacing; mobile navigation opens as a native modal. */
+:root { --site-header-offset: 110px; }
+@media (min-width: 1280px) { :root { --site-header-offset: 118px; } }
+.mobile-navigation { overscroll-behavior: contain; padding-bottom: env(safe-area-inset-bottom); }
+.mobile-navigation::backdrop { background: rgb(23 55 43 / .35); }
+.mobile-navigation summary::-webkit-details-marker { display: none; }
+.mobile-navigation details[open] summary svg { transform: rotate(180deg); }
+.mobile-nav-link { display: flex; width: 100%; min-height: 48px; align-items: center; padding: 8px 0; text-align: left; font-size: 16px; }
+
+@media (max-width: 639px) {
+  html { -webkit-text-size-adjust: 100%; }
+  /* 16px prevents Safari from zooming when a patient focuses a form field. */
+  input:not([type="radio"]):not([type="checkbox"]), select, textarea { font-size: 16px !important; min-width: 0; max-width: 100%; }
+  main h1 { font-size: clamp(2rem, 9vw, 3rem); overflow-wrap: break-word; text-wrap: balance; }
+  main h2:not(.text-xl):not(.text-lg):not(.text-base):not(.text-sm):not(.text-2xl) { font-size: clamp(1.75rem, 7.5vw, 2.5rem); text-wrap: balance; }
+  .mobile-contact-trigger { right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); }
+  /* Give the last footer links room above persistent contact controls. */
+  footer { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }

@@ -18,7 +18,7 @@ const DEPARTMENTS: DepartmentCard[] = [
       <svg className="size-10 text-[#121212]" viewBox="0 0 40 40" fill="none">
         <path
           d="M20 10C17.5 7 13 7.5 11 10.5C9 13.5 10 17 13 20L20 27L27 20C30 17 31 13.5 29 10.5C27 7.5 22.5 7 20 10Z"
-          fill="#FACC15"
+          fill="#B8D5B9"
           stroke="#121212"
           strokeWidth="2.2"
           strokeLinejoin="round"
@@ -37,7 +37,7 @@ const DEPARTMENTS: DepartmentCard[] = [
       <svg className="size-10 text-[#121212]" viewBox="0 0 40 40" fill="none">
         <path
           d="M13 14C13 9 17 6 20 6C23 6 27 9 27 14V17H13V14Z"
-          fill="#FACC15"
+          fill="#B8D5B9"
           stroke="#121212"
           strokeWidth="2.2"
         />
@@ -59,15 +59,15 @@ const DEPARTMENTS: DepartmentCard[] = [
     departmentId: 'gynecology',
     icon: (
       <svg className="size-10 text-[#121212]" viewBox="0 0 40 40" fill="none">
-        <circle cx="11" cy="18" r="3.5" fill="#FACC15" stroke="#121212" strokeWidth="2" />
-        <circle cx="29" cy="18" r="3.5" fill="#FACC15" stroke="#121212" strokeWidth="2" />
+        <circle cx="11" cy="18" r="3.5" fill="#B8D5B9" stroke="#121212" strokeWidth="2" />
+        <circle cx="29" cy="18" r="3.5" fill="#B8D5B9" stroke="#121212" strokeWidth="2" />
         <path
           d="M14.5 18C16.5 15 17.5 12 20 12C22.5 12 23.5 15 25.5 18C27 20 26 26 23 29L20 33L17 29C14 26 13 20 14.5 18Z"
           stroke="#121212"
           strokeWidth="2.2"
           strokeLinejoin="round"
         />
-        <circle cx="20" cy="20" r="2.5" fill="#FACC15" stroke="#121212" strokeWidth="1.5" />
+        <circle cx="20" cy="20" r="2.5" fill="#B8D5B9" stroke="#121212" strokeWidth="1.5" />
       </svg>
     ),
   },
@@ -85,10 +85,10 @@ const DEPARTMENTS: DepartmentCard[] = [
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <circle cx="17" cy="24" r="1.5" fill="#FACC15" />
-        <circle cx="22" cy="22" r="1.5" fill="#FACC15" />
-        <circle cx="20" cy="27" r="1.5" fill="#FACC15" />
-        <circle cx="26" cy="25" r="1.5" fill="#FACC15" />
+        <circle cx="17" cy="24" r="1.5" fill="#B8D5B9" />
+        <circle cx="22" cy="22" r="1.5" fill="#B8D5B9" />
+        <circle cx="20" cy="27" r="1.5" fill="#B8D5B9" />
+        <circle cx="26" cy="25" r="1.5" fill="#B8D5B9" />
       </svg>
     ),
   },
@@ -105,9 +105,9 @@ const DEPARTMENTS: DepartmentCard[] = [
           strokeWidth="2.2"
           strokeLinejoin="round"
         />
-        <circle cx="16" cy="18" r="3" fill="#FACC15" stroke="#121212" strokeWidth="1.5" />
-        <circle cx="24" cy="18" r="3" fill="#FACC15" stroke="#121212" strokeWidth="1.5" />
-        <circle cx="20" cy="25" r="3" fill="#FACC15" stroke="#121212" strokeWidth="1.5" />
+        <circle cx="16" cy="18" r="3" fill="#B8D5B9" stroke="#121212" strokeWidth="1.5" />
+        <circle cx="24" cy="18" r="3" fill="#B8D5B9" stroke="#121212" strokeWidth="1.5" />
+        <circle cx="20" cy="25" r="3" fill="#B8D5B9" stroke="#121212" strokeWidth="1.5" />
       </svg>
     ),
   },
@@ -125,7 +125,7 @@ const DEPARTMENTS: DepartmentCard[] = [
           strokeWidth="2.2"
           strokeLinejoin="round"
         />
-        <circle cx="20" cy="21" r="4.5" fill="#FACC15" stroke="#121212" strokeWidth="2" />
+        <circle cx="20" cy="21" r="4.5" fill="#B8D5B9" stroke="#121212" strokeWidth="2" />
         <circle cx="20" cy="21" r="2" fill="#121212" />
       </svg>
     ),

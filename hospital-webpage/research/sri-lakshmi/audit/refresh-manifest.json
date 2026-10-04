@@ -1,0 +1,72 @@
+[
+  {
+    "url": "https://slsshospitals.com/cardiac-cathlab/",
+    "path": "research/sri-lakshmi/audit/cardiac-cathlab.html.source",
+    "bytes": 211184,
+    "sha256": "83ca7c29a869e4773cd65d17cd454b7d2905680454738d47c0db1b97aea5e412",
+    "title": [
+      "Cardiac Cathlab - SriLakshmi"
+    ],
+    "verificationPage": false
+  },
+  {
+    "url": "https://slsshospitals.com/10-bedded-dialysis/",
+    "path": "research/sri-lakshmi/audit/10-bedded-dialysis.html.source",
+    "bytes": 203735,
+    "sha256": "5bedde90c241b10f96007aed213de1679c2d12992fa4bde0087619492217790e",
+    "title": [
+      "10 Bedded Dialysis - SriLakshmi"
+    ],
+    "verificationPage": false
+  },
+  {
+    "url": "https://slsshospitals.com/radiology/",
+    "path": "research/sri-lakshmi/audit/radiology.html.source",
+    "bytes": 268648,
+    "sha256": "9b2c650609664237ad630df38cab622fbb695fd76e7d1a983ca8f880d3fdb656",
+    "title": [
+      "Radiology - SriLakshmi"
+    ],
+    "verificationPage": false
+  },
+  {
+    "url": "https://slsshospitals.com/patient-care/",
+    "path": "research/sri-lakshmi/audit/patient-care.html.source",
+    "bytes": 175808,
+    "sha256": "0e73c2ba0f5472098ab9954a7f87963b8c9f4a09140bad96a12cc6df97015f10",
+    "title": [
+      "Patient Care - SriLakshmi"
+    ],
+    "verificationPage": false
+  },
+  {
+    "url": "https://slsshospitals.com/privacy-policy/",
+    "path": "research/sri-lakshmi/audit/privacy-policy.html.source",
+    "bytes": 204795,
+    "sha256": "cd54629977237736c366026945dfadb7aed099eb43a05c910f8f8936339fad92",
+    "title": [
+      "Privacy Policy - SriLakshmi"
+    ],
+    "verificationPage": false
+  },
+  {
+    "url": "https://slsshospitals.com/media-news/",
+    "path": "research/sri-lakshmi/audit/media-news.html.source",
+    "bytes": 204660,
+    "sha256": "8a1694982301a6ac54ac3c4e5c74a31394a31a2e87837feda7688adf8fa84b7a",
+    "title": [
+      "Media & News - SriLakshmi"
+    ],
+    "verificationPage": false
+  },
+  {
+    "url": "https://slsshospitals.com/video-gallery/",
+    "path": "research/sri-lakshmi/audit/video-gallery.html.source",
+    "bytes": 190658,
+    "sha256": "5a67745cc7804b627cea9ca42a1525c86d759d23125c28177e3f33534a9b5ead",
+    "title": [
+      "Video Gallery - SriLakshmi"
+    ],
+    "verificationPage": false
+  }
+]

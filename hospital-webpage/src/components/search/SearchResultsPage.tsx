@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { trackSearchUsed, countToBucket } from '../../lib/posthog';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 import {
   ChevronRight,
@@ -14,100 +15,17 @@ import {
   Video,
   X,
   CheckCircle2,
-  Star,
   Award,
   GraduationCap,
   Building2,
   ZoomIn,
 } from 'lucide-react';
 import { doctors } from '../../data/doctors';
-import { branches, physicalBranches } from '../../data/branches';
-import { hospitalInfo } from '../../data/hospitalInfo';
-import { Doctor } from '../../types';
+import { physicalBranches } from '../../data/branches';
 import { INSURANCE_PROVIDERS, CLINIC_LOCATIONS } from '../ai/aiTriageData';
 import { format, addDays } from 'date-fns';
-import { DoctorScheduleProfile } from '../booking/ScheduleAppointmentPage';
-
-// Booking profiles are derived from the shared roster (data/doctors.ts) so search, profile and schedule
-// always show the same doctor as the homepage. Hand-written copy per doctor lives in PROFILE_EXTRAS.
-const DEMO_DATES = ['2026-10-30', '2026-10-31', '2026-11-01', '2026-11-02', '2026-11-03'];
-
-const FACILITY_PHOTOS = [
-  { url: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800', title: 'Clinic Reception & Check-in' },
-  { url: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=800', title: 'Consultation & Examination Room' },
-  { url: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=800', title: 'Diagnostics & Procedure Suite' },
-];
-
-const PROFILE_EXTRAS: Record<string, Partial<DoctorScheduleProfile>> = {
-  'doc-1': {
-    bedsideManner: 'Calm, reassuring communicator who takes time to diagram cardiac anatomy and demystify surgical and non-surgical options for patients and their families.',
-    decisionChips: ['< 15 min wait time', 'Advanced cath lab on-site', 'Emergency direct team access', 'Speaks English, Hindi & Telugu'],
-    nicheExpertise: 'Complex coronary angioplasty, radial catheterization, preventive cardiology & heart failure surveillance',
-    clinicalInterests: ['Interventional Cardiology', 'Coronary Angioplasty', 'Structural Heart Health'],
-  },
-  'doc-2': {
-    bedsideManner: 'Warm and attentive clinician focused on whole-person preventive health and sustainable lifestyle changes rather than quick prescription fixes.',
-    decisionChips: ['< 10 min wait time', 'Metabolic & heart focus', 'Direct patient messaging portal', 'Speaks English & Hindi'],
-    nicheExpertise: 'Cardiometabolic risk assessments, hypertension management, preventive executive wellness exams',
-    clinicalInterests: ['Preventive Care', 'Metabolic Health', 'Executive Health Exams'],
-  },
-  'doc-4': {
-    bedsideManner: 'Highly compassionate, attentive practitioner who builds lifelong trust with patients. Takes ample time during prenatal consults to explain each phase of maternity care.',
-    decisionChips: ['< 10 min wait time', 'Private birth suites', 'High-risk OB certified', 'Speaks English, Hindi & Marathi'],
-    nicheExpertise: 'High-risk pregnancy surveillance, complex PCOS management, minimally invasive laparoscopy',
-    clinicalInterests: ["Women's Health", 'Prenatal Care', 'Minimally Invasive Gynecologic Surgery'],
-  },
-  'doc-6': {
-    bedsideManner: 'Unhurried and judgment-free — patients note he explains the cause of every flare and leaves them with a clear, simple routine.',
-    decisionChips: ['< 10 min wait time', 'Laser suite on-site', 'Comprehensive patch testing', 'Speaks English, Malayalam & Kannada'],
-    nicheExpertise: 'Stubborn acne & acne scarring, eczema and psoriasis flares, pigmentation & contact allergy patch panels',
-    clinicalInterests: ['Acne & Scarring', 'Eczema & Psoriasis', 'Pigmentation', 'Laser Dermatology'],
-  },
-  'doc-8': {
-    bedsideManner: 'Beloved by toddlers and adolescents alike for his fun, gentle exam style. Parents appreciate his prompt follow-ups and patient answers to new-parent concerns.',
-    decisionChips: ['< 5 min wait time', 'Same-day sick child visits', 'Direct pediatrician SMS', 'Speaks English & Gujarati'],
-    nicheExpertise: 'Childhood asthma action plans, infant developmental milestones, pediatric allergy care',
-    clinicalInterests: ['General Pediatrics', 'Childhood Asthma', 'Developmental Milestones'],
-  },
-};
-
-function toProfile(d: Doctor): DoctorScheduleProfile {
-  const branch = branches.find((b) => d.roomNumber.includes(b.name));
-  // demo calendar: the doctor's usual slots on the days they consult
-  const availableSlots = Object.fromEntries(
-    DEMO_DATES.map((iso) => {
-      const day = format(new Date(`${iso}T00:00:00`), 'EEE');
-      return [iso, d.availableDays.includes(day) ? d.timeSlots : []];
-    })
-  );
-  const firstOpen = DEMO_DATES.find((iso) => availableSlots[iso].length > 0);
-  return {
-    id: d.id,
-    name: d.name,
-    credentials: d.qualifications[0].replace(/\s*\(.*?\)/g, ''),
-    specialty: d.title,
-    photo: d.image.replace('w=600', 'w=800'),
-    rating: d.rating,
-    reviewCount: d.reviewCount,
-    boardCertified: d.qualifications.slice(1).join(' • ') || d.qualifications[0],
-    pedigree: `${d.qualifications[0]} • ${d.experienceYears}+ Yrs Clinical Practice`,
-    hospitalAffiliation: `${hospitalInfo.shortName} • ${d.departmentName}`,
-    practiceName: branch?.name ?? hospitalInfo.shortName,
-    addressLine1: d.roomNumber.split(',')[0],
-    addressLine2: `${branch?.area ?? 'Indiranagar'}, Bengaluru`,
-    phone: hospitalInfo.phone,
-    offersVideo: d.acceptsVirtual,
-    nextVisitText: firstOpen ? format(new Date(`${firstOpen}T00:00:00`), 'EEE MMM d') : undefined,
-    availableSlots,
-    bio: d.bio,
-    education: d.qualifications,
-    clinicalInterests: [d.departmentName],
-    facilityPhotos: FACILITY_PHOTOS,
-    ...PROFILE_EXTRAS[d.id],
-  };
-}
-
-export const DOCTOR_PROFILES: DoctorScheduleProfile[] = doctors.map(toProfile);
+import { DOCTOR_PROFILES } from '../../data/doctorProfiles';
+import { demoStartDate } from '../../data/demoAvailability';
 
 export interface SearchResultsPageProps {
   careType: string;
@@ -120,7 +38,7 @@ export interface SearchResultsPageProps {
   onScheduleDoctor?: (doctorId: string, step: 1 | 2, prefillDate?: string, prefillSlot?: string) => void;
   onSelectDoctorDetail?: (doctorId: string) => void;
   onOpenBooking: () => void;
-  onOpenLogin: () => void;
+  onOpenLogin?: () => void;
   user: { name: string; identifier: string } | null;
 }
 
@@ -147,19 +65,17 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
   const [selectedAge, setSelectedAge] = useState('All Ages');
   const [selectedGender, setSelectedGender] = useState('No preference');
   const [selectedLanguage, setSelectedLanguage] = useState('English');
-  const [sortBy, setSortBy] = useState<'next-available' | 'highest-rated' | 'experience'>('next-available');
+  const [sortBy, setSortBy] = useState<'next-available' | 'experience'>('next-available');
 
   // Toggles
   const [showMap, setShowMap] = useState(false);
   const [showMonthModal, setShowMonthModal] = useState(false);
 
-  // 5-day appointment date window (starts Fri Oct 30 - Tue Nov 03 matching reference 1:1)
+  // Rolling five-day sample window.
   const [dateOffset, setDateOffset] = useState(0);
 
   const baseDate = useMemo(() => {
-    // 2026-10-30 = Fri Oct 30
-    const initialRefDate = new Date(2026, 9, 30);
-    return addDays(initialRefDate, dateOffset);
+    return addDays(demoStartDate(), dateOffset);
   }, [dateOffset]);
 
   const fiveDays = useMemo(() => {
@@ -212,14 +128,16 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
     }
 
     // Sort order
-    if (sortBy === 'highest-rated') {
-      list.sort((a, b) => b.rating - a.rating);
-    } else if (sortBy === 'experience') {
+    if (sortBy === 'experience') {
       list.sort((a, b) => b.experienceYears - a.experienceYears);
     }
 
     return list.length > 0 ? list : doctors;
   }, [searchQuery, specialtyId, selectedGender, sortBy]);
+
+  useEffect(() => {
+    trackSearchUsed('search_page', countToBucket(matchedDoctors.length));
+  }, []);
 
   return (
     <div className="bg-[#fcfbf9] text-[#121212] flex flex-col font-sans">
@@ -309,7 +227,9 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
             {/* Glowing Turquoise Search Button (1:1 match) */}
             <button
               type="button"
-              onClick={() => {}}
+              onClick={() => {
+                trackSearchUsed('search_filter', countToBucket(matchedDoctors.length));
+              }}
               className="h-[44px] bg-[#4efcd3] hover:bg-[#3af0c4] active:scale-95 text-stone-950 font-bold text-sm sm:text-base px-9 rounded-md shadow-sm transition-all cursor-pointer flex items-center justify-center shrink-0"
             >
               Search
@@ -416,7 +336,7 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
       </section>
 
       {/* ── RESULTS SUB-HEADER / CONTROL BAR (1:1 with media_1790069031583.png) ── */}
-      <section className="bg-white border-b border-stone-200 py-3 px-4 sm:px-6 lg:px-8 sticky top-16 z-30">
+      <section className="bg-white border-b border-stone-200 py-3 px-4 sm:px-6 lg:px-8 sticky top-[var(--site-header-offset)] z-30">
         <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-xs sm:text-sm">
           {/* Left: provider count & Sort By Pill Dropdown */}
           <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
@@ -434,7 +354,6 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
                 className="appearance-none bg-white hover:bg-stone-50 border border-[#154734] text-[#154734] font-bold rounded-full pl-3.5 pr-7 py-1 text-xs cursor-pointer focus:outline-none shadow-2xs"
               >
                 <option value="next-available">Sort By: Next available</option>
-                <option value="highest-rated">Sort By: Highest rated</option>
                 <option value="experience">Sort By: Experience</option>
               </select>
               <ChevronDown className="size-3 text-[#154734] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -450,8 +369,9 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
               <div className="flex items-center gap-1 ml-1">
                 <button
                   type="button"
-                  onClick={() => setDateOffset((prev) => prev - 5)}
-                  className="size-6 rounded-full bg-[#154734] hover:bg-[#0f3426] text-white flex items-center justify-center transition cursor-pointer shadow-xs"
+                  onClick={() => setDateOffset((prev) => Math.max(0, prev - 5))}
+                  disabled={dateOffset === 0}
+                  className="size-6 rounded-full bg-[#154734] hover:bg-[#0f3426] text-white flex items-center justify-center transition cursor-pointer shadow-xs disabled:cursor-not-allowed disabled:opacity-40"
                   title="Previous 5 days"
                 >
                   <ChevronLeft className="size-3.5" />
@@ -501,7 +421,7 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
                 <MapPin className="size-4 text-[#154734]" />
-                <span>Avocado Health Clinics</span>
+                <span>Sri Lakshmi Hospital Clinics</span>
               </h3>
               <span className="text-xs text-stone-500">Bengaluru branches &amp; virtual care</span>
             </div>
@@ -538,7 +458,7 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
 
             // Reusable Doctor Info Card (Matching 1:1 Reference media_1790069042700.png)
             const doctorInfoCard = (
-              <div className="flex items-start gap-5 flex-1 min-w-0">
+              <div className="flex items-start gap-3 sm:gap-5 flex-1 min-w-0">
                 {/* Large Doctor Image Container with Badges */}
                 <div
                   onClick={() =>
@@ -546,7 +466,7 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
                       ? onSelectDoctorDetail(profile.id)
                       : setSelectedDoctorDetail(profile)
                   }
-                  className="relative w-32 sm:w-36 md:w-40 aspect-[3/4] rounded-xl overflow-hidden shadow-sm border border-stone-200 bg-stone-100 group/img cursor-pointer shrink-0"
+                  className="relative w-24 sm:w-36 md:w-40 aspect-[3/4] rounded-xl overflow-hidden shadow-sm border border-stone-200 bg-stone-100 group/img cursor-pointer shrink-0"
                   title="Click to view full doctor profile"
                 >
                   <img
@@ -558,19 +478,6 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
                     }}
                     className="w-full h-full object-cover object-top group-hover/img:scale-105 transition-transform duration-300"
                   />
-
-                  {/* Top Rating Overlay */}
-                  <div className="absolute top-2 right-2 bg-stone-900/80 backdrop-blur-xs text-white px-1.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-0.5 shadow-xs z-10">
-                    <Star className="size-2.5 fill-amber-400 text-amber-400" />
-                    <span>{profile.rating}</span>
-                  </div>
-
-                  {/* Bottom Board Certified Gradient Banner */}
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#12231b] via-[#12231b]/80 to-transparent pt-4 pb-1.5 px-1 text-center z-10">
-                    <span className="text-[10px] font-bold tracking-wider text-white uppercase line-clamp-1">
-                      Board Certified
-                    </span>
-                  </div>
 
                   {/* Hover Zoom Prompt */}
                   <div className="absolute inset-0 bg-[#12231b]/35 opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 flex items-center justify-center z-20">
@@ -592,7 +499,7 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
                     }
                     className="group text-left cursor-pointer"
                   >
-                    <h2 className="text-xl font-bold text-stone-950 group-hover:text-[#154734] transition-colors inline-flex items-center gap-1.5">
+                    <h2 className="text-lg sm:text-xl font-bold text-stone-950 group-hover:text-[#154734] transition-colors inline-flex max-w-full flex-wrap items-center gap-1.5">
                       <span>{docName}</span>
                       <span className="text-[#154734] group-hover:translate-x-1 transition-transform">→</span>
                     </h2>
@@ -619,6 +526,9 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
                       <span>Offers Video Visits &amp; Remote Follow-ups</span>
                     </div>
                   )}
+                  <button type="button" onClick={() => onScheduleDoctor ? onScheduleDoctor(profile.id, 1) : onBookDoctor(profile.id)} className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-[#154734] underline underline-offset-4 hover:text-[#0f3426]">
+                    Book appointment <span aria-hidden="true">→</span>
+                  </button>
                 </div>
               </div>
             );
@@ -707,7 +617,7 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
 
                     {/* Column 3: Video Visits are Available Card */}
                     <div className="w-full bg-white rounded-md border border-stone-200 shadow-2xs overflow-hidden">
-                      <div className="h-1 w-full bg-gradient-to-r from-[#8b5cf6] via-[#6366f1] to-[#06b6d4]" />
+                      <div className="h-1 w-full bg-gradient-to-r from-[#8cb598] via-[#4e8661] to-[#24553c]" />
                       <div className="p-4 sm:p-5 space-y-3">
                         <div className="text-[#154734]">
                           <Video className="size-7 stroke-[2.2]" />
@@ -810,10 +720,6 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
                     alt={selectedDoctorDetail.name}
                     className="w-full h-full object-cover object-top"
                   />
-                  <div className="absolute top-2 right-2 bg-stone-900/80 backdrop-blur-xs text-white px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm">
-                    <Star className="size-3 fill-amber-400 text-amber-400" />
-                    <span>{selectedDoctorDetail.rating}</span>
-                  </div>
                 </div>
 
                 {/* Doctor Bio & Key Credentials */}
@@ -968,11 +874,11 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
               </button>
             </div>
             <p className="text-xs text-stone-600">
-              Select any day in <strong>October &amp; November 2026</strong> to view instant consultation availability.
+              Choose a date to start booking. Availability is confirmed by the clinic.
             </p>
             <div className="grid grid-cols-5 gap-2 pt-2">
               {Array.from({ length: 15 }, (_, i) => {
-                const d = addDays(new Date(2026, 9, 30), i);
+                const d = addDays(demoStartDate(), i);
                 return (
                   <button
                     key={i}

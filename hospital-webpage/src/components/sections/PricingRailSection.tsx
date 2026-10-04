@@ -1,3 +1,4 @@
+import { clientPackages } from '../../data/clientPackages';
 import React, { useState } from 'react';
 import {
   Check,
@@ -29,77 +30,65 @@ interface PricingTierData {
 
 const staticThreeTiers: PricingTierData[] = [
   {
-    id: 'tier-signature',
-    name: 'Avocado Signature',
-    subtitle: 'Concierge Primary Care',
-    badge: 'Active •',
-    isRecommended: false,
-    annualPrice: '₹4,999',
-    annualPriceMonthlyEquiv: '₹416 / mo',
-    monthlyPrice: '₹499',
-    description:
-      'Seamless primary, urgent, and telemedicine care for individuals and households who value continuous, unhurried physician access.',
-    inclusions: [
-      'Unlimited 24/7 virtual care with senior family physicians',
-      'Zero wait-time priority access at our Indiranagar clinic',
-      'Complimentary doorstep diagnostic sample collection',
-      'Annual preventive baseline screen & digital health passport',
-      'Direct WhatsApp standby with dedicated care team',
+    "id": "diabetic-check-up",
+    "name": "Diabetic Check Up",
+    "subtitle": "One-time health check-up",
+    "badge": "Published",
+    "isRecommended": false,
+    "annualPrice": "\u20b9749",
+    "annualPriceMonthlyEquiv": "Confirm inclusions with hospital",
+    "monthlyPrice": "\u20b92,699",
+    "originalAnnualPrice": "\u20b91,000",
+    "originalMonthlyPrice": "\u20b93,955",
+    "description": "A focused check-up for diabetes monitoring.",
+    "inclusions": [
+      "Hospital-based health screening",
+      "Discuss preparation with the hospital",
+      "Confirm the exact list of tests",
+      "Contact the hospital for current pricing"
     ],
-    exclusions: [
-      'Full-body DEXA scan & cellular biomarker mapping',
-      'Toxic heavy metals & full hormone matrix review',
-    ],
-    ctaText: 'Get Started with Signature',
+    "ctaText": "Ask about this package"
   },
   {
-    id: 'tier-longevity',
-    name: 'Avocado Longevity 360',
-    subtitle: 'Signature Diagnostic & Cellular Health',
-    badge: 'Save 25% •',
-    isRecommended: true,
-    annualPrice: '₹14,999',
-    annualPriceMonthlyEquiv: '₹1,250 / mo',
-    monthlyPrice: '₹1,499',
-    originalAnnualPrice: '₹19,999',
-    originalMonthlyPrice: '₹1,800',
-    description:
-      'Our flagship comprehensive screening combining low-dose whole-body DEXA imaging, 96+ biomarker metabolic mapping, and cardiac ultrasound.',
-    inclusions: [
-      'Everything in Avocado Signature, plus:',
-      'Full-body DEXA composition scan & abdominal sonography',
-      '96+ advanced blood biomarkers (ApoB, hs-CRP, HbA1c, Homocysteine)',
-      '1-on-1 longevity physician & senior cardiologist roadmap',
-      'Personalized genetic health risk scoring & biological age review',
-      'Comprehensive nutrition, sleep & cardiovascular protocol',
+    "id": "fertility-health-check-up",
+    "name": "Fertility Health Check Up",
+    "subtitle": "One-time health check-up",
+    "badge": "Published",
+    "isRecommended": true,
+    "annualPrice": "\u20b93,699",
+    "annualPriceMonthlyEquiv": "Confirm inclusions with hospital",
+    "monthlyPrice": "\u20b93,199",
+    "originalAnnualPrice": "\u20b94,955",
+    "originalMonthlyPrice": "\u20b94,955",
+    "description": "A fertility health assessment package.",
+    "inclusions": [
+      "Hospital-based health screening",
+      "Discuss preparation with the hospital",
+      "Confirm the exact list of tests",
+      "Contact the hospital for current pricing"
     ],
-    exclusions: [
-      'Continuous glucose monitor (CGM) sensor & private suite access',
-    ],
-    ctaText: 'Start with Longevity 360',
+    "ctaText": "Ask about this package"
   },
   {
-    id: 'tier-executive',
-    name: 'Avocado Executive 360',
-    subtitle: 'Leadership & Peak Performance',
-    badge: 'Popular •',
-    isRecommended: false,
-    annualPrice: '₹24,999',
-    annualPriceMonthlyEquiv: '₹2,083 / mo',
-    monthlyPrice: '₹2,499',
-    description:
-      'Engineered for founders, executives, and high-performers demanding private physician oversight, toxicology screening, and vitality protection.',
-    inclusions: [
-      'Everything in Longevity 360, plus:',
-      'Multi-specialty health board review (Cardiology & Endocrinology)',
-      'Coronary calcium score & carotid intima-media Doppler study',
-      'Toxic heavy metals screen (Lead, Mercury, Arsenic) & hormone matrix',
-      'Dedicated executive health navigator & expedited hospital OPD admission',
-      'Continuous glucose monitor (CGM) 14-day tracking sensor',
-      'Private clinical lounge suite with zero waiting',
+    "id": "general-diabetic-health-check-up",
+    "name": "General Diabetic Health Check Up",
+    "subtitle": "One-time health check-up",
+    "badge": "Published",
+    "isRecommended": false,
+    "annualPrice": "\u20b92,399",
+    "annualPriceMonthlyEquiv": "Confirm inclusions with hospital",
+    "monthlyPrice": "\u20b93,999",
+    "originalAnnualPrice": "\u20b93,955",
+    "originalMonthlyPrice": "\u20b94,955",
+    "description": "A broader diabetic health profile.",
+    "inclusions": [
+      "Hospital-based health screening",
+      "Discuss preparation with the hospital",
+      "Confirm the exact list of tests",
+      "Contact the hospital for current pricing"
     ],
-    ctaText: 'Get Started with Executive',
-  },
+    "ctaText": "Ask about this package"
+  }
 ];
 
 interface PricingRailSectionProps {
@@ -126,10 +115,10 @@ export const PricingRailSection: React.FC<PricingRailSectionProps> = ({
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 sm:mb-16">
           <div className="max-w-2xl">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#1c1a17] tracking-tight leading-tight mb-3">
-              Health care designed around your life, not the system.
+              Health checks for you and your family.
             </h2>
             <p className="text-sm sm:text-base text-[#5c5850] leading-relaxed">
-              Transparent membership tiers with unhurried doctor consultations, zero co-pays, and proactive cellular diagnostics.
+              Published one-time check-up prices from Sri Lakshmi Hospital. Confirm inclusions and current offers before booking.
             </p>
           </div>
 
@@ -140,13 +129,13 @@ export const PricingRailSection: React.FC<PricingRailSectionProps> = ({
               onClick={() => setBillingCycle('annual')}
               className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
                 billingCycle === 'annual'
-                  ? 'bg-[#1c1a17] text-white shadow-xs'
+                  ? 'bg-[#24553c] text-white shadow-xs'
                   : 'text-[#5c5850] hover:text-[#1c1a17]'
               }`}
             >
-              <span>Annual</span>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#ede9fe] text-[#5b21b6]">
-                Save 25%
+              <span>Essential checks</span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#dcebd9] text-[#24553c]">
+                One-time
               </span>
             </button>
 
@@ -155,18 +144,21 @@ export const PricingRailSection: React.FC<PricingRailSectionProps> = ({
               onClick={() => setBillingCycle('monthly')}
               className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
                 billingCycle === 'monthly'
-                  ? 'bg-[#1c1a17] text-white shadow-xs'
+                  ? 'bg-[#24553c] text-white shadow-xs'
                   : 'text-[#5c5850] hover:text-[#1c1a17]'
               }`}
             >
-              Monthly
+              More checks
             </button>
           </div>
         </div>
 
         {/* Static 3-Tier Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
-          {staticThreeTiers.map((tier) => {
+          {staticThreeTiers.map((baseTier, index) => {
+            const selected = clientPackages[billingCycle === 'annual' ? index : index + 3];
+            const tier = { ...baseTier, name: selected.name, description: selected.description };
+
             const isRec = tier.isRecommended;
 
             return (
@@ -174,15 +166,15 @@ export const PricingRailSection: React.FC<PricingRailSectionProps> = ({
                 key={tier.id}
                 className={`relative rounded-[28px] transition-all duration-300 flex flex-col justify-between ${
                   isRec
-                    ? 'bg-[#1c1a17] text-white border-2 border-[#8b5cf6]/40 shadow-[0_20px_50px_rgba(139,92,246,0.12)] p-7 sm:p-8 lg:-translate-y-2'
+                    ? 'bg-[#e7f0e4] text-[#17372b] border-2 border-[#9ebda2] shadow-[0_20px_50px_rgba(31,80,47,0.09)] p-7 sm:p-8 lg:-translate-y-2'
                     : 'bg-white text-[#1c1a17] border border-[#ded7cb] shadow-[0_8px_30px_rgba(28,26,23,0.04)] hover:border-[#c5bba9] hover:shadow-md p-7 sm:p-8'
                 }`}
               >
-                {/* Recommended Badge with Normal Curve & Soothing Lavender */}
+                {/* Recommended Badge */}
                 {isRec && (
-                  <div className="absolute -top-3.5 left-7 sm:left-8 inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#ede9fe] text-[#5b21b6] border border-[#c4b5fd] shadow-sm text-xs font-bold uppercase tracking-wider">
-                    <Sparkles className="size-3.5 text-[#7c3aed] fill-[#7c3aed]" />
-                    <span>Recommended</span>
+                  <div className="absolute -top-3.5 left-7 sm:left-8 inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#24553c] text-white border border-[#24553c] shadow-sm text-xs font-bold uppercase tracking-wider">
+                    <Sparkles className="size-3.5 text-[#d9ecd5] fill-[#d9ecd5]" />
+                    <span>Health check-up</span>
                   </div>
                 )}
 
@@ -193,14 +185,14 @@ export const PricingRailSection: React.FC<PricingRailSectionProps> = ({
                     <div>
                       <h3
                         className={`text-xl sm:text-2xl font-bold tracking-tight leading-snug ${
-                          isRec ? 'text-white' : 'text-[#1c1a17]'
+                          isRec ? 'text-[#17372b]' : 'text-[#1c1a17]'
                         }`}
                       >
                         {tier.name}
                       </h3>
                       <p
                         className={`text-xs font-medium mt-1 ${
-                          isRec ? 'text-[#c4b5fd]' : 'text-[#787267]'
+                          isRec ? 'text-[#587462]' : 'text-[#787267]'
                         }`}
                       >
                         {tier.subtitle}
@@ -211,7 +203,7 @@ export const PricingRailSection: React.FC<PricingRailSectionProps> = ({
                       <span
                         className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${
                           isRec
-                            ? 'bg-[#ede9fe]/15 text-[#ddd6fe] border border-[#a78bfa]/30'
+                            ? 'bg-[#d4e6d2] text-[#24553c] border border-[#a9c8ac]'
                             : 'bg-[#f4efe6] text-[#736e65] border border-[#ded5c6]'
                         }`}
                       >
@@ -226,7 +218,7 @@ export const PricingRailSection: React.FC<PricingRailSectionProps> = ({
                       {isRec && (
                         <span
                           className={`text-base sm:text-lg line-through font-medium ${
-                            isRec ? 'text-zinc-500' : 'text-zinc-400'
+                            isRec ? 'text-[#829987]' : 'text-zinc-400'
                           }`}
                         >
                           {billingCycle === 'annual'
@@ -237,7 +229,7 @@ export const PricingRailSection: React.FC<PricingRailSectionProps> = ({
 
                       <span
                         className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${
-                          isRec ? 'text-[#f5f3ff]' : 'text-[#1c1a17]'
+                          isRec ? 'text-[#17372b]' : 'text-[#1c1a17]'
                         }`}
                       >
                         {billingCycle === 'annual' ? tier.annualPrice : tier.monthlyPrice}
@@ -245,28 +237,28 @@ export const PricingRailSection: React.FC<PricingRailSectionProps> = ({
 
                       <span
                         className={`text-xs sm:text-sm font-medium ${
-                          isRec ? 'text-[#c4b5fd]' : 'text-[#736e65]'
+                          isRec ? 'text-[#587462]' : 'text-[#736e65]'
                         }`}
                       >
-                        {billingCycle === 'annual' ? '/ year' : '/ month'}
+                        {'/ check-up'}
                       </span>
                     </div>
 
                     <p
                       className={`text-xs font-medium mt-1.5 ${
-                        isRec ? 'text-zinc-400' : 'text-[#787267]'
+                        isRec ? 'text-[#617766]' : 'text-[#787267]'
                       }`}
                     >
                       {billingCycle === 'annual'
-                        ? `Equivalent to ${tier.annualPriceMonthlyEquiv} billed annually`
-                        : 'Billed monthly • Cancel or adjust anytime'}
+                        ? 'Published website price · confirm before booking'
+                        : 'Published website price · confirm before booking'}
                     </p>
                   </div>
 
                   {/* Description */}
                   <p
                     className={`text-xs sm:text-[13px] leading-relaxed font-normal mb-6 ${
-                      isRec ? 'text-zinc-300' : 'text-[#5c5850]'
+                      isRec ? 'text-[#4f6756]' : 'text-[#5c5850]'
                     }`}
                   >
                     {tier.description}
@@ -276,7 +268,7 @@ export const PricingRailSection: React.FC<PricingRailSectionProps> = ({
                 {/* Middle Divider: Subtle Dashed Line */}
                 <div
                   className={`border-t border-dashed my-2 ${
-                    isRec ? 'border-white/15' : 'border-[#ded5c6]'
+                    isRec ? 'border-[#a9c7ab]' : 'border-[#ded5c6]'
                   }`}
                 />
 
@@ -285,7 +277,7 @@ export const PricingRailSection: React.FC<PricingRailSectionProps> = ({
                   <div>
                     <h4
                       className={`font-semibold text-xs tracking-tight uppercase mb-4 ${
-                        isRec ? 'text-[#ede9fe]' : 'text-[#1c1a17]'
+                        isRec ? 'text-[#24553c]' : 'text-[#1c1a17]'
                       }`}
                     >
                       What&apos;s Included
@@ -298,7 +290,7 @@ export const PricingRailSection: React.FC<PricingRailSectionProps> = ({
                           <span
                             className={`size-4.5 rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-2xs ${
                               isRec
-                                ? 'bg-[#7c3aed]/25 text-[#ddd6fe]'
+                                ? 'bg-[#c5ddc2] text-[#24553c]'
                                 : 'bg-[#10b981]/15 text-[#059669]'
                             }`}
                           >
@@ -306,7 +298,7 @@ export const PricingRailSection: React.FC<PricingRailSectionProps> = ({
                           </span>
                           <span
                             className={`text-xs sm:text-[12.5px] leading-snug font-normal ${
-                              isRec ? 'text-zinc-200' : 'text-[#3d3a35]'
+                              isRec ? 'text-[#324b39]' : 'text-[#3d3a35]'
                             }`}
                           >
                             {item}
@@ -322,7 +314,7 @@ export const PricingRailSection: React.FC<PricingRailSectionProps> = ({
                           </span>
                           <span
                             className={`text-xs sm:text-[12.5px] leading-snug font-normal line-through ${
-                              isRec ? 'text-zinc-400' : 'text-[#736e65]'
+                              isRec ? 'text-[#7d9381]' : 'text-[#736e65]'
                             }`}
                           >
                             {exItem}
@@ -338,8 +330,8 @@ export const PricingRailSection: React.FC<PricingRailSectionProps> = ({
                     onClick={() => onBookPackage?.(tier.name)}
                     className={`w-full py-3.5 px-6 rounded-full font-semibold text-xs sm:text-sm transition-all duration-200 active:scale-95 cursor-pointer flex items-center justify-center gap-2 mt-auto shadow-xs ${
                       isRec
-                        ? 'bg-[#ede9fe] hover:bg-white text-[#3b0764] shadow-md hover:shadow-lg'
-                        : 'border-2 border-[#1c1a17] text-[#1c1a17] hover:bg-[#1c1a17] hover:text-white'
+                        ? 'bg-[#24553c] hover:bg-[#173f2d] text-white shadow-md hover:shadow-lg'
+                        : 'border-2 border-[#24553c] text-[#24553c] hover:bg-[#24553c] hover:text-white'
                     }`}
                   >
                     <span>{tier.ctaText}</span>
@@ -359,20 +351,20 @@ export const PricingRailSection: React.FC<PricingRailSectionProps> = ({
             </div>
             <div>
               <p className="text-sm font-semibold text-[#1c1a17]">
-                Looking for dedicated Pediatric Care or Corporate Family Plans?
+                Looking for cardiac or complete health checks?
               </p>
               <p className="text-xs text-[#736e65] mt-0.5">
-                Avocado Pediatrics provides 24/7 on-demand doctor WhatsApp standby, emergency house calls, and routine developmental checks for ₹8,999/year.
+                Complete Health CheckUp: ₹8,599 · Cardiac Health Check Up: ₹2,500. Confirm the test list, preparation and current offers with the hospital.
               </p>
             </div>
           </div>
 
           <button
             type="button"
-            onClick={() => onBookPackage?.('Avocado Pediatrics Care')}
+            onClick={() => onBookPackage?.('Health packages')}
             className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-xs font-semibold bg-[#1c1a17] text-white hover:bg-black transition-all cursor-pointer shrink-0 shadow-xs active:scale-95"
           >
-            <span>Explore Pediatrics</span>
+            <span>View all health packages</span>
             <ArrowRight className="size-3.5" />
           </button>
         </div>

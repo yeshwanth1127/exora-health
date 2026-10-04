@@ -1,5 +1,7 @@
 # Avocado Health — Modern Hospital Webpage
 
+Design research for the proposed healthcare AI company website: [Healthcare AI website references](HEALTHCARE_AI_WEBSITE_REFERENCES.md).
+
 A modern, high-conversion healthcare webpage for **Avocado Health**, built with React 19, Vite, Tailwind CSS, and Framer Motion / GSAP.
 
 ---
@@ -69,4 +71,3 @@ Open `http://localhost:5173` to view the application in your browser.
 npm run build
 npm run preview
 ```
-

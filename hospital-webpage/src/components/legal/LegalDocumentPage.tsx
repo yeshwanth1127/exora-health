@@ -129,7 +129,7 @@ export const LegalDocumentPage: React.FC<LegalDocumentPageProps> = ({
                 <span>&larr; Back to Legal</span>
               </button>
               <span className="text-stone-400 text-xs font-normal">
-                Avocado Health Clinics Pvt. Ltd. &copy; 2025
+                Sri Lakshmi Hospital Clinics Pvt. Ltd. &copy; 2025
               </span>
             </div>
           </div>

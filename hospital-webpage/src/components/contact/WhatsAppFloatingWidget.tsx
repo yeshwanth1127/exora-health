@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Phone, MessageCircle, X, Calendar, ShieldAlert } from 'lucide-react';
 import { hospitalInfo, whatsAppQuickOptions } from '../../data/hospitalInfo';
+import { VoiceAgentLauncher } from '../voice/VoiceAgentLauncher';
+import { trackContactIntent } from '../../lib/posthog';
 
 interface WhatsAppFloatingWidgetProps {
   onOpenBooking: () => void;
@@ -10,16 +12,17 @@ export const WhatsAppFloatingWidget: React.FC<WhatsAppFloatingWidgetProps> = ({ 
   const [isOpen, setIsOpen] = useState(false);
 
   const openWhatsApp = (msg?: string) => {
+    trackContactIntent('home', 'whatsapp');
     const message = encodeURIComponent(msg || hospitalInfo.defaultWhatsAppMessage);
     const url = `https://wa.me/${hospitalInfo.whatsappNumber.replace(/[^0-9]/g, '')}?text=${message}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="mobile-contact-trigger fixed bottom-6 right-6 z-40 flex flex-col items-end">
       {/* Expanded Quick Action Popover */}
       {isOpen && (
-        <div className="mb-3 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-stone-100 overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
+        <div className="mb-3 w-[calc(100vw-32px)] max-w-96 bg-white rounded-2xl shadow-2xl border border-stone-100 overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
           {/* Header */}
           <div className="bg-[#154734] p-4 text-white flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -27,23 +30,24 @@ export const WhatsAppFloatingWidget: React.FC<WhatsAppFloatingWidgetProps> = ({ 
                 <MessageCircle className="w-5 h-5 fill-current" />
               </div>
               <div>
-                <div className="font-semibold text-sm">Avocado Care Assistance</div>
+                <div className="font-semibold text-sm">Sri Lakshmi Care Assistance</div>
                 <div className="text-[11px] text-emerald-200 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  Available 24/7 on WhatsApp & Calls
+                  Call reception to confirm availability
                 </div>
               </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition"
+              aria-label="Close care assistance"
+              className="text-white/70 hover:text-white min-w-11 min-h-11 grid place-items-center rounded-lg hover:bg-white/10 transition"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Quick Options */}
-          <div className="p-4 space-y-2.5 max-h-[380px] overflow-y-auto">
+          <div className="p-4 space-y-2.5 max-h-[min(380px,calc(100dvh-180px))] overflow-y-auto">
             {/* Book Appointment CTA */}
             <button
               onClick={() => {
@@ -58,15 +62,17 @@ export const WhatsAppFloatingWidget: React.FC<WhatsAppFloatingWidgetProps> = ({ 
                 </div>
                 <div>
                   <div className="font-semibold text-xs text-emerald-950">Book Doctor Appointment</div>
-                  <div className="text-[11px] text-emerald-700">Choose doctor, date & time slot</div>
+                  <div className="text-[11px] text-emerald-700">Find a doctor and confirm consultation times</div>
                 </div>
               </div>
               <span className="text-xs font-semibold text-emerald-700">Book →</span>
             </button>
 
+            <div className="sm:hidden"><VoiceAgentLauncher inline /></div>
+
             {/* WhatsApp Intents */}
             <div className="pt-2 pb-1 text-[11px] font-semibold text-stone-400 uppercase tracking-wider">
-              WhatsApp Chatbot Topics
+              Hospital enquiry topics
             </div>
             {whatsAppQuickOptions.map((opt) => (
               <button
@@ -88,6 +94,7 @@ export const WhatsAppFloatingWidget: React.FC<WhatsAppFloatingWidgetProps> = ({ 
             <div className="pt-2 border-t border-stone-100 grid grid-cols-2 gap-2">
               <a
                 href={`tel:${hospitalInfo.emergencyPhone}`}
+                onClick={() => trackContactIntent('home', 'phone')}
                 className="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-100 text-center flex flex-col items-center justify-center transition"
               >
                 <ShieldAlert className="w-4 h-4 mb-0.5 text-rose-600" />
@@ -96,6 +103,7 @@ export const WhatsAppFloatingWidget: React.FC<WhatsAppFloatingWidgetProps> = ({ 
               </a>
               <a
                 href={`tel:${hospitalInfo.phone}`}
+                onClick={() => trackContactIntent('home', 'phone')}
                 className="p-2.5 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-100 text-center flex flex-col items-center justify-center transition"
               >
                 <Phone className="w-4 h-4 mb-0.5 text-stone-600" />

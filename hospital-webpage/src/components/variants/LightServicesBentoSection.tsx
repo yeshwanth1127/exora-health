@@ -15,7 +15,7 @@ export function LightServicesBentoSection({ onBookAppointment, onViewAll }: Prop
     <div className="mx-auto max-w-[1360px] px-5 sm:px-8 lg:px-12">
       <div className="mb-11 flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end">
         <div className="max-w-2xl">
-          <p className="mb-4 text-xs font-bold tracking-[.2em] text-[#5e8064]">EXPLORE AVOCADO CARE</p>
+          <p className="mb-4 text-xs font-bold tracking-[.2em] text-[#5e8064]">EXPLORE SRI LAKSHMI CARE</p>
           <h2 className="font-medium text-5xl sm:text-6xl tracking-[-.05em] leading-[1.04] text-[#17372b]">Care for every chapter.</h2>
           <p className="mt-4 text-base sm:text-lg leading-relaxed text-[#627369]">From everyday questions to specialist support, find a good place to begin.</p>
         </div>

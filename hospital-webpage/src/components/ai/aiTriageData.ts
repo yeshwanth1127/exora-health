@@ -16,14 +16,54 @@ export interface TriageSpecialty {
 }
 
 export const POPULAR_SPECIALTIES = [
-  { id: 'general-medicine', name: 'Primary Care', departmentId: 'general-medicine', icon: 'Stethoscope' },
-  { id: 'obgyn', name: 'OB-GYN', departmentId: 'general-medicine', icon: 'User' },
-  { id: 'dermatology', name: 'Dermatologist', departmentId: 'dermatology', icon: 'Sparkles' },
-  { id: 'dental', name: 'Dentist', departmentId: 'dental', icon: 'Smile' },
-  { id: 'ent', name: 'Ear, Nose, Throat', departmentId: 'ent', icon: 'Headphones' },
-  { id: 'ophthalmology', name: 'Eye Doctor', departmentId: 'general-medicine', icon: 'Eye' },
-  { id: 'neurology', name: 'Psychiatrist', departmentId: 'neurology', icon: 'Brain' },
-  { id: 'orthopedics', name: 'Orthopedist', departmentId: 'orthopedics', icon: 'Bone' },
+  {
+    "id": "general-medicine",
+    "name": "General Medicine",
+    "departmentId": "general-medicine",
+    "icon": "Stethoscope"
+  },
+  {
+    "id": "obgyn",
+    "name": "OB-GYN",
+    "departmentId": "gynecology",
+    "icon": "User"
+  },
+  {
+    "id": "dermatology",
+    "name": "Dermatology",
+    "departmentId": "dermatology",
+    "icon": "Sparkles"
+  },
+  {
+    "id": "cardiology",
+    "name": "Cardiology",
+    "departmentId": "cardiology",
+    "icon": "HeartPulse"
+  },
+  {
+    "id": "ent",
+    "name": "Ear, Nose, Throat",
+    "departmentId": "ent",
+    "icon": "Headphones"
+  },
+  {
+    "id": "urology",
+    "name": "Urology",
+    "departmentId": "urology",
+    "icon": "Stethoscope"
+  },
+  {
+    "id": "neurology",
+    "name": "Neurology",
+    "departmentId": "neurology",
+    "icon": "Brain"
+  },
+  {
+    "id": "orthopedics",
+    "name": "Orthopedics",
+    "departmentId": "orthopedics",
+    "icon": "Bone"
+  }
 ];
 
 export const TRIAGE_DATA: Record<string, TriageSpecialty> = {
@@ -38,38 +78,32 @@ export const TRIAGE_DATA: Record<string, TriageSpecialty> = {
         id: 'ear-hearing',
         title: 'Treat an ear or hearing problem',
         description: 'Ear pain, infection, hearing loss, ringing, dizziness, wax buildup, or ear surgery',
-        recommendedDoctorId: 'doc-9',
       },
       {
         id: 'nose-sinus',
         title: 'Treat a nose, sinus, or allergy issue',
         description: 'Sinus pain, congestion, nose bleeds, allergies, loss of smell, or nose surgery',
-        recommendedDoctorId: 'doc-9',
       },
       {
         id: 'throat-voice',
         title: 'Treat a throat, voice, or mouth problem',
         description: 'Sore throat, tonsils, hoarseness, swallowing, cough, or mouth and jaw issues',
-        recommendedDoctorId: 'doc-9',
       },
       {
         id: 'urgent-ent',
         title: 'Get an urgent ENT visit',
         description: 'A sudden ear, nose, or throat problem that needs same-day attention',
-        recommendedDoctorId: 'doc-9',
         urgency: 'urgent',
       },
       {
         id: 'neck-salivary',
         title: 'Address a neck, head, or salivary issue',
         description: 'Neck lumps, thyroid nodules, salivary glands, head and neck tumors, or skin rash',
-        recommendedDoctorId: 'doc-9',
       },
       {
         id: 'snoring-sleep',
         title: 'Get help with snoring or sleep',
         description: 'Snoring, sleep apnea, trouble sleeping, or a sleep study',
-        recommendedDoctorId: 'doc-9',
       },
     ],
   },
@@ -117,25 +151,21 @@ export const TRIAGE_DATA: Record<string, TriageSpecialty> = {
         id: 'acne-breakouts',
         title: 'Acne, breakouts, or facial blemishes',
         description: 'Cystic acne, blackheads, hormonal flare-ups, and laser scar revision therapies',
-        recommendedDoctorId: 'doc-6',
       },
       {
         id: 'rash-eczema',
         title: 'Unusual rash, itching, or eczema',
         description: 'Dry flaking skin, psoriasis plaques, contact allergy testing, or urticaria',
-        recommendedDoctorId: 'doc-6',
       },
       {
         id: 'hair-loss',
         title: 'Hair fall, thinning, or scalp condition',
         description: 'Excessive hair shedding, male/female pattern alopecia, or scalp dermatitis',
-        recommendedDoctorId: 'doc-6',
       },
       {
         id: 'mole-check',
         title: 'Mole evaluation or preventative skin biopsy',
         description: 'Screening changing moles, skin tags, cysts, and benign lesion removals',
-        recommendedDoctorId: 'doc-6',
       },
     ],
   },
@@ -150,25 +180,21 @@ export const TRIAGE_DATA: Record<string, TriageSpecialty> = {
         id: 'tooth-pain',
         title: 'Toothache, cavity, or sensitive tooth',
         description: 'Sharp nerve pain, throbbing tooth discomfort, hot/cold sensitivity, or fillings',
-        recommendedDoctorId: 'doc-10',
       },
       {
         id: 'cleaning-checkup',
         title: 'Routine teeth cleaning & oral hygiene exam',
         description: 'Plaque and tartar scaling, enamel polish, gum disease check, and digital X-rays',
-        recommendedDoctorId: 'doc-10',
       },
       {
         id: 'root-canal',
         title: 'Root canal treatment (RCT) & crowns',
         description: 'Painless single-sitting computerized endodontics and zirconium crown fittings',
-        recommendedDoctorId: 'doc-10',
       },
       {
         id: 'aligners-cosmetic',
         title: 'Clear aligners, braces, or smile makeover',
         description: 'Invisible teeth aligners, cosmetic composite veneers, and laser whitening',
-        recommendedDoctorId: 'doc-10',
       },
     ],
   },

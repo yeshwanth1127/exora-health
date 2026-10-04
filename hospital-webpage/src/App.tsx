@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { LiveBookingEntry } from "./components/booking/LiveBookingEntry";
+import { demoBookingEnabled } from './data/clientBrand';
+import { lazy, Suspense, useState, useEffect, useLayoutEffect } from 'react';
 import { Settings } from 'lucide-react';
-import { StickyEmergencyHeader } from './components/common/StickyEmergencyHeader';
 import { TiaInspiredHeader } from './components/variants/TiaInspiredHeader';
 import { LightCareSearchHero } from './components/variants/LightCareSearchHero';
 import { LightWhyChooseUsSection } from './components/variants/LightWhyChooseUsSection';
@@ -11,11 +12,10 @@ import { LightInsurancePartnersSection } from './components/variants/LightInsura
 import { LightPricingRailSection } from './components/variants/LightPricingRailSection';
 import { LightBlogReportsSection } from './components/variants/LightBlogReportsSection';
 import { LightFooter } from './components/variants/LightFooter';
-import { AvocadoHero } from './components/home/AvocadoHero';
+import { HospitalGallerySection } from './components/sections/HospitalGallerySection';
 import { AccreditationsSection } from './components/sections/AccreditationsSection';
 import { WhyChooseUsSection } from './components/sections/WhyChooseUsSection';
 import { ServicesBentoSection } from './components/sections/ServicesBentoSection';
-import { ServicesGridVariant } from './components/sections/ServicesGridVariant';
 import { PricingRailSection, PricingRailVariant } from './components/sections/PricingRailSection';
 import { DoctorsGridSection } from './components/sections/DoctorsGridSection';
 import { BangaloreLocationSection } from './components/sections/BangaloreLocationSection';
@@ -24,52 +24,99 @@ import { InsurancePartnersSection } from './components/sections/InsurancePartner
 import { BlogReportsSection } from './components/sections/BlogReportsSection';
 import { FAQSection } from './components/sections/FAQSection';
 import { DoctorShowcaseSection } from './components/sections/DoctorShowcaseSection';
-import { Footer } from './components/common/Footer';
 import { WhatsAppFloatingWidget } from './components/contact/WhatsAppFloatingWidget';
-import { SettingsModal, type ComponentVariants, type ComponentVariantKey } from './components/common/SettingsModal';
-import { FamilyFaqPage } from './components/faq/FamilyFaqPage';
-import { FamilyBlogListPage } from './components/blog/FamilyBlogListPage';
-import { FamilyBlogPostPage } from './components/blog/FamilyBlogPostPage';
-import { LegalHubPage } from './components/legal/LegalHubPage';
-import { LegalDocumentPage } from './components/legal/LegalDocumentPage';
-import { DepartmentPage } from './components/departments/DepartmentPage';
-import { DepartmentsOverviewPage } from './components/departments/DepartmentsOverviewPage';
-import { DoctorsDirectoryPage } from './components/doctor/DoctorsDirectoryPage';
-import { LocationsPage } from './components/locations/LocationsPage';
-import { ContactPage, HowCareWorksPage, InsurancePricingPage } from './components/info/PatientInfoPages';
-import { InsuranceAccessPage } from './components/info/InsuranceAccessPage';
+import { SettingsModal, type DesignMode } from './components/common/SettingsModal';
+import { BLOG_POSTS } from './components/blog/blogData';
+import { ALL_LEGAL_DOCS } from './components/legal/legalData';
+import { branches } from './data/branches';
+import { departments } from './data/departments';
+import { PageErrorBoundary, PageLoading, PageNotFound } from './components/common/PageStates';
 import { CareSearchHero } from './components/home/CareSearchHero';
+import { HERO_BACKDROPS, HERO_PLACEMENTS, type HeroBackdrop, type HeroPlacement } from './components/home/heroBackdrops';
 import { AICareAssistantModal } from './components/ai/AICareAssistantModal';
 import { doctors } from './data/doctors';
 import { Doctor } from './types';
-import { SearchResultsPage, DOCTOR_PROFILES } from './components/search/SearchResultsPage';
-import { OriginalSearchResultsPage } from './components/search/OriginalSearchResultsPage';
-import { ScheduleAppointmentPage } from './components/booking/ScheduleAppointmentPage';
-import { OriginalScheduleAppointmentPage } from './components/booking/OriginalScheduleAppointmentPage';
-import { DoctorDetailPage } from './components/doctor/DoctorDetailPage';
-import { OriginalDoctorDetailPage } from './components/doctor/OriginalDoctorDetailPage';
+import { DOCTOR_PROFILES } from './data/doctorProfiles';
 import { VoiceAgentLauncher } from './components/voice/VoiceAgentLauncher';
 import { authApi } from './lib/auth';
 
 import { lockActiveSection } from './components/common/navigation';
+import { updateSeo } from './seo';
+import { AnalyticsConsentBanner } from './components/common/AnalyticsConsentBanner';
+import {
+  trackPageView,
+  updateAnalyticsContext,
+  trackNavigation,
+  trackDoctorProfileOpened,
+  trackBookingIntent,
+  trackSearchUsed,
+  type PageFamily,
+} from './lib/posthog';
 
-type Page = 'home' | 'faq' | 'blog' | 'blog-post' | 'legal' | 'legal-doc' | 'departments' | 'department' | 'doctors' | 'search-results' | 'schedule-appointment' | 'doctor-detail' | 'locations' | 'location' | 'insurance' | 'insurance-pricing' | 'how-it-works' | 'contact-page';
-const defaultComponentVariants: ComponentVariants = {
-  header: 'original', hero: 'original', why: 'original', services: 'original',
-  doctors: 'original', locations: 'original', insurance: 'original',
-  pricing: 'original', articles: 'original', footer: 'original',
-  'doctor-profile': 'light',
-  'search-results': 'light', appointment: 'light',
+const FamilyFaqPage = lazy(() => import('./components/faq/FamilyFaqPage').then(module => ({ default: module.FamilyFaqPage })));
+const FamilyBlogListPage = lazy(() => import('./components/blog/FamilyBlogListPage').then(module => ({ default: module.FamilyBlogListPage })));
+const FamilyBlogPostPage = lazy(() => import('./components/blog/FamilyBlogPostPage').then(module => ({ default: module.FamilyBlogPostPage })));
+const LegalHubPage = lazy(() => import('./components/legal/LegalHubPage').then(module => ({ default: module.LegalHubPage })));
+const LegalDocumentPage = lazy(() => import('./components/legal/LegalDocumentPage').then(module => ({ default: module.LegalDocumentPage })));
+const DepartmentPage = lazy(() => import('./components/departments/DepartmentPage').then(module => ({ default: module.DepartmentPage })));
+const DepartmentsOverviewPage = lazy(() => import('./components/departments/DepartmentsOverviewPage').then(module => ({ default: module.DepartmentsOverviewPage })));
+const DoctorsDirectoryPage = lazy(() => import('./components/doctor/DoctorsDirectoryPage').then(module => ({ default: module.DoctorsDirectoryPage })));
+const LocationsPage = lazy(() => import('./components/locations/LocationsPage').then(module => ({ default: module.LocationsPage })));
+const InsurancePricingPage = lazy(() => import('./components/info/PatientInfoPages').then(module => ({ default: module.InsurancePricingPage })));
+const CommunityMediaPage = lazy(() => import('./components/info/CommunityMediaPage').then(module => ({ default: module.CommunityMediaPage })));
+const FacilitiesPage = lazy(() => import('./components/info/FacilitiesPage').then(module => ({ default: module.FacilitiesPage })));
+const FounderPage = lazy(() => import('./components/info/FounderPage').then(module => ({ default: module.FounderPage })));
+const AboutUsPage = lazy(() => import('./components/info/PatientInfoPages').then(module => ({ default: module.AboutUsPage })));
+const HowCareWorksPage = lazy(() => import('./components/info/PatientInfoPages').then(module => ({ default: module.HowCareWorksPage })));
+const ContactPage = lazy(() => import('./components/info/PatientInfoPages').then(module => ({ default: module.ContactPage })));
+const InsuranceAccessPage = lazy(() => import('./components/info/InsuranceAccessPage').then(module => ({ default: module.InsuranceAccessPage })));
+const SearchResultsPage = lazy(() => import('./components/search/SearchResultsPage').then(module => ({ default: module.SearchResultsPage })));
+const OriginalSearchResultsPage = lazy(() => import('./components/search/OriginalSearchResultsPage').then(module => ({ default: module.OriginalSearchResultsPage })));
+const ScheduleAppointmentPage = lazy(() => import('./components/booking/ScheduleAppointmentPage').then(module => ({ default: module.ScheduleAppointmentPage })));
+const OriginalScheduleAppointmentPage = lazy(() => import('./components/booking/OriginalScheduleAppointmentPage').then(module => ({ default: module.OriginalScheduleAppointmentPage })));
+const DoctorDetailPage = lazy(() => import('./components/doctor/DoctorDetailPage').then(module => ({ default: module.DoctorDetailPage })));
+
+type Page = 'community' | 'facilities' | 'founder' | 'about' | 'home' | 'faq' | 'blog' | 'blog-post' | 'legal' | 'legal-doc' | 'departments' | 'department' | 'doctors' | 'search-results' | 'schedule-appointment' | 'doctor-detail' | 'locations' | 'location' | 'insurance' | 'insurance-pricing' | 'how-it-works' | 'contact-page' | 'not-found';
+const pagesWithBothDesigns: Page[] = ['home', 'search-results', 'schedule-appointment'];
+
+const pageFamilyMap: Record<Page, PageFamily> = {
+  'home': 'home',
+  'about': 'info',
+  'founder': 'info',
+  'community': 'info',
+  'facilities': 'info',
+  'faq': 'faq',
+  'blog': 'blog_list',
+  'blog-post': 'blog_post',
+  'legal': 'legal_hub',
+  'legal-doc': 'legal_doc',
+  'departments': 'departments',
+  'department': 'department_detail',
+  'doctors': 'doctors',
+  'doctor-detail': 'doctor_detail',
+  'locations': 'locations',
+  'location': 'location_detail',
+  'search-results': 'search',
+  'schedule-appointment': 'booking',
+  'insurance': 'info',
+  'insurance-pricing': 'info',
+  'how-it-works': 'info',
+  'contact-page': 'info',
+  'not-found': 'not_found',
 };
+
+function scrollToPageTop() {
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+}
 
 export function App() {
   const [currentView, setCurrentView] = useState<Page>('home');
   const [selectedDoctorDetailId, setSelectedDoctorDetailId] = useState<string>('doc-1');
-  const [doctorReturnView, setDoctorReturnView] = useState<'doctors' | 'department' | 'search-results' | 'location'>('doctors');
+  const [doctorReturnView, setDoctorReturnView] = useState<'home' | 'doctors' | 'department' | 'search-results' | 'location'>('doctors');
   const [scheduleDoctorId, setScheduleDoctorId] = useState<string>('doc-1');
   const [scheduleInitialStep, setScheduleInitialStep] = useState<1 | 2>(1);
-  const [schedulePrefillDate, setSchedulePrefillDate] = useState<string | undefined>('2026-10-30');
-  const [schedulePrefillSlot, setSchedulePrefillSlot] = useState<string | undefined>('12:45 PM');
+  const [schedulePrefillDate, setSchedulePrefillDate] = useState<string | undefined>();
+  const [schedulePrefillSlot, setSchedulePrefillSlot] = useState<string | undefined>();
   const [scheduleReturnView, setScheduleReturnView] = useState<Page>('search-results');
   const [searchResultsFilter, setSearchResultsFilter] = useState<{ careType: string; specialtyId?: string; dateTime?: string }>({
     careType: 'Annual physical / checkup',
@@ -77,10 +124,10 @@ export function App() {
     dateTime: 'Anytime',
   });
   const [selectedDateTime, setSelectedDateTime] = useState<string>('Anytime');
-  const [selectedPostId, setSelectedPostId] = useState<string>('fragmented-healthcare-problem');
+  const [selectedPostId, setSelectedPostId] = useState<string>('before-your-first-specialist-visit');
   const [selectedLegalDocId, setSelectedLegalDocId] = useState<string>('terms');
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('ent');
-  const [selectedBranchId, setSelectedBranchId] = useState<string>('indiranagar');
+  const [selectedBranchId, setSelectedBranchId] = useState<string>('kr-puram');
   const [aiRecommendation, setAiRecommendation] = useState<{
     query: string;
     matchedDoctor: Doctor;
@@ -95,54 +142,204 @@ export function App() {
   const openPatientPortal = () => {
     window.location.href = '/portal';
   };
-  const [activeTestimonialOption, setActiveTestimonialOption] = useState<'option1' | 'option2'>('option2');
-  const [activeServicesOption, setActiveServicesOption] = useState<'option1' | 'option2'>('option1');
-  const [heroBookingPosition, setHeroBookingPosition] = useState<'top' | 'bottom'>('top');
+  const openLogin = openPatientPortal;
+  const activeTestimonialOption = 'option2' as const;
   const [pricingRailVariant, setPricingRailVariant] = useState<PricingRailVariant>('tall');
-  const [heroVariant, setHeroVariant] = useState<'centered-search' | 'classic-image'>('centered-search');
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
   const [aiSpecialtyId, setAiSpecialtyId] = useState<string | undefined>();
   const [aiQuery, setAiQuery] = useState<string | undefined>();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [componentVariants, setComponentVariants] = useState<ComponentVariants>(() => {
+  const [designMode, setDesignMode] = useState<DesignMode>(() => {
     try {
-      const current = localStorage.getItem('avocado_component_options_v3');
-      const saved = JSON.parse(current || localStorage.getItem('avocado_component_options_v2') || '{}');
-      return Object.fromEntries(Object.entries(defaultComponentVariants).map(([key, fallback]) => [key, saved[key] === 'light' || saved[key] === 'original' ? saved[key] : fallback])) as ComponentVariants;
+      const saved = localStorage.getItem('avocado_design_mode_v1');
+      if (saved === 'original' || saved === 'light') return saved;
+      // A mixed set of old component choices is intentionally reset to one coherent mode.
+      const legacy = JSON.parse(localStorage.getItem('avocado_component_options_v3') || localStorage.getItem('avocado_component_options_v2') || '{}');
+      const homepageKeys = ['header', 'hero', 'why', 'services', 'doctors', 'locations', 'insurance', 'pricing', 'articles', 'footer'];
+      return homepageKeys.every(key => legacy[key] === 'light') ? 'light' : 'original';
     } catch {
-      return { ...defaultComponentVariants };
+      return 'original';
+    }
+  });
+  // v2: the default moved from the plain hero to a photo, so earlier saved choices are not carried over.
+  const [heroBackdrop, setHeroBackdrop] = useState<HeroBackdrop>(() => {
+    try {
+      const saved = localStorage.getItem('avocado_hero_backdrop_v2');
+      return saved === 'plain' || (saved && saved in HERO_BACKDROPS) ? saved as HeroBackdrop : 'visit';
+    } catch {
+      return 'visit';
+    }
+  });
+  const [heroPlacement, setHeroPlacement] = useState<HeroPlacement>(() => {
+    try {
+      const saved = localStorage.getItem('avocado_hero_placement_v1');
+      return HERO_PLACEMENTS.find(option => option.id === saved)?.id ?? 'fullbleed';
+    } catch {
+      return 'fullbleed';
     }
   });
   useEffect(() => {
-    try { localStorage.setItem('avocado_component_options_v3', JSON.stringify(componentVariants)); } catch { /* Storage is optional for this UI preview. */ }
-  }, [componentVariants]);
-  const changeComponentVariant = (key: ComponentVariantKey, value: 'original' | 'light') => {
-    setComponentVariants(current => ({ ...current, [key]: value }));
-  };
-
-  // Sync URL parameters on initial load and browser back/forward
+    try { localStorage.setItem('avocado_design_mode_v1', designMode); } catch { /* Storage is optional. */ }
+  }, [designMode]);
   useEffect(() => {
+    try { localStorage.setItem('avocado_hero_backdrop_v2', heroBackdrop); } catch { /* Storage is optional. */ }
+  }, [heroBackdrop]);
+  useEffect(() => {
+    try { localStorage.setItem('avocado_hero_placement_v1', heroPlacement); } catch { /* Storage is optional. */ }
+  }, [heroPlacement]);
+  useEffect(() => {
+    updateSeo(currentView, {
+      post: selectedPostId,
+      department: selectedDepartmentId,
+      doctor: selectedDoctorDetailId,
+      branch: selectedBranchId,
+      legal: selectedLegalDocId,
+    });
+  }, [currentView, selectedPostId, selectedDepartmentId, selectedDoctorDetailId, selectedBranchId, selectedLegalDocId]);
+
+  const routeDetailId = currentView === 'department' ? selectedDepartmentId
+    : currentView === 'doctor-detail' ? selectedDoctorDetailId
+    : currentView === 'blog-post' ? selectedPostId
+    : currentView === 'legal-doc' ? selectedLegalDocId
+    : currentView === 'location' ? selectedBranchId
+    : currentView === 'schedule-appointment' ? scheduleDoctorId
+    : '';
+
+  // Settled route analytics observer adhering to POSTHOG_ANALYTICS_PLAN.md
+  useEffect(() => {
+    const effectiveMode = designMode === 'original' && pagesWithBothDesigns.includes(currentView) ? 'original' : 'light';
+    updateAnalyticsContext({
+      selectedMode: designMode,
+      effectiveMode,
+    });
+
+    const family = pageFamilyMap[currentView] || 'unknown';
+    trackPageView(family);
+  }, [currentView, routeDetailId, designMode]);
+
+  // Reset after React commits the destination, including browser back/forward
+  // and navigation between two records that share the same page component.
+  useLayoutEffect(() => {
+    scrollToPageTop();
+  }, [currentView, routeDetailId]);
+
+  // Resolve direct links before paint, then keep browser back/forward in sync.
+  useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
 
+    const previousScrollRestoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
+
     const handleUrlSync = () => {
+      const rawPath = window.location.pathname.replace(/\/+$/, '') || '/';
       const params = new URLSearchParams(window.location.search);
-      const pageParam = params.get('page');
-      if (pageParam === 'faq') {
+      let pageParam = params.get('page');
+
+      // If no query ?page= was provided, parse clean pathnames:
+      let pathEntityId: string | null = null;
+
+      if (!pageParam && rawPath !== '/' && rawPath !== '/index.html') {
+        const segments = rawPath.split('/').filter(Boolean);
+        const [first, second] = segments;
+
+        if (first === 'departments' || first === 'department' || first === 'dept') {
+          if (second) {
+            pageParam = 'department';
+            pathEntityId = second;
+          } else {
+            pageParam = 'departments';
+          }
+        } else if (first === 'doctors' || first === 'doctor' || first === 'doctor-detail') {
+          if (second) {
+            pageParam = 'doctor-detail';
+            pathEntityId = second;
+          } else {
+            pageParam = 'doctors';
+          }
+        } else if (first === 'locations' || first === 'location') {
+          if (second) {
+            pageParam = 'location';
+            pathEntityId = second;
+          } else {
+            pageParam = 'locations';
+          }
+        } else if (first === 'blog' || first === 'blogs' || first === 'articles') {
+          if (second) {
+            pageParam = 'blog-post';
+            pathEntityId = second;
+          } else {
+            pageParam = 'blog';
+          }
+        } else if (first === 'legal' || first === 'policies') {
+          if (second) {
+            pageParam = 'legal-doc';
+            pathEntityId = second;
+          } else {
+            pageParam = 'legal';
+          }
+        } else if (first === 'terms' || first === 'tos') {
+          pageParam = 'terms';
+        } else if (first === 'privacy') {
+          pageParam = 'privacy';
+        } else if (first === 'telehealth' || first === 'telemedicine') {
+          pageParam = 'telehealth';
+        } else if (first === 'records') {
+          pageParam = 'records';
+        } else if (first === 'billing') {
+          pageParam = 'billing';
+        } else if (first === 'refund') {
+          pageParam = 'refund';
+        } else if (first === 'faq') {
+          pageParam = 'faq';
+        } else if (first === 'insurance') {
+          pageParam = 'insurance';
+        } else if (first === 'pricing' || first === 'insurance-pricing' || first === 'packages') {
+          pageParam = 'insurance-pricing';
+        } else if (first === 'community' || first === 'community-events' || first === 'media') {
+          pageParam = 'community';
+        } else if (first === 'facilities' || first === 'technology') {
+          pageParam = 'facilities';
+        } else if (first === 'founder' || first === 'from-the-founder') {
+          pageParam = 'founder';
+        } else if (first === 'about' || first === 'about-us') {
+          pageParam = 'about';
+        } else if (first === 'how-it-works') {
+          pageParam = 'how-it-works';
+        } else if (first === 'contact' || first === 'contact-us') {
+          pageParam = 'contact';
+        } else if (first === 'schedule' || first === 'schedule-appointment' || first === 'book') {
+          pageParam = 'schedule';
+          if (second) pathEntityId = second;
+        } else if (first === 'search' || first === 'results' || first === 'search-results') {
+          pageParam = 'search-results';
+        } else if (first === 'home') {
+          pageParam = 'home';
+        } else {
+          setCurrentView('not-found');
+          return;
+        }
+      }
+
+      if (!pageParam || pageParam === 'home') {
+        setCurrentView('home');
+      } else if (pageParam === 'faq') {
         setCurrentView('faq');
       } else if (pageParam === 'blog' || pageParam === 'blogs') {
         setCurrentView('blog');
       } else if (pageParam === 'blog-post' || pageParam === 'post') {
         setCurrentView('blog-post');
-        const idParam = params.get('id');
-        if (idParam) setSelectedPostId(idParam);
+        setSelectedPostId(params.get('id') || pathEntityId || 'before-your-first-specialist-visit');
       } else if (pageParam === 'legal') {
-        const docParam = params.get('doc');
+        const docParam = params.get('doc') || params.get('id') || pathEntityId;
         if (docParam) {
           setCurrentView('legal-doc');
           setSelectedLegalDocId(docParam);
         } else {
           setCurrentView('legal');
         }
+      } else if (pageParam === 'legal-doc') {
+        setCurrentView('legal-doc');
+        setSelectedLegalDocId(params.get('doc') || params.get('id') || pathEntityId || 'terms');
       } else if (pageParam === 'terms' || pageParam === 'tos') {
         setCurrentView('legal-doc');
         setSelectedLegalDocId('terms');
@@ -152,6 +349,15 @@ export function App() {
       } else if (pageParam === 'telehealth' || pageParam === 'telemedicine') {
         setCurrentView('legal-doc');
         setSelectedLegalDocId('telehealth');
+      } else if (pageParam === 'records') {
+        setCurrentView('legal-doc');
+        setSelectedLegalDocId('records');
+      } else if (pageParam === 'billing') {
+        setCurrentView('legal-doc');
+        setSelectedLegalDocId('billing');
+      } else if (pageParam === 'refund') {
+        setCurrentView('legal-doc');
+        setSelectedLegalDocId('refund');
       } else if (pageParam === 'departments') {
         setCurrentView('departments');
       } else if (pageParam === 'doctors') {
@@ -160,19 +366,26 @@ export function App() {
         setCurrentView('locations');
       } else if (pageParam === 'location') {
         setCurrentView('location');
-        setSelectedBranchId(params.get('id') || 'indiranagar');
+        setSelectedBranchId(params.get('id') || pathEntityId || 'kr-puram');
       } else if (pageParam === 'insurance') {
         setCurrentView('insurance');
-      } else if (pageParam === 'insurance-pricing') {
+      } else if (pageParam === 'insurance-pricing' || pageParam === 'pricing' || pageParam === 'packages') {
         setCurrentView('insurance-pricing');
+      } else if (pageParam === 'community' || pageParam === 'community-events' || pageParam === 'media') {
+        setCurrentView('community');
+      } else if (pageParam === 'facilities' || pageParam === 'technology') {
+        setCurrentView('facilities');
+      } else if (pageParam === 'founder' || pageParam === 'from-the-founder') {
+        setCurrentView('founder');
+      } else if (pageParam === 'about' || pageParam === 'about-us') {
+        setCurrentView('about');
       } else if (pageParam === 'how-it-works') {
         setCurrentView('how-it-works');
-      } else if (pageParam === 'contact') {
+      } else if (pageParam === 'contact' || pageParam === 'contact-us') {
         setCurrentView('contact-page');
       } else if (pageParam === 'department' || pageParam === 'dept') {
         setCurrentView('department');
-        const idParam = params.get('id') || params.get('dept');
-        if (idParam) setSelectedDepartmentId(idParam);
+        setSelectedDepartmentId(params.get('id') || params.get('dept') || pathEntityId || 'gynecology');
       } else if (pageParam === 'search' || pageParam === 'results' || pageParam === 'search-results') {
         setCurrentView('search-results');
         const careParam = params.get('care');
@@ -183,10 +396,13 @@ export function App() {
             specialtyId: specParam || undefined,
           });
         }
-      } else if (pageParam === 'schedule' || pageParam === 'schedule-appointment') {
+      } else if (pageParam === 'schedule' || pageParam === 'schedule-appointment' || pageParam === 'book') {
         setCurrentView('schedule-appointment');
-        const docParam = params.get('doctor') || params.get('id');
-        if (docParam) setScheduleDoctorId(docParam);
+        const requestedName = params.get('doctor_name')?.trim().toLowerCase();
+        const nameMatches = requestedName ? DOCTOR_PROFILES.filter(doctor => doctor.name.toLowerCase() === requestedName) : [];
+        const rawDoctor = params.get('doctor') || params.get('id') || pathEntityId || (nameMatches.length === 1 ? nameMatches[0].id : undefined);
+        const validDoctor = DOCTOR_PROFILES.some(d => d.id === rawDoctor) ? rawDoctor : (DOCTOR_PROFILES[0]?.id || 'doc-1');
+        setScheduleDoctorId(validDoctor!);
         const stepParam = params.get('step');
         if (stepParam === '2') {
           setScheduleInitialStep(2);
@@ -199,10 +415,9 @@ export function App() {
         if (slotParam) setSchedulePrefillSlot(slotParam);
       } else if (pageParam === 'doctor' || pageParam === 'doctor-detail') {
         setCurrentView('doctor-detail');
-        const docParam = params.get('doctor') || params.get('id');
-        if (docParam) setSelectedDoctorDetailId(docParam);
+        setSelectedDoctorDetailId(params.get('doctor') || params.get('id') || pathEntityId || 'doc-1');
       } else {
-        setCurrentView('home');
+        setCurrentView('not-found');
       }
 
       if (params.get('login') === 'true' || window.location.hash === '#login') {
@@ -212,7 +427,10 @@ export function App() {
 
     handleUrlSync();
     window.addEventListener('popstate', handleUrlSync);
-    return () => window.removeEventListener('popstate', handleUrlSync);
+    return () => {
+      window.removeEventListener('popstate', handleUrlSync);
+      window.history.scrollRestoration = previousScrollRestoration;
+    };
   }, []);
 
   const navigateToPage = (
@@ -239,6 +457,7 @@ export function App() {
 
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
+      url.pathname = '/';
       url.hash = '';
       url.searchParams.delete('page');
       url.searchParams.delete('id');
@@ -265,7 +484,7 @@ export function App() {
       } else if (page === 'department') {
         url.searchParams.set('page', 'department');
         url.searchParams.set('id', extraId || selectedDepartmentId);
-      } else if (page === 'departments' || page === 'doctors' || page === 'locations' || page === 'insurance' || page === 'insurance-pricing' || page === 'how-it-works') {
+      } else if (page === 'departments' || page === 'doctors' || page === 'locations' || page === 'insurance' || page === 'insurance-pricing' || page === 'about' || page === 'founder' || page === 'community' || page === 'facilities' || page === 'how-it-works') {
         url.searchParams.set('page', page);
       } else if (page === 'location') {
         url.searchParams.set('page', 'location');
@@ -281,18 +500,26 @@ export function App() {
         if (extraId) url.searchParams.set('specialty', extraId);
       } else if (page === 'schedule-appointment') {
         url.searchParams.set('page', 'schedule');
+        if (demoBookingEnabled()) url.searchParams.set('booking_preview', 'true');
         if (extraId) url.searchParams.set('doctor', extraId);
         if (extraStep) url.searchParams.set('step', String(extraStep));
         if (extraDate) url.searchParams.set('date', extraDate);
         if (extraSlot) url.searchParams.set('slot', extraSlot);
       }
       window.history.pushState({}, '', url.toString());
-      window.scrollTo(0, 0); // instant: a smooth scroll here would cancel handleNavigate's section scroll
+      scrollToPageTop();
     }
   };
 
   // Booking actions use the dedicated appointment screen after a clinician is selected.
-  const startBooking = (doctorId?: string, date?: string, slot?: string) => {
+  const startBooking = (
+    doctorId?: string,
+    date?: string,
+    slot?: string,
+    ctaPlacement: string = 'general_cta'
+  ) => {
+    const currentFamily = pageFamilyMap[currentView] || 'home';
+    trackBookingIntent(currentFamily, ctaPlacement);
     if (!doctorId || !DOCTOR_PROFILES.some(profile => profile.id === doctorId)) {
       navigateToPage('doctors');
       return;
@@ -302,6 +529,19 @@ export function App() {
   };
 
   const handleNavigate = (section: string) => {
+    let destFamily: PageFamily = 'home';
+    if (section === 'services' || section === 'departments') destFamily = 'departments';
+    else if (section === 'doctors') destFamily = 'doctors';
+    else if (section === 'locations') destFamily = 'locations';
+    else if (section.startsWith('location-')) destFamily = 'location_detail';
+    else if (section.startsWith('department-')) destFamily = 'department_detail';
+    else if (section === 'faq') destFamily = 'faq';
+    else if (section === 'blog' || section === 'blogs') destFamily = 'blog_list';
+    else if (section === 'legal') destFamily = 'legal_hub';
+    else if (section === 'insurance' || section === 'insurance-pricing' || section === 'packages' || section === 'how-it-works' || section === 'about' || section === 'founder' || section === 'community' || section === 'facilities' || section === 'contact' || section === 'contact-page') destFamily = 'info';
+
+    trackNavigation('header', destFamily);
+
     if (section === 'services') {
       navigateToPage('departments');
       return;
@@ -314,6 +554,10 @@ export function App() {
     if (section.startsWith('location-')) { navigateToPage('location', section.replace('location-', '')); return; }
     if (section === 'insurance') { navigateToPage('insurance'); return; }
     if (section === 'insurance-pricing' || section === 'packages') { navigateToPage('insurance-pricing'); return; }
+    if (section === 'community') { navigateToPage('community'); return; }
+    if (section === 'facilities') { navigateToPage('facilities'); return; }
+    if (section === 'founder') { navigateToPage('founder'); return; }
+    if (section === 'about') { navigateToPage('about'); return; }
     if (section === 'how-it-works') { navigateToPage('how-it-works'); return; }
     if (section === 'contact' || section === 'contact-page') { navigateToPage('contact-page'); return; }
     if (section === 'blog' || section === 'faq') {
@@ -333,8 +577,6 @@ export function App() {
     }
     if (currentView !== 'home') {
       navigateToPage('home');
-      // the closure above still sees the old view, so scroll directly once home has rendered
-      setTimeout(() => scrollToSection(section), 50);
       return;
     }
     scrollToSection(section);
@@ -386,19 +628,8 @@ export function App() {
       setAiRecommendation(null);
       navigateToPage('department', departmentId);
     } else {
-      startBooking();
+      startBooking(undefined, undefined, undefined, 'services_bento');
     }
-  };
-
-  const handleHeroBookingSearch = (details: {
-    specialty: string;
-    location: string;
-    date: string;
-    patientType: string;
-  }) => {
-    const specialtyId = ({ general: 'general-medicine', pediatric: 'pediatrics', dentist: 'dental', ent: 'ent', cardiology: 'cardiology' } as Record<string, string>)[details.specialty];
-    setSearchResultsFilter({ careType: 'Specialist Consultation', specialtyId, dateTime: details.date });
-    navigateToPage('search-results', specialtyId);
   };
 
   const handleOpenQuestionnaire = (specialtyId?: string, query?: string, dateTime?: string) => {
@@ -408,13 +639,11 @@ export function App() {
     setIsAIAssistantOpen(true);
   };
 
-  // Distinct AI Search Flow: Directly takes patient to the Department page with recommended specialist (No questionnaire!)
+  // Keyword navigation uses only doctors listed in the selected department.
   const handleAISearch = (queryText: string) => {
+    trackSearchUsed('hero', '1-5');
     const lower = queryText.toLowerCase();
     let detectedDept = 'general-medicine';
-    let docId = 'doc-2';
-    let reasoning =
-      'Based on your symptoms, our clinical triage recommends consulting with a Primary Care physician.';
 
     if (
       lower.includes('ear') ||
@@ -427,9 +656,6 @@ export function App() {
       lower.includes('vertigo')
     ) {
       detectedDept = 'ent';
-      docId = 'doc-9';
-      reasoning =
-        'Your symptoms indicate an Ear, Nose, or Throat concern. We recommend consulting Senior Consultant Dr. Priya Nair for diagnostic endoscopy and targeted therapy.';
     } else if (
       lower.includes('tooth') ||
       lower.includes('teeth') ||
@@ -439,9 +665,6 @@ export function App() {
       lower.includes('root canal')
     ) {
       detectedDept = 'dental';
-      docId = 'doc-10';
-      reasoning =
-        'Dental and oral symptoms should be evaluated promptly to avoid nerve inflammation. Dr. Rajesh Kulkarni is available for painless consultation.';
     } else if (
       lower.includes('skin') ||
       lower.includes('acne') ||
@@ -452,9 +675,6 @@ export function App() {
       lower.includes('itching')
     ) {
       detectedDept = 'dermatology';
-      docId = 'doc-6';
-      reasoning =
-        'Your symptoms relate to clinical dermatology. We recommend an evaluation by Dr. Arjun Nair for targeted skin and allergy care.';
     } else if (
       lower.includes('chest') ||
       lower.includes('heart') ||
@@ -464,9 +684,6 @@ export function App() {
       lower.includes('cardio')
     ) {
       detectedDept = 'cardiology';
-      docId = 'doc-1';
-      reasoning =
-        'Cardiovascular signs should be reviewed carefully. We recommend a priority evaluation with Senior Consultant Dr. Vikram Rao.';
     } else if (
       lower.includes('knee') ||
       lower.includes('bone') ||
@@ -478,9 +695,6 @@ export function App() {
       lower.includes('ortho')
     ) {
       detectedDept = 'orthopedics';
-      docId = 'doc-3';
-      reasoning =
-        'Orthopedic discomfort is best assessed with mobility testing and imaging. Dr. Siddharth Mukherjee is recommended.';
     } else if (
       lower.includes('child') ||
       lower.includes('baby') ||
@@ -489,9 +703,6 @@ export function App() {
       lower.includes('infant')
     ) {
       detectedDept = 'pediatrics';
-      docId = 'doc-8';
-      reasoning =
-        'For pediatric symptoms, Dr. Rohan Desai provides comprehensive adolescent and child healthcare.';
     } else if (
       lower.includes('anxiety') ||
       lower.includes('depression') ||
@@ -503,23 +714,29 @@ export function App() {
       lower.includes('neuro')
     ) {
       detectedDept = 'neurology';
-      docId = 'doc-7';
-      reasoning =
-        'We recommend a compassionate assessment with Dr. Kavya Reddy covering neurological and psychiatric wellbeing.';
     }
 
-    const matchedDoctor = doctors.find((d) => d.id === docId) || doctors[0];
-    setAiRecommendation({
+    const matchedDoctor = doctors.find(doctor => doctor.departmentId === detectedDept);
+    setAiRecommendation(matchedDoctor ? {
       query: queryText,
       matchedDoctor,
-      clinicalReasoning: reasoning,
-    });
+      clinicalReasoning: `${matchedDoctor.name} is listed by the hospital under ${matchedDoctor.departmentName}. Contact reception to confirm the right specialist and availability.`,
+    } : null);
     setSelectedDepartmentId(detectedDept);
     navigateToPage('department', detectedDept);
   };
 
   // Non-home views share the site header, footer and modals below; this picks the page body.
   const renderInnerPage = () => {
+    const missingDetail = (currentView === 'blog-post' && !BLOG_POSTS.some(post => post.id === selectedPostId))
+      || (currentView === 'legal-doc' && !ALL_LEGAL_DOCS[selectedLegalDocId])
+      || (currentView === 'department' && !departments.some(department => department.id === selectedDepartmentId))
+      || (currentView === 'doctor-detail' && !DOCTOR_PROFILES.some(doctor => doctor.id === selectedDoctorDetailId))
+      || (currentView === 'schedule-appointment' && !DOCTOR_PROFILES.some(doctor => doctor.id === scheduleDoctorId))
+      || (currentView === 'location' && !branches.some(branch => branch.id === selectedBranchId));
+    if (missingDetail || currentView === 'not-found') {
+      return <PageNotFound onGoHome={() => navigateToPage('home')} />;
+    }
     switch (currentView) {
       // Render dedicated 1:1 Clinic FAQ Page
       case 'faq': {
@@ -582,21 +799,30 @@ export function App() {
             aiRecommendation={aiRecommendation}
             onBackToHome={() => navigateToPage('home')}
             onBackToDepartments={() => navigateToPage('departments')}
-            onViewDoctor={(id) => { setDoctorReturnView('department'); navigateToPage('doctor-detail', id); }}
+            onViewDoctor={(id) => {
+              trackDoctorProfileOpened('department_detail');
+              setDoctorReturnView('department');
+              navigateToPage('doctor-detail', id);
+            }}
             onSelectDepartment={(deptId) => {
               setSelectedDepartmentId(deptId);
               setAiRecommendation(null);
               navigateToPage('department', deptId);
             }}
-            onBookDoctor={(doctorId) => startBooking(doctorId)}
-            onOpenBooking={() => startBooking(doctors.find(doctor => doctor.departmentId === selectedDepartmentId)?.id)}
+            onBookDoctor={(doctorId) => startBooking(doctorId, undefined, undefined, 'department_doctor_card')}
+            onOpenBooking={(placement) => startBooking(doctors.find(doctor => doctor.departmentId === selectedDepartmentId)?.id, undefined, undefined, placement || 'department_hero')}
           />
         );
       }
       case 'doctors': {
         return <DoctorsDirectoryPage
           onBackToHome={() => navigateToPage('home')}
-          onSelectDoctor={(id) => { setDoctorReturnView('doctors'); navigateToPage('doctor-detail', id); }}
+          onSelectDoctor={(id) => {
+            trackDoctorProfileOpened('doctors');
+            setDoctorReturnView('doctors');
+            navigateToPage('doctor-detail', id);
+          }}
+          onBookDoctor={(id) => startBooking(id, undefined, undefined, 'doctors_directory_card')}
           onExploreDepartments={() => navigateToPage('departments')}
         />;
       }
@@ -607,31 +833,46 @@ export function App() {
           onBackToHome={() => navigateToPage('home')}
           onBackToLocations={() => navigateToPage('locations')}
           onSelectBranch={(id) => navigateToPage('location', id)}
-          onSelectDoctor={(id) => { setDoctorReturnView('location'); navigateToPage('doctor-detail', id); }}
+          onSelectDoctor={(id) => {
+            trackDoctorProfileOpened('location_detail');
+            setDoctorReturnView('location');
+            navigateToPage('doctor-detail', id);
+          }}
+          onBookDoctor={(id) => startBooking(id, undefined, undefined, 'location_doctor_card')}
           onExploreDepartments={() => navigateToPage('departments')}
-          onOpenBooking={() => startBooking()}
+          onOpenBooking={() => startBooking(undefined, undefined, undefined, 'location_general_cta')}
         />;
       }
+      case 'community':
+        return <CommunityMediaPage onBackToHome={() => navigateToPage('home')} onExploreFacilities={() => navigateToPage('facilities')} />;
+      case 'facilities':
+        return <FacilitiesPage onBackToHome={() => navigateToPage('home')} onExploreCommunity={() => navigateToPage('community')} onSelectDepartment={(id) => navigateToPage('department', id)} />;
+      case 'founder':
+        return <FounderPage onBackToHome={() => navigateToPage('home')} onExploreHospital={() => navigateToPage('about')} />;
+      case 'about':
       case 'insurance-pricing':
       case 'how-it-works':
       case 'contact-page': {
         const props = {
           onBackToHome: () => navigateToPage('home'),
+          onExploreFounder: () => navigateToPage('founder'),
+          onExploreInsurance: () => navigateToPage('insurance'),
           onExploreDepartments: () => navigateToPage('departments'),
           onExploreDoctors: () => navigateToPage('doctors'),
           onExploreLocations: () => navigateToPage('locations'),
           onSelectLocation: (id: string) => navigateToPage('location', id),
-          onOpenBooking: () => startBooking(),
+          onOpenBooking: () => startBooking(undefined, undefined, undefined, 'patient_info_cta'),
         };
+        if (currentView === 'about') return <AboutUsPage {...props} />;
         if (currentView === 'insurance-pricing') return <InsurancePricingPage {...props} />;
         if (currentView === 'how-it-works') return <HowCareWorksPage {...props} />;
         return <ContactPage {...props} />;
       }
       case 'insurance':
-        return <InsuranceAccessPage user={user} onBackToHome={() => navigateToPage('home')} onOpenLogin={openPatientPortal} onViewPricing={() => navigateToPage('insurance-pricing')} />;
+        return <InsuranceAccessPage user={user} onBackToHome={() => navigateToPage('home')} onOpenLogin={openLogin} onViewPricing={() => navigateToPage('insurance-pricing')} />;
       // Render dedicated Doctor Search Results Page
       case 'search-results': {
-        const ResultsPage = componentVariants['search-results'] === 'original' ? OriginalSearchResultsPage : SearchResultsPage;
+        const ResultsPage = designMode === 'original' ? OriginalSearchResultsPage : SearchResultsPage;
         return (
           <ResultsPage
             careType={searchResultsFilter.careType}
@@ -642,43 +883,47 @@ export function App() {
             onRetakeQuestionnaire={() => {
               setIsAIAssistantOpen(true);
             }}
-            onBookDoctor={(doctorId, _prefillReason, prefillDate, prefillSlot) => startBooking(doctorId, prefillDate, prefillSlot)}
+            onBookDoctor={(doctorId, _prefillReason, prefillDate, prefillSlot) => startBooking(doctorId, prefillDate, prefillSlot, 'search_results_instant_book')}
             onScheduleDoctor={(doctorId, step, prefillDate, prefillSlot) => {
+              trackBookingIntent('search', 'search_results_schedule');
               setScheduleReturnView('search-results');
               navigateToPage('schedule-appointment', doctorId, step, prefillDate, prefillSlot);
             }}
             onSelectDoctorDetail={(doctorId) => {
+              trackDoctorProfileOpened('search');
               setSelectedDoctorDetailId(doctorId);
               setDoctorReturnView('search-results');
               navigateToPage('doctor-detail', doctorId);
             }}
-            onOpenBooking={() => startBooking()}
-            onOpenLogin={openPatientPortal}
+            onOpenBooking={() => startBooking(undefined, undefined, undefined, 'search_results_general_cta')}
+            onOpenLogin={openLogin}
             user={user}
           />
         );
       }
       // Render dedicated Doctor Profile Page (matching reference screenshots media_1790073472687.png etc)
       case 'doctor-detail': {
-        const ProfilePage = componentVariants['doctor-profile'] === 'original' ? OriginalDoctorDetailPage : DoctorDetailPage;
         return (
-          <ProfilePage
+          <DoctorDetailPage
             doctorId={selectedDoctorDetailId}
             onBackToSearch={() => navigateToPage(doctorReturnView, doctorReturnView === 'department' ? selectedDepartmentId : doctorReturnView === 'search-results' ? searchResultsFilter.specialtyId : doctorReturnView === 'location' ? selectedBranchId : undefined)}
             onBackToHome={() => navigateToPage('home')}
             onScheduleAppointment={(docId, step = 1) => {
+              trackBookingIntent('doctor_detail', 'doctor_profile_schedule');
               setScheduleReturnView('doctor-detail');
               navigateToPage('schedule-appointment', docId, step);
             }}
-            onOpenLogin={openPatientPortal}
-            user={user}
           />
         );
       }
       // Render dedicated 1:1 Schedule Appointment Flow (Steps 1, 2, 3 matching reference screenshots)
       case 'schedule-appointment': {
         const matchedProfile = DOCTOR_PROFILES.find((p) => p.id === scheduleDoctorId) || DOCTOR_PROFILES[0];
-        const AppointmentPage = componentVariants.appointment === 'original' ? OriginalScheduleAppointmentPage : ScheduleAppointmentPage;
+        if (!demoBookingEnabled() && new URLSearchParams(window.location.search).get('booking_preview') !== 'true') {
+          const requestedDoctor = new URLSearchParams(window.location.search).get('doctor') ?? window.location.pathname.split('/')[2];
+          return <LiveBookingEntry doctorName={DOCTOR_PROFILES.find(p => p.id === requestedDoctor)?.name} />;
+        }
+        const AppointmentPage = designMode === 'original' ? OriginalScheduleAppointmentPage : ScheduleAppointmentPage;
         return (
           <AppointmentPage
             doctor={matchedProfile}
@@ -687,7 +932,7 @@ export function App() {
             initialSlot={schedulePrefillSlot}
             onBackToSearch={() => navigateToPage(scheduleReturnView, scheduleReturnView === 'department' ? selectedDepartmentId : scheduleReturnView === 'doctor-detail' ? scheduleDoctorId : scheduleReturnView === 'location' ? selectedBranchId : undefined)}
             onBackToHome={() => navigateToPage('home')}
-            onOpenLogin={openPatientPortal}
+            onOpenLogin={openLogin}
             onSelectSimilarDoctor={(similarId) => {
               setScheduleDoctorId(similarId);
               setScheduleInitialStep(1);
@@ -702,133 +947,113 @@ export function App() {
     }
   };
   const innerPage = renderInnerPage();
-  const embeddedHeader =
-    (currentView === 'doctor-detail' && componentVariants['doctor-profile'] === 'original') ||
-    (currentView === 'search-results' && componentVariants['search-results'] === 'original') ||
-    (currentView === 'schedule-appointment' && componentVariants.appointment === 'original');
-  const embeddedFooter =
-    (currentView === 'doctor-detail' && componentVariants['doctor-profile'] === 'original') ||
-    (currentView === 'search-results' && componentVariants['search-results'] === 'original');
-  const WhySection = componentVariants.why === 'light' ? LightWhyChooseUsSection : WhyChooseUsSection;
-  const DoctorSection = componentVariants.doctors === 'light' ? LightDoctorsGridSection : DoctorsGridSection;
-  const LocationSection = componentVariants.locations === 'light' ? LightBangaloreLocationSection : BangaloreLocationSection;
-  const PricingSection = componentVariants.pricing === 'light' ? LightPricingRailSection : PricingRailSection;
+  // Single-design pages use their light green shell in either mode, rather than
+  // mixing an original header/footer with a light green screen.
+  const pageMode: DesignMode = designMode === 'original' && !pagesWithBothDesigns.includes(currentView) ? 'light' : designMode;
+  const WhySection = designMode === 'light' ? LightWhyChooseUsSection : WhyChooseUsSection;
+  const DoctorSection = designMode === 'light' ? LightDoctorsGridSection : DoctorsGridSection;
+  const LocationSection = designMode === 'light' ? LightBangaloreLocationSection : BangaloreLocationSection;
+  const PricingSection = designMode === 'light' ? LightPricingRailSection : PricingRailSection;
 
   return (
-    <div className="min-h-screen bg-[#f6f4ef] text-[#121212] flex flex-col">
-      <div
-        role="status"
-        className="fixed bottom-4 left-1/2 z-[60] -translate-x-1/2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-center text-xs font-semibold tracking-wide text-emerald-800 shadow-lg shadow-emerald-900/10"
-      >
-        CI/CD test · deployed from my local machine
-      </div>
-      {/* Sticky Top Header with Emergency Pill (Always On during scroll) */}
-      {!embeddedHeader && (componentVariants.header === 'light' ? <TiaInspiredHeader
+    <div data-design-mode={pageMode} className={`min-h-screen text-[#121212] flex flex-col ${pageMode === 'light' ? 'bg-[#fbfaf6]' : 'bg-[#f6f4ef]'}`}>
+      <TiaInspiredHeader
+        onOpenSettings={() => setIsSettingsOpen(true)}
         onNavigate={handleNavigate}
-        onOpenBooking={() => startBooking()}
-        onOpenLogin={openPatientPortal}
+        onOpenBooking={() => startBooking(currentView === 'doctor-detail' ? selectedDoctorDetailId : currentView === 'schedule-appointment' ? scheduleDoctorId : undefined, undefined, undefined, 'header_nav')}
+        onOpenLogin={openLogin}
         user={user}
-      /> : <StickyEmergencyHeader
-        onNavigate={handleNavigate}
-        onOpenBooking={() => startBooking()}
-        onOpenLogin={openPatientPortal}
-        user={user}
-        showAnnouncement={!innerPage}
-        forceScrolledStyle={!!innerPage}
-      />)}
+      />
 
       {innerPage ? (
-        <main className={`flex-1 ${embeddedHeader ? '' : componentVariants.header === 'light' ? 'pt-[96px] lg:pt-[108px]' : 'pt-[72px]'}`}>{innerPage}</main>
+        <main className="flex-1 pt-[var(--site-header-offset)]">
+          <PageErrorBoundary key={`${currentView}:${routeDetailId}`} onGoHome={() => navigateToPage('home')}>
+            <Suspense fallback={<PageLoading />}>{innerPage}</Suspense>
+          </PageErrorBoundary>
+        </main>
       ) : (
       <>
-      {/* Hero Section: Centered AI/Classic Search (Default) or Avocado Image Hero */}
+      {/* Hero Section: Centered AI/Classic Search (Default) or Sri Lakshmi Image Hero */}
       <main className="flex-1">
-        {componentVariants.hero === 'light' ? (
-          <LightCareSearchHero onOpenQuestionnaire={handleOpenQuestionnaire} onAISearch={handleAISearch} />
-        ) : heroVariant === 'centered-search' ? (
+        {designMode === 'light' ? (
+          <LightCareSearchHero onOpenQuestionnaire={handleOpenQuestionnaire} onAISearch={handleAISearch} backdrop={heroBackdrop} />
+        ) : (
           <CareSearchHero
             onOpenQuestionnaire={handleOpenQuestionnaire}
             onAISearch={handleAISearch}
-          />
-        ) : (
-          <AvocadoHero
-            onGetStarted={() => startBooking()}
-            onOpenBooking={() => startBooking()}
-            onOpenLogin={openPatientPortal}
-            user={user}
-            onNavigate={handleNavigate}
-            bookingBarPosition={heroBookingPosition}
-            onSearchBooking={handleHeroBookingSearch}
+            backdrop={heroBackdrop}
+            placement={heroPlacement}
           />
         )}
 
         {/* Monotone Indian Accreditations & Medical Badges below Hero */}
-        <AccreditationsSection />
+        {designMode === 'original' && <AccreditationsSection />}
 
         {/* Why Choose Us Section (Dual Care Cards + Big Bold Numbers) */}
         <WhySection
-          onBookInPerson={() => startBooking()}
-          onBookVirtual={() => startBooking()}
+          onBookInPerson={() => startBooking(undefined, undefined, undefined, 'why_choose_us_in_person')}
         />
 
-        {/* 1. Services Section (Toggleable between Option 1 Bento & Option 2 Diverse Departments) */}
-        {componentVariants.services === 'light' ? (
+        {/* Services in the selected design mode */}
+        {designMode === 'light' ? (
           <LightServicesBentoSection onBookAppointment={handleBookService} onViewAll={() => navigateToPage('departments')} />
-        ) : activeServicesOption === 'option1' ? (
-          <ServicesBentoSection onBookAppointment={handleBookService} />
         ) : (
-          <ServicesGridVariant onBookAppointment={handleBookService} />
+          <ServicesBentoSection onBookAppointment={handleBookService} />
         )}
 
         {/* 2. Top Specialists Doctor Showcase (media_1789993820491.png) */}
         <DoctorSection
-          onBookDoctor={(doctorId) => startBooking(doctorId)}
+          onBookDoctor={(doctorId) => startBooking(doctorId, undefined, undefined, 'home_doctor_card')}
+          onViewDoctor={(id) => {
+            trackDoctorProfileOpened('home');
+            setDoctorReturnView('home');
+            navigateToPage('doctor-detail', id);
+          }}
           onViewAll={() => navigateToPage('doctors')}
         />
 
-        {/* 3. Bangalore Minimal Line Map Location Strip ("Find an Avocado clinic near you") */}
+        {/* 3. Bangalore Minimal Line Map Location Strip ("Find an Sri Lakshmi clinic near you") */}
         <LocationSection
-          onBookVirtual={() => startBooking()}
-          onOpenBooking={() => startBooking()}
+          onBookVirtual={() => navigateToPage('contact-page')}
+          onOpenBooking={() => navigateToPage('locations')}
         />
 
-        {/* 4. Testimonials Section ("Patients of Avocado") */}
-        <TestimonialsSection
+        {/* 4. Testimonials Section ("Patients of Sri Lakshmi") */}
+        {designMode === 'original' && <TestimonialsSection
           viewMode={activeTestimonialOption}
-          onConsultDoctor={() => startBooking()}
-        />
+          onConsultDoctor={() => startBooking(undefined, undefined, undefined, 'home_testimonials')}
+        />}
 
         {/* 5. Cashless Insurance Partners with GSAP 3D Rotating Logo Wave */}
-        {componentVariants.insurance === 'light' ? <LightInsurancePartnersSection onOpenVerification={() => handleNavigate('insurance')} /> : <InsurancePartnersSection onOpenVerification={() => handleNavigate('insurance')} />}
+        {designMode === 'light' ? <LightInsurancePartnersSection onOpenVerification={() => handleNavigate('insurance')} /> : <InsurancePartnersSection onOpenVerification={() => handleNavigate('insurance')} />}
 
         {/* 6. Strategic Placement: Personalized Health Packages & Pricing Rail (Directly below Insurance Coverage) */}
         <PricingSection
           variant={pricingRailVariant}
           onVariantChange={setPricingRailVariant}
-          onBookPackage={() => startBooking()}
-          onExploreAll={() => startBooking()}
+          onBookPackage={() => startBooking(undefined, undefined, undefined, 'home_pricing_package')}
+          onExploreAll={() => navigateToPage('insurance-pricing')}
         />
 
+        <HospitalGallerySection onExploreHospital={() => navigateToPage('community')} />
+
         {/* 7. Doctor Drafts Section ("The latest from our Physicians") */}
-        {componentVariants.articles === 'light' ? <LightBlogReportsSection onOpenBlog={() => navigateToPage('blog')} /> : <BlogReportsSection onOpenBlog={() => navigateToPage('blog')} />}
+        {designMode === 'light' ? <LightBlogReportsSection onOpenBlog={() => navigateToPage('blog')} /> : <BlogReportsSection onOpenBlog={() => navigateToPage('blog')} />}
 
         {/* 6. Frequently Asked Questions Section (4 Questions) */}
-        <FAQSection onOpenFullFaq={() => navigateToPage('faq')} />
+        {designMode === 'original' && <FAQSection onOpenFullFaq={() => navigateToPage('faq')} />}
 
         {/* 7. Doctor Candid Marketing Showcase (GSAP Style with Coming Soon Video) */}
-        <DoctorShowcaseSection onBookAppointment={() => startBooking()} />
+        {designMode === 'original' && <DoctorShowcaseSection onBookAppointment={() => startBooking(undefined, undefined, undefined, 'home_doctor_showcase')} />}
       </main>
       </>
       )}
 
       {/* Footer */}
-      {!embeddedFooter && (componentVariants.footer === 'light' ? <LightFooter
-        onOpenBooking={() => startBooking()}
+      <LightFooter
+        onOpenBooking={() => startBooking(undefined, undefined, undefined, 'footer_nav')}
         onOpenLegal={(docId) => docId ? navigateToPage('legal-doc', docId) : navigateToPage('legal')}
-      /> : <Footer
-        onOpenBooking={() => startBooking()}
-        onOpenLegal={(docId) => docId ? navigateToPage('legal-doc', docId) : navigateToPage('legal')}
-      />)}
+      />
 
       {/* Questionnaire Modal matching media_1790064883413.png 1:1 */}
       <AICareAssistantModal
@@ -838,6 +1063,7 @@ export function App() {
         initialQuery={aiQuery}
         dateTime={selectedDateTime}
         onNavigateToResults={({ careType, specialtyId, dateTime }) => {
+          trackSearchUsed('care_search', '6-20');
           setIsAIAssistantOpen(false);
           setSearchResultsFilter({
             careType,
@@ -849,7 +1075,7 @@ export function App() {
       />
 
       {/* WhatsApp Bot & Emergency Calls Floating Widget */}
-      <WhatsAppFloatingWidget onOpenBooking={() => startBooking()} />
+      <WhatsAppFloatingWidget onOpenBooking={() => startBooking(undefined, undefined, undefined, 'whatsapp_widget')} />
       <VoiceAgentLauncher user={user} />
 
       {/* Discreet Display Settings Floating Button */}
@@ -859,7 +1085,7 @@ export function App() {
         onClick={() => setIsSettingsOpen(true)}
         title="Website Display Settings"
         aria-label="Website Display Settings"
-        className="fixed bottom-6 left-6 z-40 size-10 sm:size-11 rounded-full bg-[#f6f4ef]/90 hover:bg-white text-[#555] hover:text-[#121212] shadow-md hover:shadow-lg border border-[#ded7cb] flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-xs"
+        className="hidden sm:flex fixed bottom-6 left-6 z-40 size-11 rounded-full bg-[#f6f4ef]/90 hover:bg-white text-[#555] hover:text-[#121212] shadow-md hover:shadow-lg border border-[#ded7cb] items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-xs"
       >
         <Settings className="size-4.5" />
       </button>
@@ -869,20 +1095,16 @@ export function App() {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        activeTestimonialOption={activeTestimonialOption}
-        onChangeTestimonialOption={setActiveTestimonialOption}
-        activeServicesOption={activeServicesOption}
-        onChangeServicesOption={setActiveServicesOption}
-        activeHeroBookingPosition={heroBookingPosition}
-        onChangeHeroBookingPosition={setHeroBookingPosition}
-        activePricingVariant={pricingRailVariant}
-        onChangePricingVariant={setPricingRailVariant}
-        activeHeroType={heroVariant}
-        onChangeHeroType={setHeroVariant}
-        componentVariants={componentVariants}
-        onChangeComponentVariant={changeComponentVariant}
+        mode={designMode}
+        onChangeMode={setDesignMode}
+        heroBackdrop={heroBackdrop}
+        onChangeHeroBackdrop={setHeroBackdrop}
+        heroPlacement={heroPlacement}
+        onChangeHeroPlacement={setHeroPlacement}
       />
 
+      {/* PostHog Privacy & Analytics Consent Banner */}
+      <AnalyticsConsentBanner />
     </div>
   );
 }

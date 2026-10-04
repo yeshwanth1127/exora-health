@@ -1,0 +1,22 @@
+import { test, expect, openBooking, verify, hold, control, type Snapshot } from './fixtures';
+test('B3/C1: expired holds, changed fees and blocked schedules do not confirm stale visits', async ({ page, clinic }) => {
+  await openBooking(page, clinic);
+  await verify(page);
+  await hold(page);
+  await page.getByLabel('Patient’s full name').fill('Fictional Stale Patient');
+  await control('expire-holds');
+  await page.getByRole('button', { name: 'Confirm appointment', exact: true }).click();
+  await expect(page.getByText('Request could not complete', { exact: true })).toBeVisible();
+  expect((await control<Snapshot>('snapshot')).appointments).toHaveLength(0);
+  await page.getByRole('button', { name: 'Choose another time' }).click();
+  await hold(page);
+  await control('fee', { doctor: clinic.doctor, fee: clinic.fee + 100 });
+  await page.getByRole('button', { name: 'Confirm appointment', exact: true }).click();
+  await expect(page.getByLabel('Patient’s full name')).toHaveCount(0);
+  await expect(page.getByText(new RegExp(`Consultation ₹${clinic.fee + 100}`)).first()).toBeVisible();
+  await hold(page);
+  await control('block');
+  await page.getByRole('button', { name: 'Confirm appointment', exact: true }).click();
+  await expect(page.getByText('Request could not complete', { exact: true })).toBeVisible();
+  expect((await control<Snapshot>('snapshot')).appointments).toHaveLength(0);
+});

@@ -1,17 +1,13 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
-  Menu,
   ChevronRight,
   ChevronLeft,
   ChevronDown,
-  Search,
-  Sparkles,
   MapPin,
   Calendar,
   FileText,
   Check,
   CheckCircle2,
-  Printer,
   ArrowRight,
   CalendarCheck,
   AlertCircle,
@@ -27,6 +23,15 @@ import {
   subMonths,
   addDays,
 } from 'date-fns';
+import { demoStartDate, initialDemoDate } from '../../data/demoAvailability';
+import {
+  trackBookingFlowStarted,
+  trackBookingStepViewed,
+  trackBookingStepCompleted,
+  trackBookingValidationFailed,
+  trackBookingPreviewCompleted,
+  type BookingFieldGroup,
+} from '../../lib/posthog';
 
 export interface DoctorScheduleProfile {
   id: string;
@@ -63,7 +68,7 @@ interface OriginalScheduleAppointmentPageProps {
   initialVisitType?: 'Office Visit' | 'Video Visit';
   onBackToSearch: () => void;
   onBackToHome: () => void;
-  onOpenLogin: () => void;
+  onOpenLogin?: () => void;
   onSelectSimilarDoctor?: (doctorId: string) => void;
   user: { name: string; identifier: string } | null;
 }
@@ -82,25 +87,36 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
   // Stepper state (1: Appointment Details, 2: Patient Information, 3: Confirmation)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(initialStep);
 
+  // PostHog analytics tracking for booking funnel (shared contract with ScheduleAppointmentPage)
+  useEffect(() => {
+    trackBookingFlowStarted('booking', initialStep);
+  }, [initialStep]);
+
+  useEffect(() => {
+    trackBookingStepViewed(currentStep);
+    if (currentStep === 3) {
+      trackBookingPreviewCompleted('booking');
+    }
+  }, [currentStep]);
+
   // Step 1: Appointment Details State
   const [isNewPatient, setIsNewPatient] = useState<'new' | 'existing'>('new');
   const [visitType, setVisitType] = useState<'Office Visit' | 'Video Visit'>(initialVisitType);
-  const [selectedLocation, setSelectedLocation] = useState(doctor.practiceName || 'Avocado Health');
+  const [selectedLocation, setSelectedLocation] = useState(doctor.practiceName || 'Sri Lakshmi Hospital');
 
-  // Calendar month state (starts in October 2026 matching screenshots)
-  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date(2026, 9, 1)); // Oct 2026
-  const [selectedDate, setSelectedDate] = useState<string>(initialDate || '2026-10-30');
-  const [selectedSlot, setSelectedSlot] = useState<string>(initialSlot || '12:45 PM');
+  const [calendarMonth, setCalendarMonth] = useState<Date>(() => initialDemoDate(initialDate));
+  const [selectedDate, setSelectedDate] = useState<string>(() => format(initialDemoDate(initialDate), 'yyyy-MM-dd'));
+  const [selectedSlot, setSelectedSlot] = useState<string>(initialSlot || '');
 
   // Step 2: Patient Information State (styled using login modal components)
   const [appointmentFor, setAppointmentFor] = useState<'Myself' | 'Someone else'>('Myself');
-  const [fullName, setFullName] = useState(user?.name || 'Alex Mercer');
-  const [dob, setDob] = useState('1994-06-15');
-  const [gender, setGender] = useState('Female');
+  const [fullName, setFullName] = useState(user?.name || '');
+  const [dob, setDob] = useState('');
+  const [gender, setGender] = useState('');
   const [showMoreGender, setShowMoreGender] = useState(false);
-  const [phone, setPhone] = useState(user?.identifier || '8217286695');
+  const [phone, setPhone] = useState(user?.identifier?.match(/^\d+$/) ? user.identifier : '');
   const [email, setEmail] = useState(''); // Optional!
-  const [reason, setReason] = useState('New consultation for sensitive skin condition');
+  const [reason, setReason] = useState('');
   const [showSignInAccordion, setShowSignInAccordion] = useState(false);
 
   // OTP Verification State (adapted from AaveLoginFlow)
@@ -108,43 +124,42 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [activeOtpIndex, setActiveOtpIndex] = useState(0);
-  const [resendCountdown, setResendCountdown] = useState(0);
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Validation & Error state
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Step 3: Confirmation state
-  const [confirmationCode] = useState('BM-8649-5748');
+  // Step 3 is a local walkthrough; no booking is submitted here.
 
-  // Resend countdown timer
-  useEffect(() => {
-    if (resendCountdown > 0) {
-      const timer = setTimeout(() => setResendCountdown((c) => c - 1), 1000);
-      return () => clearTimeout(timer);
+  // Dynamic slot generation for any selected date (>3 slots per day supported!)
+  const getSlotsForDate = useCallback((dateStr: string): string[] => {
+    if (doctor.availableSlots && doctor.availableSlots[dateStr] && doctor.availableSlots[dateStr].length > 0) {
+      return doctor.availableSlots[dateStr];
     }
-  }, [resendCountdown]);
+    const parts = dateStr.split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    const d = new Date(year, month, day);
+    const dayOfWeek = d.getDay();
 
-  // Available slots for doctor (with variable >3 slots per day)
-  const doctorSlots = useMemo(() => {
-    if (doctor.availableSlots && Object.keys(doctor.availableSlots).length > 0) {
-      return doctor.availableSlots;
+    if (dayOfWeek === 0) {
+      return ['10:00 AM', '11:00 AM', '11:45 AM', '01:30 PM'];
     }
-    // High-availability default schedule with >3 slots per day
-    return {
-      '2026-10-30': ['12:45 PM', '1:15 PM', '1:45 PM', '2:15 PM'],
-      '2026-10-31': ['9:30 AM', '10:00 AM', '10:30 AM', '11:15 AM'],
-      '2026-11-01': [],
-      '2026-11-02': ['9:00 AM', '10:00 AM', '2:00 PM', '2:30 PM'],
-      '2026-11-03': ['11:30 AM', '1:00 PM', '2:30 PM', '3:15 PM'],
-      '2026-11-04': ['9:15 AM', '10:45 AM', '1:30 PM', '2:15 PM'],
-    };
-  }, [doctor]);
+    if (dayOfWeek === 6) {
+      return ['09:30 AM', '10:15 AM', '11:00 AM', '11:45 AM', '01:30 PM', '02:15 PM'];
+    }
+    if (day % 2 === 0) {
+      return ['09:00 AM', '10:30 AM', '11:45 AM', '02:30 PM', '03:45 PM', '04:30 PM'];
+    } else {
+      return ['09:15 AM', '10:00 AM', '11:30 AM', '01:15 PM', '02:45 PM', '04:00 PM'];
+    }
+  }, [doctor.availableSlots]);
 
   // Current day slots list
   const currentDaySlots = useMemo(() => {
-    return doctorSlots[selectedDate] || ['12:45 PM', '1:15 PM', '1:45 PM', '2:15 PM'];
-  }, [doctorSlots, selectedDate]);
+    return getSlotsForDate(selectedDate);
+  }, [getSlotsForDate, selectedDate]);
 
   // Format selected date display
   const formattedSelectedDate = useMemo(() => {
@@ -153,7 +168,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
       const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
       return format(d, 'EEEE, MMMM d, yyyy');
     } catch {
-      return 'Monday, November 2, 2026';
+      return 'Choose a date';
     }
   }, [selectedDate]);
 
@@ -169,15 +184,16 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
         dayNum: format(day, 'd'),
         dateStr: dStr,
         isCurrentMonth: isSameMonth(day, calendarMonth),
-        hasSlots: Boolean(doctorSlots[dStr] && doctorSlots[dStr].length > 0),
+        hasSlots: true,
         isSelected: dStr === selectedDate,
       };
     });
-  }, [calendarMonth, doctorSlots, selectedDate]);
+  }, [calendarMonth, selectedDate]);
 
   // Handle advancing to Step 2 when slot is picked in Step 1
   const handleSelectSlotInStep1 = (slot: string) => {
     setSelectedSlot(slot);
+    trackBookingStepCompleted(1);
     setCurrentStep(2);
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -187,11 +203,12 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
   // OTP Handlers (adapted from AaveLoginFlow)
   const handleSendOtp = () => {
     if (!phone.trim()) {
-      setErrors((prev) => ({ ...prev, phone: 'Mobile phone number is required to send OTP' }));
+      setErrors((prev) => ({ ...prev, phone: 'Enter a sample mobile number to try the demo code' }));
       return;
     }
     setOtpSent(true);
-    setResendCountdown(30);
+    setOtpVerified(false);
+    setOtpDigits(['', '', '', '', '', '']);
     setErrors((prev) => ({ ...prev, phone: '', otp: '' }));
     setTimeout(() => {
       otpInputRefs.current[0]?.focus();
@@ -272,7 +289,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
       setOtpVerified(true);
       setErrors((prev) => ({ ...prev, otp: '' }));
     } else {
-      setErrors((prev) => ({ ...prev, otp: 'Please enter all 6 digits of the verification code' }));
+      setErrors((prev) => ({ ...prev, otp: 'Enter all 6 digits of the demo code' }));
     }
   };
 
@@ -282,12 +299,12 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
 
     const newErrors: Record<string, string> = {};
 
-    // 1. Legal full name (a single field; naming conventions vary)
+    // 1. Legal full name (single field with first and last)
     const trimmedName = fullName.trim();
     if (!trimmedName) {
       newErrors.fullName = 'Full name is required';
-    } else if (trimmedName.length < 2) {
-      newErrors.fullName = 'Please enter the patient’s full name';
+    } else if (trimmedName.split(/\s+/).length < 2) {
+      newErrors.fullName = 'Please enter both your first and last name';
     }
 
     // 2. Date of birth
@@ -304,7 +321,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
     if (!phone.trim()) {
       newErrors.phone = 'Mobile phone number is required';
     } else if (!otpVerified) {
-      newErrors.otp = 'Please verify your phone number with the OTP code before continuing';
+      newErrors.otp = 'Enter a six-digit demo code before continuing';
       if (!otpSent) {
         setOtpSent(true);
       }
@@ -312,6 +329,13 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      const fieldGroup: BookingFieldGroup = newErrors.fullName ? 'identity'
+        : newErrors.dob ? 'date_of_birth'
+        : newErrors.gender ? 'gender'
+        : newErrors.phone || newErrors.otp ? 'contact_verification'
+        : 'other';
+      trackBookingValidationFailed(2, fieldGroup);
+
       // Stop and scroll smoothly to the first error
       const firstKey = Object.keys(newErrors)[0];
       const el = document.getElementById(`field-${firstKey}`);
@@ -323,6 +347,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
 
     // All requirements satisfied -> advance to Step 3
     setErrors({});
+    trackBookingStepCompleted(2);
     setCurrentStep(3);
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -331,82 +356,29 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
 
   return (
     <div className="min-h-screen bg-white text-neutral-900 flex flex-col font-sans">
-      {/* ── TOP UTILITY & BREADCRUMB NAVIGATION (1:1 with media_1790071475424.png) ── */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs sm:text-sm text-neutral-600 overflow-x-auto no-scrollbar py-1">
-            <button
-              type="button"
-              onClick={onBackToHome}
-              className="hover:text-neutral-950 font-medium inline-flex items-center gap-1 shrink-0 cursor-pointer"
-            >
-              <Menu className="size-4" />
-              <span>Menu</span>
-            </button>
-            <span className="text-neutral-300">|</span>
-            <button
-              type="button"
-              onClick={onBackToHome}
-              className="hover:text-neutral-950 font-medium shrink-0 cursor-pointer"
-            >
-              Home
-            </button>
-            <ChevronRight className="size-3.5 text-neutral-400 shrink-0" />
-            <button
-              type="button"
-              onClick={onBackToSearch}
-              className="hover:text-neutral-950 font-medium shrink-0 cursor-pointer"
-            >
-              Find a Doctor
-            </button>
-            <ChevronRight className="size-3.5 text-neutral-400 shrink-0" />
-            <span className="text-neutral-700 font-medium truncate max-w-[140px] sm:max-w-none">
-              {doctor.name}
-            </span>
-            <ChevronRight className="size-3.5 text-neutral-400 shrink-0" />
-            <span className="text-neutral-950 font-bold shrink-0">Schedule an Appointment</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onBackToSearch}
-              className="text-neutral-700 hover:text-neutral-950 p-1.5 rounded-full hover:bg-neutral-100 transition cursor-pointer"
-              title="Search Doctors"
-            >
-              <Search className="size-4.5" />
-            </button>
-            <button
-              type="button"
-              onClick={onBackToSearch}
-              className="text-xs font-bold text-[#3d117a] border border-[#3d117a]/30 px-3 py-1.5 rounded-full hover:bg-[#3d117a]/5 transition cursor-pointer inline-flex items-center gap-1"
-            >
-              <Sparkles className="size-3.5 text-[#3d117a]" />
-              <span>Ask AI</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
       {/* ── MAIN CONTENT CONTAINER ── */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           <p role="status" className="rounded-xl border border-[#dce9df] bg-[#eef5eb] px-4 py-3 text-sm text-[#315943]">
             Sample walkthrough: dates, time slots, verification and confirmation are examples. No appointment is reserved and no message is sent. Use the standard booking view for live availability and Virtual OPD bookings.
           </p>
+          <div className="max-w-2xl" aria-label={`Booking progress: step ${currentStep} of 3`}>
+            <div className="mb-2 flex justify-between text-xs font-semibold text-[#315943]"><span>Step {currentStep} of 3</span><span>{currentStep === 1 ? 'Visit details' : currentStep === 2 ? 'Your details' : 'Review'}</span></div>
+            <div role="progressbar" aria-valuemin={1} aria-valuemax={3} aria-valuenow={currentStep} aria-label="Booking progress" className="h-1.5 overflow-hidden rounded-full bg-[#dce9df]"><div className="h-full rounded-full bg-[#24553c] transition-[width]" style={{ width: `${currentStep / 3 * 100}%` }} /></div>
+          </div>
           {/* ══════════════════════════════════════════════════════════════
               3-STEP PROGRESS STEPPER (Matching media_1790071475424.png & media_1790071408155.png)
               ══════════════════════════════════════════════════════════════ */}
-          <div className="flex items-center max-w-2xl text-xs sm:text-sm font-semibold select-none">
+          <div className="hidden sm:flex items-center max-w-2xl text-xs sm:text-sm font-semibold select-none">
             {/* Step 1 Item */}
             <div
               onClick={() => setCurrentStep(1)}
               className="flex items-center gap-2.5 cursor-pointer group"
             >
               <div
-                className={`size-6 rounded-full flex items-center justify-center font-bold text-xs transition-colors ${
+                className={`size-6 shrink-0 rounded-full flex items-center justify-center font-bold text-xs transition-colors ${
                   currentStep === 1
-                    ? 'bg-[#3d117a] text-white shadow-xs'
+                    ? 'bg-[#154734] text-white shadow-xs'
                     : 'bg-[#008080] text-white' // Teal check circle when completed
                 }`}
               >
@@ -432,9 +404,9 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
               className={`flex items-center gap-2.5 ${currentStep >= 2 ? 'cursor-pointer group' : 'opacity-60'}`}
             >
               <div
-                className={`size-6 rounded-full flex items-center justify-center font-bold text-xs transition-colors ${
+                className={`size-6 shrink-0 rounded-full flex items-center justify-center font-bold text-xs transition-colors ${
                   currentStep === 2
-                    ? 'bg-[#3d117a] text-white shadow-xs'
+                    ? 'bg-[#154734] text-white shadow-xs'
                     : currentStep > 2
                     ? 'bg-[#008080] text-white'
                     : 'bg-white border-2 border-neutral-300 text-neutral-500'
@@ -457,18 +429,18 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
             {/* Step 3 Item */}
             <div className={`flex items-center gap-2.5 ${currentStep === 3 ? 'text-neutral-950 font-bold' : 'opacity-60 text-neutral-500'}`}>
               <div
-                className={`size-6 rounded-full flex items-center justify-center font-bold text-xs ${
-                  currentStep === 3 ? 'bg-[#3d117a] text-white shadow-xs' : 'bg-white border-2 border-neutral-300 text-neutral-500'
+                className={`size-6 shrink-0 rounded-full flex items-center justify-center font-bold text-xs ${
+                  currentStep === 3 ? 'bg-[#154734] text-white shadow-xs' : 'bg-white border-2 border-neutral-300 text-neutral-500'
                 }`}
               >
                 3
               </div>
-              <span>Confirmation</span>
+              <span>Review</span>
             </div>
           </div>
 
           {/* Page Title */}
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-[#1c0840] tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-[#17372b] tracking-tight">
             Schedule an Appointment
           </h1>
 
@@ -491,7 +463,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                         name="isNewPatient"
                         checked={isNewPatient === 'new'}
                         onChange={() => setIsNewPatient('new')}
-                        className="size-4.5 text-[#3d117a] focus:ring-[#3d117a] cursor-pointer accent-[#3d117a]"
+                        className="size-4.5 text-[#154734] focus:ring-[#154734] cursor-pointer accent-[#154734]"
                       />
                       <span>I&apos;m new to this doctor.</span>
                     </label>
@@ -502,7 +474,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                         name="isNewPatient"
                         checked={isNewPatient === 'existing'}
                         onChange={() => setIsNewPatient('existing')}
-                        className="size-4.5 text-[#3d117a] focus:ring-[#3d117a] cursor-pointer accent-[#3d117a]"
+                        className="size-4.5 text-[#154734] focus:ring-[#154734] cursor-pointer accent-[#154734]"
                       />
                       <span>I&apos;ve seen this doctor in the past three years.</span>
                     </label>
@@ -523,7 +495,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                         name="visitType"
                         checked={visitType === 'Office Visit'}
                         onChange={() => setVisitType('Office Visit')}
-                        className="size-4.5 text-[#3d117a] focus:ring-[#3d117a] cursor-pointer accent-[#3d117a]"
+                        className="size-4.5 text-[#154734] focus:ring-[#154734] cursor-pointer accent-[#154734]"
                       />
                       <span>Office Visit</span>
                     </label>
@@ -534,7 +506,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                         name="visitType"
                         checked={visitType === 'Video Visit'}
                         onChange={() => setVisitType('Video Visit')}
-                        className="size-4.5 text-[#3d117a] focus:ring-[#3d117a] cursor-pointer accent-[#3d117a]"
+                        className="size-4.5 text-[#154734] focus:ring-[#154734] cursor-pointer accent-[#154734]"
                       />
                       <span>Video Visit</span>
                     </label>
@@ -549,14 +521,14 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     Location for Your Visit
                   </h3>
 
-                  {/* Clean Location Card with standard purple highlight */}
+                  {/* Clean Location Card with standard green highlight */}
                   <div
-                    onClick={() => setSelectedLocation(doctor.practiceName || 'Avocado Health')}
-                    className="relative bg-white rounded-xl border-2 border-neutral-200 hover:border-[#3d117a]/50 shadow-xs overflow-hidden p-5 sm:p-6 space-y-4 cursor-pointer transition-all"
+                    onClick={() => setSelectedLocation(doctor.practiceName || 'Sri Lakshmi Hospital')}
+                    className="relative bg-white rounded-xl border-2 border-neutral-200 hover:border-[#154734]/50 shadow-xs overflow-hidden p-5 sm:p-6 space-y-4 cursor-pointer transition-all"
                   >
                     <div className="flex items-start gap-3.5">
-                      <div className="size-5 rounded-full border-2 border-[#3d117a] flex items-center justify-center shrink-0 mt-0.5">
-                        <div className="size-2.5 rounded-full bg-[#3d117a]" />
+                      <div className="size-5 rounded-full border-2 border-[#154734] flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="size-2.5 rounded-full bg-[#154734]" />
                       </div>
                       <div className="space-y-1 text-sm">
                         <h4 className="font-bold text-base text-neutral-900 leading-snug">
@@ -566,42 +538,8 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                           {doctor.addressLine1 || 'Clinic details to be confirmed'}, {doctor.addressLine2 || 'Bengaluru'}
                         </div>
                         <div className="text-xs sm:text-sm text-neutral-800 font-semibold pt-0.5">
-                          📞 {doctor.phone || '080 4968 2800'}
+                          📞 {doctor.phone || '99017 11716'}
                         </div>
-                      </div>
-                    </div>
-
-                    {/* Stylized Interactive Mini Map Graphic */}
-                    <div className="relative w-full sm:w-[340px] h-40 rounded-lg overflow-hidden border border-neutral-200 bg-[#e5e3df] shadow-2xs">
-                      {/* Stylized Google Map Canvas Simulation with Murray Hill Pin */}
-                      <svg viewBox="0 0 400 200" className="w-full h-full object-cover">
-                        <rect width="400" height="200" fill="#e8ece9" />
-                        {/* Street grid */}
-                        <path d="M0,40 L400,40 M0,90 L400,90 M0,140 L400,140 M0,180 L400,180" stroke="#ffffff" strokeWidth="6" />
-                        <path d="M60,0 L60,200 M130,0 L130,200 M200,0 L200,200 M280,0 L280,200 M350,0 L350,200" stroke="#ffffff" strokeWidth="6" />
-                        {/* Diagonal Avenue */}
-                        <path d="M0,170 L260,0" stroke="#fbd986" strokeWidth="8" />
-                        {/* Parks */}
-                        <rect x="210" y="50" width="60" height="35" rx="3" fill="#cbe6a3" />
-                        {/* Location Pin */}
-                        <g transform="translate(195, 75)">
-                          <circle cx="10" cy="10" r="14" fill="#ef4444" opacity="0.25" />
-                          <path
-                            d="M10,0 C4.48,0 0,4.48 0,10 C0,17.5 10,28 10,28 C10,28 20,17.5 20,10 C20,4.48 15.52,0 10,0 Z"
-                            fill="#dc2626"
-                          />
-                          <circle cx="10" cy="10" r="4" fill="#ffffff" />
-                        </g>
-                        {/* Neighborhood Label */}
-                        <rect x="155" y="115" width="90" height="18" rx="2" fill="#ffffff" opacity="0.9" />
-                        <text x="200" y="128" fontSize="10" fontWeight="bold" fill="#374151" textAnchor="middle">
-                          MURRAY HILL
-                        </text>
-                      </svg>
-
-                      {/* Map Attribution Watermark */}
-                      <div className="absolute bottom-1 left-2 text-[9px] text-neutral-500 bg-white/70 px-1 rounded">
-                        Google Map Preview
                       </div>
                     </div>
 
@@ -609,7 +547,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     <div className="pt-1">
                       <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 text-sky-800 border border-sky-200 text-xs font-bold">
                         <CalendarCheck className="size-4 text-sky-600" />
-                        <span>Next Available: Friday, October 30</span>
+                        <span>Sample times from {format(demoStartDate(), 'MMM d')}</span>
                       </div>
                     </div>
                   </div>
@@ -647,7 +585,8 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     <button
                       type="button"
                       onClick={() => setCalendarMonth((m) => subMonths(m, 1))}
-                      className="text-xs font-semibold text-neutral-700 hover:text-[#3d117a] inline-flex items-center gap-0.5 cursor-pointer"
+                      disabled={startOfMonth(calendarMonth) <= startOfMonth(demoStartDate())}
+                      className="text-xs font-semibold text-neutral-700 hover:text-[#154734] inline-flex items-center gap-0.5 cursor-pointer"
                     >
                       <ChevronLeft className="size-4" />
                       <span>{format(subMonths(calendarMonth, 1), 'MMM')}</span>
@@ -661,7 +600,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     <button
                       type="button"
                       onClick={() => setCalendarMonth((m) => addMonths(m, 1))}
-                      className="text-xs font-semibold text-neutral-700 hover:text-[#3d117a] inline-flex items-center gap-0.5 cursor-pointer"
+                      className="text-xs font-semibold text-neutral-700 hover:text-[#154734] inline-flex items-center gap-0.5 cursor-pointer"
                     >
                       <span>{format(addMonths(calendarMonth, 1), 'MMM')}</span>
                       <ChevronRight className="size-4" />
@@ -681,35 +620,32 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
 
                   {/* 42-day uniform grid (Zero warping, pixel-perfect alignment) */}
                   <div className="grid grid-cols-7 gap-y-1.5 gap-x-1 text-center pt-1">
-                    {calendarDays.map((cell) => (
-                      <div key={cell.dateStr} className="h-9 flex items-center justify-center">
-                        {!cell.isCurrentMonth ? (
-                          <span className="text-[13px] text-neutral-400 select-none">
-                            {cell.dayNum}
-                          </span>
-                        ) : cell.isSelected ? (
+                    {calendarDays.map((cell) => {
+                      const isSelected = cell.isSelected;
+                      return (
+                        <div key={cell.dateStr} className="h-10 flex items-center justify-center">
                           <button
                             type="button"
-                            onClick={() => setSelectedDate(cell.dateStr)}
-                            className="size-8 rounded-full bg-[#3d117a] text-white font-bold text-[13px] flex items-center justify-center shadow-xs cursor-pointer ring-2 ring-[#3d117a]/20"
+                            disabled={cell.dateStr < format(demoStartDate(), 'yyyy-MM-dd')}
+                            onClick={() => {
+                              setSelectedDate(cell.dateStr);
+                              if (!cell.isCurrentMonth) {
+                                setCalendarMonth(cell.dateObj);
+                              }
+                            }}
+                            className={`w-full h-10 sm:size-10 rounded-full text-[13px] flex items-center justify-center transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 ${
+                              isSelected
+                                ? 'bg-[#154734] text-white font-bold shadow-xs ring-2 ring-[#154734]/20'
+                                : cell.isCurrentMonth
+                                ? 'text-neutral-900 font-bold hover:bg-emerald-50 hover:text-[#154734] active:scale-95'
+                                : 'text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100'
+                            }`}
                           >
                             {cell.dayNum}
                           </button>
-                        ) : cell.hasSlots ? (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedDate(cell.dateStr)}
-                            className="size-8 rounded-full text-neutral-900 font-bold text-[13px] hover:bg-purple-100 flex items-center justify-center transition cursor-pointer"
-                          >
-                            {cell.dayNum}
-                          </button>
-                        ) : (
-                          <span className="text-[13px] text-neutral-600 select-none">
-                            {cell.dayNum}
-                          </span>
-                        )}
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -726,7 +662,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
 
                   {/* Slot buttons grid (More than 3 slots supported!) */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {currentDaySlots.map((slot) => {
+                    {currentDaySlots.map((slot: string) => {
                       const isSelected = selectedSlot === slot;
                       return (
                         <button
@@ -735,8 +671,8 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                           onClick={() => handleSelectSlotInStep1(slot)}
                           className={`py-2 px-2 rounded-md font-bold text-xs transition cursor-pointer text-center ${
                             isSelected
-                              ? 'bg-[#2a0c58] text-white ring-2 ring-[#4efcd3]'
-                              : 'bg-[#3d117a] hover:bg-[#2d0960] active:scale-95 text-white'
+                              ? 'bg-[#1b5b39] text-white ring-2 ring-[#cbe6a3]'
+                              : 'bg-[#154734] hover:bg-[#0f3426] active:scale-95 text-white'
                           }`}
                         >
                           {slot}
@@ -748,18 +684,18 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
 
                 <div className="border-t border-neutral-200" />
 
-                {/* Similar Providers with Online Scheduling */}
+                {/* Explore similar providers */}
                 <div className="space-y-2 pt-1">
                   <h4 className="font-bold text-xs text-neutral-900">
-                    Similar Providers with Online Scheduling
+                    Explore similar providers
                   </h4>
                   <p className="text-[11px] text-neutral-600 leading-relaxed">
-                    Browse providers similar to {doctor.name.split(',')[0]} that have online appointments available.
+                    Browse providers similar to {doctor.name.split(',')[0]} in this walkthrough.
                   </p>
                   <button
                     type="button"
                     onClick={onBackToSearch}
-                    className="w-full bg-[#3d117a] hover:bg-[#2d0960] active:scale-95 text-white font-bold text-xs py-2 px-4 rounded-md transition cursor-pointer"
+                    className="w-full bg-[#154734] hover:bg-[#0f3426] active:scale-95 text-white font-bold text-xs py-2 px-4 rounded-md transition cursor-pointer"
                   >
                     View Similar Providers
                   </button>
@@ -782,11 +718,11 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     className="flex items-center justify-between cursor-pointer"
                   >
                     <div className="space-y-1">
-                      <h3 className="font-bold text-base text-[#1c0840]">
-                        Sign Into Brave Mendel Health Account
+                      <h3 className="font-bold text-base text-[#17372b]">
+                        Sri Lakshmi appointment demo
                       </h3>
                       <p className="text-xs text-neutral-600 leading-relaxed">
-                        You can save time by signing into your account, and we&apos;ll automatically fill out your personal information.
+                        Continue as a guest with sample details. This walkthrough does not create a patient account.
                       </p>
                     </div>
                     <div className="size-8 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 ml-3">
@@ -798,16 +734,16 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     </div>
                   </div>
 
-                  {showSignInAccordion && (
+                  {showSignInAccordion && onOpenLogin && (
                     <div className="mt-4 pt-4 border-t border-neutral-200 flex items-center gap-3">
                       <button
                         type="button"
                         onClick={onOpenLogin}
-                        className="px-5 py-2.5 rounded-[12px] bg-[#3d117a] text-white text-xs font-bold hover:bg-[#2d0960] transition cursor-pointer"
+                        className="px-5 py-2.5 rounded-[12px] bg-[#154734] text-white text-xs font-bold hover:bg-[#0f3426] transition cursor-pointer"
                       >
                         Sign In Now
                       </button>
-                      <span className="text-xs text-neutral-500">Instant OTP verification via mobile</span>
+                      <span className="text-xs text-neutral-500">Demo code only; no SMS is sent</span>
                     </div>
                   )}
                 </div>
@@ -842,7 +778,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                         name="appointmentFor"
                         checked={appointmentFor === 'Myself'}
                         onChange={() => setAppointmentFor('Myself')}
-                        className="size-4.5 text-[#3d117a] focus:ring-[#3d117a] cursor-pointer accent-[#3d117a]"
+                        className="size-4.5 text-[#154734] focus:ring-[#154734] cursor-pointer accent-[#154734]"
                       />
                       <span>Myself</span>
                     </label>
@@ -853,7 +789,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                         name="appointmentFor"
                         checked={appointmentFor === 'Someone else'}
                         onChange={() => setAppointmentFor('Someone else')}
-                        className="size-4.5 text-[#3d117a] focus:ring-[#3d117a] cursor-pointer accent-[#3d117a]"
+                        className="size-4.5 text-[#154734] focus:ring-[#154734] cursor-pointer accent-[#154734]"
                       />
                       <span>Someone else</span>
                     </label>
@@ -862,25 +798,26 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
 
                 {/* Patient Information Form (Single Name field, Optional Email, Inline OTP) */}
                 <form onSubmit={handleProceedToConfirmation} className="space-y-5 pt-1" noValidate>
-                  {/* 1. Legal Full Name */}
+                  {/* 1. Legal Full Name (Single Field with First and Last) */}
                   <div id="field-fullName" className="space-y-1.5">
-                    <label className="flex items-center gap-1.5 text-[13px] font-semibold text-neutral-800">
+                    <label htmlFor="patient-full-name" className="flex items-center gap-1.5 text-[13px] font-semibold text-neutral-800">
                       <span>Legal full name</span>
                       <Info className="size-3.5 text-neutral-400" />
                       <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="patient-full-name"
                       type="text"
                       value={fullName}
                       onChange={(e) => {
                         setFullName(e.target.value);
                         if (errors.fullName) setErrors((prev) => ({ ...prev, fullName: '' }));
                       }}
-                      placeholder="Full name"
+                      placeholder="First and last name"
                       className={`w-full h-[52px] px-4 rounded-[14px] text-[15px] font-normal transition-all outline-none text-[#111827] placeholder-[#9CA3AF] ${
                         errors.fullName
                           ? 'bg-red-50/25 border-2 border-red-500 focus:border-red-600'
-                          : 'bg-[#F4F4F6] border-2 border-transparent focus:bg-[#FCFCFE] focus:border-[#3d117a] focus:shadow-[0_0_0_3px_rgba(61,17,122,0.12)]'
+                          : 'bg-[#F4F4F6] border-2 border-transparent focus:bg-[#FCFCFE] focus:border-[#154734] focus:shadow-[0_0_0_3px_rgba(21,71,52,0.12)]'
                       }`}
                     />
                     {errors.fullName && (
@@ -895,10 +832,11 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     {/* Date of Birth */}
                     <div id="field-dob" className="space-y-1.5">
-                      <label className="block text-[13px] font-semibold text-neutral-800">
+                      <label htmlFor="patient-dob" className="block text-[13px] font-semibold text-neutral-800">
                         Date of birth <span className="text-red-500">*</span>
                       </label>
                       <input
+                        id="patient-dob"
                         type="date"
                         value={dob}
                         onChange={(e) => {
@@ -908,7 +846,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                         className={`w-full h-[52px] px-4 rounded-[14px] text-[15px] font-normal transition-all outline-none text-[#111827] placeholder-[#9CA3AF] cursor-pointer ${
                           errors.dob
                             ? 'bg-red-50/25 border-2 border-red-500 focus:border-red-600'
-                            : 'bg-[#F4F4F6] border-2 border-transparent focus:bg-[#FCFCFE] focus:border-[#3d117a] focus:shadow-[0_0_0_3px_rgba(61,17,122,0.12)]'
+                            : 'bg-[#F4F4F6] border-2 border-transparent focus:bg-[#FCFCFE] focus:border-[#154734] focus:shadow-[0_0_0_3px_rgba(21,71,52,0.12)]'
                         }`}
                       />
                       {errors.dob && (
@@ -927,8 +865,9 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                         <span className="text-red-500">*</span>
                       </label>
                       <div className="flex items-center gap-6 h-[52px] px-4 rounded-[14px] bg-[#F4F4F6]">
-                        <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-neutral-800">
+                        <label htmlFor="patient-gender-male" className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-neutral-800">
                           <input
+                            id="patient-gender-male"
                             type="radio"
                             name="gender"
                             checked={gender === 'Male'}
@@ -936,12 +875,13 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                               setGender('Male');
                               if (errors.gender) setErrors((prev) => ({ ...prev, gender: '' }));
                             }}
-                            className="size-4.5 text-[#3d117a] focus:ring-[#3d117a] cursor-pointer accent-[#3d117a]"
+                            className="size-4.5 text-[#154734] focus:ring-[#154734] cursor-pointer accent-[#154734]"
                           />
                           <span>Male</span>
                         </label>
-                        <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-neutral-800">
+                        <label htmlFor="patient-gender-female" className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-neutral-800">
                           <input
+                            id="patient-gender-female"
                             type="radio"
                             name="gender"
                             checked={gender === 'Female'}
@@ -949,7 +889,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                               setGender('Female');
                               if (errors.gender) setErrors((prev) => ({ ...prev, gender: '' }));
                             }}
-                            className="size-4.5 text-[#3d117a] focus:ring-[#3d117a] cursor-pointer accent-[#3d117a]"
+                            className="size-4.5 text-[#154734] focus:ring-[#154734] cursor-pointer accent-[#154734]"
                           />
                           <span>Female</span>
                         </label>
@@ -968,7 +908,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     <button
                       type="button"
                       onClick={() => setShowMoreGender(!showMoreGender)}
-                      className="text-xs font-semibold text-[#3d117a] hover:underline cursor-pointer"
+                      className="text-xs font-semibold text-[#154734] hover:underline cursor-pointer"
                     >
                       Add more sex &amp; gender info (optional)
                     </button>
@@ -992,12 +932,13 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
 
                   {/* 3. Mobile Phone Number & Inline OTP Verification */}
                   <div id="field-phone" className="space-y-2">
-                    <label className="block text-[13px] font-semibold text-neutral-800">
+                    <label htmlFor="patient-phone" className="block text-[13px] font-semibold text-neutral-800">
                       Mobile Phone Number <span className="text-red-500">*</span>
                     </label>
 
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
                       <input
+                        id="patient-phone"
                         type="tel"
                         value={phone}
                         onChange={(e) => {
@@ -1009,7 +950,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                         className={`flex-1 h-[52px] px-4 rounded-[14px] text-[15px] font-normal transition-all outline-none text-[#111827] placeholder-[#9CA3AF] ${
                           errors.phone || (errors.otp && !otpVerified)
                             ? 'bg-red-50/25 border-2 border-red-500 focus:border-red-600'
-                            : 'bg-[#F4F4F6] border-2 border-transparent focus:bg-[#FCFCFE] focus:border-[#3d117a] focus:shadow-[0_0_0_3px_rgba(61,17,122,0.12)]'
+                            : 'bg-[#F4F4F6] border-2 border-transparent focus:bg-[#FCFCFE] focus:border-[#154734] focus:shadow-[0_0_0_3px_rgba(21,71,52,0.12)]'
                         }`}
                       />
 
@@ -1017,10 +958,10 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                         <button
                           type="button"
                           onClick={handleSendOtp}
-                          className="h-[52px] px-5 bg-[#3d117a] hover:bg-[#2d0960] active:scale-95 text-white text-xs font-bold rounded-[14px] transition cursor-pointer shrink-0 shadow-xs flex items-center justify-center gap-1.5"
+                          className="h-[52px] px-5 bg-[#154734] hover:bg-[#0f3426] active:scale-95 text-white text-xs font-bold rounded-[14px] transition cursor-pointer shrink-0 shadow-xs flex items-center justify-center gap-1.5"
                         >
                           <Smartphone className="size-4" />
-                          <span>{otpSent ? (resendCountdown > 0 ? `Resend (${resendCountdown}s)` : 'Resend Code') : 'Send OTP'}</span>
+                          <span>{otpSent ? 'Reset demo code' : 'Try demo code'}</span>
                         </button>
                       )}
                     </div>
@@ -1036,28 +977,28 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     {otpVerified && (
                       <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-[14px] text-xs font-semibold">
                         <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
-                        <span>Phone number verified via SMS code (+1 {phone})</span>
+                        <span>Demo code accepted. Your phone number has not been verified.</span>
                       </div>
                     )}
 
                     {/* Inline OTP Code Verification Panel (from AaveLoginFlow) */}
                     {otpSent && !otpVerified && (
-                      <div className="bg-[#f7f5fc] border border-[#ddd6fe] rounded-2xl p-4 sm:p-5 space-y-3.5 animate-fadeIn">
+                      <div className="bg-[#f4f8f2] border border-[#c8dec9] rounded-2xl p-4 sm:p-5 space-y-3.5 animate-fadeIn">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h4 className="text-sm font-bold text-[#1c0840] flex items-center gap-1.5">
-                              <Smartphone className="size-4 text-[#3d117a]" />
-                              <span>Enter 6-Digit SMS Verification Code</span>
+                            <h4 className="text-sm font-bold text-[#17372b] flex items-center gap-1.5">
+                              <Smartphone className="size-4 text-[#154734]" />
+                              <span>Enter any 6 digits to continue</span>
                             </h4>
                             <p className="text-xs text-neutral-600 mt-0.5">
-                              We texted a code to <strong className="text-neutral-900">{phone || 'your mobile'}</strong>
+                              No code was sent to <strong className="text-neutral-900">{phone || 'your mobile'}</strong>.
                             </p>
                           </div>
 
                           <button
                             type="button"
                             onClick={handleAutoFillDemoOtp}
-                            className="text-[11px] font-bold text-[#3d117a] bg-white border border-[#ddd6fe] hover:bg-purple-50 px-2.5 py-1 rounded-lg transition cursor-pointer shadow-2xs"
+                            className="text-[11px] font-bold text-[#154734] bg-white border border-[#c8dec9] hover:bg-green-50 px-2.5 py-1 rounded-lg transition cursor-pointer shadow-2xs"
                             title="Click to instantly auto-fill verified code for testing"
                           >
                             Quick Auto-fill (884922)
@@ -1081,9 +1022,9 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                               onChange={(e) => handleOtpChange(idx, e.target.value)}
                               onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                               onPaste={handleOtpPaste}
-                              className={`w-10 h-12 sm:w-11 sm:h-13 text-center text-lg sm:text-xl font-bold rounded-[12px] outline-none transition-all placeholder-neutral-300 ${
+                              className={`min-w-0 flex-1 max-w-10 h-12 sm:w-11 sm:h-13 text-center text-lg sm:text-xl font-bold rounded-[12px] outline-none transition-all placeholder-neutral-300 ${
                                 activeOtpIndex === idx
-                                  ? 'border-2 border-[#3d117a] bg-white text-neutral-950 shadow-[0_0_0_3px_rgba(61,17,122,0.12)]'
+                                  ? 'border-2 border-[#154734] bg-white text-neutral-950 shadow-[0_0_0_3px_rgba(21,71,52,0.12)]'
                                   : 'border-2 border-transparent bg-white text-neutral-900 shadow-2xs'
                               }`}
                             />
@@ -1106,9 +1047,9 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                               onChange={(e) => handleOtpChange(idx, e.target.value)}
                               onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                               onPaste={handleOtpPaste}
-                              className={`w-10 h-12 sm:w-11 sm:h-13 text-center text-lg sm:text-xl font-bold rounded-[12px] outline-none transition-all placeholder-neutral-300 ${
+                              className={`min-w-0 flex-1 max-w-10 h-12 sm:w-11 sm:h-13 text-center text-lg sm:text-xl font-bold rounded-[12px] outline-none transition-all placeholder-neutral-300 ${
                                 activeOtpIndex === idx
-                                  ? 'border-2 border-[#3d117a] bg-white text-neutral-950 shadow-[0_0_0_3px_rgba(61,17,122,0.12)]'
+                                  ? 'border-2 border-[#154734] bg-white text-neutral-950 shadow-[0_0_0_3px_rgba(21,71,52,0.12)]'
                                   : 'border-2 border-transparent bg-white text-neutral-900 shadow-2xs'
                               }`}
                             />
@@ -1126,16 +1067,15 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                           <button
                             type="button"
                             onClick={handleSendOtp}
-                            disabled={resendCountdown > 0}
-                            className="text-xs text-[#3d117a] font-semibold hover:underline disabled:opacity-50 cursor-pointer"
+                            className="text-xs text-[#154734] font-semibold hover:underline cursor-pointer"
                           >
-                            {resendCountdown > 0 ? `Resend code (${resendCountdown}s)` : 'Resend code'}
+                            Reset demo code
                           </button>
 
                           <button
                             type="button"
                             onClick={handleVerifyOtp}
-                            className="px-4 py-1.5 bg-[#3d117a] hover:bg-[#2d0960] active:scale-95 text-white text-xs font-bold rounded-lg transition cursor-pointer shadow-xs"
+                            className="px-4 py-1.5 bg-[#154734] hover:bg-[#0f3426] active:scale-95 text-white text-xs font-bold rounded-lg transition cursor-pointer shadow-xs"
                           >
                             Verify Code
                           </button>
@@ -1154,29 +1094,31 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
 
                   {/* 4. Email Address (Optional as requested!) */}
                   <div className="space-y-1.5">
-                    <label className="block text-[13px] font-semibold text-neutral-800">
+                    <label htmlFor="patient-email" className="block text-[13px] font-semibold text-neutral-800">
                       Email Address <span className="text-neutral-400 font-normal">(Optional)</span>
                     </label>
                     <input
+                      id="patient-email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="alex.mercer@example.com (optional)"
-                      className="w-full h-[52px] px-4 rounded-[14px] text-[15px] font-normal transition-all outline-none bg-[#F4F4F6] text-[#111827] border-2 border-transparent placeholder-[#9CA3AF] focus:bg-[#FCFCFE] focus:border-[#3d117a] focus:shadow-[0_0_0_3px_rgba(61,17,122,0.12)]"
+                      className="w-full h-[52px] px-4 rounded-[14px] text-[15px] font-normal transition-all outline-none bg-[#F4F4F6] text-[#111827] border-2 border-transparent placeholder-[#9CA3AF] focus:bg-[#FCFCFE] focus:border-[#154734] focus:shadow-[0_0_0_3px_rgba(21,71,52,0.12)]"
                     />
                   </div>
 
                   {/* 5. Reason for Visit (Optional) */}
                   <div className="space-y-1.5">
-                    <label className="block text-[13px] font-semibold text-neutral-800">
+                    <label htmlFor="patient-reason" className="block text-[13px] font-semibold text-neutral-800">
                       Reason for Visit <span className="text-neutral-400 font-normal">(Optional)</span>
                     </label>
                     <textarea
+                      id="patient-reason"
                       rows={3}
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       placeholder="Briefly describe your symptoms or concern for the doctor..."
-                      className="w-full p-4 rounded-[14px] text-[15px] font-normal transition-all outline-none bg-[#F4F4F6] text-[#111827] border-2 border-transparent placeholder-[#9CA3AF] focus:bg-[#FCFCFE] focus:border-[#3d117a] focus:shadow-[0_0_0_3px_rgba(61,17,122,0.12)] resize-none"
+                      className="w-full p-4 rounded-[14px] text-[15px] font-normal transition-all outline-none bg-[#F4F4F6] text-[#111827] border-2 border-transparent placeholder-[#9CA3AF] focus:bg-[#FCFCFE] focus:border-[#154734] focus:shadow-[0_0_0_3px_rgba(21,71,52,0.12)] resize-none"
                     />
                   </div>
 
@@ -1184,9 +1126,9 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                   <div className="pt-3">
                     <button
                       type="submit"
-                      className="w-full h-[52px] bg-[#3d117a] hover:bg-[#2d0960] active:scale-[0.99] text-white font-bold text-base rounded-[14px] shadow-sm transition cursor-pointer flex items-center justify-center gap-2"
+                      className="w-full h-[52px] bg-[#154734] hover:bg-[#0f3426] active:scale-[0.99] text-white font-bold text-base rounded-[14px] shadow-sm transition cursor-pointer flex items-center justify-center gap-2"
                     >
-                      <span>Continue to Confirmation</span>
+                      <span>Review visit details</span>
                       <ArrowRight className="size-4" />
                     </button>
                   </div>
@@ -1195,8 +1137,8 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
 
               {/* Right Column: Sticky Appointment Summary Card (1:1 with media_1790071408155.png) */}
               <div className="sticky top-20 bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-                {/* Top Purple Accent Strip */}
-                <div className="h-1.5 w-full bg-[#3d117a]" />
+                {/* Top Green Accent Strip */}
+                <div className="h-1.5 w-full bg-[#154734]" />
 
                 <div className="p-6 space-y-5">
                   <h3 className="font-bold text-lg text-neutral-950">
@@ -1228,13 +1170,13 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
                       <div className="text-xs font-bold text-neutral-900 uppercase tracking-wider flex items-center gap-1.5">
-                        <Calendar className="size-3.5 text-[#3d117a]" />
+                        <Calendar className="size-3.5 text-[#154734]" />
                         <span>Date and Time</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => setCurrentStep(1)}
-                        className="text-xs font-bold text-[#3d117a] hover:underline cursor-pointer"
+                        className="text-xs font-bold text-[#154734] hover:underline cursor-pointer"
                       >
                         Change
                       </button>
@@ -1249,7 +1191,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                   {/* Location with Address */}
                   <div className="space-y-1">
                     <div className="text-xs font-bold text-neutral-900 uppercase tracking-wider flex items-center gap-1.5">
-                      <MapPin className="size-3.5 text-[#3d117a]" />
+                      <MapPin className="size-3.5 text-[#154734]" />
                       <span>Location</span>
                     </div>
                     <div className="text-sm font-semibold text-neutral-900 pt-0.5">
@@ -1268,7 +1210,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                   {/* Visit Type */}
                   <div className="space-y-1">
                     <div className="text-xs font-bold text-neutral-900 uppercase tracking-wider flex items-center gap-1.5">
-                      <FileText className="size-3.5 text-[#3d117a]" />
+                      <FileText className="size-3.5 text-[#154734]" />
                       <span>Visit Type</span>
                     </div>
                     <div className="text-sm font-semibold text-neutral-900 pt-0.5">
@@ -1296,14 +1238,8 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     Walkthrough complete
                   </h2>
                   <p className="text-xs sm:text-sm text-neutral-600">
-                    This sample did not reserve an appointment or send an SMS or calendar invitation. Contact reception or use the standard booking view to confirm availability.
+                    This was a sample walkthrough. No appointment has been reserved, and no SMS or calendar invitation has been sent. Contact the clinic to confirm availability before making plans.
                   </p>
-                </div>
-
-                {/* Confirmation Code Pill */}
-                <div className="inline-block bg-[#f4f3f8] px-5 py-2.5 rounded-xl border border-purple-200">
-                  <span className="text-xs text-neutral-500 block font-medium">Sample reference</span>
-                  <span className="text-xl font-mono font-extrabold text-[#3d117a]">{confirmationCode}</span>
                 </div>
 
                 {/* Appointment Breakdown Card */}
@@ -1317,7 +1253,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     <div>
                       <div className="font-bold text-base text-neutral-900">{doctor.name}</div>
                       <div className="text-xs text-neutral-600">{doctor.specialty}</div>
-                      <div className="text-xs text-[#3d117a] font-semibold mt-0.5">New Patient {visitType}</div>
+                      <div className="text-xs text-[#154734] font-semibold mt-0.5">New Patient {visitType}</div>
                     </div>
                   </div>
 
@@ -1345,19 +1281,8 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      if (typeof window !== 'undefined') window.print();
-                    }}
-                    className="w-full sm:w-auto px-5 py-2.5 rounded-[12px] border border-neutral-300 text-neutral-700 text-xs font-bold hover:bg-neutral-100 transition cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <Printer className="size-4" />
-                    <span>Print Confirmation</span>
-                  </button>
-
-                  <button
-                    type="button"
                     onClick={onBackToSearch}
-                    className="w-full sm:w-auto px-6 py-2.5 rounded-[12px] bg-[#3d117a] hover:bg-[#2d0960] active:scale-95 text-white text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+                    className="w-full sm:w-auto px-6 py-2.5 rounded-[12px] bg-[#154734] hover:bg-[#0f3426] active:scale-95 text-white text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
                   >
                     <span>Find Another Doctor</span>
                   </button>
@@ -1365,7 +1290,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                   <button
                     type="button"
                     onClick={onBackToHome}
-                    className="w-full sm:w-auto px-5 py-2.5 rounded-[12px] border border-purple-200 bg-purple-50 text-[#3d117a] text-xs font-bold hover:bg-purple-100 transition cursor-pointer"
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-[12px] border border-green-200 bg-green-50 text-[#154734] text-xs font-bold hover:bg-green-100 transition cursor-pointer"
                   >
                     Return to Home
                   </button>

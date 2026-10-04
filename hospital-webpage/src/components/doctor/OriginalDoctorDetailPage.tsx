@@ -24,7 +24,7 @@ import {
   Globe,
 } from 'lucide-react';
 import { DoctorScheduleProfile } from '../booking/ScheduleAppointmentPage';
-import { DOCTOR_PROFILES } from '../search/SearchResultsPage';
+import { DOCTOR_PROFILES } from '../../data/doctorProfiles';
 import { Footer } from '../common/Footer';
 
 interface OriginalDoctorDetailPageProps {
@@ -32,7 +32,7 @@ interface OriginalDoctorDetailPageProps {
   onBackToSearch: () => void;
   onBackToHome: () => void;
   onScheduleAppointment: (doctorId: string, step?: 1 | 2) => void;
-  onOpenLogin: () => void;
+  onOpenLogin?: () => void;
   user?: { name: string; identifier: string } | null;
 }
 
@@ -202,7 +202,7 @@ export function OriginalDoctorDetailPage({
               <span className="text-xs font-medium text-neutral-700 hidden sm:inline px-2 py-0.5 bg-neutral-100 rounded-full">
                 {user.name}
               </span>
-            ) : (
+            ) : onOpenLogin && (
               <button
                 onClick={onOpenLogin}
                 className="text-xs font-semibold text-neutral-700 hover:text-neutral-900 px-2.5 py-1 rounded-md hover:bg-neutral-100 transition-colors"

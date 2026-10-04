@@ -5,31 +5,50 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 5173",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "build": "tsc && vite build && node scripts/generate-seo.mjs",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "whatsapp:simulate": "node whatsapp-mvp/simulator.mjs",
+    "whatsapp:test": "node --test whatsapp-mvp/test/*.test.mjs",
+    "whatsapp:server": "node --env-file=whatsapp-mvp/.env whatsapp-mvp/server.mjs",
+    "whatsapp:preflight": "node --env-file=whatsapp-mvp/.env whatsapp-mvp/preflight.mjs",
+    "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=./node_modules/.cache/playwright playwright test",
+    "test:e2e:install": "PLAYWRIGHT_BROWSERS_PATH=./node_modules/.cache/playwright playwright install --with-deps --only-shell chromium webkit firefox",
+    "test:e2e:types": "tsc --noEmit --strict --target es2022 --module esnext --moduleResolution bundler --skipLibCheck playwright.config.ts tests/e2e/*.ts"
   },
   "dependencies": {
     "@radix-ui/react-popover": "^1.1.23",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "framer-motion": "^13.4.0",
     "gsap": "^3.15.0",
     "lucide-react": "^1.28.0",
+    "posthog-js": "^1.435.3",
+    "radix-ui": "^1.6.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "sarvam-conv-ai-sdk": "^0.0.42",
     "tailwind-merge": "^3.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.0.0",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^30.1.1",
+    "serve": "^14.2.6",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.3",
     "vite": "^6.0.0",
+    "vitest": "^5.0.3",
     "ws": "^8.21.3"
   }
 }

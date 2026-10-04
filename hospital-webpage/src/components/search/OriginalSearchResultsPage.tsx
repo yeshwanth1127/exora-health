@@ -1,9 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { trackSearchUsed, countToBucket } from '../../lib/posthog';
 import {
-  Menu,
   ChevronRight,
   Search,
-  Sparkles,
   Shield,
   MapPin,
   SlidersHorizontal,
@@ -14,7 +13,6 @@ import {
   Video,
   X,
   CheckCircle2,
-  Star,
   Award,
   GraduationCap,
   Building2,
@@ -23,12 +21,11 @@ import {
 import { doctors } from '../../data/doctors';
 import { branches } from '../../data/branches';
 import { INSURANCE_PROVIDERS, CLINIC_LOCATIONS } from '../ai/aiTriageData';
-import { Footer } from '../common/Footer';
 import { format, addDays } from 'date-fns';
 
-// Keep the original layout while reading the same Avocado roster as the updated flow.
-import { DOCTOR_PROFILES } from './SearchResultsPage';
-export { DOCTOR_PROFILES } from './SearchResultsPage';
+// Keep the original layout while reading the same Sri Lakshmi roster as the updated flow.
+import { DOCTOR_PROFILES } from '../../data/doctorProfiles';
+import { demoStartDate } from '../../data/demoAvailability';
 
 export interface OriginalSearchResultsPageProps {
   careType: string;
@@ -41,7 +38,7 @@ export interface OriginalSearchResultsPageProps {
   onScheduleDoctor?: (doctorId: string, step: 1 | 2, prefillDate?: string, prefillSlot?: string) => void;
   onSelectDoctorDetail?: (doctorId: string) => void;
   onOpenBooking: () => void;
-  onOpenLogin: () => void;
+  onOpenLogin?: () => void;
   user: { name: string; identifier: string } | null;
 }
 
@@ -49,8 +46,6 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
   careType,
   specialtyId,
   initialQuery = '',
-  onBackToHome,
-  onRetakeQuestionnaire,
   onBookDoctor,
   onScheduleDoctor,
   onSelectDoctorDetail,
@@ -68,19 +63,17 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
   const [selectedAge, setSelectedAge] = useState('All Ages');
   const [selectedGender, setSelectedGender] = useState('No preference');
   const [selectedLanguage, setSelectedLanguage] = useState('English');
-  const [sortBy, setSortBy] = useState<'next-available' | 'highest-rated' | 'experience'>('next-available');
+  const [sortBy, setSortBy] = useState<'next-available' | 'experience'>('next-available');
 
   // Toggles
   const [showMap, setShowMap] = useState(false);
   const [showMonthModal, setShowMonthModal] = useState(false);
 
-  // 5-day appointment date window (starts Fri Oct 30 - Tue Nov 03 matching reference 1:1)
+  // Rolling five-day sample window.
   const [dateOffset, setDateOffset] = useState(0);
 
   const baseDate = useMemo(() => {
-    // 2026-10-30 = Fri Oct 30
-    const initialRefDate = new Date(2026, 9, 30);
-    return addDays(initialRefDate, dateOffset);
+    return addDays(demoStartDate(), dateOffset);
   }, [dateOffset]);
 
   const fiveDays = useMemo(() => {
@@ -133,9 +126,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
     }
 
     // Sort order
-    if (sortBy === 'highest-rated') {
-      list.sort((a, b) => b.rating - a.rating);
-    } else if (sortBy === 'experience') {
+    if (sortBy === 'experience') {
       list.sort((a, b) => b.experienceYears - a.experienceYears);
     }
 
@@ -144,65 +135,14 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
     return combined.slice(0, 7);
   }, [searchQuery, specialtyId, selectedGender, sortBy]);
 
+  useEffect(() => {
+    trackSearchUsed('search_page', countToBucket(matchedDoctors.length));
+  }, []);
+
   return (
     <div className="min-h-screen bg-white text-neutral-900 flex flex-col font-sans">
-      {/* ── TOP UTILITY & BREADCRUMB BAR (1:1 with reference) ── */}
-      <header className="sticky top-0 z-40 bg-white border-b border-neutral-200">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-13 flex items-center justify-between">
-          {/* Left: Menu & Breadcrumbs */}
-          <div className="flex items-center gap-3 sm:gap-4">
-            <button
-              type="button"
-              onClick={onBackToHome}
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-neutral-800 hover:text-[#3d117a] transition cursor-pointer"
-            >
-              <Menu className="size-4 stroke-[2.5]" />
-              <span>Menu</span>
-            </button>
-
-            <div className="h-4 w-px bg-neutral-200" />
-
-            <nav className="flex items-center gap-2 text-xs sm:text-sm font-medium">
-              <button
-                type="button"
-                onClick={onBackToHome}
-                className="text-neutral-600 hover:text-[#3d117a] transition cursor-pointer"
-              >
-                Home
-              </button>
-              <ChevronRight className="size-3.5 text-neutral-400" />
-              <span className="font-bold text-[#3d117a]">Find a Doctor</span>
-            </nav>
-          </div>
-
-          {/* Right: Search & Ask AI */}
-          <div className="flex items-center gap-3 sm:gap-4">
-            <button
-              type="button"
-              onClick={() => {
-                const el = document.getElementById('doctor-search-input');
-                el?.focus();
-              }}
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#3d117a] hover:text-[#2d0960] transition cursor-pointer"
-            >
-              <Search className="size-4" />
-              <span>Search</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onRetakeQuestionnaire}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-neutral-300 bg-white hover:border-[#3d117a] hover:bg-[#3d117a]/5 text-[#3d117a] text-xs sm:text-sm font-bold shadow-2xs transition-all cursor-pointer group active:scale-95"
-            >
-              <Sparkles className="size-3.5 text-[#3d117a] group-hover:scale-110 transition-transform" />
-              <span>Ask AI</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* ── HERO SEARCH & FILTER BANNER (1:1 Indigo-Blue / Purple Theme) ── */}
-      <section className="relative bg-gradient-to-r from-[#1c0840] via-[#2a0c58] to-[#1e0743] text-white pt-8 sm:pt-9 pb-6 sm:pb-7 px-4 sm:px-6 lg:px-8 shadow-md">
+      {/* ── HERO SEARCH & FILTER BANNER (1:1 Deep Green Theme) ── */}
+      <section className="relative bg-gradient-to-r from-[#17372b] via-[#1b5b39] to-[#103b2a] text-white pt-8 sm:pt-9 pb-6 sm:pb-7 px-4 sm:px-6 lg:px-8 shadow-md">
         <div className="relative z-10 w-full max-w-7xl mx-auto space-y-4">
           {/* Main Title */}
           <h1 className="text-3xl sm:text-[34px] font-bold tracking-tight text-white">
@@ -216,7 +156,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
 
               {/* Field 1: Provider, specialty, condition */}
               <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-white min-w-0">
-                <Search className="size-4 text-[#3d117a] shrink-0 pointer-events-none" />
+                <Search className="size-4 text-[#154734] shrink-0 pointer-events-none" />
                 <input
                   id="doctor-search-input"
                   type="text"
@@ -238,7 +178,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
 
               {/* Field 2: Insurance company & plan */}
               <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-white min-w-0">
-                <Shield className="size-4 text-[#3d117a] fill-[#3d117a] shrink-0 pointer-events-none" />
+                <Shield className="size-4 text-[#154734] fill-[#154734] shrink-0 pointer-events-none" />
                 <select
                   value={selectedInsurance}
                   onChange={(e) => setSelectedInsurance(e.target.value)}
@@ -255,7 +195,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
 
               {/* Field 3: Zip code, city or neighborhood */}
               <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-white min-w-0">
-                <MapPin className="size-4 text-[#3d117a] fill-[#3d117a] shrink-0 pointer-events-none" />
+                <MapPin className="size-4 text-[#154734] fill-[#154734] shrink-0 pointer-events-none" />
                 <select
                   value={selectedLocation}
                   onChange={(e) => setSelectedLocation(e.target.value)}
@@ -275,14 +215,16 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
             {/* Glowing Turquoise Search Button (1:1 match) */}
             <button
               type="button"
-              onClick={() => {}}
-              className="h-[44px] bg-[#4efcd3] hover:bg-[#3af0c4] active:scale-95 text-neutral-950 font-bold text-sm sm:text-base px-9 rounded-md shadow-sm transition-all cursor-pointer flex items-center justify-center shrink-0"
+              onClick={() => {
+                trackSearchUsed('search_filter', countToBucket(matchedDoctors.length));
+              }}
+              className="h-[44px] bg-[#cbe6a3] hover:bg-[#b6d88f] active:scale-95 text-neutral-950 font-bold text-sm sm:text-base px-9 rounded-md shadow-sm transition-all cursor-pointer flex items-center justify-center shrink-0"
             >
               Search
             </button>
           </div>
 
-          {/* Filters Row with Dark Indigo Glass Dropdown Pills */}
+          {/* Filters Row with Dark Green Glass Dropdown Pills */}
           <div className="pt-2 flex flex-wrap items-center gap-2 text-xs">
             <span className="font-bold text-white flex items-center gap-1.5 mr-1 text-sm">
               <SlidersHorizontal className="size-4 stroke-[2.5]" />
@@ -294,12 +236,12 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
               <select
                 value={selectedDistance}
                 onChange={(e) => setSelectedDistance(e.target.value)}
-                className="appearance-none bg-[#1f0942]/60 hover:bg-[#1f0942]/90 border border-white/30 rounded-full pl-3.5 pr-7 py-1.5 text-white font-medium cursor-pointer focus:outline-none transition"
+                className="appearance-none bg-[#123d2b]/60 hover:bg-[#123d2b]/90 border border-white/30 rounded-full pl-3.5 pr-7 py-1.5 text-white font-medium cursor-pointer focus:outline-none transition"
               >
-                <option value="All" className="bg-[#240c50] text-white">Distance: Any</option>
-                <option value="5" className="bg-[#240c50] text-white">Distance: 5 miles</option>
-                <option value="10" className="bg-[#240c50] text-white">Distance: 10 miles</option>
-                <option value="25" className="bg-[#240c50] text-white">Distance: 25 miles</option>
+                <option value="All" className="bg-[#123d2b] text-white">Distance: Any</option>
+                <option value="5" className="bg-[#123d2b] text-white">Distance: 5 miles</option>
+                <option value="10" className="bg-[#123d2b] text-white">Distance: 10 miles</option>
+                <option value="25" className="bg-[#123d2b] text-white">Distance: 25 miles</option>
               </select>
               <ChevronDown className="size-3 text-white/80 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -309,12 +251,12 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
               <select
                 value={selectedCondition}
                 onChange={(e) => setSelectedCondition(e.target.value)}
-                className="appearance-none bg-[#1f0942]/60 hover:bg-[#1f0942]/90 border border-white/30 rounded-full pl-3.5 pr-7 py-1.5 text-white font-medium cursor-pointer focus:outline-none transition"
+                className="appearance-none bg-[#123d2b]/60 hover:bg-[#123d2b]/90 border border-white/30 rounded-full pl-3.5 pr-7 py-1.5 text-white font-medium cursor-pointer focus:outline-none transition"
               >
-                <option value="All" className="bg-[#240c50] text-white">Condition: Any</option>
-                <option value="skin" className="bg-[#240c50] text-white">Condition: Pediatric Dermatology</option>
-                <option value="hair" className="bg-[#240c50] text-white">Condition: Hair Loss</option>
-                <option value="acne" className="bg-[#240c50] text-white">Condition: Eczema &amp; Acne</option>
+                <option value="All" className="bg-[#123d2b] text-white">Condition: Any</option>
+                <option value="skin" className="bg-[#123d2b] text-white">Condition: Pediatric Dermatology</option>
+                <option value="hair" className="bg-[#123d2b] text-white">Condition: Hair Loss</option>
+                <option value="acne" className="bg-[#123d2b] text-white">Condition: Eczema &amp; Acne</option>
               </select>
               <ChevronDown className="size-3 text-white/80 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -324,12 +266,12 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
               <select
                 value={selectedTreatment}
                 onChange={(e) => setSelectedTreatment(e.target.value)}
-                className="appearance-none bg-[#1f0942]/60 hover:bg-[#1f0942]/90 border border-white/30 rounded-full pl-3.5 pr-7 py-1.5 text-white font-medium cursor-pointer focus:outline-none transition"
+                className="appearance-none bg-[#123d2b]/60 hover:bg-[#123d2b]/90 border border-white/30 rounded-full pl-3.5 pr-7 py-1.5 text-white font-medium cursor-pointer focus:outline-none transition"
               >
-                <option value="All" className="bg-[#240c50] text-white">Treatment: Any</option>
-                <option value="consult" className="bg-[#240c50] text-white">Treatment: Consultation</option>
-                <option value="procedure" className="bg-[#240c50] text-white">Treatment: Laser Therapy</option>
-                <option value="biopsy" className="bg-[#240c50] text-white">Treatment: Skin Biopsy</option>
+                <option value="All" className="bg-[#123d2b] text-white">Treatment: Any</option>
+                <option value="consult" className="bg-[#123d2b] text-white">Treatment: Consultation</option>
+                <option value="procedure" className="bg-[#123d2b] text-white">Treatment: Laser Therapy</option>
+                <option value="biopsy" className="bg-[#123d2b] text-white">Treatment: Skin Biopsy</option>
               </select>
               <ChevronDown className="size-3 text-white/80 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -339,12 +281,12 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
               <select
                 value={selectedAge}
                 onChange={(e) => setSelectedAge(e.target.value)}
-                className="appearance-none bg-[#1f0942]/60 hover:bg-[#1f0942]/90 border border-white/30 rounded-full pl-3.5 pr-7 py-1.5 text-white font-medium cursor-pointer focus:outline-none transition"
+                className="appearance-none bg-[#123d2b]/60 hover:bg-[#123d2b]/90 border border-white/30 rounded-full pl-3.5 pr-7 py-1.5 text-white font-medium cursor-pointer focus:outline-none transition"
               >
-                <option value="All Ages" className="bg-[#240c50] text-white">Treats ages: All Ages</option>
-                <option value="Pediatrics" className="bg-[#240c50] text-white">Treats ages: Pediatrics (0-17)</option>
-                <option value="Adults" className="bg-[#240c50] text-white">Treats ages: Adults (18+)</option>
-                <option value="Seniors" className="bg-[#240c50] text-white">Treats ages: Seniors (65+)</option>
+                <option value="All Ages" className="bg-[#123d2b] text-white">Treats ages: All Ages</option>
+                <option value="Pediatrics" className="bg-[#123d2b] text-white">Treats ages: Pediatrics (0-17)</option>
+                <option value="Adults" className="bg-[#123d2b] text-white">Treats ages: Adults (18+)</option>
+                <option value="Seniors" className="bg-[#123d2b] text-white">Treats ages: Seniors (65+)</option>
               </select>
               <ChevronDown className="size-3 text-white/80 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -354,11 +296,11 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
               <select
                 value={selectedGender}
                 onChange={(e) => setSelectedGender(e.target.value)}
-                className="appearance-none bg-[#1f0942]/60 hover:bg-[#1f0942]/90 border border-white/30 rounded-full pl-3.5 pr-7 py-1.5 text-white font-medium cursor-pointer focus:outline-none transition"
+                className="appearance-none bg-[#123d2b]/60 hover:bg-[#123d2b]/90 border border-white/30 rounded-full pl-3.5 pr-7 py-1.5 text-white font-medium cursor-pointer focus:outline-none transition"
               >
-                <option value="No preference" className="bg-[#240c50] text-white">Provider Gender: No preference</option>
-                <option value="Female" className="bg-[#240c50] text-white">Female Providers</option>
-                <option value="Male" className="bg-[#240c50] text-white">Male Providers</option>
+                <option value="No preference" className="bg-[#123d2b] text-white">Provider Gender: No preference</option>
+                <option value="Female" className="bg-[#123d2b] text-white">Female Providers</option>
+                <option value="Male" className="bg-[#123d2b] text-white">Male Providers</option>
               </select>
               <ChevronDown className="size-3 text-white/80 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -368,12 +310,12 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
               <select
                 value={selectedLanguage}
                 onChange={(e) => setSelectedLanguage(e.target.value)}
-                className="appearance-none bg-[#1f0942]/60 hover:bg-[#1f0942]/90 border border-white/30 rounded-full pl-3.5 pr-7 py-1.5 text-white font-medium cursor-pointer focus:outline-none transition"
+                className="appearance-none bg-[#123d2b]/60 hover:bg-[#123d2b]/90 border border-white/30 rounded-full pl-3.5 pr-7 py-1.5 text-white font-medium cursor-pointer focus:outline-none transition"
               >
-                <option value="English" className="bg-[#240c50] text-white">Provider Language: English</option>
-                <option value="Spanish" className="bg-[#240c50] text-white">Provider Language: Spanish</option>
-                <option value="Hindi" className="bg-[#240c50] text-white">Provider Language: Hindi</option>
-                <option value="Kannada" className="bg-[#240c50] text-white">Provider Language: Kannada</option>
+                <option value="English" className="bg-[#123d2b] text-white">Provider Language: English</option>
+                <option value="Spanish" className="bg-[#123d2b] text-white">Provider Language: Spanish</option>
+                <option value="Hindi" className="bg-[#123d2b] text-white">Provider Language: Hindi</option>
+                <option value="Kannada" className="bg-[#123d2b] text-white">Provider Language: Kannada</option>
               </select>
               <ChevronDown className="size-3 text-white/80 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -382,7 +324,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
       </section>
 
       {/* ── RESULTS SUB-HEADER / CONTROL BAR (1:1 with media_1790069031583.png) ── */}
-      <section className="bg-white border-b border-neutral-200 py-3 px-4 sm:px-6 lg:px-8 sticky top-13 z-30">
+      <section className="bg-white border-b border-neutral-200 py-3 px-4 sm:px-6 lg:px-8 sticky top-[var(--site-header-offset)] z-30">
         <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-xs sm:text-sm">
           {/* Left: 1-7 of 7 Providers & Sort By Pill Dropdown */}
           <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
@@ -392,32 +334,32 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
 
             <div className="h-4 w-px bg-neutral-200" />
 
-            {/* Sort By Pill Dropdown (with Purple Border matching reference) */}
+            {/* Sort By Pill Dropdown (with Green Border matching reference) */}
             <div className="relative">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="appearance-none bg-white hover:bg-neutral-50 border border-[#3d117a] text-[#3d117a] font-bold rounded-full pl-3.5 pr-7 py-1 text-xs cursor-pointer focus:outline-none shadow-2xs"
+                className="appearance-none bg-white hover:bg-neutral-50 border border-[#154734] text-[#154734] font-bold rounded-full pl-3.5 pr-7 py-1 text-xs cursor-pointer focus:outline-none shadow-2xs"
               >
                 <option value="next-available">Sort By: Next available</option>
-                <option value="highest-rated">Sort By: Highest rated</option>
                 <option value="experience">Sort By: Experience</option>
               </select>
-              <ChevronDown className="size-3 text-[#3d117a] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <ChevronDown className="size-3 text-[#154734] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
 
           {/* Right: Date navigation + Show Month + Show Map */}
           <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-between md:justify-end">
-            {/* Date range header with < and > circular purple buttons */}
+            {/* Date range header with < and > circular green buttons */}
             <div className="flex items-center gap-1.5 font-medium text-neutral-700">
               <span>Show visits on:</span>
               <strong className="text-neutral-950 font-bold">{dateRangeDisplay}</strong>
               <div className="flex items-center gap-1 ml-1">
                 <button
                   type="button"
-                  onClick={() => setDateOffset((prev) => prev - 5)}
-                  className="size-6 rounded-full bg-[#3d117a] hover:bg-[#2d0960] text-white flex items-center justify-center transition cursor-pointer shadow-xs"
+                  onClick={() => setDateOffset((prev) => Math.max(0, prev - 5))}
+                  disabled={dateOffset === 0}
+                  className="size-6 rounded-full bg-[#154734] hover:bg-[#0f3426] text-white flex items-center justify-center transition cursor-pointer shadow-xs disabled:cursor-not-allowed disabled:opacity-40"
                   title="Previous 5 days"
                 >
                   <ChevronLeft className="size-3.5" />
@@ -425,7 +367,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                 <button
                   type="button"
                   onClick={() => setDateOffset((prev) => prev + 5)}
-                  className="size-6 rounded-full bg-[#3d117a] hover:bg-[#2d0960] text-white flex items-center justify-center transition cursor-pointer shadow-xs"
+                  className="size-6 rounded-full bg-[#154734] hover:bg-[#0f3426] text-white flex items-center justify-center transition cursor-pointer shadow-xs"
                   title="Next 5 days"
                 >
                   <ChevronRight className="size-3.5" />
@@ -433,27 +375,27 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
               </div>
             </div>
 
-            {/* Show Month Button (Purple Border) */}
+            {/* Show Month Button (Green Border) */}
             <button
               type="button"
               onClick={() => setShowMonthModal(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border border-[#3d117a] bg-white hover:bg-[#3d117a]/5 text-[#3d117a] font-bold text-xs transition cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border border-[#154734] bg-white hover:bg-[#154734]/5 text-[#154734] font-bold text-xs transition cursor-pointer shadow-2xs"
             >
-              <Calendar className="size-3.5 text-[#3d117a]" />
+              <Calendar className="size-3.5 text-[#154734]" />
               <span>Show month</span>
             </button>
 
-            {/* Show Map Button (Purple Border) */}
+            {/* Show Map Button (Green Border) */}
             <button
               type="button"
               onClick={() => setShowMap(!showMap)}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border border-[#3d117a] text-xs font-bold shadow-2xs transition cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border border-[#154734] text-xs font-bold shadow-2xs transition cursor-pointer ${
                 showMap
-                  ? 'bg-[#3d117a] text-white'
-                  : 'bg-white hover:bg-[#3d117a]/5 text-[#3d117a]'
+                  ? 'bg-[#154734] text-white'
+                  : 'bg-white hover:bg-[#154734]/5 text-[#154734]'
               }`}
             >
-              <Map className={`size-3.5 ${showMap ? 'text-white' : 'text-[#3d117a]'}`} />
+              <Map className={`size-3.5 ${showMap ? 'text-white' : 'text-[#154734]'}`} />
               <span>{showMap ? 'Hide map' : 'Show map'}</span>
             </button>
           </div>
@@ -466,8 +408,8 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
           <div className="w-full max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                <MapPin className="size-4 text-[#3d117a]" />
-                <span>Avocado Health locations</span>
+                <MapPin className="size-4 text-[#154734]" />
+                <span>Sri Lakshmi Hospital locations</span>
               </h3>
               <span className="text-xs text-neutral-500">Bengaluru care locations</span>
             </div>
@@ -476,7 +418,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                 <div key={b.id} className="bg-white p-4 rounded-xl border border-neutral-200 shadow-2xs space-y-1.5">
                   <div className="font-bold text-sm text-neutral-900">{b.name}</div>
                   <div className="text-xs text-neutral-500 leading-relaxed">{b.area}, Bengaluru</div>
-                  <div className="text-[11px] font-semibold text-[#3d117a] pt-1">
+                  <div className="text-[11px] font-semibold text-[#154734] pt-1">
                     OPD: 8:00 AM - 6:00 PM
                   </div>
                 </div>
@@ -504,7 +446,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
 
             // Reusable Doctor Info Card (Matching 1:1 Reference media_1790069042700.png)
             const doctorInfoCard = (
-              <div className="flex items-start gap-5 flex-1 min-w-0">
+              <div className="flex items-start gap-3 sm:gap-5 flex-1 min-w-0">
                 {/* Large Doctor Image Container with Badges */}
                 <div
                   onClick={() =>
@@ -512,7 +454,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                       ? onSelectDoctorDetail(profile.id)
                       : setSelectedDoctorDetail(profile)
                   }
-                  className="relative w-32 sm:w-36 md:w-40 aspect-[3/4] rounded-xl overflow-hidden shadow-sm border border-neutral-200 bg-neutral-100 group/img cursor-pointer shrink-0"
+                  className="relative w-24 sm:w-36 md:w-40 aspect-[3/4] rounded-xl overflow-hidden shadow-sm border border-neutral-200 bg-neutral-100 group/img cursor-pointer shrink-0"
                   title="Click to view full doctor profile"
                 >
                   <img
@@ -525,22 +467,9 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                     className="w-full h-full object-cover object-top group-hover/img:scale-105 transition-transform duration-300"
                   />
 
-                  {/* Top Rating Overlay */}
-                  <div className="absolute top-2 right-2 bg-neutral-900/80 backdrop-blur-xs text-white px-1.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-0.5 shadow-xs z-10">
-                    <Star className="size-2.5 fill-amber-400 text-amber-400" />
-                    <span>{profile.rating}</span>
-                  </div>
-
-                  {/* Bottom Board Certified Gradient Banner */}
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#1c0840] via-[#1c0840]/80 to-transparent pt-4 pb-1.5 px-1 text-center z-10">
-                    <span className="text-[10px] font-bold tracking-wider text-white uppercase line-clamp-1">
-                      Board Certified
-                    </span>
-                  </div>
-
                   {/* Hover Zoom Prompt */}
-                  <div className="absolute inset-0 bg-[#1c0840]/35 opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 flex items-center justify-center z-20">
-                    <span className="bg-white text-[#3d117a] text-[10px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+                  <div className="absolute inset-0 bg-[#17372b]/35 opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 flex items-center justify-center z-20">
+                    <span className="bg-white text-[#154734] text-[10px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
                       <ZoomIn className="size-3" />
                       <span>View Profile</span>
                     </span>
@@ -558,41 +487,17 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                     }
                     className="group text-left cursor-pointer"
                   >
-                    <h2 className="text-xl font-bold text-neutral-950 group-hover:text-[#3d117a] transition-colors inline-flex items-center gap-1.5">
+                    <h2 className="text-lg sm:text-xl font-bold text-neutral-950 group-hover:text-[#154734] transition-colors inline-flex max-w-full flex-wrap items-center gap-1.5">
                       <span>{docName}</span>
-                      <span className="text-[#3d117a] group-hover:translate-x-1 transition-transform">→</span>
+                      <span className="text-[#154734] group-hover:translate-x-1 transition-transform">→</span>
                     </h2>
                   </button>
 
                   {/* Specialty & Pedigree Banner */}
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm">
-                    <span className="font-bold text-[#1c0840]">{docSpecialty}</span>
+                    <span className="font-bold text-[#17372b]">{docSpecialty}</span>
                     <span className="text-neutral-300">•</span>
                     <span className="text-neutral-600 font-medium">{profile.pedigree}</span>
-                  </div>
-
-                  {/* Hidden Insight / Bedside Manner Highlight Box */}
-                  <div className="bg-[#f7f5fc] border border-[#e5ddf5] rounded-lg p-2.5 sm:p-3 text-xs text-neutral-700 leading-relaxed shadow-2xs">
-                    <div className="flex items-center gap-1.5 font-bold text-[#3d117a] text-[11px] uppercase tracking-wider mb-1">
-                      <Sparkles className="size-3.5 text-[#3d117a] shrink-0" />
-                      <span>What Patients Praise &amp; Bedside Manner</span>
-                    </div>
-                    <p className="text-neutral-700 font-normal leading-relaxed">
-                      {profile.bedsideManner}
-                    </p>
-                  </div>
-
-                  {/* Key Highlights Decision Chips */}
-                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                    {profile.decisionChips?.map((chip, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#ede9f7]/75 text-[#2a0c58] text-[11px] font-semibold border border-[#ddd6fe]/60"
-                      >
-                        <span className="size-1.5 rounded-full bg-[#3d117a]" />
-                        <span>{chip}</span>
-                      </span>
-                    ))}
                   </div>
 
                   {/* Clinical Focus / Niche Expertise */}
@@ -603,11 +508,14 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
 
                   {/* Offers Video Visits */}
                   {profile.offersVideo && (
-                    <div className="pt-0.5 flex items-center gap-1.5 text-xs font-semibold text-[#3d117a]">
-                      <Video className="size-3.5 text-[#3d117a] shrink-0" />
+                    <div className="pt-0.5 flex items-center gap-1.5 text-xs font-semibold text-[#154734]">
+                      <Video className="size-3.5 text-[#154734] shrink-0" />
                       <span>Offers Video Visits &amp; Remote Follow-ups</span>
                     </div>
                   )}
+                  <button type="button" onClick={() => onScheduleDoctor ? onScheduleDoctor(profile.id, 1) : onBookDoctor(profile.id)} className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-[#154734] underline underline-offset-4 hover:text-[#0f3426]">
+                    Book appointment <span aria-hidden="true">→</span>
+                  </button>
                 </div>
               </div>
             );
@@ -615,7 +523,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
             // 5-Day Interactive Appointment Slot Matrix (4 rows of level, pixel-perfect rectangles)
             const fiveDaySlotMatrix = (
               <div className="w-full lg:w-[320px] xl:w-[340px] shrink-0">
-                <div className="bg-[#f4f3f8] text-neutral-700 text-xs font-semibold px-3 py-1 rounded inline-block mb-2.5">
+                <div className="bg-[#f1f6ef] text-neutral-700 text-xs font-semibold px-3 py-1 rounded inline-block mb-2.5">
                   New Patient Office Visit
                 </div>
 
@@ -649,14 +557,14 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                                     onBookDoctor(profile.id, 'New Patient Office Visit', col.formatted, slot);
                                   }
                                 }}
-                                className="h-8 w-full bg-[#3d117a] hover:bg-[#2d0960] active:scale-95 text-white font-semibold text-[11px] rounded-[3px] transition cursor-pointer flex items-center justify-center leading-none shadow-2xs"
+                                className="h-8 w-full bg-[#154734] hover:bg-[#0f3426] active:scale-95 text-white font-semibold text-[11px] rounded-[3px] transition cursor-pointer flex items-center justify-center leading-none shadow-2xs"
                               >
                                 {slot}
                               </button>
                             );
                           }
                           return (
-                            <div key={`empty-${rowIndex}`} className="h-8 w-full bg-[#ede9f7] rounded-[3px]" />
+                            <div key={`empty-${rowIndex}`} className="h-8 w-full bg-[#eaf2e7] rounded-[3px]" />
                           );
                         })}
                       </div>
@@ -675,7 +583,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                         onBookDoctor(profile.id, `Consultation with ${docName}`);
                       }
                     }}
-                    className="font-bold text-xs text-[#3d117a] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    className="font-bold text-xs text-[#154734] hover:underline inline-flex items-center gap-1 cursor-pointer"
                   >
                     <span>View all availability</span>
                     <span>→</span>
@@ -696,9 +604,9 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
 
                     {/* Column 3: Video Visits are Available Card */}
                     <div className="w-full bg-white rounded-md border border-neutral-200 shadow-2xs overflow-hidden">
-                      <div className="h-1 w-full bg-gradient-to-r from-[#8b5cf6] via-[#6366f1] to-[#06b6d4]" />
+                      <div className="h-1 w-full bg-gradient-to-r from-[#5b9a69] via-[#77b88b] to-[#06b6d4]" />
                       <div className="p-4 sm:p-5 space-y-3">
-                        <div className="text-[#3d117a]">
+                        <div className="text-[#154734]">
                           <Video className="size-7 stroke-[2.2]" />
                         </div>
                         <h3 className="font-bold text-base text-neutral-900 leading-snug">
@@ -711,7 +619,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                           <button
                             type="button"
                             onClick={onOpenBooking}
-                            className="w-full bg-[#3d117a] hover:bg-[#2d0960] active:scale-95 text-white font-bold text-xs py-2.5 px-3 rounded-md transition shadow-xs flex items-center justify-center gap-1"
+                            className="w-full bg-[#154734] hover:bg-[#0f3426] active:scale-95 text-white font-bold text-xs py-2.5 px-3 rounded-md transition shadow-xs flex items-center justify-center gap-1"
                           >
                             <span>Learn more about video visits</span>
                             <span>→</span>
@@ -751,7 +659,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                             onBookDoctor(profile.id, `Consultation with ${docName}`);
                           }
                         }}
-                        className="w-full sm:w-auto bg-[#3d117a] hover:bg-[#2d0960] active:scale-95 text-white font-bold text-xs sm:text-sm px-8 py-3 rounded-md shadow-xs transition-all cursor-pointer inline-flex items-center justify-center gap-1.5"
+                        className="w-full sm:w-auto bg-[#154734] hover:bg-[#0f3426] active:scale-95 text-white font-bold text-xs sm:text-sm px-8 py-3 rounded-md shadow-xs transition-all cursor-pointer inline-flex items-center justify-center gap-1.5"
                       >
                         <span>Check for availability</span>
                         <span>→</span>
@@ -772,7 +680,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
             {/* Modal Header */}
             <div className="sticky top-0 bg-white/95 backdrop-blur-md px-6 py-4 border-b border-neutral-200 flex items-center justify-between z-20">
               <div>
-                <span className="text-[11px] font-bold tracking-wider text-[#3d117a] uppercase">
+                <span className="text-[11px] font-bold tracking-wider text-[#154734] uppercase">
                   Doctor Profile &amp; Clinical Information
                 </span>
                 <h3 className="text-lg sm:text-xl font-bold text-neutral-900 leading-snug">
@@ -799,10 +707,6 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                     alt={selectedDoctorDetail.name}
                     className="w-full h-full object-cover object-top"
                   />
-                  <div className="absolute top-2 right-2 bg-neutral-900/80 backdrop-blur-xs text-white px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm">
-                    <Star className="size-3 fill-amber-400 text-amber-400" />
-                    <span>{selectedDoctorDetail.rating}</span>
-                  </div>
                 </div>
 
                 {/* Doctor Bio & Key Credentials */}
@@ -811,39 +715,15 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                     <div className="text-sm font-semibold text-neutral-500">
                       {selectedDoctorDetail.specialty}
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#3d117a] mt-1">
-                      <CheckCircle2 className="size-4 fill-[#3d117a] text-white" />
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#154734] mt-1">
+                      <CheckCircle2 className="size-4 fill-[#154734] text-white" />
                       <span>{selectedDoctorDetail.hospitalAffiliation}</span>
                     </div>
                   </div>
 
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50 border border-purple-200 text-[#3d117a] text-xs font-semibold">
-                    <Award className="size-3.5 text-[#3d117a]" />
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200 text-[#154734] text-xs font-semibold">
+                    <Award className="size-3.5 text-[#154734]" />
                     <span>{selectedDoctorDetail.boardCertified}</span>
-                  </div>
-
-                  {/* Bedside Manner & Patient Praise Callout */}
-                  <div className="bg-[#f7f5fc] border border-[#e5ddf5] rounded-lg p-3 text-xs text-neutral-700 leading-relaxed shadow-2xs">
-                    <div className="flex items-center gap-1.5 font-bold text-[#3d117a] text-[11px] uppercase tracking-wider mb-1">
-                      <Sparkles className="size-3.5 text-[#3d117a] shrink-0" />
-                      <span>What Patients Praise &amp; Bedside Manner</span>
-                    </div>
-                    <p className="text-neutral-700 font-normal leading-relaxed">
-                      {selectedDoctorDetail.bedsideManner}
-                    </p>
-                  </div>
-
-                  {/* Key Highlights Chips */}
-                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                    {selectedDoctorDetail.decisionChips?.map((chip, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#ede9f7]/75 text-[#2a0c58] text-[11px] font-semibold border border-[#ddd6fe]/60"
-                      >
-                        <span className="size-1.5 rounded-full bg-[#3d117a]" />
-                        <span>{chip}</span>
-                      </span>
-                    ))}
                   </div>
 
                   <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed pt-1">
@@ -870,7 +750,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
               {/* Education & Training */}
               <div className="border-t border-neutral-200 pt-5 space-y-2">
                 <h4 className="text-sm font-bold text-neutral-900 flex items-center gap-1.5">
-                  <GraduationCap className="size-4 text-[#3d117a]" />
+                  <GraduationCap className="size-4 text-[#154734]" />
                   <span>Education, Residencies &amp; Fellowships</span>
                 </h4>
                 <ul className="space-y-1.5 pl-6 list-disc text-xs text-neutral-600">
@@ -885,7 +765,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                 <div className="border-t border-neutral-200 pt-5 space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-bold text-neutral-900 flex items-center gap-1.5">
-                      <Building2 className="size-4 text-[#3d117a]" />
+                      <Building2 className="size-4 text-[#154734]" />
                       <span>Practice Location &amp; Clinical Facility</span>
                     </h4>
                     <span className="text-xs text-neutral-500 font-medium">
@@ -939,7 +819,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                       setSelectedDoctorDetail(null);
                       onSelectDoctorDetail(id);
                     }}
-                    className="px-4 py-2 rounded-md border border-purple-200 text-[#3d117a] bg-purple-50 hover:bg-purple-100 text-xs font-bold transition cursor-pointer"
+                    className="px-4 py-2 rounded-md border border-green-200 text-[#154734] bg-green-50 hover:bg-green-100 text-xs font-bold transition cursor-pointer"
                   >
                     View Full Profile →
                   </button>
@@ -952,7 +832,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                     setSelectedDoctorDetail(null);
                     onBookDoctor(docId, `Consultation with ${docName}`);
                   }}
-                  className="px-6 py-2 rounded-md bg-[#3d117a] hover:bg-[#2d0960] active:scale-95 text-white text-xs font-bold transition cursor-pointer shadow-xs"
+                  className="px-6 py-2 rounded-md bg-[#154734] hover:bg-[#0f3426] active:scale-95 text-white text-xs font-bold transition cursor-pointer shadow-xs"
                 >
                   Book with {selectedDoctorDetail.name.split(',')[0]}
                 </button>
@@ -968,7 +848,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
           <div className="bg-white rounded-xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 animate-fadeIn">
             <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
               <h3 className="font-bold text-lg text-neutral-900 flex items-center gap-2">
-                <Calendar className="size-5 text-[#3d117a]" />
+                <Calendar className="size-5 text-[#154734]" />
                 <span>Monthly Doctor Availability</span>
               </h3>
               <button
@@ -980,11 +860,11 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
               </button>
             </div>
             <p className="text-xs text-neutral-600">
-              Select any day in <strong>October &amp; November 2026</strong> to view instant consultation availability.
+              Choose a date to start booking. Availability is confirmed by the clinic.
             </p>
             <div className="grid grid-cols-5 gap-2 pt-2">
               {Array.from({ length: 15 }, (_, i) => {
-                const d = addDays(new Date(2026, 9, 30), i);
+                const d = addDays(demoStartDate(), i);
                 return (
                   <button
                     key={i}
@@ -993,7 +873,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                       setDateOffset(i);
                       setShowMonthModal(false);
                     }}
-                    className="p-2.5 rounded-md border border-neutral-200 hover:border-[#3d117a] hover:bg-[#3d117a]/5 text-center transition cursor-pointer"
+                    className="p-2.5 rounded-md border border-neutral-200 hover:border-[#154734] hover:bg-[#154734]/5 text-center transition cursor-pointer"
                   >
                     <div className="text-[11px] font-semibold text-neutral-400">{format(d, 'EEE')}</div>
                     <div className="text-sm font-bold text-neutral-900">{format(d, 'd')}</div>
@@ -1005,7 +885,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
               <button
                 type="button"
                 onClick={() => setShowMonthModal(false)}
-                className="bg-[#3d117a] text-white text-xs font-bold px-6 py-2 rounded-md hover:bg-[#2d0960] transition cursor-pointer"
+                className="bg-[#154734] text-white text-xs font-bold px-6 py-2 rounded-md hover:bg-[#0f3426] transition cursor-pointer"
               >
                 Done
               </button>
@@ -1014,8 +894,6 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
         </div>
       )}
 
-      {/* Standard Hospital Footer */}
-      <Footer />
     </div>
   );
 };

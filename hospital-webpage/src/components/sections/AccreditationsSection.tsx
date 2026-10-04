@@ -59,7 +59,7 @@ export const AccreditationsSection: React.FC = () => {
               <img
                 src={item.src}
                 alt={item.name}
-                className={`w-auto object-contain select-none transition-all duration-200 opacity-85 group-hover:opacity-100 group-hover:scale-105 filter grayscale mix-blend-multiply ${item.className || 'max-h-20 sm:max-h-24 max-w-[220px]'}`}
+                className={`w-auto !max-w-full object-contain select-none transition-all duration-200 opacity-85 group-hover:opacity-100 group-hover:scale-105 filter grayscale mix-blend-multiply ${item.className || 'max-h-20 sm:max-h-24 max-w-[220px]'}`}
               />
             </div>
           ))}

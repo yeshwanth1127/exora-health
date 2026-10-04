@@ -1,3 +1,4 @@
+import { HospitalLogo } from './HospitalLogo';
 import React from 'react';
 import { motion, type Variants } from 'framer-motion';
 import { ArrowRight, Phone, MessageCircle, MapPin, ShieldCheck } from 'lucide-react';
@@ -46,6 +47,7 @@ const footerColumns = [
       { label: 'Our Medical Team', href: '/?page=doctors' },
       { label: 'Patient Reviews & Stories', href: '/#testimonials' },
       { label: 'Frequently Asked Questions', href: '/?page=faq' },
+      { label: 'Articles & guides', href: '/?page=blog' },
     ],
   },
   {
@@ -65,7 +67,7 @@ const socialIcons = [
   { icon: TwitterIcon, label: 'Twitter / X', href: 'https://twitter.com' },
   { icon: InstagramIcon, label: 'Instagram', href: 'https://instagram.com' },
   { icon: LinkedinIcon, label: 'LinkedIn', href: 'https://linkedin.com' },
-  { icon: MessageCircle, label: 'WhatsApp', href: 'https://wa.me/918049682800' },
+  { icon: MessageCircle, label: 'WhatsApp', href: 'https://wa.me/919901711716' },
 ];
 
 const imageReveal: Variants = {
@@ -141,7 +143,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenBooking, onOpenLegal }) =>
           {/* Clean modern clinic architectural interior with soft ambient light */}
           <img
             src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=2400&q=85"
-            alt="Avocado Health Healing Environment"
+            alt="Sri Lakshmi Hospital Healing Environment"
             className="h-full w-full object-cover object-center filter brightness-[0.65] contrast-[1.05]"
           />
         </motion.div>
@@ -185,11 +187,11 @@ export const Footer: React.FC<FooterProps> = ({ onOpenBooking, onOpenLegal }) =>
             </button>
 
             <a
-              href="tel:+918049682800"
+              href="tel:+919901711716"
               className="inline-flex items-center gap-2 text-xs sm:text-sm font-normal text-neutral-300 hover:text-white px-4 py-2 rounded-full border border-white/15 hover:border-white/40 transition"
             >
               <Phone className="size-3.5 text-[#e04a36]" />
-              <span>24/7 Helpline: +91 80 4968 2800</span>
+              <span>24/7 Helpline: +91 99017 11716</span>
             </a>
           </motion.div>
         </motion.div>
@@ -209,15 +211,11 @@ export const Footer: React.FC<FooterProps> = ({ onOpenBooking, onOpenLegal }) =>
             variants={riseUp}
             className="flex flex-col gap-4 sm:col-span-2 lg:col-span-3"
           >
-            {/* Avocado Health Brand Mark in Family Typography */}
+            {/* Sri Lakshmi Hospital Brand Mark in Family Typography */}
             <div className="flex items-center gap-2.5">
-              <div className="size-8 rounded-lg bg-gradient-to-tr from-[#1e4635] to-[#2e6d53] flex items-center justify-center border border-emerald-500/30 shadow-sm shrink-0">
-                <svg className="w-4.5 h-4.5 text-emerald-200" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C8.5 2 6 6 6 11c0 4.5 3 9 6 11 3-2 6-6.5 6-11 0-5-2.5-9-6-9zm0 15c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4z" />
-                </svg>
-              </div>
+              <HospitalLogo className="size-8" />
               <span className="text-xl font-medium tracking-[-0.5px] text-white">
-                Avocado Health
+                Sri Lakshmi Hospital
               </span>
             </div>
 
@@ -307,7 +305,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenBooking, onOpenLegal }) =>
             {/* Clinic Address snippet */}
             <div className="mt-2 pt-3 border-t border-white/10 flex items-start gap-2 text-xs text-neutral-400">
               <MapPin className="size-4 text-[#e04a36] shrink-0 mt-0.5" />
-              <span>100 Feet Rd, Indiranagar, Bengaluru, Karnataka 560038</span>
+              <span>#301, Old Extension, KR Puram, Bengaluru 560036</span>
             </div>
           </motion.div>
         </motion.div>
@@ -321,7 +319,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenBooking, onOpenLegal }) =>
           className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-white/[0.08] pt-6 pb-8 text-xs text-neutral-500 sm:flex-row sm:items-center"
         >
           <p className="leading-none tabular-nums">
-            &copy; 2026 Avocado Health Clinics Private Limited. All rights reserved. KPME Reg. #BLR-2024-889.
+            &copy; 2026 Sri Lakshmi Super Speciality Hospital. All rights reserved. KPME Reg. #BLR-2024-889.
           </p>
 
           <div className="flex flex-wrap items-center gap-5 leading-none">

@@ -1,0 +1,44 @@
+[
+  {
+    "videoId": "3HTtj5NBA4w",
+    "url": "https://i.ytimg.com/vi/3HTtj5NBA4w/hqdefault.jpg",
+    "localPath": "public/clients/sri-lakshmi/videos/3HTtj5NBA4w.jpg",
+    "sha256": "3dce934d28f6d5b380d7eae198fe08d0e7297d3c4145f3dda4d19ce993285e35",
+    "bytes": 31784
+  },
+  {
+    "videoId": "4jvl0J9NKpY",
+    "url": "https://i.ytimg.com/vi/4jvl0J9NKpY/hqdefault.jpg",
+    "localPath": "public/clients/sri-lakshmi/videos/4jvl0J9NKpY.jpg",
+    "sha256": "5df375733f4023c406615471ee4e1a38233417451744e0a12aea99c4442e7abd",
+    "bytes": 19575
+  },
+  {
+    "videoId": "uT4a9oMj8dU",
+    "url": "https://i.ytimg.com/vi/uT4a9oMj8dU/hqdefault.jpg",
+    "localPath": "public/clients/sri-lakshmi/videos/uT4a9oMj8dU.jpg",
+    "sha256": "ad6df2918b4c199b9a11922ca098e13eb5c6e94789fc159305d8e056de07d92b",
+    "bytes": 17335
+  },
+  {
+    "videoId": "ZGpAgCYAy5k",
+    "url": "https://i.ytimg.com/vi/ZGpAgCYAy5k/hqdefault.jpg",
+    "localPath": "public/clients/sri-lakshmi/videos/ZGpAgCYAy5k.jpg",
+    "sha256": "48718998ebafdc0f33363386234f2e0b422bb1e2d79ce13a5f1ff9c8801a80d7",
+    "bytes": 18693
+  },
+  {
+    "videoId": "63W1DaLcDKM",
+    "url": "https://i.ytimg.com/vi/63W1DaLcDKM/hqdefault.jpg",
+    "localPath": "public/clients/sri-lakshmi/videos/63W1DaLcDKM.jpg",
+    "sha256": "18061633ee90590c1c4f4563de97789e21593a0ee6d77611cec0568b306478c2",
+    "bytes": 31302
+  },
+  {
+    "videoId": "sQihejx3qFU",
+    "url": "https://i.ytimg.com/vi/sQihejx3qFU/hqdefault.jpg",
+    "localPath": "public/clients/sri-lakshmi/videos/sQihejx3qFU.jpg",
+    "sha256": "c2e82471aa7984fef45c54c5b813d9771589513ea0e8e5915b804b19b4012d77",
+    "bytes": 22705
+  }
+]

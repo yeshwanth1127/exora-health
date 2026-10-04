@@ -19,7 +19,7 @@ export const LightBangaloreLocationSection: React.FC<LightBangaloreLocationSecti
           <div className="relative flex items-center justify-center p-2 sm:p-6">
             <img
               src="/images/bangalore_real_map.svg"
-              alt="Real Map of Bangalore Clinics"
+              alt="Bangalore hospital location map"
               className="w-full max-w-[520px] h-auto drop-shadow-sm select-none"
             />
           </div>
@@ -27,7 +27,7 @@ export const LightBangaloreLocationSection: React.FC<LightBangaloreLocationSecti
           {/* Right Column: Clean Content matching Tia Reference with Unified Font */}
           <div className="flex flex-col items-start max-w-xl">
             <h2 className="font-medium text-5xl sm:text-6xl tracking-[-.05em] leading-[1.05] text-[#17372b] mb-5">
-              Find an Avocado clinic near you
+              Find a Sri Lakshmi hospital near you
             </h2>
 
             <p className="block text-[#3d5a45] text-lg leading-relaxed mb-3">
@@ -35,7 +35,7 @@ export const LightBangaloreLocationSection: React.FC<LightBangaloreLocationSecti
             </p>
 
             <p className="block text-[#607466] text-base leading-relaxed mb-9">
-              Virtual visits available across Karnataka and pan-India.
+              Main hospital: #301, Old Extension, KR Puram, Bengaluru 560036.
             </p>
 
             {/* Action Buttons matching Tia reference */}
@@ -50,7 +50,7 @@ export const LightBangaloreLocationSection: React.FC<LightBangaloreLocationSecti
                 onClick={onBookVirtual || onOpenBooking}
                 className="bg-[#fffefa] hover:bg-white text-[#24553c] border border-[#aac4ae] font-semibold text-sm sm:text-base px-8 py-3.5 rounded-full transition-colors cursor-pointer"
               >
-                Book a virtual visit
+                Contact KR Puram
               </button>
             </div>
 

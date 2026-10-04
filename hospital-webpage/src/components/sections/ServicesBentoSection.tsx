@@ -9,40 +9,40 @@ interface ServiceBentoItem {
 
 const servicesList: ServiceBentoItem[] = [
   {
-    id: "primary-care",
-    title: "Primary Care",
-    image: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=800",
-    departmentId: "general-medicine"
+    "id": "general-medicine",
+    "title": "General Medicine",
+    "image": "/clients/sri-lakshmi/36f2a4cf-home-page-banner.png",
+    "departmentId": "general-medicine"
   },
   {
-    id: "cardiology",
-    title: "Cardiology & Heart Health",
-    image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=800",
-    departmentId: "cardiology"
+    "id": "cardiology",
+    "title": "Cardiology",
+    "image": "/clients/sri-lakshmi/0b3cc897-cardiology.png",
+    "departmentId": "cardiology"
   },
   {
-    id: "metabolic",
-    title: "Weight Management & Metabolic Health",
-    image: "https://images.unsplash.com/photo-1505576399279-565b52d4ac71?auto=format&fit=crop&q=80&w=800",
-    departmentId: "metabolic"
+    "id": "metabolic",
+    "title": "Diabetology",
+    "image": "/clients/sri-lakshmi/df0a204c-Untitled-design-39.png",
+    "departmentId": "metabolic"
   },
   {
-    id: "orthopedics",
-    title: "Orthopedics & Joint Care",
-    image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800",
-    departmentId: "orthopedics"
+    "id": "orthopedics",
+    "title": "Orthopedics",
+    "image": "/clients/sri-lakshmi/aaaa640e-Untitled-design-24-2.png",
+    "departmentId": "orthopedics"
   },
   {
-    id: "skin-care",
-    title: "Skin Care",
-    image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&q=80&w=800",
-    departmentId: "dermatology"
+    "id": "dermatology",
+    "title": "Dermatology",
+    "image": "/clients/sri-lakshmi/786db910-Untitled-design-14-1.png",
+    "departmentId": "dermatology"
   },
   {
-    id: "mental-health",
-    title: "Mental Health & Neurology",
-    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800",
-    departmentId: "neurology"
+    "id": "neurology",
+    "title": "Neurology",
+    "image": "/clients/sri-lakshmi/2e5e56ad-Untitled-design-20-1.png",
+    "departmentId": "neurology"
   }
 ];
 
@@ -57,7 +57,7 @@ export const ServicesBentoSection: React.FC<ServicesBentoSectionProps> = ({
     <section className="w-full pt-28 pb-20" id="services">
       <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16">
         
-        {/* Section Header matching exact typography from Patients of Avocado */}
+        {/* Section Header matching exact typography from Patients of Sri Lakshmi */}
         <div className="text-center max-w-2xl mx-auto mb-14">
           <h2 className="block text-color-002 [font-family:Family,_-apple-system,_'system-ui',_'Segoe_UI',_Helvetica,_'Apple_Color_Emoji',_Arial,_sans-serif,_'Segoe_UI_Emoji',_'Segoe_UI_Symbol'] text-[2.75rem] font-medium leading-12 tracking-[-1.35px] [-webkit-text-stroke:0.001px_var(--clr-3)] max-md:text-[2rem] max-md:leading-[2.1875rem] max-md:tracking-[-0.69px] mb-3.5">
             Services we offer

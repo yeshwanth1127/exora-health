@@ -13,8 +13,7 @@ export const FamilyBlogListPage: React.FC<FamilyBlogListPageProps> = ({
 }) => {
   const [activeFilter, setActiveFilter] = useState<string>('All');
 
-  // Extract all unique tags
-  const allTags = ['All', 'Clinical Care', 'Preventive Health', 'Diagnostics'];
+  const allTags = ['All', ...new Set(BLOG_POSTS.flatMap(post => post.tags))];
 
   const filteredPosts = BLOG_POSTS.filter((post) => {
     if (activeFilter === 'All') return true;
@@ -22,7 +21,7 @@ export const FamilyBlogListPage: React.FC<FamilyBlogListPageProps> = ({
   });
 
   return (
-    <div className="bg-[#fcfbf9] text-[#121212] [font-family:-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,Helvetica,Arial,sans-serif]">
+    <div className="bg-[#fcfbf9] text-[#121212]">
 
       {/* Main Blog List matching layout 1:1 */}
       <main className="max-w-[1100px] mx-auto px-6 py-14 sm:py-20">
@@ -30,10 +29,10 @@ export const FamilyBlogListPage: React.FC<FamilyBlogListPageProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-12">
           <div>
             <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-stone-950">
-              Clinical Blog & Insights
+              Practical care guides
             </h1>
             <p className="text-stone-500 mt-2 text-[15px]">
-              The latest medical research, physician drafts, and wellness guides from Avocado Health
+              Small, useful steps for planning a visit and keeping your records in order.
             </p>
             <p className="mt-3 text-sm text-[#4f6756]">Draft articles · Awaiting clinical review before publication.</p>
           </div>
@@ -64,20 +63,21 @@ export const FamilyBlogListPage: React.FC<FamilyBlogListPageProps> = ({
           {filteredPosts.map((post: BlogPost, index: number) => (
             <article
               key={post.id}
-              onClick={() => onSelectPost(post.id)}
-              className={`w-full py-10 sm:py-14 grid grid-cols-1 md:grid-cols-[140px_1fr_1.3fr] gap-4 md:gap-8 items-start cursor-pointer group transition-colors ${
+              className={`w-full py-10 sm:py-14 grid grid-cols-1 md:grid-cols-[140px_1fr_1.3fr] gap-4 md:gap-8 items-start group transition-colors ${
                 index !== filteredPosts.length - 1 ? 'border-b border-stone-200/80' : ''
               }`}
             >
               {/* Column 1: Date */}
               <div className="text-[14px] text-stone-500 font-normal select-none pt-0.5">
-                {post.date}
+                Draft · {post.readingMinutes} min read
               </div>
 
               {/* Column 2: Title & Tags */}
               <div className="flex flex-col pr-4">
-                <h2 className="text-[19px] sm:text-[20px] font-bold text-stone-900 group-hover:text-black group-hover:underline leading-snug tracking-tight">
-                  {post.title}
+                <h2 className="text-[19px] sm:text-[20px] font-bold text-stone-900 group-hover:text-black leading-snug tracking-tight">
+                  <a href={`/?page=blog-post&id=${post.id}`} onClick={(event) => { event.preventDefault(); onSelectPost(post.id); }} className="hover:underline">
+                    {post.title}
+                  </a>
                 </h2>
                 <div className="text-[13px] text-stone-500 mt-2 font-normal">
                   {post.tags.join(', ')}
@@ -100,7 +100,7 @@ export const FamilyBlogListPage: React.FC<FamilyBlogListPageProps> = ({
           >
             <ArrowLeft className="size-4" /> Back to Hospital Home
           </button>
-          <span>&copy; {new Date().getFullYear()} Avocado Health, Inc. Bengaluru, Karnataka.</span>
+          <span>Sri Lakshmi Hospital</span>
         </div>
       </main>
     </div>

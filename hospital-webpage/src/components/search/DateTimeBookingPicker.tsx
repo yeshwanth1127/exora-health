@@ -175,7 +175,7 @@ export const DateTimeBookingPicker: React.FC<DateTimeBookingPickerProps> = ({
     }
 
     return (
-      <div className="flex-1 min-w-[280px]">
+      <div className="flex-1 min-w-0">
         {/* Month Header */}
         <div className="flex items-center justify-between px-2 mb-4 h-9">
           {showPrev ? (
@@ -285,7 +285,7 @@ export const DateTimeBookingPicker: React.FC<DateTimeBookingPickerProps> = ({
       <PopoverContent
         align="center"
         sideOffset={12}
-        className="w-[calc(100vw-32px)] sm:w-[680px] max-w-[680px] p-0 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-neutral-200/90 overflow-hidden"
+        className="w-[calc(100vw-32px)] sm:w-[680px] max-w-[680px] max-h-[calc(100dvh-32px)] overflow-y-auto p-0 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-neutral-200/90"
       >
         {/* Top Travel-Style Tabs: Calendar vs I'm Flexible */}
         <div className="flex border-b border-neutral-200 px-6 pt-3 bg-neutral-50/50">

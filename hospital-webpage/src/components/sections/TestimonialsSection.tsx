@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, Sparkles } from 'lucide-react';
+import { Play, Star } from 'lucide-react';
 
 // Option 1: X (Twitter) Community Testimonials
 interface PatientTestimonial {
@@ -11,45 +11,47 @@ interface PatientTestimonial {
 
 const patientTestimonials: PatientTestimonial[] = [
   {
-    name: "Elena Vance",
-    handle: "@elenavance",
-    avatar: "/assets/cloned/images/688082b68697.jpeg",
-    text: "After feeling breathless during morning runs, Dr. Jenkins diagnosed my mitral valve issue over a video consult and had me admitted two days later. The care and recovery follow-up via WhatsApp was unlike any hospital experience I've ever had."
+    "name": "Emergency care",
+    "handle": "Hospital website information",
+    "avatar": "/clients/sri-lakshmi/f8fcf782-emergency-care.png",
+    "text": "The hospital lists emergency and trauma services as available 24/7."
   },
   {
-    name: "Daniel Feodoroff",
-    handle: "@mrdanielfeo",
-    avatar: "/assets/cloned/images/3991dbcd8280.jpeg",
-    text: "The Avocado Health app has some of the best patient UX I’ve ever seen. Booking my MRI, talking with the doctor, and having test results delivered within hours was so effortless."
+    "name": "Dialysis unit",
+    "handle": "Hospital website information",
+    "avatar": "/clients/sri-lakshmi/c3c3d54f-1-8.png",
+    "text": "The facilities page lists a 10-bed dialysis unit."
   },
   {
-    name: "Emma Thornton",
-    handle: "@emmathornton",
-    avatar: "/assets/cloned/images/6dace7097a3e.jpeg",
-    text: "Got in on the Avocado virtual care triage and first impression is that THIS is the delightful healthcare experience we've all been missing. Immediate pharmacy prescription delivery too."
+    "name": "Founded in 2002",
+    "handle": "Hospital website information",
+    "avatar": "/clients/sri-lakshmi/f22f9b39-1-1.png",
+    "text": "Dr. Sambashiva founded the KR Puram hospital in 2002, according to its About Us page."
   },
   {
-    name: "Sarah Miller",
-    handle: "@sarahm_health",
-    avatar: "/assets/cloned/images/98b86b931bf2.jpeg",
-    text: "Dr. Vance performed robotic-assisted spine surgery that completely restored my mobility without heavy painkillers. 6 weeks post-op and hiking again! 🔥👏"
+    "name": "Intensive care",
+    "handle": "Hospital website information",
+    "avatar": "/clients/sri-lakshmi/81a4ec5b-1-9.png",
+    "text": "The facilities page lists a 10-bed intensive care unit."
   },
   {
-    name: "Ilya Komolkin",
-    handle: "@ilyakomolkin",
-    avatar: "/assets/cloned/images/8d22908ae989.png",
-    text: "It is one of the best patient portals in modern healthcare. Onboarding, watching vitals, direct triage with nurses, and prescription renewals are on a whole another level 👏"
+    "name": "Hospital pharmacy",
+    "handle": "Hospital website information",
+    "avatar": "/clients/sri-lakshmi/13214f3a-6-6.png",
+    "text": "The hospital lists a pharmacy open around the clock."
   },
   {
-    name: "Adam Waterhouse",
-    handle: "@AdamWaterhouse",
-    avatar: "/assets/cloned/images/2cea4d9ff44d.jpeg",
-    text: "The attention to detail on the Avocado telemedicine app is staggering. The instant video connection with an on-call physician made an emergency anxiety attack manageable."
+    "name": "Cardiac cathlab",
+    "handle": "Hospital website information",
+    "avatar": "/clients/sri-lakshmi/aada937b-1-3.png",
+    "text": "The hospital describes its Philips FD10 cardiac cathlab."
   }
 ];
 
-// Option 2: Clinical Stories (Generic high-res pictures, Audio waveforms, Quotes)
-export type StoryType = 'photo' | 'quote' | 'audio';
+// Option 2: Real patient voices. Reviews are quoted as written (names shortened) from the
+// hospital's Google listing and the Google review widget on slsshospitals.com, checked
+// 4 Oct 2026. Videos are from the hospital's own YouTube channel (see data/clientMedia.ts).
+export type StoryType = 'photo' | 'quote' | 'video';
 
 export interface ClinicalStory {
   id: string;
@@ -58,110 +60,99 @@ export interface ClinicalStory {
   procedure: string;
   quote: string;
   image?: string;
-  audioDuration?: string;
-  audioTotalSeconds?: number;
+  videoId?: string;
 }
 
 const CLINICAL_STORIES: ClinicalStory[] = [
   {
-    id: 'adeeba-family',
+    id: 'video-founder',
+    type: 'video',
+    patientName: 'Dr. Sambashiva AC',
+    procedure: 'OUR STORY',
+    quote: 'The founder introduces the Sri Lakshmi Group of Hospitals.',
+    videoId: '3HTtj5NBA4w',
+  },
+  {
+    id: 'review-cardiac',
     type: 'photo',
-    patientName: 'ADEEBA IRSHAD',
-    procedure: 'MATERNITY CARE',
-    quote: '“Avocado never felt like a hospital. The team cared for me and my baby with so much warmth.”',
-    image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?auto=format&fit=crop&w=800&q=80',
+    patientName: 'Murthy D.',
+    procedure: 'HEART CARE',
+    quote: '“My brother was admitted for cardiac issues. All doctors and staff reacted immediately and today he is safe.”',
+    image: '/clients/sri-lakshmi/aada937b-1-3.png',
   },
   {
-    id: 'paritosh-audio',
-    type: 'audio',
-    patientName: 'PARITOSH & FAMILY',
-    procedure: 'FAMILY CARE PLAN',
-    quote: '“Great doctors, kind people, and such a calm, cozy experience throughout.”',
-    audioDuration: '0:41',
-    audioTotalSeconds: 41,
-  },
-  {
-    id: 'dr-raghu-quote',
+    id: 'review-hysterectomy',
     type: 'quote',
-    patientName: 'DR. RAGHU & FAMILY',
-    procedure: 'FAMILY CARE PLAN',
-    quote: '“For the first time, our family of six’s healthcare feels organised, predictable and stress free.”',
+    patientName: 'Ashok N.',
+    procedure: 'LAP HYSTERECTOMY',
+    quote: '“Doctors and staffs are well friendly. Cashless facility is hassle free. The team is very much supportive.”',
   },
   {
-    id: 'sangeetha-portrait',
+    id: 'video-kidney',
+    type: 'video',
+    patientName: 'Dr. Manjunath S',
+    procedure: 'UROLOGY',
+    quote: 'Understanding kidney stone treatment.',
+    videoId: '4jvl0J9NKpY',
+  },
+  {
+    id: 'review-surgery',
     type: 'photo',
-    patientName: 'SANGEETHA JAIN',
-    procedure: 'SPINE SURGERY',
-    quote: '“From physio to surgery. Everything was so seamless. Doctors here explain where I understood things.”',
-    image: 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&w=800&q=80',
+    patientName: 'Manju S.',
+    procedure: 'SURGERY',
+    quote: '“Admitted my mother for Surgery. The hospital staff has supported us very friendly. The cashless team was very good.”',
+    image: '/clients/sri-lakshmi/c3c3d54f-1-8.png',
   },
   {
-    id: 'audio-ashwinipriya',
-    type: 'audio',
-    patientName: 'ASHWINIPRIYA AND\nCHANDRA MOHAN',
-    procedure: 'MATERNITY CARE',
-    quote: '“We had seen great healthcare in Sweden. Avocado gave us that same sense of confidence and comfort.”',
-    audioDuration: '0:08',
-    audioTotalSeconds: 8,
-  },
-  {
-    id: 'shruthi-arjun-baby',
-    type: 'photo',
-    patientName: 'B. SHRUTHI & ARJUN',
-    procedure: 'MATERNITY CARE',
-    quote: '“From my appointments, giving birth and discharge, everything was planned, hassle free, and smooth.”',
-    image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: 'navya-photo',
-    type: 'photo',
-    patientName: 'NAVYA',
-    procedure: 'RIGHT LEG SURGERY',
-    quote: '“I went through two surgeries here, and I\'ve seen the difference in care and attention to details, that\'s what truly makes Avocado special.”',
-    image: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: 'sharuk-quote',
+    id: 'review-front-desk',
     type: 'quote',
-    patientName: 'SHARUK',
-    procedure: 'KIDNEY SURGERY',
-    quote: '“After my surgery experience at Avocado, I honestly don’t see myself going to any other hospital.”',
+    patientName: 'Prakruthi N.',
+    procedure: 'PATIENT CARE',
+    quote: '“From the moment I arrived, the front desk people are very friendly and they took initiative and explained very well.”',
   },
   {
-    id: 'tapan-photo',
-    type: 'photo',
-    patientName: 'TAPAN KAR',
-    procedure: 'HERNIA SURGERY',
-    quote: '“Avocado made surgery feel easy. From reaching the hospital to going back home, everything was taken care of.”',
-    image: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=800&q=80',
+    id: 'video-joints',
+    type: 'video',
+    patientName: 'Dr. G Krishna Naresh Goud',
+    procedure: 'ORTHOPAEDICS',
+    quote: 'Arthroscopy and joint replacement, explained.',
+    videoId: 'uT4a9oMj8dU',
   },
   {
-    id: 'shivaram-photo',
-    type: 'photo',
-    patientName: 'SHIVARAMAIAH & FAMILY',
-    procedure: 'ORTHOPEDIC REHAB',
-    quote: '“It seemed as if I walked into not a five star, but a world-class healing sanctuary. Everything was taken care of.”',
-    image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=800&q=80',
+    id: 'review-team',
+    type: 'quote',
+    patientName: 'Suresh F.',
+    procedure: 'INPATIENT CARE',
+    quote: '“All the services was very gud in this hospital. All doctors and staff coordinated very well. Thank you for entire team.”',
   },
 ];
+
+const ReviewSource: React.FC = () => (
+  <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-[#121212]/60">
+    <span className="flex text-[#e3a008]" aria-label="5 out of 5 stars">
+      {Array.from({ length: 5 }, (_, i) => <Star key={i} className="size-3.5 fill-current" aria-hidden="true" />)}
+    </span>
+    Google review
+  </div>
+);
 
 // Sub-component for Photo Story Card (Clean, crisp, no shadow or murky gradient)
 const PhotoStoryCard: React.FC<{ story: ClinicalStory }> = ({ story }) => {
   return (
     <div className="group relative w-[310px] sm:w-[350px] md:w-[370px] h-[460px] sm:h-[490px] shrink-0 rounded-[26px] bg-[#f4eee3] border border-[#ded6c7] overflow-hidden flex flex-col justify-between select-none">
-      {/* Top Patient Photo (Crisp, clean rectangle) */}
-      <div className="relative h-[240px] sm:h-[260px] w-full overflow-hidden bg-[#ebe4d6]">
+      {/* Hospital photo (not the reviewer) */}
+      <div className="relative h-[220px] sm:h-[240px] w-full overflow-hidden bg-[#ebe4d6]">
         <img
           src={story.image}
-          alt={story.patientName}
+          alt=""
           className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-103"
           loading="lazy"
         />
       </div>
 
-      {/* Bottom Quote & Info (Clean cream card body, NO gradient) */}
       <div className="p-6 sm:p-7 flex flex-col justify-between flex-1">
-        <blockquote className="text-[1.02rem] sm:text-[1.08rem] leading-[1.4] font-normal text-[#121212] [font-family:Family,_-apple-system,_'system-ui',_'Segoe_UI',_Helvetica,_Arial,_sans-serif] tracking-[-0.3px] mb-4 line-clamp-3">
+        <ReviewSource />
+        <blockquote className="mt-3 text-[1.02rem] sm:text-[1.08rem] leading-[1.4] font-normal text-[#121212] [font-family:Family,_-apple-system,_'system-ui',_'Segoe_UI',_Helvetica,_Arial,_sans-serif] tracking-[-0.3px] mb-4 line-clamp-4">
           {story.quote}
         </blockquote>
 
@@ -178,107 +169,37 @@ const PhotoStoryCard: React.FC<{ story: ClinicalStory }> = ({ story }) => {
   );
 };
 
-// Sub-component for Audio card with interactive waveform
-const AudioStoryCard: React.FC<{ story: ClinicalStory }> = ({ story }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [seconds, setSeconds] = useState(0);
-  const total = story.audioTotalSeconds || 8;
-
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isPlaying) {
-      timer = setInterval(() => {
-        setSeconds((prev) => {
-          if (prev >= total) {
-            setIsPlaying(false);
-            return 0;
-          }
-          return prev + 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [isPlaying, total]);
-
-  const toggleAudio = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(isPlaying ? 360 : 540, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.15);
-    } catch {
-      // AudioContext fallback
-    }
-    setIsPlaying(!isPlaying);
-  };
-
-  const formatTime = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  };
-
+// Video card: poster until played, then a privacy-enhanced YouTube embed in place.
+const VideoStoryCard: React.FC<{ story: ClinicalStory; playing: boolean; onPlay: () => void }> = ({ story, playing, onPlay }) => {
   return (
-    <div className="w-[310px] sm:w-[350px] md:w-[370px] h-[460px] sm:h-[490px] shrink-0 rounded-[26px] bg-[#f4eee3] border border-[#ded6c7] p-7 sm:p-8 flex flex-col justify-between select-none">
-      {/* Audio Player Pill Widget */}
-      <div className="w-full bg-white rounded-full p-2 pl-2 pr-4.5 flex items-center justify-between border border-[#ece4d6]">
-        <button
-          type="button"
-          onClick={toggleAudio}
-          className="size-11 rounded-full bg-[#121212] hover:bg-neutral-800 text-white flex items-center justify-center shrink-0 cursor-pointer transition-transform active:scale-95"
-          aria-label={isPlaying ? 'Pause audio' : 'Play audio'}
-        >
-          {isPlaying ? (
-            <Pause className="size-4 fill-white text-white" />
-          ) : (
-            <Play className="size-4 fill-white text-white ml-0.5" />
-          )}
-        </button>
-
-        {/* Purple Stylized Soundwave */}
-        <div className="flex-1 mx-3 flex items-center justify-center gap-[3px] h-6 overflow-hidden">
-          {[30, 45, 75, 95, 60, 85, 100, 70, 90, 50, 40, 65, 80, 55, 35].map((h, i) => (
-            <span
-              key={i}
-              className="w-[3px] rounded-full bg-gradient-to-b from-[#8b5cf6] to-[#6366f1] transition-all duration-200"
-              style={{
-                height: isPlaying
-                  ? `${Math.max(20, h * (0.6 + Math.sin(Date.now() / 200 + i) * 0.4))}%`
-                  : `${Math.max(25, h * 0.4)}%`,
-                opacity: isPlaying ? 0.95 : 0.65,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Timestamp duration */}
-        <span className="text-xs sm:text-[13px] font-semibold tracking-tight text-[#121212] tabular-nums font-mono">
-          {isPlaying ? formatTime(seconds) : story.audioDuration || '0:08'}
-        </span>
+    <div className="relative w-[310px] sm:w-[350px] md:w-[370px] h-[460px] sm:h-[490px] shrink-0 rounded-[26px] bg-[#17372b] overflow-hidden flex flex-col select-none text-white">
+      <div className="relative flex-1 bg-black">
+        {playing ? (
+          <iframe
+            className="absolute inset-0 h-full w-full border-0"
+            src={`https://www.youtube-nocookie.com/embed/${story.videoId}?autoplay=1&rel=0`}
+            title={`${story.patientName}: ${story.quote}`}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
+          />
+        ) : (
+          <button type="button" onClick={onPlay} aria-label={`Play video: ${story.quote}`} className="group absolute inset-0 h-full w-full cursor-pointer focus-visible:outline-4 focus-visible:outline-offset-[-6px] focus-visible:outline-white">
+            <img src={`/clients/sri-lakshmi/videos/${story.videoId}.jpg`} alt="" className="h-full w-full object-cover opacity-80 transition-opacity duration-300 group-hover:opacity-95" loading="lazy" />
+            <span className="absolute inset-0 bg-gradient-to-t from-[#17372b] via-transparent to-transparent" />
+            <span className="absolute inset-0 flex items-center justify-center">
+              <span className="flex size-16 items-center justify-center rounded-full bg-white text-[#17372b] shadow-lg transition-transform group-hover:scale-110">
+                <Play className="ml-1 size-6 fill-current" />
+              </span>
+            </span>
+          </button>
+        )}
       </div>
-
-      {/* Main Quote */}
-      <div className="my-auto py-4">
-        <blockquote className="text-[1.25rem] sm:text-[1.38rem] leading-[1.38] font-normal text-[#121212] [font-family:Family,_-apple-system,_'system-ui',_'Segoe_UI',_Helvetica,_Arial,_sans-serif] tracking-[-0.5px]">
-          {story.quote}
-        </blockquote>
-      </div>
-
-      {/* Bottom Patient Info & Procedure */}
-      <div className="flex items-end justify-between pt-4 border-t border-[#121212]/10 mt-auto">
-        <div className="text-[11px] sm:text-xs font-semibold tracking-wider text-[#121212] uppercase leading-tight whitespace-pre-line">
-          {story.patientName}
-        </div>
-        <div className="text-xs sm:text-[13px] font-bold tracking-wider text-[#121212] uppercase">
-          {story.procedure}
+      <div className="p-6 sm:p-7">
+        <p className="text-[1.15rem] sm:text-[1.25rem] leading-[1.35] tracking-[-0.4px]">{story.quote}</p>
+        <div className="flex items-end justify-between pt-4 mt-4 border-t border-white/15">
+          <div className="text-[11px] sm:text-xs font-semibold tracking-wider uppercase leading-tight">{story.patientName}</div>
+          <div className="text-[11px] sm:text-xs font-bold tracking-wider uppercase">{story.procedure}</div>
         </div>
       </div>
     </div>
@@ -300,6 +221,9 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
   const startXRef = useRef(0);
   const scrollLeftRef = useRef(0);
   const isHoveringRef = useRef(false);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const playingRef = useRef(false);
+  playingRef.current = playingId !== null;
 
   // 1. Drag to scroll logic ("movable by my hand by dragging")
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -332,7 +256,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
     if (viewMode !== 'option2') return;
 
     const interval = setInterval(() => {
-      if (isDownRef.current || isHoveringRef.current || !carouselRef.current) return;
+      if (isDownRef.current || isHoveringRef.current || playingRef.current || !carouselRef.current) return;
 
       const el = carouselRef.current;
       const cardWidth = 350 + 24; // card width + gap
@@ -352,18 +276,18 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
     <section
       className="block pt-24 sm:pt-28 pb-20 sm:pb-24 border-b border-[#e7ded3] overflow-hidden"
       id="testimonials"
-      aria-label="Patients of Avocado Testimonials"
+      aria-label="Patient reviews and doctor videos"
     >
       {/* ── Section Header (Clean, no pills or switcher clutter) ── */}
       <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16 pb-12">
         <div className="flex flex-col gap-2.5 max-w-2xl">
           <h2 className="text-[#121212] [font-family:Family,_-apple-system,_'system-ui',_'Segoe_UI',_Helvetica,_'Apple_Color_Emoji',_Arial,_sans-serif] text-[2.5rem] sm:text-[2.85rem] font-medium leading-[1.15] tracking-[-1.35px]">
-            Patients of Avocado
+            What our patients say
           </h2>
           <p className="text-[1.125rem] leading-[1.6] tracking-[-0.3px] text-[#575554]">
             {viewMode === 'option2'
-              ? 'Clinical stories, voice recoveries, and patient experiences across Bengaluru.'
-              : 'See what verified patients are saying on community channels.'}
+              ? 'Reviews from our Google listing (4.1★ from 792 reviews) and videos from our doctors.'
+              : 'Hospital information from the published website.'}
           </p>
         </div>
       </div>
@@ -399,9 +323,9 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
                 return <PhotoStoryCard key={story.id} story={story} />;
               }
 
-              // B. Audio Story Card
-              if (story.type === 'audio') {
-                return <AudioStoryCard key={story.id} story={story} />;
+              // B. Video Story Card
+              if (story.type === 'video') {
+                return <VideoStoryCard key={story.id} story={story} playing={playingId === story.id} onPlay={() => setPlayingId(story.id)} />;
               }
 
               // C. Pure Quote Card (Clean, crisp, no weird shadow)
@@ -410,9 +334,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
                   key={story.id}
                   className="w-[310px] sm:w-[350px] md:w-[370px] h-[460px] sm:h-[490px] shrink-0 rounded-[26px] bg-[#f4eee3] border border-[#ded6c7] p-7 sm:p-8 flex flex-col justify-between select-none"
                 >
-                  <div className="size-10 rounded-full bg-[#121212]/5 flex items-center justify-center text-[#121212]/40">
-                    <Sparkles className="size-4.5" />
-                  </div>
+                  <ReviewSource />
 
                   <div className="my-auto py-4">
                     <blockquote className="text-[1.35rem] sm:text-[1.5rem] leading-[1.35] font-normal text-[#121212] [font-family:Family,_-apple-system,_'system-ui',_'Segoe_UI',_Helvetica,_Arial,_sans-serif] tracking-[-0.6px]">

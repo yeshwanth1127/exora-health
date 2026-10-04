@@ -8,6 +8,13 @@ export interface DepartmentEditorial {
 
 // Patient-facing prompts; the canonical services and clinicians live in departments.ts and doctors.ts.
 export const departmentEditorial: Record<string, DepartmentEditorial> = {
+  gynecology: {
+    intro: 'Finally, gynecology and reproductive health care that actually listens to your body, your pain, and your questions.',
+    concerns: ['Painful periods, cramps, or pelvic pain', 'Cycle irregularities or missed periods', 'Birth control options and IUD consultations', 'Perimenopause and menopause support'],
+    visit: ['Talk through symptoms, cycle history, and goals', 'Gentle examination and screening if appropriate', 'Leave with a clear, personalized care plan'],
+    question: 'Do I have to do a pelvic exam during my first visit?',
+    answer: 'No. Exams are always collaborative and conducted only with your full consent. We move at your pace.',
+  },
   'general-medicine': {
     intro: 'For a new symptom, a regular checkup, or a condition you have managed for years, primary care helps put the pieces together.',
     concerns: ['A new symptom or health question', 'Blood pressure and diabetes follow up', 'Preventive checks and screening', 'Care for older adults'],

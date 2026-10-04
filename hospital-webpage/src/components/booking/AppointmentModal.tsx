@@ -86,7 +86,7 @@ Reason: ${reason || 'General Consultation'}`;
         <div className="bg-[#154734] px-6 py-5 text-white flex items-center justify-between">
           <div>
             <div className="text-lg font-bold">Book a Doctor Consultation</div>
-            <div className="text-xs text-emerald-200">Avocado Health Verified Specialists</div>
+            <div className="text-xs text-emerald-200">Sri Lakshmi Hospital Verified Specialists</div>
           </div>
           <button
             onClick={onClose}

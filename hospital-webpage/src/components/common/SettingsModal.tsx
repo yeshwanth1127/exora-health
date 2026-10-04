@@ -1,66 +1,50 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, X, Check, MessageSquare, HeartHandshake, LayoutGrid, Layers, Image as ImageIcon, LayoutTemplate } from 'lucide-react';
-import { PricingRailVariant } from '../sections/PricingRailSection';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Check, Settings, X } from 'lucide-react';
+import { HERO_BACKDROPS, HERO_PLACEMENTS, type HeroBackdrop, type HeroPlacement } from '../home/heroBackdrops';
+import { getAnalyticsConsent, setAnalyticsConsent, trackModeSwitched } from '../../lib/posthog';
 
-export type ComponentVariantKey = 'header' | 'hero' | 'why' | 'services' | 'doctors' | 'locations' | 'insurance' | 'pricing' | 'articles' | 'footer' | 'doctor-profile' | 'search-results' | 'appointment';
-export type ComponentVariants = Record<ComponentVariantKey, 'original' | 'light'>;
-
-const componentOptions: { key: ComponentVariantKey; label: string }[] = [
-  { key: 'header', label: 'Top navigation' },
-  { key: 'hero', label: 'Homepage hero' },
-  { key: 'why', label: 'Why choose us' },
-  { key: 'services', label: 'Services' },
-  { key: 'doctors', label: 'Doctor showcase' },
-  { key: 'locations', label: 'Location section' },
-  { key: 'insurance', label: 'Insurance section' },
-  { key: 'pricing', label: 'Pricing section' },
-  { key: 'articles', label: 'Articles section' },
-  { key: 'footer', label: 'Footer' },
-  { key: 'doctor-profile', label: 'Doctor profile screen' },
-  { key: 'search-results', label: 'Doctor search screen' },
-  { key: 'appointment', label: 'Appointment screen' },
-];
-const screenOptionKeys: ComponentVariantKey[] = ['doctor-profile', 'search-results', 'appointment'];
+export type DesignMode = 'original' | 'light';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  activeTestimonialOption: 'option1' | 'option2';
-  onChangeTestimonialOption: (option: 'option1' | 'option2') => void;
-  activeServicesOption?: 'option1' | 'option2';
-  onChangeServicesOption?: (option: 'option1' | 'option2') => void;
-  activeHeroBookingPosition?: 'top' | 'bottom';
-  onChangeHeroBookingPosition?: (position: 'top' | 'bottom') => void;
-  activePricingVariant?: PricingRailVariant;
-  onChangePricingVariant?: (variant: PricingRailVariant) => void;
-  activeHeroType?: 'centered-search' | 'classic-image';
-  onChangeHeroType?: (type: 'centered-search' | 'classic-image') => void;
-  componentVariants?: ComponentVariants;
-  onChangeComponentVariant?: (key: ComponentVariantKey, value: 'original' | 'light') => void;
+  mode: DesignMode;
+  onChangeMode: (mode: DesignMode) => void;
+  heroBackdrop: HeroBackdrop;
+  onChangeHeroBackdrop: (backdrop: HeroBackdrop) => void;
+  heroPlacement: HeroPlacement;
+  onChangeHeroPlacement: (placement: HeroPlacement) => void;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({
-  isOpen,
-  onClose,
-  activeTestimonialOption,
-  onChangeTestimonialOption,
-  activeServicesOption = 'option1',
-  onChangeServicesOption,
-  activeHeroBookingPosition = 'top',
-  onChangeHeroBookingPosition,
-  activePricingVariant = 'visual',
-  onChangePricingVariant,
-  activeHeroType = 'centered-search',
-  onChangeHeroType,
-  componentVariants,
-  onChangeComponentVariant,
-}) => {
+const modes: { id: DesignMode; name: string; description: string; swatch: string }[] = [
+  {
+    id: 'original',
+    name: 'Original',
+    description: 'The original Sri Lakshmi homepage, care search, and appointment layouts.',
+    swatch: 'bg-[#f2f4f6] border-[#d5d9da]',
+  },
+  {
+    id: 'light',
+    name: 'Light Green',
+    description: 'The lighter homepage, care search, and appointment layouts.',
+    swatch: 'bg-[#eaf0e7] border-[#b9cfbd]',
+  },
+];
+
+const heroOptions: { id: HeroBackdrop; name: string; description: string; image?: string }[] = [
+  { id: 'plain', name: 'Clean canvas', description: 'No photo, just the search.' },
+  { id: 'visit', name: HERO_BACKDROPS.visit.label, description: 'Doctor, nurse and family together.', image: HERO_BACKDROPS.visit.image },
+  { id: 'family', name: HERO_BACKDROPS.family.label, description: 'Whole-family care. Best as a banner.', image: HERO_BACKDROPS.family.image },
+  { id: 'consultation', name: HERO_BACKDROPS.consultation.label, description: 'Warm, personal care.', image: HERO_BACKDROPS.consultation.image },
+  { id: 'cardiology', name: HERO_BACKDROPS.cardiology.label, description: 'A closer clinical moment.', image: HERO_BACKDROPS.cardiology.image },
+  { id: 'telehealth', name: HERO_BACKDROPS.telehealth.label, description: 'A wider care setting.', image: HERO_BACKDROPS.telehealth.image },
+];
+
+export function SettingsModal({ isOpen, onClose, mode, onChangeMode, heroBackdrop, onChangeHeroBackdrop, heroPlacement, onChangeHeroPlacement }: SettingsModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-          {/* Backdrop */}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -68,524 +52,112 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             onClick={onClose}
             className="absolute inset-0 bg-black/60 backdrop-blur-xs"
           />
-
-          {/* Modal Container */}
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="display-settings-title"
             initial={{ opacity: 0, scale: 0.96, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="relative w-full max-w-lg rounded-2xl bg-[#f6f4ef] border border-[#ded7cb] p-6 shadow-2xl z-10 [font-family:Family,_-apple-system,_'system-ui',_'Segoe_UI',_Helvetica,_Arial,_sans-serif] max-h-[90vh] overflow-y-auto"
+            className="relative z-10 w-full max-w-lg max-h-[min(90vh,820px)] overflow-y-auto rounded-2xl border border-[#ded7cb] bg-[#f6f4ef] p-6 shadow-2xl [font-family:Family,_-apple-system,_'system-ui',_'Segoe_UI',_Helvetica,_Arial,_sans-serif]"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-[#e5ded2]">
-              <div className="flex items-center gap-2.5">
-                <div className="size-8 rounded-full bg-[#121212] text-white flex items-center justify-center">
-                  <Settings className="size-4" />
-                </div>
+            <div className="flex items-start justify-between gap-4 border-b border-[#e5ded2] pb-5">
+              <div className="flex items-center gap-3">
+                <span className="flex size-9 items-center justify-center rounded-full bg-[#17372b] text-white"><Settings size={17} /></span>
                 <div>
-                  <h3 className="text-base font-semibold text-[#121212] leading-none">
-                    Display Settings
-                  </h3>
-                  <p className="text-xs text-[#6e6a65] mt-1">
-                    Toggle design variations and options
-                  </p>
+                  <h2 id="display-settings-title" className="text-lg font-semibold text-[#17372b]">Website design</h2>
+                  <p className="mt-0.5 text-sm text-[#647066]">Choose one style for the whole site.</p>
                 </div>
               </div>
-
-              <button
-                type="button"
-                onClick={onClose}
-                className="size-8 rounded-full hover:bg-black/5 text-[#555] flex items-center justify-center transition cursor-pointer"
-                aria-label="Close settings"
-              >
-                <X className="size-4" />
-              </button>
+              <button type="button" onClick={onClose} aria-label="Close settings" className="rounded-full p-2 text-[#555] hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-offset-2"><X size={17} /></button>
             </div>
 
-            {componentVariants && onChangeComponentVariant && (
-              <div className="py-5 border-b border-[#e5ded2]">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#555] mb-2">Component options</h4>
-                <p className="text-xs leading-relaxed text-[#666] mb-4">Original homepage sections are the default. Compare the earlier and updated journey screens here; the earlier doctor profile still contains source reference copy.</p>
-                <div className="space-y-2">
-                  {componentOptions.map(({ key, label }) => (
-                    <div key={key} className="flex items-center justify-between gap-3 rounded-lg border border-[#ded7cb] bg-white px-3 py-2.5">
-                      <span className="text-sm font-medium text-[#222]">{label}</span>
-                      <div className="inline-flex shrink-0 rounded-md border border-[#ded7cb] p-0.5" role="group" aria-label={`${label} design`}>
-                        {(['original', 'light'] as const).map(value => <button key={value} type="button" onClick={() => onChangeComponentVariant(key, value)} aria-pressed={componentVariants[key] === value} className={`rounded px-2.5 py-1.5 text-xs font-semibold capitalize transition-colors ${componentVariants[key] === value ? 'bg-[#17372b] text-white' : 'text-[#555] hover:bg-[#f1eee8]'}`}>{value === 'original' ? 'Original' : screenOptionKeys.includes(key) ? 'Updated' : 'Light'}</button>)}
-                      </div>
-                    </div>
+            <div className="space-y-3 py-5" role="group" aria-label="Website design mode">
+              {modes.map(option => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => {
+                    if (mode !== option.id) {
+                      trackModeSwitched(mode, option.id);
+                    }
+                    onChangeMode(option.id);
+                  }}
+                  aria-pressed={mode === option.id}
+                  className={`flex w-full items-start gap-4 rounded-xl border p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1f5037] ${mode === option.id ? 'border-[#245b3e] bg-white' : 'border-[#ddd9d0] bg-[#faf9f6] hover:border-[#7b9c82]'}`}
+                >
+                  <span aria-hidden="true" className={`mt-0.5 size-12 shrink-0 rounded-lg border ${option.swatch}`} />
+                  <span className="flex-1">
+                    <span className="block text-base font-semibold text-[#17372b]">{option.name}</span>
+                    <span className="mt-1 block text-sm leading-relaxed text-[#657167]">{option.description}</span>
+                  </span>
+                  {mode === option.id && <Check aria-hidden="true" className="mt-1 shrink-0 text-[#245b3e]" size={18} />}
+                </button>
+              ))}
+            </div>
+            <div className="border-t border-[#e5ded2] py-5">
+              <h3 className="text-sm font-semibold text-[#17372b]">Home hero backdrop</h3>
+              <p className="mt-1 text-xs leading-relaxed text-[#647066]">Try photo directions behind the booking search. Your choice is saved in this browser.</p>
+              <div className="mt-4 grid grid-cols-2 gap-2.5" role="group" aria-label="Home hero backdrop">
+                {heroOptions.map(option => (
+                  <button key={option.id} type="button" onClick={() => onChangeHeroBackdrop(option.id)} aria-pressed={heroBackdrop === option.id} className={`overflow-hidden rounded-xl border text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1f5037] ${heroBackdrop === option.id ? 'border-[#245b3e] bg-white ring-1 ring-[#245b3e]' : 'border-[#ddd9d0] bg-[#faf9f6] hover:border-[#7b9c82]'}`}>
+                    <span className="block h-16 overflow-hidden bg-gradient-to-br from-[#eef4eb] to-[#f9faf6]">{option.image && <img src={option.image} alt="" className="h-full w-full object-cover" loading="lazy" />}</span>
+                    <span className="block p-2.5"><span className="flex items-center justify-between gap-1 text-xs font-semibold text-[#17372b]">{option.name}{heroBackdrop === option.id && <Check size={14} aria-hidden="true" />}</span><span className="mt-0.5 block text-[11px] leading-snug text-[#657167]">{option.description}</span></span>
+                  </button>
+                ))}
+              </div>
+              {mode === 'original' && heroBackdrop !== 'plain' && <>
+                <h3 className="mt-6 text-sm font-semibold text-[#17372b]">Hero image placement</h3>
+                <div className="mt-3 grid grid-cols-2 gap-2.5" role="group" aria-label="Hero image placement">
+                  {HERO_PLACEMENTS.map(option => (
+                    <button key={option.id} type="button" onClick={() => onChangeHeroPlacement(option.id)} aria-pressed={heroPlacement === option.id} className={`rounded-xl border p-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1f5037] ${heroPlacement === option.id ? 'border-[#245b3e] bg-white ring-1 ring-[#245b3e]' : 'border-[#ddd9d0] bg-[#faf9f6] hover:border-[#7b9c82]'}`}>
+                      <span className="flex items-center justify-between gap-1 text-xs font-semibold text-[#17372b]">{option.name}{heroPlacement === option.id && <Check size={14} aria-hidden="true" />}</span>
+                      <span className="mt-0.5 block text-[11px] leading-snug text-[#657167]">{option.description}</span>
+                    </button>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* 0. Hero Section Style Setting */}
-            {onChangeHeroType && (
-              <div className="py-4 border-b border-[#e5ded2]">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#555] mb-3">
-                  Hero Style — Centered AI Search vs Image
-                </label>
-
-                <div className="space-y-2.5">
-                  {/* Option 1: Centered Search with AI Assistant */}
+              </>}
+            </div>
+            <div className="border-t border-[#e5ded2] py-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-[#17372b]">Product analytics</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-[#647066] max-w-sm">
+                    Anonymous telemetry to improve page journeys. Zero patient names, phone numbers, symptoms, or health topics are collected.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${
+                    getAnalyticsConsent() === 'granted'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-gray-200 text-gray-700'
+                  }`}>
+                    {getAnalyticsConsent() === 'granted' ? 'Enabled' : 'Disabled'}
+                  </span>
                   <button
                     type="button"
-                    onClick={() => onChangeHeroType('centered-search')}
-                    className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
-                      activeHeroType === 'centered-search'
-                        ? 'bg-white border-[#121212] shadow-sm'
-                        : 'bg-[#eee8dc] border-[#ded6c7] hover:bg-white/80'
-                    }`}
+                    onClick={() => {
+                      const next = getAnalyticsConsent() !== 'granted';
+                      setAnalyticsConsent(next);
+                    }}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#c4ccc2] bg-white hover:bg-[#f0f4ee] transition-colors"
                   >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          activeHeroType === 'centered-search'
-                            ? 'bg-[#121212] text-white'
-                            : 'bg-[#ded6c7] text-[#555]'
-                        }`}
-                      >
-                        <LayoutTemplate className="size-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-[#121212]">
-                            Centered Hero with AI Care Assistant
-                          </span>
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#fde047] text-neutral-900">
-                            New
-                          </span>
-                        </div>
-                        <p className="text-xs text-[#666] mt-0.5 leading-relaxed">
-                          Clean centered headline with AI Care Assistant search toggle, insurance selector, and questionnaire triage.
-                        </p>
-                      </div>
-                    </div>
-
-                    {activeHeroType === 'centered-search' && (
-                      <div className="size-5 rounded-full bg-[#121212] text-white flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="size-3 stroke-[3]" />
-                      </div>
-                    )}
-                  </button>
-
-                  {/* Option 2: Photorealistic Telehealth Hero */}
-                  <button
-                    type="button"
-                    onClick={() => onChangeHeroType('classic-image')}
-                    className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
-                      activeHeroType === 'classic-image'
-                        ? 'bg-white border-[#121212] shadow-sm'
-                        : 'bg-[#eee8dc] border-[#ded6c7] hover:bg-white/80'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          activeHeroType === 'classic-image'
-                            ? 'bg-[#121212] text-white'
-                            : 'bg-[#ded6c7] text-[#555]'
-                        }`}
-                      >
-                        <ImageIcon className="size-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-[#121212]">
-                            Photorealistic Telehealth Doctor Hero
-                          </span>
-                        </div>
-                        <p className="text-xs text-[#666] mt-0.5 leading-relaxed">
-                          Edge-to-edge doctor telemedicine portrait with frosted glass floating booking dock.
-                        </p>
-                      </div>
-                    </div>
-
-                    {activeHeroType === 'classic-image' && (
-                      <div className="size-5 rounded-full bg-[#121212] text-white flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="size-3 stroke-[3]" />
-                      </div>
-                    )}
+                    {getAnalyticsConsent() === 'granted' ? 'Disable' : 'Enable'}
                   </button>
                 </div>
-              </div>
-            )}
-
-            {/* 1. Services Section Setting */}
-            {onChangeServicesOption && (
-              <div className="py-4 border-b border-[#e5ded2]">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#555] mb-3">
-                  Services We Offer — Layout Style
-                </label>
-
-                <div className="space-y-2.5">
-                  {/* Option 1: Bento Grid */}
-                  <button
-                    type="button"
-                    onClick={() => onChangeServicesOption('option1')}
-                    className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
-                      activeServicesOption === 'option1'
-                        ? 'bg-white border-[#121212] shadow-sm'
-                        : 'bg-[#eee8dc] border-[#ded6c7] hover:bg-white/80'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          activeServicesOption === 'option1'
-                            ? 'bg-[#121212] text-white'
-                            : 'bg-[#ded6c7] text-[#555]'
-                        }`}
-                      >
-                        <LayoutGrid className="size-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-[#121212]">
-                            Option 1: 6-Grid Bento Cards
-                          </span>
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-[#10b981]/15 text-[#059669]">
-                            Default
-                          </span>
-                        </div>
-                        <p className="text-xs text-[#666] mt-0.5 leading-relaxed">
-                          Visual photographic tiles with pill badges, procedural tags, and clean hover elevation.
-                        </p>
-                      </div>
-                    </div>
-
-                    {activeServicesOption === 'option1' && (
-                      <div className="size-5 rounded-full bg-[#121212] text-white flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="size-3 stroke-[3]" />
-                      </div>
-                    )}
-                  </button>
-
-                  {/* Option 2: Diverse Departments Grid */}
-                  <button
-                    type="button"
-                    onClick={() => onChangeServicesOption('option2')}
-                    className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
-                      activeServicesOption === 'option2'
-                        ? 'bg-white border-[#121212] shadow-sm'
-                        : 'bg-[#eee8dc] border-[#ded6c7] hover:bg-white/80'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          activeServicesOption === 'option2'
-                            ? 'bg-[#121212] text-white'
-                            : 'bg-[#ded6c7] text-[#555]'
-                        }`}
-                      >
-                        <Layers className="size-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-[#121212]">
-                            Option 2: Diverse Departments (Yellow Duo-Tone)
-                          </span>
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-amber-500/20 text-amber-800">
-                            New Variant
-                          </span>
-                        </div>
-                        <p className="text-xs text-[#666] mt-0.5 leading-relaxed">
-                          Streamlined 6-specialty asymmetric grid with custom yellow duo-tone icons (Primary Care, Dentist, OB-GYN, etc.).
-                        </p>
-                      </div>
-                    </div>
-
-                    {activeServicesOption === 'option2' && (
-                      <div className="size-5 rounded-full bg-[#121212] text-white flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="size-3 stroke-[3]" />
-                      </div>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* 2. Testimonials Section Setting */}
-            <div className="py-4">
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#555] mb-3">
-                Patients of Avocado — Testimonial Style
-              </label>
-
-              <div className="space-y-2.5">
-                {/* Option 2 (Primary) */}
-                <button
-                  type="button"
-                  onClick={() => onChangeTestimonialOption('option2')}
-                  className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
-                    activeTestimonialOption === 'option2'
-                      ? 'bg-white border-[#121212] shadow-sm'
-                      : 'bg-[#eee8dc] border-[#ded6c7] hover:bg-white/80'
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${
-                        activeTestimonialOption === 'option2'
-                          ? 'bg-[#121212] text-white'
-                          : 'bg-[#ded6c7] text-[#555]'
-                      }`}
-                    >
-                      <HeartHandshake className="size-4" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-[#121212]">
-                          Option 2: Clinical Stories (Voice &amp; Cards)
-                        </span>
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-[#10b981]/15 text-[#059669]">
-                          Default
-                        </span>
-                      </div>
-                      <p className="text-xs text-[#666] mt-0.5 leading-relaxed">
-                        Continuous draggable carousel with generic portraits, Web Audio sound waveforms, and procedure badges.
-                      </p>
-                    </div>
-                  </div>
-
-                  {activeTestimonialOption === 'option2' && (
-                    <div className="size-5 rounded-full bg-[#121212] text-white flex items-center justify-center shrink-0 mt-0.5">
-                      <Check className="size-3 stroke-[3]" />
-                    </div>
-                  )}
-                </button>
-
-                {/* Option 1 (Social X) */}
-                <button
-                  type="button"
-                  onClick={() => onChangeTestimonialOption('option1')}
-                  className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
-                    activeTestimonialOption === 'option1'
-                      ? 'bg-white border-[#121212] shadow-sm'
-                      : 'bg-[#eee8dc] border-[#ded6c7] hover:bg-white/80'
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${
-                        activeTestimonialOption === 'option1'
-                          ? 'bg-[#121212] text-white'
-                          : 'bg-[#ded6c7] text-[#555]'
-                      }`}
-                    >
-                      <MessageSquare className="size-4" />
-                    </div>
-                    <div>
-                      <span className="text-sm font-semibold text-[#121212]">
-                        Option 1: Social Community (𝕏 Reviews)
-                      </span>
-                      <p className="text-xs text-[#666] mt-0.5 leading-relaxed">
-                        Grid of Twitter/𝕏 patient reviews with verified profile avatars, handles, and short comments.
-                      </p>
-                    </div>
-                  </div>
-
-                  {activeTestimonialOption === 'option1' && (
-                    <div className="size-5 rounded-full bg-[#121212] text-white flex items-center justify-center shrink-0 mt-0.5">
-                      <Check className="size-3 stroke-[3]" />
-                    </div>
-                  )}
-                </button>
               </div>
             </div>
 
-            {/* 3. Hero Booking Bar Placement Setting */}
-            {onChangeHeroBookingPosition && (
-              <div className="py-4 border-b border-[#e5ded2]">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#555] mb-3">
-                  Hero Page — Quick Booking Flow Placement
-                </label>
-
-                <div className="space-y-2.5">
-                  {/* Mode 1: Top Placement */}
-                  <button
-                    type="button"
-                    onClick={() => onChangeHeroBookingPosition('top')}
-                    className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
-                      activeHeroBookingPosition === 'top'
-                        ? 'bg-white border-[#121212] shadow-sm'
-                        : 'bg-[#eee8dc] border-[#ded6c7] hover:bg-white/80'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          activeHeroBookingPosition === 'top'
-                            ? 'bg-[#121212] text-white'
-                            : 'bg-[#ded6c7] text-[#555]'
-                        }`}
-                      >
-                        <Layers className="size-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-[#121212]">
-                            Mode 1: Floating on Top (Above Hero Details)
-                          </span>
-                        </div>
-                        <p className="text-xs text-[#666] mt-0.5 leading-relaxed">
-                          Positions the quick appointment search bar right below the navigation bar, above the headline.
-                        </p>
-                      </div>
-                    </div>
-
-                    {activeHeroBookingPosition === 'top' && (
-                      <div className="size-5 rounded-full bg-[#121212] text-white flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="size-3 stroke-[3]" />
-                      </div>
-                    )}
-                  </button>
-
-                  {/* Mode 2: Bottom Placement */}
-                  <button
-                    type="button"
-                    onClick={() => onChangeHeroBookingPosition('bottom')}
-                    className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
-                      activeHeroBookingPosition === 'bottom'
-                        ? 'bg-white border-[#121212] shadow-sm'
-                        : 'bg-[#eee8dc] border-[#ded6c7] hover:bg-white/80'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          activeHeroBookingPosition === 'bottom'
-                            ? 'bg-[#121212] text-white'
-                            : 'bg-[#ded6c7] text-[#555]'
-                        }`}
-                      >
-                        <LayoutGrid className="size-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-[#121212]">
-                            Mode 2: Below &ldquo;Your Wellness...&rdquo; (Bottom)
-                          </span>
-                        </div>
-                        <p className="text-xs text-[#666] mt-0.5 leading-relaxed">
-                          Embeds the quick appointment search bar right beneath the main headline in place of the simple button.
-                        </p>
-                      </div>
-                    </div>
-
-                    {activeHeroBookingPosition === 'bottom' && (
-                      <div className="size-5 rounded-full bg-[#121212] text-white flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="size-3 stroke-[3]" />
-                      </div>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* 4. Membership & Pricing Rail Style Setting */}
-            {onChangePricingVariant && (
-              <div className="py-4 border-b border-[#e5ded2]">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#555] mb-3">
-                  Membership &amp; Pricing Rail — Layout Style
-                </label>
-
-                <div className="space-y-2.5 mb-4">
-                  {/* Option 1: Visual Rail */}
-                  <button
-                    type="button"
-                    onClick={() => onChangePricingVariant('visual')}
-                    className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
-                      activePricingVariant === 'visual'
-                        ? 'bg-white border-[#121212] shadow-sm'
-                        : 'bg-[#eee8dc] border-[#ded6c7] hover:bg-white/80'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          activePricingVariant === 'visual'
-                            ? 'bg-[#121212] text-white'
-                            : 'bg-[#ded6c7] text-[#555]'
-                        }`}
-                      >
-                        <ImageIcon className="size-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-[#121212]">
-                            Variant 1: Wide Cards
-                          </span>
-                        </div>
-                        <p className="text-xs text-[#666] mt-0.5 leading-relaxed">
-                          Wide two-column cards — plan and price on the left, full feature ladder on the right.
-                        </p>
-                      </div>
-                    </div>
-
-                    {activePricingVariant === 'visual' && (
-                      <div className="size-5 rounded-full bg-[#121212] text-white flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="size-3 stroke-[3]" />
-                      </div>
-                    )}
-                  </button>
-
-                  {/* Option 2: Tall Cards (No Photos) */}
-                  <button
-                    type="button"
-                    onClick={() => onChangePricingVariant('tall')}
-                    className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
-                      activePricingVariant === 'tall'
-                        ? 'bg-white border-[#121212] shadow-sm'
-                        : 'bg-[#eee8dc] border-[#ded6c7] hover:bg-white/80'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          activePricingVariant === 'tall'
-                            ? 'bg-[#121212] text-white'
-                            : 'bg-[#ded6c7] text-[#555]'
-                        }`}
-                      >
-                        <LayoutTemplate className="size-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-[#121212]">
-                            Variant 2: Tall Cards
-                          </span>
-                        </div>
-                        <p className="text-xs text-[#666] mt-0.5 leading-relaxed">
-                          Narrow vertical cards, several visible side-by-side, fully scrollable.
-                        </p>
-                      </div>
-                    </div>
-
-                    {activePricingVariant === 'tall' && (
-                      <div className="size-5 rounded-full bg-[#121212] text-white flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="size-3 stroke-[3]" />
-                      </div>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Footer */}
-            <div className="pt-3 border-t border-[#e5ded2] flex justify-end">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-5 py-2 rounded-full bg-[#121212] hover:bg-neutral-800 text-white text-xs font-semibold tracking-tight transition cursor-pointer"
-              >
-                Apply &amp; Done
-              </button>
+            <p className="border-t border-[#e5ded2] pt-4 text-xs leading-relaxed text-[#6c746d]">
+              Navigation, departments, doctors, announcement, and footer are shared in both modes.
+            </p>
+            <div className="mt-5 flex justify-end">
+              <button type="button" onClick={onClose} className="rounded-full bg-[#17372b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#245b3e] focus-visible:outline-2 focus-visible:outline-offset-2">Done</button>
             </div>
           </motion.div>
         </div>
       )}
     </AnimatePresence>
   );
-};
+}

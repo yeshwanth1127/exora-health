@@ -1,3 +1,4 @@
+import { clientPackages } from '../../data/clientPackages';
 import React, { useState } from 'react';
 import {
   Check,
@@ -29,77 +30,65 @@ interface PricingTierData {
 
 const staticThreeTiers: PricingTierData[] = [
   {
-    id: 'tier-signature',
-    name: 'Avocado Signature',
-    subtitle: 'Concierge Primary Care',
-    badge: 'Active •',
-    isRecommended: false,
-    annualPrice: '₹4,999',
-    annualPriceMonthlyEquiv: '₹416 / mo',
-    monthlyPrice: '₹499',
-    description:
-      'Seamless primary, urgent, and telemedicine care for individuals and households who value continuous, unhurried physician access.',
-    inclusions: [
-      'Unlimited 24/7 virtual care with senior family physicians',
-      'Zero wait-time priority access at our Indiranagar clinic',
-      'Complimentary doorstep diagnostic sample collection',
-      'Annual preventive baseline screen & digital health passport',
-      'Direct WhatsApp standby with dedicated care team',
+    "id": "diabetic-check-up",
+    "name": "Diabetic Check Up",
+    "subtitle": "One-time health check-up",
+    "badge": "Published",
+    "isRecommended": false,
+    "annualPrice": "\u20b9749",
+    "annualPriceMonthlyEquiv": "Confirm inclusions with hospital",
+    "monthlyPrice": "\u20b92,699",
+    "originalAnnualPrice": "\u20b91,000",
+    "originalMonthlyPrice": "\u20b93,955",
+    "description": "A focused check-up for diabetes monitoring.",
+    "inclusions": [
+      "Hospital-based health screening",
+      "Discuss preparation with the hospital",
+      "Confirm the exact list of tests",
+      "Contact the hospital for current pricing"
     ],
-    exclusions: [
-      'Full-body DEXA scan & cellular biomarker mapping',
-      'Toxic heavy metals & full hormone matrix review',
-    ],
-    ctaText: 'Get Started with Signature',
+    "ctaText": "Ask about this package"
   },
   {
-    id: 'tier-longevity',
-    name: 'Avocado Longevity 360',
-    subtitle: 'Signature Diagnostic & Cellular Health',
-    badge: 'Save 25% •',
-    isRecommended: true,
-    annualPrice: '₹14,999',
-    annualPriceMonthlyEquiv: '₹1,250 / mo',
-    monthlyPrice: '₹1,499',
-    originalAnnualPrice: '₹19,999',
-    originalMonthlyPrice: '₹1,800',
-    description:
-      'Our flagship comprehensive screening combining low-dose whole-body DEXA imaging, 96+ biomarker metabolic mapping, and cardiac ultrasound.',
-    inclusions: [
-      'Everything in Avocado Signature, plus:',
-      'Full-body DEXA composition scan & abdominal sonography',
-      '96+ advanced blood biomarkers (ApoB, hs-CRP, HbA1c, Homocysteine)',
-      '1-on-1 longevity physician & senior cardiologist roadmap',
-      'Personalized genetic health risk scoring & biological age review',
-      'Comprehensive nutrition, sleep & cardiovascular protocol',
+    "id": "fertility-health-check-up",
+    "name": "Fertility Health Check Up",
+    "subtitle": "One-time health check-up",
+    "badge": "Published",
+    "isRecommended": true,
+    "annualPrice": "\u20b93,699",
+    "annualPriceMonthlyEquiv": "Confirm inclusions with hospital",
+    "monthlyPrice": "\u20b93,199",
+    "originalAnnualPrice": "\u20b94,955",
+    "originalMonthlyPrice": "\u20b94,955",
+    "description": "A fertility health assessment package.",
+    "inclusions": [
+      "Hospital-based health screening",
+      "Discuss preparation with the hospital",
+      "Confirm the exact list of tests",
+      "Contact the hospital for current pricing"
     ],
-    exclusions: [
-      'Continuous glucose monitor (CGM) sensor & private suite access',
-    ],
-    ctaText: 'Start with Longevity 360',
+    "ctaText": "Ask about this package"
   },
   {
-    id: 'tier-executive',
-    name: 'Avocado Executive 360',
-    subtitle: 'Leadership & Peak Performance',
-    badge: 'Popular •',
-    isRecommended: false,
-    annualPrice: '₹24,999',
-    annualPriceMonthlyEquiv: '₹2,083 / mo',
-    monthlyPrice: '₹2,499',
-    description:
-      'Engineered for founders, executives, and high-performers demanding private physician oversight, toxicology screening, and vitality protection.',
-    inclusions: [
-      'Everything in Longevity 360, plus:',
-      'Multi-specialty health board review (Cardiology & Endocrinology)',
-      'Coronary calcium score & carotid intima-media Doppler study',
-      'Toxic heavy metals screen (Lead, Mercury, Arsenic) & hormone matrix',
-      'Dedicated executive health navigator & expedited hospital OPD admission',
-      'Continuous glucose monitor (CGM) 14-day tracking sensor',
-      'Private clinical lounge suite with zero waiting',
+    "id": "general-diabetic-health-check-up",
+    "name": "General Diabetic Health Check Up",
+    "subtitle": "One-time health check-up",
+    "badge": "Published",
+    "isRecommended": false,
+    "annualPrice": "\u20b92,399",
+    "annualPriceMonthlyEquiv": "Confirm inclusions with hospital",
+    "monthlyPrice": "\u20b93,999",
+    "originalAnnualPrice": "\u20b93,955",
+    "originalMonthlyPrice": "\u20b94,955",
+    "description": "A broader diabetic health profile.",
+    "inclusions": [
+      "Hospital-based health screening",
+      "Discuss preparation with the hospital",
+      "Confirm the exact list of tests",
+      "Contact the hospital for current pricing"
     ],
-    ctaText: 'Get Started with Executive',
-  },
+    "ctaText": "Ask about this package"
+  }
 ];
 
 interface LightPricingRailSectionProps {
@@ -126,10 +115,10 @@ export const LightPricingRailSection: React.FC<LightPricingRailSectionProps> = (
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 sm:mb-16">
           <div className="max-w-2xl">
             <h2 className="font-medium text-5xl sm:text-6xl text-[#17372b] tracking-[-.05em] leading-[1.04] mb-4">
-              Health care designed around your life, not the system.
+              Health checks for you and your family.
             </h2>
             <p className="text-sm sm:text-base text-[#5b7061] leading-relaxed">
-              Transparent membership tiers with unhurried doctor consultations, zero co-pays, and proactive cellular diagnostics.
+              Published one-time check-up prices from Sri Lakshmi Hospital. Confirm inclusions and current offers before booking.
             </p>
           </div>
 
@@ -144,9 +133,9 @@ export const LightPricingRailSection: React.FC<LightPricingRailSectionProps> = (
                   : 'text-[#4f6a56] hover:text-[#17372b]'
               }`}
             >
-              <span>Annual</span>
+              <span>Essential checks</span>
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#d9e9d5] text-[#24553c]">
-                Save 25%
+                One-time
               </span>
             </button>
 
@@ -159,14 +148,17 @@ export const LightPricingRailSection: React.FC<LightPricingRailSectionProps> = (
                   : 'text-[#4f6a56] hover:text-[#17372b]'
               }`}
             >
-              Monthly
+              More checks
             </button>
           </div>
         </div>
 
         {/* Static 3-Tier Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
-          {staticThreeTiers.map((tier) => {
+          {staticThreeTiers.map((baseTier, index) => {
+            const selected = clientPackages[billingCycle === 'annual' ? index : index + 3];
+            const tier = { ...baseTier, name: selected.name, description: selected.description };
+
             const isRec = tier.isRecommended;
 
             return (
@@ -182,7 +174,7 @@ export const LightPricingRailSection: React.FC<LightPricingRailSectionProps> = (
                 {isRec && (
                   <div className="absolute -top-3.5 left-7 sm:left-8 inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#24553c] text-white border border-[#24553c] shadow-sm text-xs font-bold uppercase tracking-wider">
                     <Sparkles className="size-3.5 text-[#d9ecd5] fill-[#d9ecd5]" />
-                    <span>Recommended</span>
+                    <span>Health check-up</span>
                   </div>
                 )}
 
@@ -248,7 +240,7 @@ export const LightPricingRailSection: React.FC<LightPricingRailSectionProps> = (
                           isRec ? 'text-[#587462]' : 'text-[#6b7c70]'
                         }`}
                       >
-                        {billingCycle === 'annual' ? '/ year' : '/ month'}
+                        {'/ check-up'}
                       </span>
                     </div>
 
@@ -258,8 +250,8 @@ export const LightPricingRailSection: React.FC<LightPricingRailSectionProps> = (
                       }`}
                     >
                       {billingCycle === 'annual'
-                        ? `Equivalent to ${tier.annualPriceMonthlyEquiv} billed annually`
-                        : 'Billed monthly • Cancel or adjust anytime'}
+                        ? 'Published website price · confirm before booking'
+                        : 'Published website price · confirm before booking'}
                     </p>
                   </div>
 
@@ -359,20 +351,20 @@ export const LightPricingRailSection: React.FC<LightPricingRailSectionProps> = (
             </div>
             <div>
               <p className="text-sm font-semibold text-[#17372b]">
-                Looking for dedicated Pediatric Care or Corporate Family Plans?
+                Looking for cardiac or complete health checks?
               </p>
               <p className="text-xs text-[#607466] mt-0.5">
-                Avocado Pediatrics provides 24/7 on-demand doctor WhatsApp standby, emergency house calls, and routine developmental checks for ₹8,999/year.
+                Complete Health CheckUp: ₹8,599 · Cardiac Health Check Up: ₹2,500. Confirm the test list, preparation and current offers with the hospital.
               </p>
             </div>
           </div>
 
           <button
             type="button"
-            onClick={() => onBookPackage?.('Avocado Pediatrics Care')}
+            onClick={() => onBookPackage?.('Health packages')}
             className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-xs font-semibold bg-[#24553c] text-white hover:bg-[#173f2d] transition-colors cursor-pointer shrink-0"
           >
-            <span>Explore Pediatrics</span>
+            <span>View all health packages</span>
             <ArrowRight className="size-3.5" />
           </button>
         </div>

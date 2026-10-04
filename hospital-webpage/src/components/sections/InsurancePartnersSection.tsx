@@ -11,60 +11,38 @@ interface IndianInsuranceProvider {
 // Authentic major Indian insurance providers with real corporate logos
 const INDIAN_INSURANCE_LOGOS: IndianInsuranceProvider[] = [
   {
-    id: 'star-health',
-    name: 'Star Health and Allied Insurance',
-    src: '/images/star_health.svg',
-    className: 'max-h-14 sm:max-h-18 md:max-h-20 max-w-[200px] sm:max-w-[250px]',
+    "id": "star-health",
+    "name": "Star Health Insurance",
+    "src": "/images/star_health.svg",
+    "className": "max-h-14 sm:max-h-18 md:max-h-20 max-w-[200px] sm:max-w-[250px]"
   },
   {
-    id: 'hdfc-ergo',
-    name: 'HDFC ERGO General Insurance',
-    src: '/images/hdfc_ergo.svg',
-    className: 'max-h-16 sm:max-h-20 md:max-h-22 max-w-[180px] sm:max-w-[220px]',
+    "id": "hdfc-ergo",
+    "name": "HDFC ERGO",
+    "src": "/images/hdfc_ergo.svg",
+    "className": "max-h-14 sm:max-h-18 md:max-h-20 max-w-[200px] sm:max-w-[250px]"
   },
   {
-    id: 'icici-lombard',
-    name: 'ICICI Lombard General Insurance',
-    src: '/images/icici_lombard.svg',
-    className: 'max-h-12 sm:max-h-15 md:max-h-18 max-w-[210px] sm:max-w-[260px]',
+    "id": "icici-lombard",
+    "name": "ICICI Lombard",
+    "src": "/images/icici_lombard.svg",
+    "className": "max-h-14 sm:max-h-18 md:max-h-20 max-w-[200px] sm:max-w-[250px]"
   },
   {
-    id: 'bajaj-allianz',
-    name: 'Bajaj Allianz Insurance',
-    src: '/images/bajaj_allianz.svg',
-    className: 'max-h-12 sm:max-h-15 md:max-h-18 max-w-[210px] sm:max-w-[260px]',
+    "id": "bajaj-allianz",
+    "name": "Bajaj Allianz",
+    "src": "/images/bajaj_allianz.svg",
+    "className": "max-h-14 sm:max-h-18 md:max-h-20 max-w-[200px] sm:max-w-[250px]"
   },
   {
-    id: 'niva-bupa',
-    name: 'Niva Bupa Health Insurance',
-    src: '/images/niva_bupa.svg',
-    className: 'max-h-14 sm:max-h-18 md:max-h-20 max-w-[200px] sm:max-w-[240px]',
-  },
-  {
-    id: 'digit',
-    name: 'Digit Health Insurance',
-    src: '/images/digit.svg',
-    className: 'max-h-12 sm:max-h-15 md:max-h-18 max-w-[180px] sm:max-w-[220px]',
-  },
-  {
-    id: 'care-health',
-    name: 'Care Health Insurance',
-    src: '/images/care_health.png',
-    className: 'max-h-14 sm:max-h-18 md:max-h-20 max-w-[200px] sm:max-w-[240px]',
-  },
-  {
-    id: 'tata-aig',
-    name: 'TATA AIG General Insurance',
-    src: '/images/tata_aig.png',
-    className: 'max-h-14 sm:max-h-18 md:max-h-20 max-w-[200px] sm:max-w-[240px]',
-  },
-  {
-    id: 'sbi-general',
-    name: 'SBI General Insurance',
-    src: '/images/sbi.svg',
-    className: 'max-h-14 sm:max-h-18 md:max-h-20 max-w-[190px] sm:max-w-[230px]',
-  },
+    "id": "max-bupa",
+    "name": "Max Bupa (name used on hospital site)",
+    "src": "/images/niva_bupa.svg",
+    "className": "max-h-14 sm:max-h-18 md:max-h-20 max-w-[200px] sm:max-w-[250px]"
+  }
 ];
+
+const SLOTS = Math.min(6, INDIAN_INSURANCE_LOGOS.length);
 
 interface InsurancePartnersSectionProps {
   onOpenVerification?: () => void;
@@ -73,16 +51,18 @@ interface InsurancePartnersSectionProps {
 export const InsurancePartnersSection: React.FC<InsurancePartnersSectionProps> = ({
   onOpenVerification,
 }) => {
-  // 6 visible logo slots across the row
-  const [activeIndices, setActiveIndices] = useState<number[]>([0, 1, 2, 3, 4, 5]);
+  // Up to 6 visible logo slots; never more slots than logos.
+  const [activeIndices, setActiveIndices] = useState<number[]>(() => Array.from({ length: SLOTS }, (_, i) => i));
   const slotRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const nextPoolIndexRef = useRef<number>(6);
-  const currentSlotToFlipRef = useRef<number>(5);
+  const nextPoolIndexRef = useRef<number>(SLOTS);
+  const currentSlotToFlipRef = useRef<number>(SLOTS - 1);
   const isHoveredRef = useRef<boolean>(false);
 
   useEffect(() => {
     // GSAP Showcase animation: every 3.2s, one slot flips 3D and reveals another authentic logo
-    let interval: NodeJS.Timeout;
+    // Nothing to flip in when every logo is already showing.
+    if (INDIAN_INSURANCE_LOGOS.length <= SLOTS) return;
+    let interval: ReturnType<typeof setInterval>;
     const initialTimeout = setTimeout(() => {
       interval = setInterval(() => {
         if (isHoveredRef.current) return;
@@ -111,7 +91,7 @@ export const InsurancePartnersSection: React.FC<InsurancePartnersSectionProps> =
             });
 
             // Cycle which slot flips next
-            currentSlotToFlipRef.current = (slotIdx + 1) % 6;
+            currentSlotToFlipRef.current = (slotIdx + 1) % SLOTS;
           },
         });
 
@@ -152,7 +132,7 @@ export const InsurancePartnersSection: React.FC<InsurancePartnersSectionProps> =
           No pill boxes, no backgrounds, made BIG and clearly recognizable
         */}
         <div
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 items-center justify-items-center gap-y-12 gap-x-8 sm:gap-x-12 mb-14 sm:mb-16"
+          className={`grid grid-cols-2 sm:grid-cols-3 ${SLOTS === 6 ? 'lg:grid-cols-6' : 'lg:grid-cols-5'} items-center justify-items-center gap-y-12 gap-x-5 sm:gap-x-12 mb-14 sm:mb-16`}
           style={{ perspective: '1000px' }}
           onMouseEnter={() => {
             isHoveredRef.current = true;
@@ -180,21 +160,21 @@ export const InsurancePartnersSection: React.FC<InsurancePartnersSectionProps> =
                 <img
                   src={provider.src}
                   alt={provider.name}
-                  className={`w-auto object-contain select-none transition-all duration-200 opacity-90 group-hover:opacity-100 group-hover:scale-105 filter grayscale ${provider.className || 'max-h-14 sm:max-h-18 max-w-[200px]'}`}
+                  className={`w-auto !max-w-full object-contain select-none transition-all duration-200 opacity-90 group-hover:opacity-100 group-hover:scale-105 filter grayscale ${provider.className || 'max-h-14 sm:max-h-18 max-w-[200px]'}`}
                 />
               </div>
             );
           })}
         </div>
 
-        {/* Coral Pill Button */}
+        {/* Coverage action */}
         <div className="flex items-center justify-center">
           <button
             onClick={onOpenVerification}
             type="button"
-            className="inline-flex items-center justify-center rounded-full bg-[#ff5310] hover:bg-[#e04a36] text-white px-8 sm:px-10 py-3 sm:py-3.5 text-sm sm:text-[15px] font-semibold tracking-[-0.2px] shadow-sm hover:shadow-md transition-all active:scale-[0.97] cursor-pointer"
+            className="inline-flex items-center justify-center rounded-full bg-[#24553c] hover:bg-[#173f2d] text-white px-8 sm:px-10 py-3 sm:py-3.5 text-sm sm:text-[15px] font-semibold tracking-[-0.2px] shadow-sm hover:shadow-md transition-all active:scale-[0.97] cursor-pointer"
           >
-            Check your cashless coverage
+            Ask about cashless coverage
           </button>
         </div>
 

@@ -1,0 +1,26 @@
+import { test, expect, openBooking, verify, timeButtons, control, type Snapshot } from './fixtures';
+test('B2: invalid input, wrong sender and expired sessions cannot register appointments', async ({ page, clinic }) => {
+  await openBooking(page, clinic);
+  await expect(timeButtons(page).first()).toBeDisabled();
+  const prepare = page.getByRole('button', { name: 'Prepare verification message' });
+  await page.getByLabel('WhatsApp number with country code').fill('invalid');
+  await expect(prepare).toBeDisabled();
+  await page.getByRole('checkbox', { name: /Use this number for verification/ }).check();
+  await prepare.click();
+  await expect(page.getByText('Request could not complete', { exact: true })).toBeVisible();
+  await page.getByLabel('WhatsApp number with country code').fill('919811111111');
+  await prepare.click();
+  const href = await page.getByRole('link', { name: 'Open WhatsApp and send verification' }).getAttribute('href');
+  await control('verify', { sender: '919822222222', text: new URL(href!).searchParams.get('text') });
+  await page.getByRole('button', { name: 'I sent it · Check verification' }).click();
+  await expect(page.getByText(/Still waiting for the message/)).toBeVisible();
+  await expect(timeButtons(page).first()).toBeDisabled();
+  await control('expire-sessions');
+  await page.getByRole('button', { name: 'I sent it · Check verification' }).click();
+  await expect(page.getByRole('button', { name: 'Prepare verification message' })).toBeVisible();
+  await verify(page);
+  await control('expire-sessions');
+  await page.getByRole('button', { name: 'Refresh visits and offers' }).click();
+  await expect(page.getByLabel('WhatsApp number with country code')).toBeVisible();
+  expect((await control<Snapshot>('snapshot')).appointments).toHaveLength(0);
+});
