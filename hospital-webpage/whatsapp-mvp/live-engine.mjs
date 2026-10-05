@@ -81,7 +81,7 @@ export function createLiveEngine({ backend, downloadMedia, welcomeImagePath,
   async function welcome(sender, session) {
     reset(session);
     const visits = requireReference ? [] : await backend.appointments(sender, 1);
-    return buttons(`${pilotPrefix}Welcome to Avocado Health. What can we help you with today?\nFor urgent medical needs, call your clinic or local emergency service.`, [
+    return buttons(`${pilotPrefix}Welcome to Sri Lakshmi Super Speciality Hospital. What can we help you with today?\nFor urgent medical needs, call your clinic or local emergency service.`, [
       { id: 'menu.book', title: 'Book a visit' },
       requireReference ? { id: 'menu.status', title: 'Open a visit' }
         : visits.length ? { id: 'menu.status', title: 'My visits' } : { id: 'menu.doctors', title: 'Find a doctor' },

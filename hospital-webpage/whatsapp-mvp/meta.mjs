@@ -227,7 +227,7 @@ export function createMetaSender({ accessToken, phoneNumberId, graphVersion,
         await postJson({
           messaging_product: 'whatsapp', recipient_type: 'individual', to,
           type: 'image', image: { id: mediaId, caption: reply.imagePath
-            ? reply.body : 'Avocado Health — TEST DEMO' },
+            ? reply.body : 'Sri Lakshmi Super Speciality Hospital — TEST DEMO' },
         });
       }
     }

@@ -28,7 +28,7 @@ function welcome(hasBookings) {
   return {
     kind: 'buttons',
     text: MENU,
-    body: `Welcome to Avocado Health 👋\nWhat can we help you with today?\n${hasBookings
+    body: `Welcome to Sri Lakshmi Super Speciality Hospital 👋\nWhat can we help you with today?\n${hasBookings
       ? 'Your test requests are saved for this session. Tap My visits to see them.\n'
       : ''}\nTEST DEMO — no real appointments or medical advice.`,
     image: true,
