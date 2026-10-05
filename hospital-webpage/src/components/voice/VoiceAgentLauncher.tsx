@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Loader2, Mic2, MicOff, PhoneOff, ShieldCheck, Volume2, X } from 'lucide-react';
-import type { ConversationAgent, ServerTranscriptMsg } from 'sarvam-conv-ai-sdk/browser';
+import type { ConversationAgent, InteractionConfig, ServerTranscriptMsg } from 'sarvam-conv-ai-sdk/browser';
 import { API_BASE } from '../../lib/hospitalApi';
 
 interface VoiceAgentConfig {
@@ -115,7 +115,7 @@ export function VoiceAgentLauncher({ user, inline = false }: VoiceAgentLauncherP
           interaction_type: InteractionType.CALL,
           input_sample_rate: 16000,
           output_sample_rate: 16000,
-          initial_language_name: 'English',
+          initial_language_name: 'English' as NonNullable<InteractionConfig['initial_language_name']>,
           agent_variables: {
             user_name: user?.name || 'Guest',
             channel: 'sri_lakshmi_website',
