@@ -51,17 +51,20 @@ function fakeBackend() {
   };
 }
 
-test('backend mode sends uploaded guide and doctor photo, then books and manages the authoritative appointment', async () => {
+test('backend mode sends a current doctor directory PDF and doctor photo, then books and manages the authoritative appointment', async () => {
   const backend = fakeBackend();
   const engine = createLiveEngine({ backend, clinicReady: true, now: () => new Date('2026-09-29T10:00:00Z') });
   let n = 0;
   const send = (choiceId, text = '') => engine.handleResponse({ id: `wamid.${++n}`, from: '919811111111', type: 'text', choiceId, text });
   assert.equal((await send(null, 'hi')).kind, 'buttons');
   assert.equal((await send('menu.book')).kind, 'list');
-  const guide = await send('specialty.cardiology');
-  assert.equal(guide.messages[0].kind, 'document');
-  assert.equal(guide.messages[1].kind, 'list');
-  assert.equal((await send('branch.indiranagar')).kind, 'list');
+  assert.equal((await send('specialty.cardiology')).kind, 'list');
+  const directory = await send('branch.indiranagar');
+  assert.equal(directory.messages[0].kind, 'document');
+  assert.equal(directory.messages[0].media.mimeType, 'application/pdf');
+  assert.match(directory.messages[0].media.bytes.toString('ascii'), /^%PDF-1\.4/);
+  assert.match(directory.messages[0].media.bytes.toString('ascii'), /Dr\. One/);
+  assert.equal(directory.messages[1].kind, 'list');
   const profile = await send('doctor.doctor-1');
   assert.equal(profile.messages[0].kind, 'image');
   assert.equal(profile.messages[1].kind, 'list');
@@ -84,7 +87,7 @@ test('backend mode sends uploaded guide and doctor photo, then books and manages
   assert.match((await send(cancelPrompt.buttons[0].id)).body, /Appointment cancelled/);
 });
 
-test('missing optional guide and doctor media falls back to text without stopping booking', async () => {
+test('missing optional doctor photo falls back to text without stopping booking', async () => {
   const backend = fakeBackend();
   backend.asset = async () => { throw new BackendError(503, 'ASSET_MISSING', 'Asset is missing'); };
   const engine = createLiveEngine({ backend, clinicReady: true, now: () => new Date('2026-09-29T10:00:00Z') });
@@ -92,10 +95,10 @@ test('missing optional guide and doctor media falls back to text without stoppin
   const send = (choiceId, text = '') => engine.handleResponse({ id: `wamid.missing-${++n}`, from: '919811111111', type: 'text', choiceId, text });
   await send(null, 'hi');
   await send('menu.book');
-  const guide = await send('specialty.cardiology');
-  assert.match(guide.messages[0].text, /temporarily unavailable/i);
-  assert.equal(guide.messages[1].kind, 'list');
-  await send('branch.indiranagar');
+  assert.equal((await send('specialty.cardiology')).kind, 'list');
+  const directory = await send('branch.indiranagar');
+  assert.equal(directory.messages[0].kind, 'document');
+  assert.equal(directory.messages[1].kind, 'list');
   const profile = await send('doctor.doctor-1');
   assert.match(profile.messages[0].text, /Dr\. One/);
   assert.equal(profile.messages[1].kind, 'list');
@@ -183,7 +186,7 @@ test('backend mode records issues, feedback, and a media attachment for staff', 
   assert.equal(backend.calls.filter((item) => item[0] === 'attach').length, 1);
 });
 
-test('backend mode restores a choice and media reply after a bot restart', async () => {
+test('backend mode restores generated doctor-directory media after a bot restart', async () => {
   const backend = fakeBackend();
   const first = createLiveEngine({ backend });
   await first.handleResponse({ id: 'wamid.restart-1', from: '919811111111', type: 'text', choiceId: 'menu.book', text: '' });
@@ -191,11 +194,16 @@ test('backend mode restores a choice and media reply after a bot restart', async
   const message = { id: 'wamid.restart-2', from: '919811111111', type: 'text',
     choiceId: 'specialty.cardiology', text: '' };
   const reply = await second.handleResponse(message);
-  assert.equal(reply.messages[0].kind, 'document');
+  assert.equal(reply.kind, 'list');
   const third = createLiveEngine({ backend });
   const replay = await third.handleResponse(message);
-  assert.equal(replay.messages[0].kind, 'document');
-  assert.deepEqual(replay.messages[0].media.bytes, Buffer.from('guide-1'));
-  assert.equal((await third.handleResponse({ id: 'wamid.restart-3', from: '919811111111', type: 'text',
-    choiceId: 'branch.indiranagar', text: '' })).kind, 'list');
+  assert.equal(replay.kind, 'list');
+  const directoryMessage = { id: 'wamid.restart-3', from: '919811111111', type: 'text',
+    choiceId: 'branch.indiranagar', text: '' };
+  const directory = await third.handleResponse(directoryMessage);
+  assert.equal(directory.messages[0].kind, 'document');
+  const fourth = createLiveEngine({ backend });
+  const directoryReplay = await fourth.handleResponse(directoryMessage);
+  assert.equal(directoryReplay.messages[0].kind, 'document');
+  assert.match(directoryReplay.messages[0].media.bytes.toString('ascii'), /Dr\. One/);
 });

@@ -1,5 +1,6 @@
 import { BackendError } from './backend-client.mjs';
 import { randomBytes } from 'node:crypto';
+import { createDoctorDirectoryPdf } from './doctor-directory-pdf.mjs';
 
 const PAGE_SIZE = 8;
 const MAX_CACHE = 2000;
@@ -63,6 +64,9 @@ export function createLiveEngine({ backend, downloadMedia, welcomeImagePath,
   async function hydrateReply(reply) {
     if (reply?.kind === 'sequence') return { ...reply, messages: await Promise.all(reply.messages.map(hydrateReply)) };
     if (reply?.media?.id && !reply.media.bytes) {
+      if (reply.media.directory) {
+        return { ...reply, media: { ...reply.media, bytes: createDoctorDirectoryPdf(reply.media.directory) } };
+      }
       try {
         const asset = await backend.asset(reply.media.id);
         return { ...reply, media: { ...reply.media, bytes: asset.bytes } };
@@ -113,9 +117,18 @@ export function createLiveEngine({ backend, downloadMedia, welcomeImagePath,
     session.draft.doctors = doctors.slice(0, 10);
     session.step = 'doctor';
     if (!doctors.length) return `No doctors are listed for ${department.name} at ${branch.name}. Send “hi” to start again.`;
-    return list(`Choose a doctor in ${department.name} at ${branch.name}.`, 'View doctors',
+    const doctorList = list(`Choose a doctor in ${department.name} at ${branch.name}.`, 'View doctors',
       session.draft.doctors.map((item) => ({ id: `doctor.${item.id}`, title: item.name.slice(0, 24), description: item.title.slice(0, 72) })),
       'Doctors');
+    const bytes = createDoctorDirectoryPdf({ department, branch, doctors: session.draft.doctors });
+    return { kind: 'sequence', text: doctorList.text, messages: [{
+      kind: 'document',
+      media: { id: `doctor-directory:${department.slug}:${branch.slug}:${session.draft.doctors.map((item) => item.id).join(',')}`,
+        bytes, mimeType: 'application/pdf', filename: `${department.slug}-${branch.slug}-doctors.pdf`,
+        directory: { department, branch, doctors: session.draft.doctors } },
+      filename: `${department.slug}-${branch.slug}-doctors.pdf`,
+      caption: `${department.name} doctors at ${branch.name}`,
+    }, doctorList] };
   }
 
   async function slotMenu(session, doctor, action = 'booking', currentStart) {
@@ -256,22 +269,7 @@ export function createLiveEngine({ backend, downloadMedia, welcomeImagePath,
       const department = values.find((item) => item.slug === selected);
       if (!department) return specialties(session, session.draft.mode);
       session.draft.department = department;
-      const branchReply = branches(session);
-      if (!department.guide_asset_id) return { kind: 'sequence', text: branchReply.text,
-        messages: [asReply(`No specialty PDF has been uploaded for ${department.name} yet.`), branchReply] };
-      let asset;
-      try {
-        asset = await backend.asset(department.guide_asset_id);
-      } catch (error) {
-        if (!(error instanceof BackendError) || (error.status !== 404 && error.status !== 503)) throw error;
-        return { kind: 'sequence', text: branchReply.text,
-          messages: [asReply(`${department.name} guide is temporarily unavailable.`), branchReply] };
-      }
-      return { kind: 'sequence', text: branchReply.text, messages: [
-        { kind: 'document', media: { id: department.guide_asset_id, bytes: asset.bytes,
-          mimeType: asset.mimeType, filename: `${department.slug}.pdf` }, filename: `${department.slug}.pdf`,
-          caption: `${department.name} doctor guide` }, branchReply,
-      ] };
+      return branches(session);
     }
     if (session.step === 'branch') {
       const values = session.draft.catalogue.branches.filter((item) => !item.is_virtual).slice(0, 10);
