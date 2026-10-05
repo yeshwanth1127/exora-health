@@ -63,8 +63,13 @@ export function createLiveEngine({ backend, downloadMedia, welcomeImagePath,
   async function hydrateReply(reply) {
     if (reply?.kind === 'sequence') return { ...reply, messages: await Promise.all(reply.messages.map(hydrateReply)) };
     if (reply?.media?.id && !reply.media.bytes) {
-      const asset = await backend.asset(reply.media.id);
-      return { ...reply, media: { ...reply.media, bytes: asset.bytes } };
+      try {
+        const asset = await backend.asset(reply.media.id);
+        return { ...reply, media: { ...reply.media, bytes: asset.bytes } };
+      } catch (error) {
+        if (!(error instanceof BackendError) || (error.status !== 404 && error.status !== 503)) throw error;
+        return asReply(reply.caption || reply.text || 'This media file is temporarily unavailable.');
+      }
     }
     return reply;
   }
@@ -254,7 +259,14 @@ export function createLiveEngine({ backend, downloadMedia, welcomeImagePath,
       const branchReply = branches(session);
       if (!department.guide_asset_id) return { kind: 'sequence', text: branchReply.text,
         messages: [asReply(`No specialty PDF has been uploaded for ${department.name} yet.`), branchReply] };
-      const asset = await backend.asset(department.guide_asset_id);
+      let asset;
+      try {
+        asset = await backend.asset(department.guide_asset_id);
+      } catch (error) {
+        if (!(error instanceof BackendError) || (error.status !== 404 && error.status !== 503)) throw error;
+        return { kind: 'sequence', text: branchReply.text,
+          messages: [asReply(`${department.name} guide is temporarily unavailable.`), branchReply] };
+      }
       return { kind: 'sequence', text: branchReply.text, messages: [
         { kind: 'document', media: { id: department.guide_asset_id, bytes: asset.bytes,
           mimeType: asset.mimeType, filename: `${department.slug}.pdf` }, filename: `${department.slug}.pdf`,
@@ -277,7 +289,14 @@ export function createLiveEngine({ backend, downloadMedia, welcomeImagePath,
       const slotReply = await slotMenu(session, doctor);
       if (!doctor.photo_asset_id) return { kind: 'sequence', text: slotReply.text ?? slotReply,
         messages: [asReply(`${doctor.name}\n${doctor.title}\n${doctor.bio}`), asReply(slotReply)] };
-      const asset = await backend.asset(doctor.photo_asset_id);
+      let asset;
+      try {
+        asset = await backend.asset(doctor.photo_asset_id);
+      } catch (error) {
+        if (!(error instanceof BackendError) || (error.status !== 404 && error.status !== 503)) throw error;
+        return { kind: 'sequence', text: slotReply.text ?? slotReply,
+          messages: [asReply(`${doctor.name}\n${doctor.title}\n${doctor.bio}`), asReply(slotReply)] };
+      }
       return { kind: 'sequence', text: slotReply.text ?? slotReply, messages: [
         { kind: 'image', media: { id: doctor.photo_asset_id, bytes: asset.bytes,
           mimeType: asset.mimeType, filename: `${doctor.slug}.${asset.mimeType === 'image/png' ? 'png' : 'jpg'}` },

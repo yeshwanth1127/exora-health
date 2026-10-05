@@ -84,6 +84,23 @@ test('backend mode sends uploaded guide and doctor photo, then books and manages
   assert.match((await send(cancelPrompt.buttons[0].id)).body, /Appointment cancelled/);
 });
 
+test('missing optional guide and doctor media falls back to text without stopping booking', async () => {
+  const backend = fakeBackend();
+  backend.asset = async () => { throw new BackendError(503, 'ASSET_MISSING', 'Asset is missing'); };
+  const engine = createLiveEngine({ backend, clinicReady: true, now: () => new Date('2026-09-29T10:00:00Z') });
+  let n = 0;
+  const send = (choiceId, text = '') => engine.handleResponse({ id: `wamid.missing-${++n}`, from: '919811111111', type: 'text', choiceId, text });
+  await send(null, 'hi');
+  await send('menu.book');
+  const guide = await send('specialty.cardiology');
+  assert.match(guide.messages[0].text, /temporarily unavailable/i);
+  assert.equal(guide.messages[1].kind, 'list');
+  await send('branch.indiranagar');
+  const profile = await send('doctor.doctor-1');
+  assert.match(profile.messages[0].text, /Dr\. One/);
+  assert.equal(profile.messages[1].kind, 'list');
+});
+
 test('production rejects stale confirmation buttons and typed yes', async () => {
   const backend = fakeBackend();
   const engine = createLiveEngine({ backend, clinicReady: true, now: () => new Date('2026-09-29T10:00:00Z') });
