@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     sarvam_org_id: str = "019f7b91-eaca-7818-8fc0-25d1ff90fbfe"
     sarvam_workspace_id: str = "019f7b91-eade-7262-9caf-22133694b2d5"
     sarvam_agent_id: str = "Conversatio-47382521-7c72"
-    sarvam_agent_name: str = "Avocado Health Front Desk"
+    sarvam_agent_name: str = "Sri Lakshmi Super Speciality Hospital Front Desk"
     sarvam_runtime_url: str = "https://apps.sarvam.ai/api/app-runtime/"
     sarvam_webhook_secret: str = ""
 

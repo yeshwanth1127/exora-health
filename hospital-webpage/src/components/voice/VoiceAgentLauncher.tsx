@@ -115,9 +115,10 @@ export function VoiceAgentLauncher({ user, inline = false }: VoiceAgentLauncherP
           interaction_type: InteractionType.CALL,
           input_sample_rate: 16000,
           output_sample_rate: 16000,
+          initial_language_name: 'English',
           agent_variables: {
             user_name: user?.name || 'Guest',
-            channel: 'avocado_website',
+            channel: 'sri_lakshmi_website',
           },
         },
         stateCallback: (nextState) => setState(nextState as VoiceState),
@@ -180,7 +181,7 @@ export function VoiceAgentLauncher({ user, inline = false }: VoiceAgentLauncherP
               <span className={`size-11 rounded-full grid place-items-center ${state === 'speaking' ? 'bg-[#f2c94c] text-[#154734] animate-pulse' : 'bg-white/12'}`}>
                 {state === 'speaking' ? <Volume2 className="size-5" /> : <Mic2 className="size-5" />}
               </span>
-              <div><p className="text-xs text-white/65">Avocado Health voice assistant</p><h2 id="voice-agent-title" className="text-xl font-semibold">Aanya</h2></div>
+              <div><p className="text-xs text-white/65">Sri Lakshmi Super Speciality Hospital voice assistant</p><h2 id="voice-agent-title" className="text-xl font-semibold">Aanya</h2></div>
             </div>
             <button type="button" onClick={() => void close()} className="size-9 grid place-items-center rounded-full hover:bg-white/10" aria-label="Close voice assistant"><X className="size-5" /></button>
           </div>
