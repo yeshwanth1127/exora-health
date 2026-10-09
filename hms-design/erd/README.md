@@ -1,5 +1,7 @@
 # Hospital Management System — Database ERD
 
+> **Superseded by [../erd-v2/README.md](../erd-v2/README.md)** (merged module-based design). Kept for history.
+
 Fresh design, built bottom-up. PostgreSQL 18 · multi-tenant SaaS (shared schema + Row-Level Security) · India (ABDM, GST, DPDP Act 2023).
 
 | Layer | File | Covers |
