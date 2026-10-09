@@ -8,7 +8,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { sql, type DB, type Kysely, type Transaction } from '@hms/db';
 import { DomainError } from './errors.ts';
 
-export const MODULES = ['platform', 'patient', 'catalog', 'booking'] as const;
+export const MODULES = ['platform', 'patient', 'catalog', 'booking', 'clinical'] as const;
 export type ModuleName = (typeof MODULES)[number];
 
 export interface Actor {
@@ -18,7 +18,7 @@ export interface Actor {
 }
 
 export interface AuditInput {
-  action: 'create' | 'update' | 'status_change' | 'view' | 'export' | 'print';
+  action: 'create' | 'update' | 'status_change' | 'view' | 'export' | 'print' | 'break_glass';
   subjectType: string;
   subjectId?: string | undefined;
   patientId?: string | null | undefined;
@@ -120,41 +120,8 @@ export async function runCommand<T>(db: Kysely<DB>, options: CommandOptions, fn:
       emit: (event) => events.push(event),
     });
 
-    if (audits.length) {
-      await tx
-        .insertInto('platform.audit_event')
-        .values(
-          audits.map((a) => ({
-            tenant_id: options.tenantId,
-            actor_staff_id: options.actor.staffId ?? null,
-            actor_user_id: options.actor.userId ?? null,
-            action: a.action,
-            subject_type: a.subjectType,
-            subject_id: a.subjectId ?? null,
-            patient_id: a.patientId ?? null,
-            reason: a.reason ?? null,
-            diff: a.diff ? JSON.stringify(a.diff) : null,
-            correlation_id: correlationId,
-          })),
-        )
-        .execute();
-    }
-    if (events.length) {
-      await tx
-        .insertInto('platform.outbox_event')
-        .values(
-          events.map((e) => ({
-            tenant_id: options.tenantId,
-            event_type: e.eventType,
-            aggregate_type: e.aggregateType,
-            aggregate_id: e.aggregateId,
-            aggregate_version: e.aggregateVersion ?? null,
-            payload: JSON.stringify(e.payload),
-            correlation_id: correlationId,
-          })),
-        )
-        .execute();
-    }
+    await writeAudit(tx, options.tenantId, options.actor, correlationId, audits);
+    await writeOutbox(tx, options.tenantId, correlationId, events);
     if (idempotencyId) {
       await tx
         .updateTable('platform.idempotency_record')
@@ -164,6 +131,47 @@ export async function runCommand<T>(db: Kysely<DB>, options: CommandOptions, fn:
     }
     return result;
   });
+}
+
+/** Inserts audit events in the current transaction (used by runCommand and by event consumers). */
+export async function writeAudit(tx: Transaction<DB>, tenantId: string, actor: Actor | null, correlationId: string | null, audits: AuditInput[]): Promise<void> {
+  if (!audits.length) return;
+  await tx
+    .insertInto('platform.audit_event')
+    .values(
+      audits.map((a) => ({
+        tenant_id: tenantId,
+        actor_staff_id: actor?.staffId ?? null,
+        actor_user_id: actor?.userId ?? null,
+        action: a.action,
+        subject_type: a.subjectType,
+        subject_id: a.subjectId ?? null,
+        patient_id: a.patientId ?? null,
+        reason: a.reason ?? null,
+        diff: a.diff ? JSON.stringify(a.diff) : null,
+        correlation_id: correlationId,
+      })),
+    )
+    .execute();
+}
+
+/** Inserts outbox events in the current transaction (used by runCommand and by event consumers). */
+export async function writeOutbox(tx: Transaction<DB>, tenantId: string, correlationId: string | null, events: EventInput[]): Promise<void> {
+  if (!events.length) return;
+  await tx
+    .insertInto('platform.outbox_event')
+    .values(
+      events.map((e) => ({
+        tenant_id: tenantId,
+        event_type: e.eventType,
+        aggregate_type: e.aggregateType,
+        aggregate_id: e.aggregateId,
+        aggregate_version: e.aggregateVersion ?? null,
+        payload: JSON.stringify(e.payload),
+        correlation_id: correlationId,
+      })),
+    )
+    .execute();
 }
 
 /** Read-only work for a tenant (no module role needed: the app role reads every module). */

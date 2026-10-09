@@ -651,6 +651,186 @@ export interface CatalogTerminologyConcept {
   system_version: Generated<string>;
 }
 
+export interface ClinicalAllergyIntolerance {
+  category: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  criticality: string | null;
+  id: Generated<string>;
+  patient_id: string;
+  reaction: string | null;
+  recorded_at: Generated<Timestamp>;
+  recorded_by: string;
+  severity: string | null;
+  status: Generated<string>;
+  substance: string;
+  substance_concept_id: string | null;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface ClinicalClinicalNote {
+  author_staff_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  current_version: Generated<number>;
+  encounter_id: string;
+  id: Generated<string>;
+  note_type: string;
+  patient_id: string;
+  signed_at: Timestamp | null;
+  signed_by: string | null;
+  status: Generated<string>;
+  status_reason: string | null;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface ClinicalClinicalNoteVersion {
+  amendment_reason: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string;
+  data: Generated<Json>;
+  form_template_id: string | null;
+  id: Generated<string>;
+  narrative: string | null;
+  note_id: string;
+  tenant_id: string;
+  version_no: number;
+}
+
+export interface ClinicalCondition {
+  abatement_on: string | null;
+  clinical_status: Generated<string>;
+  code: string | null;
+  code_system: string | null;
+  concept_id: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  display: string;
+  id: Generated<string>;
+  is_chronic: Generated<boolean>;
+  onset_on: string | null;
+  patient_id: string;
+  recorded_by: string;
+  source_encounter_id: string | null;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  verification_status: Generated<string>;
+  version: Generated<number>;
+}
+
+export interface ClinicalEncounter {
+  appointment_id: string | null;
+  arrived_at: Generated<Timestamp>;
+  attending_staff_id: string;
+  cancel_reason: string | null;
+  chief_complaint: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  department_id: string | null;
+  disposition: string | null;
+  encounter_class: string;
+  encounter_no: string;
+  ended_at: Timestamp | null;
+  facility_id: string;
+  follow_up_advised_on: string | null;
+  id: Generated<string>;
+  parent_encounter_id: string | null;
+  patient_id: string;
+  referral_source: string | null;
+  started_at: Timestamp | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface ClinicalEncounterDiagnosis {
+  condition_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  encounter_id: string;
+  id: Generated<string>;
+  patient_id: string;
+  rank: Generated<number>;
+  role: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface ClinicalEncounterParticipant {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  encounter_id: string;
+  id: Generated<string>;
+  period_end: Timestamp | null;
+  period_start: Generated<Timestamp>;
+  role: string;
+  staff_id: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface ClinicalEncounterStatusHistory {
+  actor_staff_id: string | null;
+  encounter_id: string;
+  from_status: string | null;
+  id: Generated<string>;
+  occurred_at: Generated<Timestamp>;
+  tenant_id: string;
+  to_status: string;
+}
+
+export interface ClinicalFormTemplate {
+  code: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  id: Generated<string>;
+  name: string;
+  note_type: string;
+  schema: Json;
+  status: Generated<string>;
+  template_version: number;
+  tenant_id: string | null;
+}
+
+export interface ClinicalObservation {
+  category: string;
+  code: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  display: string;
+  effective_at: Timestamp;
+  encounter_id: string;
+  group_id: string;
+  id: Generated<string>;
+  is_abnormal: boolean | null;
+  observation_definition_id: string | null;
+  patient_id: string;
+  recorded_by: string;
+  status: Generated<string>;
+  status_reason: string | null;
+  supersedes_id: string | null;
+  tenant_id: string;
+  unit: string | null;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  value_num: Numeric | null;
+  value_text: string | null;
+  version: Generated<number>;
+}
+
 export interface PatientPatient {
   birth_date: string | null;
   birth_date_estimated: Generated<boolean>;
@@ -1204,6 +1384,16 @@ export interface DB {
   "catalog.tax_rule": CatalogTaxRule;
   "catalog.team_fee_rule": CatalogTeamFeeRule;
   "catalog.terminology_concept": CatalogTerminologyConcept;
+  "clinical.allergy_intolerance": ClinicalAllergyIntolerance;
+  "clinical.clinical_note": ClinicalClinicalNote;
+  "clinical.clinical_note_version": ClinicalClinicalNoteVersion;
+  "clinical.condition": ClinicalCondition;
+  "clinical.encounter": ClinicalEncounter;
+  "clinical.encounter_diagnosis": ClinicalEncounterDiagnosis;
+  "clinical.encounter_participant": ClinicalEncounterParticipant;
+  "clinical.encounter_status_history": ClinicalEncounterStatusHistory;
+  "clinical.form_template": ClinicalFormTemplate;
+  "clinical.observation": ClinicalObservation;
   "patient.patient": PatientPatient;
   "patient.patient_address": PatientPatientAddress;
   "patient.patient_consent": PatientPatientConsent;

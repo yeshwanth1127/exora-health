@@ -1,6 +1,6 @@
-// Registered event consumers. Real consumers arrive with their modules (e.g. comms sends booking
-// confirmations on appointment.confirmed; clinical opens an encounter on appointment.checked_in).
-// Until then the worker still delivers and records every event, so nothing piles up.
+// Registered event consumers. They live with their modules in the API app; the worker runs them.
+// Still to come: comms (confirmations and reminders on appointment.*), billing (charges on encounter.*).
+import { consumers } from '../../api/src/consumers.ts';
 import type { EventHandler } from './dispatcher.ts';
 
-export const handlers: EventHandler[] = [];
+export const handlers: EventHandler[] = consumers;

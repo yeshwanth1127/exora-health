@@ -12,6 +12,8 @@ export interface ApiConfig {
   auth: AuthConfig;
   /** Lets tests pin the clock with the X-Test-Now header. Never enable in production. */
   allowClockOverride: boolean;
+  /** Browser origins allowed by CORS (CORS_ORIGINS, comma-separated). */
+  corsOrigins: string[];
 }
 
 export const DEV_ISSUER = 'local-dev';
@@ -36,5 +38,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     databaseUrl: dbConfig.appDatabaseUrl,
     auth,
     allowClockOverride: env.ALLOW_CLOCK_OVERRIDE === '1' && env.NODE_ENV !== 'production',
+    // Default: the Vite dev server used by hospital-webpage.
+    corsOrigins: (env.CORS_ORIGINS ?? 'http://localhost:5173,http://127.0.0.1:5173').split(',').map((o) => o.trim()).filter(Boolean),
   };
 }

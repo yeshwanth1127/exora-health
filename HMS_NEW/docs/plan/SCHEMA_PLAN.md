@@ -1,6 +1,6 @@
 # HMS_NEW — Schema & Backend Build Plan
 
-Implements the ERD in [`../design/erd-v2/`](../design/erd-v2/README.md). Status: **Phase 4 done** — HTTP API (docs/api/README.md) with token authentication and per-facility permission checks, service accounts for booking channels, and the outbox/housekeeping worker; 105 tests green. Next: Phase 5 modules (clinical + diagnostics, then pharmacy/inventory, inpatient/theatre, billing…).
+Implements the ERD in [`../design/erd-v2/`](../design/erd-v2/README.md). Status: **Phase 5 (clinical core) done** — encounters opened by check-in, vitals, versioned and signed notes, diagnoses/problem list, allergies, care-relationship chart access with break-glass, CORS and dev login for front-ends; 111 tests green. Next: M06 diagnostics (lab/imaging orders and results), then M09/M10 pharmacy and inventory, M11 billing.
 
 ## 1. Decisions (locked)
 | # | Decision | Choice |

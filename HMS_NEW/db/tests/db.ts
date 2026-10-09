@@ -13,7 +13,7 @@ export function appPool(max = 10): pg.Pool {
   return new pg.Pool({ connectionString: config.testAppDatabaseUrl, max });
 }
 
-export type ModuleRole = 'mod_platform' | 'mod_patient' | 'mod_catalog' | 'mod_booking';
+export type ModuleRole = 'mod_platform' | 'mod_patient' | 'mod_catalog' | 'mod_booking' | 'mod_clinical';
 
 /**
  * Runs `fn` in one transaction acting for `tenantId`, optionally switched into a module write role —

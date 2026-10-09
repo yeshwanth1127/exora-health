@@ -7,9 +7,13 @@
     "@hms/platform": "workspace:*",
     "fastify": "5.12.5",
     "jose": "6.2.12",
-    "zod": "4.6.5"
+    "zod": "4.6.5",
+    "@fastify/cors": "11.3.0"
   },
   "scripts": {
     "start": "tsx src/main.ts"
+  },
+  "exports": {
+    "./consumers": "./src/consumers.ts"
   }
 }

@@ -30,7 +30,13 @@ INSERT INTO platform.permission (code, module_code, description, is_sensitive) V
   ('appointments.cancel',    'booking',  'Cancel appointments',                                 false),
   ('appointments.check_in',  'booking',  'Check patients in',                                   false),
   ('schedules.manage',       'booking',  'Edit schedules, exceptions and day plans',            false),
-  ('queue.manage',           'booking',  'Issue, call and skip queue tokens',                   false)
+  ('queue.manage',           'booking',  'Issue, call and skip queue tokens',                   false),
+  -- clinical
+  ('encounters.read',        'clinical', 'See encounter worklists (no chart contents)',         false),
+  ('encounters.manage',      'clinical', 'Open, start, finish and cancel encounters',           false),
+  ('clinical.read',          'clinical', 'Read charts of patients under your care',             true),
+  ('clinical.write',         'clinical', 'Record vitals, notes, diagnoses and allergies',       true),
+  ('clinical.sign',          'clinical', 'Sign clinical notes',                                 true)
 ON CONFLICT (code) DO UPDATE
   SET module_code = EXCLUDED.module_code,
       description = EXCLUDED.description,

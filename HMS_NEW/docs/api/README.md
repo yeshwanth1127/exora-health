@@ -12,10 +12,29 @@ Every `/v1` request needs `Authorization: Bearer <token>`.
 
 The token's issuer + subject must match an active `platform.user_account`. If one identity has accounts in several tenants, send `X-Tenant-Id`. Integrations (WhatsApp bot, voice agent) use **service accounts**: a staff row flagged `is_system_account` with the `booking_agent` role, so their actions are permission-checked and attributed like a person's.
 
+## Wiring a front-end (local)
+1. `pnpm pg:start && pnpm db:reset`, then run `pnpm api:dev` and `pnpm worker:dev` (the worker opens encounters after check-in and completes appointments after the visit).
+2. **CORS**: browser origins in `CORS_ORIGINS` (default `http://localhost:5173,http://127.0.0.1:5173`, the Vite dev server).
+3. **Sign in**: `POST /dev/login {"subject": "ravi"}` → `{ token }` (only when `AUTH_MODE=dev`). Send it as `Authorization: Bearer <token>`.
+4. Seeded demo identities:
+
+| Subject | Who | Can |
+|---|---|---|
+| `ravi` | Ravi Shankar, front desk (Bengaluru) | register patients, book, check in, run the queue |
+| `asha` | Dr Asha Rao, General Medicine (has a council registration, so can sign notes) | queue, encounters, vitals, notes, diagnoses |
+| `meena` | Meena Kumari, nurse (Bengaluru) | vitals, nursing notes |
+| `priya` | Priya Nair, tenant admin | everything except break-glass; schedules |
+| `whatsapp-bot` | WhatsApp booking bot (service account) | find/register patients, book, cancel, reschedule |
+
+Demo IDs: tenant `01920000-0000-7000-8000-000000000001`; Bengaluru facility `…0101`; Dr Asha `…0401` (Mon–Sat 09:00–13:00 slots, Mon–Fri 17:00–19:00 walk-ins); Dr Vikram `…0402`.
+
+5. A typical OPD screen flow: slots → hold → book → (on the day) check-in → poll `GET /v1/appointments/:id/encounter` (ready within ~1 s once the worker runs) → doctor: start → vitals/notes/diagnoses → sign → finish → appointment shows `completed`.
+6. Send a fresh `Idempotency-Key` (e.g. `crypto.randomUUID()`) per user action on 🔑 endpoints, and reuse it when retrying the same action.
+
 ## Authorization
 Each endpoint needs one permission, checked **for the facility involved** (a role granted for one branch doesn't work at another). `GET /v1/me` shows the caller's permissions and their facility scope (`*` = all facilities).
 
-Not yet enforced (comes with the clinical module): care-relationship checks on clinical data. Patient-portal accounts are rejected for now.
+**Chart access** additionally needs a care relationship: being a participant of one of the patient's encounters (open, or ended within 30 days), an active care assignment, or break-glass access (`POST /v1/patients/:id/break-glass`, audited, up to 24 h). Staff with clinical permissions at the facility join an *active* encounter automatically when they work on it (e.g. the nurse taking vitals). Every chart or encounter view is recorded in the audit log. Patient-portal accounts are rejected for now.
 
 ## Conventions
 | Topic | Rule |
@@ -90,10 +109,32 @@ Not yet enforced (comes with the clinical module): care-relationship checks on c
 | `POST /v1/queue/call-next` | `queue.manage` @ facility | Next patient (emergency → VIP → senior → normal, then token); 204 when empty |
 | `POST /v1/queue-tokens/:id/start` · `/complete` · `/skip` | `queue.manage` @ facility | Consultation progress; complete also completes the appointment |
 
+### Clinical (encounters)
+| Method & path | Permission | Purpose |
+|---|---|---|
+| `GET /v1/encounters?facilityId&date&staffId&status` | `encounters.read` @ facility | Worklist (no chart contents) |
+| `GET /v1/appointments/:id/encounter` | `encounters.read` @ facility | The encounter opened by check-in |
+| `POST /v1/encounters` 🔑 | `encounters.manage` @ facility | Unscheduled / emergency encounter |
+| `GET /v1/encounters/:id` | `clinical.read` @ facility + care | Encounter with vitals, notes, diagnoses, allergies, problems (audited view) |
+| `POST /v1/encounters/:id/start` · `/finish` · `/cancel` | `encounters.manage` @ facility | Lifecycle; finish needs a disposition and no draft notes, and completes the appointment |
+| `POST /v1/encounters/:id/participants` | `encounters.manage` | Add a clinician |
+| `POST /v1/encounters/:id/vitals` | `clinical.write` @ facility | One capture of vitals by code (`BP_SYS`, `BP_DIA`, `PULSE`, `RESP`, `TEMP`, `SPO2`, `WEIGHT`, `HEIGHT`, `BMI`) |
+| `POST /v1/observations/:id/correct` | `clinical.write` | Correct (new value supersedes) or mark entered in error |
+| `GET /v1/note-templates` | `clinical.read` | Published templates (e.g. `opd_consultation` SOAP) |
+| `POST /v1/encounters/:id/notes` 🔑 | `clinical.write` @ facility | New draft note (optionally from a template) |
+| `PUT /v1/notes/:id` | `clinical.write` | Save a new version (`baseVersion` required; signed notes need `amendmentReason`) |
+| `POST /v1/notes/:id/sign` | `clinical.sign` | Author signs; needs a current council registration |
+| `POST /v1/notes/:id/entered-in-error` | `clinical.write` | Void a note (reason required) |
+| `POST /v1/encounters/:id/diagnoses` | `clinical.write` @ facility | Diagnosis (new or existing condition); one primary per encounter |
+| `PATCH /v1/conditions/:id` | `clinical.write` + care | Problem-list status (resolved, confirmed…) |
+| `GET /v1/patients/:id/chart` | `clinical.read` + care | Allergies, problems, recent encounters, latest vitals (audited view) |
+| `POST /v1/patients/:id/allergies` · `PATCH /v1/allergies/:id` | `clinical.write` + care | Allergies |
+| `POST /v1/patients/:id/break-glass` | `break_glass.use` | Emergency chart access, audited |
+
 🔑 = requires `Idempotency-Key`.
 
 ## Worker
-`pnpm worker:dev` delivers outbox events (exactly once per consumer, retries with exponential backoff, dead-letters after 10 attempts), expires lapsed slot holds every 30 s, keeps monthly audit/outbox partitions ahead daily, and purges expired idempotency records hourly. No event consumers are registered yet: notifications (comms module) and encounter creation (clinical module) will subscribe to `appointment.*` events.
+`pnpm worker:dev` delivers outbox events (exactly once per consumer, retries with exponential backoff, dead-letters after 10 attempts), expires lapsed slot holds every 30 s, keeps monthly audit/outbox partitions ahead daily, and purges expired idempotency records hourly. Registered consumers: `appointment.checked_in` → open encounter; `appointment.cancelled` → cancel a not-yet-started encounter; `encounter.finished` → complete the appointment and its queue token. Still to come: notifications (comms) and charges (billing).
 
 ## Try it
 ```bash

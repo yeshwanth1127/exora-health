@@ -12,6 +12,7 @@ const MODULE_ROLE: Record<string, string> = {
   patient: 'mod_patient',
   catalog: 'mod_catalog',
   booking: 'mod_booking',
+  clinical: 'mod_clinical',
 };
 const SCHEMAS = Object.keys(MODULE_ROLE);
 
@@ -25,7 +26,7 @@ const GLOBAL_NO_RLS = new Set([
 /** Tables without tenant_id: the global reference tables plus the tenant table itself. */
 const GLOBAL_TABLES = new Set([...GLOBAL_NO_RLS, 'platform.tenant']);
 /** tenant_id may be NULL (system rows shared by all tenants). */
-const NULLABLE_TENANT = new Set(['platform.role', 'platform.role_permission', 'catalog.tax_rule']);
+const NULLABLE_TENANT = new Set(['platform.role', 'platform.role_permission', 'catalog.tax_rule', 'clinical.form_template']);
 /** Partitioned (PK includes the partition key) or link tables: no UNIQUE (tenant_id, id). */
 const NO_TENANT_ID_KEY = new Set(['platform.audit_event', 'platform.outbox_event', 'platform.role_permission']);
 /** Tables every module role may write. */

@@ -2,7 +2,7 @@
 
 New hospital management system: TypeScript (Node 22) modular backend on PostgreSQL 18. Separate from `hospital-backend/` (left untouched).
 
-**Status:** Phase 4 done — booking is usable over a secured HTTP API (see [docs/api/README.md](docs/api/README.md)), with a background worker; 105 tests. Backend only for now. Next: Phase 5 modules. Plan: [docs/plan/SCHEMA_PLAN.md](docs/plan/SCHEMA_PLAN.md).
+**Status:** Phase 5 (clinical core) done — booking → check-in → doctor's consultation → completion over a secured HTTP API ([docs/api/README.md](docs/api/README.md), including how to wire a front-end); 111 tests. Next: lab/imaging orders, pharmacy, billing. Plan: [docs/plan/SCHEMA_PLAN.md](docs/plan/SCHEMA_PLAN.md).
 
 ## Quick start
 ```bash

@@ -1,12 +1,20 @@
 // Starts the API: pnpm api:dev (local) or `pnpm --filter @hms/api start`.
 import { createDb } from '@hms/db';
+import { signDevToken } from './auth/dev-token.ts';
 import { createVerifier } from './auth/verify.ts';
 import { loadConfig } from './config.ts';
 import { buildServer } from './server.ts';
 
 const config = loadConfig();
 const db = createDb({ connectionString: config.databaseUrl, maxConnections: 20 });
-const app = buildServer({ db, verifier: createVerifier(config.auth), allowClockOverride: config.allowClockOverride, logger: true });
+const app = buildServer({
+  db,
+  verifier: createVerifier(config.auth),
+  allowClockOverride: config.allowClockOverride,
+  logger: true,
+  corsOrigins: config.corsOrigins,
+  ...(config.auth.mode === 'dev' ? { devLogin: (subject: string) => signDevToken(subject, { secret: (config.auth as { secret: string }).secret }) } : {}),
+});
 
 const shutdown = async (signal: string) => {
   app.log.info({ signal }, 'shutting down');

@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { ROOT, config } from './config.mjs';
 
-const schemas = ['platform', 'patient', 'catalog', 'booking'];
+const schemas = ['platform', 'patient', 'catalog', 'booking', 'clinical'];
 const outFile = path.join(ROOT, 'packages', 'db', 'src', 'generated', 'db.ts');
 execFileSync(
   path.join(ROOT, 'node_modules', '.bin', 'kysely-codegen'),

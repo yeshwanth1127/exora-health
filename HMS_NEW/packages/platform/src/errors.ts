@@ -21,6 +21,7 @@ export class DomainError extends Error {
 
 export const notFound = (what: string, details?: Record<string, unknown>) => new DomainError('not_found', `${what} not found`, details);
 export const conflict = (message: string, details?: Record<string, unknown>) => new DomainError('conflict', message, details);
+export const forbidden = (message: string, details?: Record<string, unknown>) => new DomainError('forbidden', message, details);
 export const invalid = (message: string, details?: Record<string, unknown>) => new DomainError('validation', message, details);
 export const preconditionFailed = (message: string, details?: Record<string, unknown>) =>
   new DomainError('precondition_failed', message, details);

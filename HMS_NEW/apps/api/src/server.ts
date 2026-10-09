@@ -1,12 +1,15 @@
 // HTTP API (Fastify). Every /v1 route requires a bearer token; the principal is resolved per request
 // and each route checks its permission (for the facility involved) before running a command.
 import { randomUUID } from 'node:crypto';
+import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { z } from 'zod';
 import { sql, type DB, type Kysely } from '@hms/db';
 import { DomainError } from '@hms/platform';
 import { resolvePrincipal } from './auth/principal.ts';
 import { AuthenticationError, type TokenVerifier } from './auth/verify.ts';
-import { sendError } from './http/support.ts';
+import { parse, sendError } from './http/support.ts';
+import { registerClinicalRoutes } from './http/routes/clinical.ts';
 import { registerBookingRoutes } from './http/routes/booking.ts';
 import { registerCalendarRoutes } from './http/routes/calendar.ts';
 import { registerDirectoryRoutes } from './http/routes/directory.ts';
@@ -19,6 +22,13 @@ export interface ServerDeps {
   /** Tests only: honour the X-Test-Now header to pin the clock. */
   allowClockOverride?: boolean;
   logger?: boolean;
+  /** Browser origins allowed to call the API (CORS), e.g. ['http://localhost:5173']. */
+  corsOrigins?: string[];
+  /**
+   * Development only: enables POST /dev/login, which signs a token for a seeded identity so a local
+   * front-end can sign in without an identity provider. Never set in production.
+   */
+  devLogin?: (subject: string) => Promise<string>;
 }
 
 const REQUEST_ID = /^[A-Za-z0-9_.:-]{8,128}$/;
@@ -33,6 +43,13 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
       return typeof header === 'string' && UUID.test(header) ? header : randomUUID();
     },
     bodyLimit: 256 * 1024,
+  });
+  void app.register(cors, {
+    origin: deps.corsOrigins ?? false,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    allowedHeaders: ['authorization', 'content-type', 'idempotency-key', 'x-request-id', 'x-tenant-id'],
+    exposedHeaders: ['x-request-id'],
+    maxAge: 600,
   });
   app.decorateRequest('principal', null);
   app.decorateRequest('clockOverride', undefined);
@@ -72,6 +89,15 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
     }
   });
 
+  if (deps.devLogin) {
+    const devLogin = deps.devLogin;
+    app.post('/dev/login', async (request) => {
+      const { subject } = parse(z.object({ subject: z.string().trim().min(1).max(100) }), request.body);
+      // The token is only useful if the subject has an account; /v1/me will say who it is.
+      return { token: await devLogin(subject), tokenType: 'Bearer', note: 'development login — disabled outside AUTH_MODE=dev' };
+    });
+  }
+
   app.get('/v1/me', async (request) => {
     const p = request.principal!;
     return {
@@ -89,6 +115,7 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   registerCalendarRoutes(app, deps.db);
   registerBookingRoutes(app, deps.db);
   registerQueueRoutes(app, deps.db);
+  registerClinicalRoutes(app, deps.db);
   return app;
 }
 
