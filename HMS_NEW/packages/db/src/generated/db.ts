@@ -941,6 +941,14 @@ export interface PlatformIdempotencyRecord {
   version: Generated<number>;
 }
 
+export interface PlatformInboxRecord {
+  consumer: string;
+  event_id: string;
+  id: Generated<string>;
+  processed_at: Generated<Timestamp>;
+  tenant_id: string;
+}
+
 export interface PlatformLocation {
   bed_category_id: string | null;
   code: string;
@@ -1011,6 +1019,7 @@ export interface PlatformOutboxEvent {
   attempts: Generated<number>;
   claimed_until: Timestamp | null;
   correlation_id: string | null;
+  dead_lettered_at: Timestamp | null;
   event_type: string;
   id: Generated<string>;
   last_error: string | null;
@@ -1086,6 +1095,7 @@ export interface PlatformStaff {
   given_name: string;
   hpr_id: string | null;
   id: Generated<string>;
+  is_system_account: Generated<boolean>;
   phone: string | null;
   sex: string | null;
   staff_type: string;
@@ -1095,6 +1105,13 @@ export interface PlatformStaff {
   updated_at: Generated<Timestamp>;
   updated_by: string | null;
   version: Generated<number>;
+}
+
+export interface PlatformStaffPermission {
+  facility_id: string | null;
+  permission: string | null;
+  staff_id: string | null;
+  tenant_id: string | null;
 }
 
 export interface PlatformStaffRegistration {
@@ -1202,6 +1219,7 @@ export interface DB {
   "platform.emergency_access_grant": PlatformEmergencyAccessGrant;
   "platform.facility": PlatformFacility;
   "platform.idempotency_record": PlatformIdempotencyRecord;
+  "platform.inbox_record": PlatformInboxRecord;
   "platform.location": PlatformLocation;
   "platform.module_state": PlatformModuleState;
   "platform.number_series": PlatformNumberSeries;
@@ -1212,6 +1230,7 @@ export interface DB {
   "platform.role_grant": PlatformRoleGrant;
   "platform.role_permission": PlatformRolePermission;
   "platform.staff": PlatformStaff;
+  "platform.staff_permission": PlatformStaffPermission;
   "platform.staff_registration": PlatformStaffRegistration;
   "platform.tenant": PlatformTenant;
   "platform.user_account": PlatformUserAccount;

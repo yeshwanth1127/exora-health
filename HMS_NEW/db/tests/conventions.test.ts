@@ -34,6 +34,7 @@ const SHARED_WRITE = new Set([
   'platform.outbox_event',
   'platform.number_series',
   'platform.idempotency_record',
+  'platform.inbox_record',
 ]);
 /** Tables where DELETE is a legitimate (audited) admin action. */
 const DELETE_ALLOWED = new Set(['platform.role_permission']);

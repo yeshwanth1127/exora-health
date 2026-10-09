@@ -31,3 +31,18 @@ FROM bundle b
 JOIN platform.role r ON r.tenant_id IS NULL AND r.code = b.role_code
 JOIN platform.permission p ON p.code = b.permission_code
 ON CONFLICT DO NOTHING;
+
+-- Integration role for booking channels (WhatsApp bot, voice agent, website backend): can find and
+-- register patients and manage appointments, nothing clinical.
+INSERT INTO platform.role (tenant_id, code, name, is_clinical) VALUES
+  (NULL, 'booking_agent', 'Booking channel (integration)', false)
+ON CONFLICT ON CONSTRAINT role_tenant_code_key DO UPDATE SET name = EXCLUDED.name;
+
+INSERT INTO platform.role_permission (role_id, permission_id)
+SELECT r.id, p.id
+FROM platform.role r
+JOIN platform.permission p ON p.code = ANY (ARRAY[
+  'catalog.read', 'patients.read', 'patients.register', 'appointments.read', 'appointments.book',
+  'appointments.reschedule', 'appointments.cancel'])
+WHERE r.tenant_id IS NULL AND r.code = 'booking_agent'
+ON CONFLICT DO NOTHING;

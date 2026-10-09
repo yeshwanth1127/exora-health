@@ -57,3 +57,13 @@ JOIN platform.role r ON r.tenant_id IS NULL AND r.code = g.role_code;
 INSERT INTO platform.module_state (tenant_id, module_code, state)
 SELECT '01920000-0000-7000-8000-000000000001', m, 'active'
 FROM unnest(ARRAY['platform', 'patient', 'catalog', 'booking']) AS m;
+
+-- Service account for the WhatsApp booking bot (signs in with client credentials).
+INSERT INTO platform.staff (id, tenant_id, employee_no, given_name, display_name, staff_type, is_system_account) VALUES
+  ('01920000-0000-7000-8000-000000000499', '01920000-0000-7000-8000-000000000001', 'SVC-WA', 'WhatsApp bot', 'WhatsApp booking bot', 'other', true);
+INSERT INTO platform.user_account (tenant_id, staff_id, identity_issuer, identity_subject, status) VALUES
+  ('01920000-0000-7000-8000-000000000001', '01920000-0000-7000-8000-000000000499', 'local-dev', 'whatsapp-bot', 'active');
+
+INSERT INTO platform.role_grant (tenant_id, staff_id, role_id)
+SELECT '01920000-0000-7000-8000-000000000001', '01920000-0000-7000-8000-000000000499', r.id
+FROM platform.role r WHERE r.tenant_id IS NULL AND r.code = 'booking_agent';

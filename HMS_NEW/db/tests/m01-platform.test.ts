@@ -270,7 +270,7 @@ describe('roles and grants', () => {
     const codes = await asTenant(app, a.tenantId, null, async (c) =>
       (await c.query<{ code: string }>('SELECT code FROM platform.role ORDER BY code')).rows.map((r) => r.code),
     );
-    expect(codes).toEqual(['auditor', 'doctor', 'front_desk', 'nurse', 'tenant_admin']);
+    expect(codes).toEqual(['auditor', 'booking_agent', 'doctor', 'front_desk', 'nurse', 'tenant_admin']);
   });
 
   it('tenants cannot change system roles or their permissions', async () => {

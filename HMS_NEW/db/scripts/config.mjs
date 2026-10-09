@@ -21,6 +21,9 @@ export const config = {
   databaseUrl: process.env.DATABASE_URL ?? `${base}/hms?sslmode=disable`,
   testDatabaseUrl: process.env.TEST_DATABASE_URL ?? `${base}/hms_test?sslmode=disable`,
   appPassword,
+  // The dev database as the application role — what the API and worker use.
+  appDatabaseUrl:
+    process.env.APP_DATABASE_URL ?? `postgres://hms_app:${appPassword}@127.0.0.1:${port}/hms?sslmode=disable`,
   // Same database, connecting as the application role (no superuser powers, RLS applies).
   testAppDatabaseUrl:
     process.env.TEST_APP_DATABASE_URL ?? `postgres://hms_app:${appPassword}@127.0.0.1:${port}/hms_test?sslmode=disable`,

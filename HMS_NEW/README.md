@@ -2,7 +2,7 @@
 
 New hospital management system: TypeScript (Node 22) modular backend on PostgreSQL 18. Separate from `hospital-backend/` (left untouched).
 
-**Status:** Phase 3 done — foundation, patients, catalogue, pricing and the end-to-end booking flow (85 tests). Next: Phase 4 (HTTP API, auth, outbox worker). Plan: [docs/plan/SCHEMA_PLAN.md](docs/plan/SCHEMA_PLAN.md).
+**Status:** Phase 4 done — booking is usable over a secured HTTP API (see [docs/api/README.md](docs/api/README.md)), with a background worker; 105 tests. Backend only for now. Next: Phase 5 modules. Plan: [docs/plan/SCHEMA_PLAN.md](docs/plan/SCHEMA_PLAN.md).
 
 ## Quick start
 ```bash
@@ -10,8 +10,10 @@ cd HMS_NEW
 pnpm install
 pnpm pg:start          # PostgreSQL 18 from bundled binaries (or: docker compose up -d)
 pnpm db:reset          # recreate dev database `hms`: migrate + reference + dev seeds
-pnpm test              # rebuilds `hms_test` from scratch, runs DB tests
+pnpm test              # rebuilds `hms_test` from scratch, runs DB, API and worker tests
 pnpm typecheck
+pnpm api:dev           # HTTP API on :3000 (dev tokens: pnpm dev:token ravi)
+pnpm worker:dev        # outbox delivery + housekeeping
 ```
 
 | Script | Does |
@@ -37,7 +39,10 @@ Settings: see `.env.example`.
 | `db/scripts/` | Local server, migrate, reset helpers |
 | `packages/db` | Kysely client + generated schema types |
 | `packages/platform` | Command runner (tenant, module role, idempotency, audit, outbox) and domain errors |
-| `apps/api/src/modules/` | Module commands and queries: `booking` (calendars, slots, appointments, queue), `patient` (registration). HTTP routes come in Phase 4 |
+| `apps/api/src/modules/` | Module commands and queries: `booking`, `patient`, `directory` |
+| `apps/api/src/http/`, `src/auth/` | HTTP routes, token verification, principal + permission checks |
+| `apps/worker/` | Outbox dispatcher and housekeeping jobs |
+| `docs/api/` | API reference |
 
 ## Notes
 - The bundled binaries don't include `pg_dump`, so `db/schema.sql` is only written when `DBMATE_DUMP=1` and a `pg_dump` 18 is on PATH (e.g. inside the Docker container).

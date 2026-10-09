@@ -1,6 +1,6 @@
 # HMS_NEW — Schema & Backend Build Plan
 
-Implements the ERD in [`../design/erd-v2/`](../design/erd-v2/README.md). Status: **Phase 3 done** — migrations 0001–0010 (through M04 booking), the command runner, and the booking flow (doctor calendars, slots, hold, book, reschedule, cancel, check-in, walk-in, queue) with 85 tests green. Next: Phase 4 (HTTP API, authentication and permission checks, outbox worker).
+Implements the ERD in [`../design/erd-v2/`](../design/erd-v2/README.md). Status: **Phase 4 done** — HTTP API (docs/api/README.md) with token authentication and per-facility permission checks, service accounts for booking channels, and the outbox/housekeeping worker; 105 tests green. Next: Phase 5 modules (clinical + diagnostics, then pharmacy/inventory, inpatient/theatre, billing…).
 
 ## 1. Decisions (locked)
 | # | Decision | Choice |
