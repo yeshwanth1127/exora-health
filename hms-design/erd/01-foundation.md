@@ -127,6 +127,10 @@ erDiagram
 
 ### Cross-cutting
 
+**document** — every uploaded/generated file (scanned Rx, consent forms, report PDFs, invoices); referenced as `*_document_id` across all layers
+- `id`, `tenant_id`, `patient_id` (nullable), `encounter_id` (nullable), `kind` CHECK (`consent_form`,`prescription_scan`,`lab_report`,`radiology_report`,`discharge_summary`,`invoice`,`id_proof`,`external_record`,`other`)
+- `storage_key` (object storage path — files never stored in the DB), `mime_type`, `size_bytes`, `sha256` (tamper evidence), `uploaded_by`, `uploaded_at`, `retain_until date`
+
 **audit_log** (partitioned by month, append-only, no UPDATE/DELETE grants)
 - `id`, `tenant_id`, `occurred_at`, `user_id`, `action` (`create`,`update`,`delete`,`view`,`export`,`login`), `entity_table`, `entity_id`, `before jsonb`, `after jsonb`, `ip`, `user_agent`, `reason`
 
