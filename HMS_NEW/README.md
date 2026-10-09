@@ -2,7 +2,7 @@
 
 New hospital management system: TypeScript (Node 22) modular backend on PostgreSQL 18. Separate from `hospital-backend/` (left untouched).
 
-**Status:** Phase 2 done — platform foundation, patient registry, catalogue and pricing, with 66 DB tests. Next: Phase 3 (booking). Plan: [docs/plan/SCHEMA_PLAN.md](docs/plan/SCHEMA_PLAN.md).
+**Status:** Phase 3 done — foundation, patients, catalogue, pricing and the end-to-end booking flow (85 tests). Next: Phase 4 (HTTP API, auth, outbox worker). Plan: [docs/plan/SCHEMA_PLAN.md](docs/plan/SCHEMA_PLAN.md).
 
 ## Quick start
 ```bash
@@ -20,6 +20,7 @@ pnpm typecheck
 | `db:migrate` / `db:rollback` / `db:status` | dbmate against `DATABASE_URL` |
 | `db:new <name>` | New migration file in `db/migrations/` |
 | `db:reset [--test]` | Drop, recreate, migrate and seed the dev (or test) database |
+| `db:codegen` | Regenerate `packages/db/src/generated/db.ts` from the dev database (run after `db:reset` whenever migrations change) |
 | `test` / `test:watch` | Vitest; global setup rebuilds `hms_test` first |
 
 Settings: see `.env.example`.
@@ -34,8 +35,9 @@ Settings: see `.env.example`.
 | `db/seeds/` | `reference/` (all environments), `dev/` (local only) |
 | `db/tests/` | DB tests against real PostgreSQL 18 |
 | `db/scripts/` | Local server, migrate, reset helpers |
-| `packages/` | `db`, `platform`, `contracts` (from Phase 2/4) |
-| `apps/` | `api`, `worker` (from Phase 4) |
+| `packages/db` | Kysely client + generated schema types |
+| `packages/platform` | Command runner (tenant, module role, idempotency, audit, outbox) and domain errors |
+| `apps/api/src/modules/` | Module commands and queries: `booking` (calendars, slots, appointments, queue), `patient` (registration). HTTP routes come in Phase 4 |
 
 ## Notes
 - The bundled binaries don't include `pg_dump`, so `db/schema.sql` is only written when `DBMATE_DUMP=1` and a `pg_dump` 18 is on PATH (e.g. inside the Docker container).

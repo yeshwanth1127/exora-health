@@ -32,8 +32,8 @@ erDiagram
 
 | Table | Key columns | Relationships / constraints |
 |---|---|---|
-| **schedulable_resource** | kind (`practitioner`,`room`,`theatre`,`equipment`), staff_id / location_id / equipment_id (CHECK one, matching kind), name, is_active | Facility |
-| **schedule_rule** | weekday 1–7, start_local, end_local (CHECK end > start), slot_minutes (NULL = token-only session), max_slot_bookings, max_walk_in_tokens, visit_mode (`in_person`,`virtual`), healthcare_service_id, effective_from, effective_to | Resource. **Slots are computed** (rule − exceptions − reservations), never materialised |
+| **schedulable_resource** | kind (`practitioner`,`room`,`theatre`,`equipment`), staff_id / location_id / equipment_id (CHECK one, matching kind), facility_id, name, is_active | **A practitioner's calendar is tenant-wide** (facility_id NULL), so a doctor working at two branches can never be double-booked across them; each schedule rule names its facility. Rooms, theatres and equipment belong to one facility |
+| **schedule_rule** | facility_id, consult_location_id, weekday 1–7, start_local, end_local (CHECK end > start), slot_minutes (NULL = token-only session), max_walk_in_tokens, visit_mode (`in_person`,`virtual`), healthcare_service_id, effective_from, effective_to | Resource. Exclusion: no overlapping sessions for the same resource and weekday in overlapping date ranges (across facilities). **Slots are computed** (rule − exceptions − reservations), never materialised |
 | **schedule_exception** | on_date, kind (`closed`,`extra_hours`,`block`), start_local, end_local, reason | Resource |
 | **facility_holiday** | holiday_on, name | Facility |
 | **day_plan** / **day_plan_block** | plan_on, revision, replaces_weekly, saved_by / block: facility_id, start_local, end_local, visit_mode | A one-day override of the weekly rule (doctor works at two branches that day) |

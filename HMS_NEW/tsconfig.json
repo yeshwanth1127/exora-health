@@ -1,10 +1,14 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "lib": ["ES2023"],
+    "lib": [
+      "ES2023"
+    ],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
@@ -16,5 +20,11 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["db/**/*.ts", "db/**/*.mjs", "vitest.config.ts"]
+  "include": [
+    "db/**/*.ts",
+    "db/**/*.mjs",
+    "packages/**/*.ts",
+    "apps/**/*.ts",
+    "vitest.config.ts"
+  ]
 }

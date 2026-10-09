@@ -1,0 +1,9 @@
+{
+  "name": "@hms/api",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@hms/db": "workspace:*",
+    "@hms/platform": "workspace:*"
+  }
+}
