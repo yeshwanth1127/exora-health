@@ -1,6 +1,6 @@
 # HMS_NEW — Schema & Backend Build Plan
 
-Implements the ERD in [`../design/erd-v2/`](../design/erd-v2/README.md). Status: **plan — nothing built yet.**
+Implements the ERD in [`../design/erd-v2/`](../design/erd-v2/README.md). Status: **Phase 0 done** (workspace, local PostgreSQL 18, migration tooling, test harness). Next: Phase 1.
 
 ## 1. Decisions (locked)
 | # | Decision | Choice |
@@ -24,7 +24,7 @@ Implements the ERD in [`../design/erd-v2/`](../design/erd-v2/README.md). Status:
 | Driver | `pg` (node-postgres) | Kysely's standard Postgres dialect |
 | Tests | Vitest; DB tests run against a real PostgreSQL 18 (never SQLite/mocks) | Invariants depend on Postgres features |
 | Logging | pino (Fastify default) with correlation IDs | Ties logs to `audit_event.correlation_id` |
-| Local DB | `docker-compose.yml` with `postgres:18` | Dev machines. In the Claude cloud container Docker isn't running, so tests there use a PGDG-installed PostgreSQL 18 |
+| Local DB | `pnpm pg:start` (PostgreSQL 18.4 binaries from the `embedded-postgres` npm package) **or** `docker-compose.yml` with `postgres:18` | npm binaries work without Docker (cloud containers, CI); the PGDG apt repo is blocked by this environment's network policy |
 
 Exact package versions are pinned when Phase 0 scaffolds the workspace.
 
@@ -183,8 +183,8 @@ The worker claims outbox rows with `FOR UPDATE SKIP LOCKED`, delivers to in-proc
 ## 11. Risks and open items
 | Item | Plan |
 |---|---|
-| PostgreSQL 18 required (`uuidv7()`) | Dev via `postgres:18` container; cloud container via PGDG apt packages. If a managed host only offers ≤17, swap in a SQL `uuidv7()` function in migration 0001 |
-| Docker not running in the Claude cloud container | Install PostgreSQL 18 from PGDG for test runs there |
+| PostgreSQL 18 required (`uuidv7()`) | Dev/CI via bundled 18.4 binaries or `postgres:18` container. If a managed host only offers ≤17, swap in a SQL `uuidv7()` function in migration 0001 |
+| Bundled binaries lack `pg_dump` | `db/schema.sql` dump only where `pg_dump` 18 exists (`DBMATE_DUMP=1`); a schema snapshot test can replace it later |
 | RLS performance | `tenant_id` leads every composite index; check plans on seeded volume before Phase 5 |
 | `hms_app` membership in `mod_*` roles requires PG16+ `GRANT … WITH INHERIT FALSE` | Fine on 18 |
 | Hosting region (DPDP Rules 2025) | Decide before production; schema unaffected |
