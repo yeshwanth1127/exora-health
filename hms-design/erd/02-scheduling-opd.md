@@ -149,6 +149,7 @@ erDiagram
 - `duration_value int`, `duration_unit` CHECK (`days`,`weeks`,`months`,`continuous`), `quantity numeric`
 - `food_relation` CHECK (`before_food`,`after_food`,`with_food`,`empty_stomach`,`any`), `instructions`, `substitution_allowed bool`
 - Snapshot columns preserve exactly what was prescribed even if the catalogue changes later.
+- IPD medication orders (v1.1): the same tables serve inpatient drug orders. Extra lifecycle columns on `prescription_item`: `order_status` CHECK (`active`,`on_hold`,`stopped`,`completed`), `start_at`, `stopped_at`, `stopped_by`, `stop_reason`. Pharmacy indents (Layer 5) reference active items. No per-dose administration record (MAR) in phase 1 — decision D14.
 
 ## Decisions log
 | # | Decision | Chosen |

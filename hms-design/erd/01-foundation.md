@@ -119,8 +119,10 @@ erDiagram
 **patient_contact** — next of kin / emergency / guardian (minors)
 - `id`, `tenant_id`, `patient_id`, `relationship`, `name`, `phone`, `is_emergency`, `is_legal_guardian`, `related_patient_id` (nullable — if the contact is also a patient)
 
-**patient_consent** — DPDP Act & ABDM consent records
-- `id`, `tenant_id`, `patient_id`, `purpose` CHECK (`treatment`,`data_sharing_abdm`,`research`,`marketing`,`sms_whatsapp`)
+**patient_consent** — DPDP Act & ABDM consent records, plus clinical (informed) consents
+- `id`, `tenant_id`, `patient_id`, `purpose` CHECK (`treatment`,`data_sharing_abdm`,`research`,`marketing`,`sms_whatsapp`,`admission`,`surgery`,`anaesthesia`,`blood_transfusion`,`high_risk_procedure`,`teleconsult`)
+- `encounter_id` (nullable), `surgery_id` (nullable) — added in v1.1 for clinical consents (Layers 2–3)
+- `signed_by` CHECK (`patient`,`guardian`,`legal_representative`), `signer_name`, `signer_relationship`, `witness_staff_id`
 - `scope jsonb`, `abdm_consent_artefact_id` (nullable), `granted_at`, `expires_at`, `revoked_at`, `captured_by`, `evidence_document_id`
 
 ### Cross-cutting
