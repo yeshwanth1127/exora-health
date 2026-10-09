@@ -1,8 +1,8 @@
 // Phase 0 smoke test: the database server provides what the schema plan relies on.
 import { afterAll, describe, expect, it } from 'vitest';
-import { testPool } from './db.ts';
+import { adminPool } from './db.ts';
 
-const pool = testPool();
+const pool = adminPool();
 afterAll(() => pool.end());
 
 describe('database environment', () => {
@@ -52,11 +52,11 @@ describe('database environment', () => {
     }
   });
 
-  it('starts from an empty test database (no application schemas yet)', async () => {
-    const { rows } = await pool.query<{ nspname: string }>(
-      `SELECT nspname FROM pg_namespace
-       WHERE nspname NOT LIKE 'pg\\_%' AND nspname NOT IN ('information_schema', 'public')`,
-    );
-    expect(rows.map((r) => r.nspname)).toEqual([]);
+  it('has every migration applied', async () => {
+    const { rows } = await pool.query<{ n: string }>('SELECT count(*) AS n FROM schema_migrations');
+    const { readdirSync } = await import('node:fs');
+    const { config } = await import('../scripts/config.mjs');
+    const files = readdirSync(config.migrationsDir).filter((f) => f.endsWith('.sql'));
+    expect(Number(rows[0]!.n)).toBe(files.length);
   });
 });

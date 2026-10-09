@@ -11,6 +11,8 @@ if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 const port = process.env.PG_PORT ?? '54329';
 const base = `postgres://postgres:postgres@127.0.0.1:${port}`;
+// Local-only password for the hms_app role (real environments provision logins separately).
+const appPassword = process.env.HMS_APP_PASSWORD ?? 'hms_app_local';
 
 export const config = {
   port,
@@ -18,6 +20,10 @@ export const config = {
   adminUrl: process.env.ADMIN_DATABASE_URL ?? `${base}/postgres?sslmode=disable`,
   databaseUrl: process.env.DATABASE_URL ?? `${base}/hms?sslmode=disable`,
   testDatabaseUrl: process.env.TEST_DATABASE_URL ?? `${base}/hms_test?sslmode=disable`,
+  appPassword,
+  // Same database, connecting as the application role (no superuser powers, RLS applies).
+  testAppDatabaseUrl:
+    process.env.TEST_APP_DATABASE_URL ?? `postgres://hms_app:${appPassword}@127.0.0.1:${port}/hms_test?sslmode=disable`,
   migrationsDir: path.join(ROOT, 'db', 'migrations'),
   schemaFile: path.join(ROOT, 'db', 'schema.sql'),
   referenceSeedsDir: path.join(ROOT, 'db', 'seeds', 'reference'),

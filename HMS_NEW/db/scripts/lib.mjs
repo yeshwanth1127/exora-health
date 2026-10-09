@@ -52,10 +52,23 @@ export async function applySeeds(url, dirs) {
   }
 }
 
+/** Lets the application role log in locally (migrations create it NOLOGIN). */
+export async function enableLocalAppLogin() {
+  const admin = new pg.Client({ connectionString: config.adminUrl });
+  await admin.connect();
+  try {
+    const { rowCount } = await admin.query("SELECT 1 FROM pg_roles WHERE rolname = 'hms_app'");
+    if (rowCount) await admin.query(`ALTER ROLE hms_app WITH LOGIN PASSWORD '${config.appPassword.replaceAll("'", "''")}'`);
+  } finally {
+    await admin.end();
+  }
+}
+
 /** Fresh database with all migrations and the requested seeds. */
 export async function resetDatabase(url, { devSeeds = false, stdio = 'inherit' } = {}) {
   await recreateDatabase(url);
   // dbmate errors when the folder has no migrations (true until Phase 1).
   if (readdirSync(config.migrationsDir).some((f) => f.endsWith('.sql'))) dbmate(url, ['up'], { stdio });
   await applySeeds(url, devSeeds ? [config.referenceSeedsDir, config.devSeedsDir] : [config.referenceSeedsDir]);
+  await enableLocalAppLogin();
 }

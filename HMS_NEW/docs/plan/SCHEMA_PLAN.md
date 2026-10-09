@@ -1,6 +1,6 @@
 # HMS_NEW — Schema & Backend Build Plan
 
-Implements the ERD in [`../design/erd-v2/`](../design/erd-v2/README.md). Status: **Phase 0 done** (workspace, local PostgreSQL 18, migration tooling, test harness). Next: Phase 1.
+Implements the ERD in [`../design/erd-v2/`](../design/erd-v2/README.md). Status: **Phase 1 done** — migrations 0001–0004 (bootstrap + M01 platform), reference and dev seeds, 43 DB tests green. Next: Phase 2 (M02 patient, M03 catalogue and pricing).
 
 ## 1. Decisions (locked)
 | # | Decision | Choice |

@@ -2,7 +2,7 @@
 
 New hospital management system: TypeScript (Node 22) modular backend on PostgreSQL 18. Separate from `hospital-backend/` (left untouched).
 
-**Status:** Phase 0 (workspace + database tooling) done. Next: Phase 1 migrations. Plan: [docs/plan/SCHEMA_PLAN.md](docs/plan/SCHEMA_PLAN.md).
+**Status:** Phase 1 done — platform foundation (tenancy, locations, staff, RBAC, numbering, audit, outbox) with 43 DB tests. Next: Phase 2 (patients, catalogue, pricing). Plan: [docs/plan/SCHEMA_PLAN.md](docs/plan/SCHEMA_PLAN.md).
 
 ## Quick start
 ```bash
