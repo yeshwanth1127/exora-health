@@ -1,16 +1,18 @@
 // M01 platform: tenant isolation, cross-tenant safety, write ownership, optimistic locking,
 // numbering under concurrency, immutability and the tree / access rules.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { PG, adminPool, appPool, asTenant, createTenant, type TenantFixture } from './db.ts';
+import { PG, adminPool, appPool, asTenant, createBedCategory, createPatient, createTenant, type TenantFixture } from './db.ts';
 
 const admin = adminPool();
 const app = appPool(25);
 let a: TenantFixture;
 let b: TenantFixture;
+let bedCategoryA: string;
 
 beforeAll(async () => {
   a = await createTenant(admin, 'tenant-a');
   b = await createTenant(admin, 'tenant-b');
+  bedCategoryA = await createBedCategory(admin, a.tenantId);
 });
 afterAll(async () => {
   await app.end();
@@ -211,8 +213,8 @@ describe('location tree', () => {
   const insertLocation = (c: { query: typeof admin.query }, kind: string, code: string, parent: string | null, extra: { ward_type?: string } = {}) =>
     c.query<{ id: string }>(
       `INSERT INTO platform.location (tenant_id, facility_id, parent_location_id, kind, code, name, ward_type, bed_category_id)
-       VALUES ($1, $2, $3, $4, $5, $5, $6, CASE WHEN $4 = 'bed' THEN uuidv7() END) RETURNING id`,
-      [a.tenantId, a.facilityId, parent, kind, code, extra.ward_type ?? null],
+       VALUES ($1, $2, $3, $4, $5, $5, $6, CASE WHEN $4 = 'bed' THEN $7::uuid END) RETURNING id`,
+      [a.tenantId, a.facilityId, parent, kind, code, extra.ward_type ?? null, bedCategoryA],
     );
 
   it('accepts a bed under a ward (via a room) and rejects a bed with no ward above it', async () => {
@@ -333,11 +335,12 @@ describe('accounts and access', () => {
 
   it('break-glass access is limited to 24 hours and needs a real reason', async () => {
     const staffId = await insertStaff(a, `BG-${Date.now()}`);
+    const patientId = await createPatient(admin, a.tenantId);
     const insert = (reason: string, hours: number) =>
       admin.query(
         `INSERT INTO platform.emergency_access_grant (tenant_id, staff_id, patient_id, reason, expires_at)
-         VALUES ($1, $2, uuidv7(), $3, now() + make_interval(hours => $4))`,
-        [a.tenantId, staffId, reason, hours],
+         VALUES ($1, $2, $3, $4, now() + make_interval(hours => $5))`,
+        [a.tenantId, staffId, patientId, reason, hours],
       );
     await expect(insert('Unconscious patient in ER', 4)).resolves.toBeDefined();
     await expect(insert('Unconscious patient in ER', 48)).rejects.toMatchObject({ code: PG.checkViolation });

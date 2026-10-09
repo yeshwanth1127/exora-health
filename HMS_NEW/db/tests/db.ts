@@ -67,6 +67,25 @@ export async function createTenant(admin: pg.Pool, label = 'fixture'): Promise<T
   return { tenantId: t!.id, organizationId: o!.id, facilityId: f!.id };
 }
 
+/** Registers a patient directly (as superuser) and returns its id. */
+export async function createPatient(admin: pg.Pool, tenantId: string, givenName = 'Test'): Promise<string> {
+  const { rows: [p] } = await admin.query<{ id: string }>(
+    `INSERT INTO patient.patient (tenant_id, mrn, given_name, sex, registration_source)
+     VALUES ($1, 'T-' || uuidv7(), $2, 'unknown', 'front_desk') RETURNING id`,
+    [tenantId, givenName],
+  );
+  return p!.id;
+}
+
+/** Creates a bed category for the tenant and returns its id. */
+export async function createBedCategory(admin: pg.Pool, tenantId: string, code = 'GEN', rank = 1): Promise<string> {
+  const { rows: [c] } = await admin.query<{ id: string }>(
+    `INSERT INTO catalog.bed_category (tenant_id, code, name, rank) VALUES ($1, $2, $2, $3) RETURNING id`,
+    [tenantId, code, rank],
+  );
+  return c!.id;
+}
+
 /** Postgres SQLSTATE codes used in assertions. */
 export const PG = {
   insufficientPrivilege: '42501', // also raised for RLS WITH CHECK violations and missing app.tenant_id
@@ -74,4 +93,5 @@ export const PG = {
   uniqueViolation: '23505',
   checkViolation: '23514',
   exclusionViolation: '23P01',
+  objectNotInPrerequisiteState: '55000', // raised by lifecycle guards (e.g. editing an active price list)
 } as const;

@@ -40,7 +40,7 @@ erDiagram
 ## Terminology (global, read-only to tenants)
 | Table | Key columns | Notes |
 |---|---|---|
-| **terminology_concept** | system (`snomed_ct`,`icd10_who`,`loinc`,`ucum`,`dicom_modality`), code, display, version, is_active, parent_codes text[] | UQ (system, code, version). SNOMED CT India edition (NRCeS), **WHO** ICD-10 (not ICD-10-CM) |
+| **terminology_concept** | system (`snomed_ct`,`icd10_who`,`loinc`,`ucum`,`dicom_modality`), code, display, system_version, is_active, parent_codes text[] | UQ (system, code, system_version). SNOMED CT India edition (NRCeS), **WHO** ICD-10 (not ICD-10-CM) |
 | **concept_map** | source_concept_id, target_concept_id, map_priority, map_rule | SNOMED → ICD-10 for claims |
 
 ## Service catalogue

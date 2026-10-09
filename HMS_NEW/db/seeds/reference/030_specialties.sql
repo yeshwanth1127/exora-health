@@ -1,0 +1,27 @@
+-- Medical specialties (global). Idempotent.
+INSERT INTO catalog.specialty (code, name) VALUES
+  ('general_medicine', 'General Medicine'),
+  ('general_surgery', 'General Surgery'),
+  ('paediatrics', 'Paediatrics'),
+  ('obstetrics_gynaecology', 'Obstetrics & Gynaecology'),
+  ('orthopaedics', 'Orthopaedics'),
+  ('cardiology', 'Cardiology'),
+  ('neurology', 'Neurology'),
+  ('nephrology', 'Nephrology'),
+  ('urology', 'Urology'),
+  ('gastroenterology', 'Gastroenterology'),
+  ('pulmonology', 'Pulmonology'),
+  ('endocrinology', 'Endocrinology'),
+  ('oncology', 'Oncology'),
+  ('dermatology', 'Dermatology'),
+  ('ophthalmology', 'Ophthalmology'),
+  ('ent', 'ENT (Otorhinolaryngology)'),
+  ('psychiatry', 'Psychiatry'),
+  ('anaesthesiology', 'Anaesthesiology'),
+  ('radiology', 'Radiology'),
+  ('pathology', 'Pathology'),
+  ('emergency_medicine', 'Emergency Medicine'),
+  ('critical_care', 'Critical Care'),
+  ('dentistry', 'Dentistry'),
+  ('physiotherapy', 'Physiotherapy')
+ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name;
