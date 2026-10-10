@@ -218,6 +218,45 @@ describe('chart privacy', () => {
   });
 });
 
+describe('lifecycle and authorship rules', () => {
+  it('a nurse self-joins once and a repeat is harmless (G35)', async () => {
+    const { encounterId } = await checkedInVisit('10:30', 'Joining');
+    const join = () => call('POST', `/v1/encounters/${encounterId}/participants`, { as: 'nurse', body: { staffId: staffIds.nurse, role: 'nurse' } });
+    expect((await join()).status).toBe(201);
+    expect((await join()).status).toBe(201);
+    const { rows } = await admin.query(`SELECT count(*)::int AS n FROM clinical.encounter_participant WHERE encounter_id = $1 AND staff_id = $2 AND period_end IS NULL`, [encounterId, staffIds.nurse]);
+    expect(rows[0].n).toBe(1);
+    expect((await call('GET', `/v1/encounters/${encounterId}`, { as: 'nurse' })).status).toBe(200);
+  });
+
+  it("only a note's author can mark it entered in error (G40)", async () => {
+    const { encounterId } = await checkedInVisit('10:45', 'Authored');
+    const note = await call('POST', `/v1/encounters/${encounterId}/notes`, { as: 'doctor', idem: true, body: { noteType: 'progress', narrative: 'Seen' } });
+    await call('POST', `/v1/encounters/${encounterId}/vitals`, { as: 'nurse', body: { values: [{ code: 'PULSE', value: 70 }] } }); // nurse is now on the care team
+    expect((await call('POST', `/v1/notes/${note.body.noteId}/entered-in-error`, { as: 'nurse', body: { reason: 'Wrong patient' } })).status).toBe(403);
+    expect((await call('POST', `/v1/notes/${note.body.noteId}/entered-in-error`, { as: 'doctor', body: { reason: 'Wrong patient' } })).body).toMatchObject({ status: 'entered_in_error' });
+  });
+
+  it('a booked encounter is cancelled through its appointment, not directly (G38)', async () => {
+    const { encounterId } = await checkedInVisit('11:00', 'Booked');
+    expect(await call('POST', `/v1/encounters/${encounterId}/cancel`, { as: 'doctor', body: { reason: 'Left' } })).toMatchObject({
+      status: 422,
+      body: { error: { details: { reason: 'cancel_appointment' } } },
+    });
+  });
+
+  it('a queue token with an open consultation cannot be completed from the queue (G15)', async () => {
+    const queueKey = { staffId: staffIds.doctor, facilityId: t.facilityId, date: monday };
+    const called = await call('POST', '/v1/queue/call-next', { as: 'doctor', now: ist('11:10'), body: queueKey });
+    expect(called.status).toBe(200);
+    expect((await call('POST', `/v1/queue-tokens/${called.body.tokenId}/start`, { as: 'doctor', now: ist('11:11') })).status).toBe(200);
+    expect(await call('POST', `/v1/queue-tokens/${called.body.tokenId}/complete`, { as: 'doctor', now: ist('11:12') })).toMatchObject({
+      status: 422,
+      body: { error: { details: { reason: 'encounter_open' } } },
+    });
+  });
+});
+
 describe('front-end support', () => {
   it('answers CORS preflight for the allowed origin only', async () => {
     const preflight = (origin: string) =>

@@ -20,7 +20,7 @@ let facility2: string;
 let doctor: string;
 let monday: string;
 const run = randomUUID().slice(0, 8); // identities are global, so make this run's subjects unique
-const tokens: Record<'admin' | 'frontDesk' | 'nurse' | 'doctor' | 'bot', string> = {} as never;
+const tokens: Record<'admin' | 'branchAdmin' | 'frontDesk' | 'nurse' | 'doctor' | 'bot', string> = {} as never;
 
 const ist = (date: string, time: string) => `${date}T${time}:00+05:30`;
 
@@ -53,6 +53,7 @@ beforeAll(async () => {
     one(`INSERT INTO platform.staff (tenant_id, employee_no, given_name, display_name, staff_type, is_system_account) VALUES ($1, $2, $3, $3, $4, $5) RETURNING id`, [t.tenantId, no, name, type, system]);
   const people = {
     admin: await staff('A1', 'Admin', 'admin'),
+    branchAdmin: await staff('A2', 'Branch 1 Admin', 'admin'),
     frontDesk: await staff('F1', 'Front Desk', 'admin'),
     nurse: await staff('N1', 'Nurse', 'nurse'),
     doctor: await staff('D1', 'Dr API', 'doctor'),
@@ -61,6 +62,7 @@ beforeAll(async () => {
   doctor = people.doctor;
   const grants: Array<[keyof typeof people, string, string | null]> = [
     ['admin', 'tenant_admin', null],
+    ['branchAdmin', 'tenant_admin', t.facilityId], // administers Branch 1 only
     ['frontDesk', 'front_desk', t.facilityId], // Branch 1 only
     ['nurse', 'nurse', t.facilityId],
     ['doctor', 'doctor', null],
@@ -156,6 +158,52 @@ describe('permissions', () => {
     expect((await call('GET', `/v1/appointments?from=${monday}&to=${monday}`, { token: tokens.frontDesk })).status).toBe(400);
     expect((await call('GET', `/v1/appointments?from=${monday}&to=${monday}&facilityId=${t.facilityId}`, { token: tokens.frontDesk })).status).toBe(200);
     expect((await call('GET', `/v1/appointments?from=${monday}&to=${monday}&facilityId=${facility2}`, { token: tokens.frontDesk })).status).toBe(403);
+  });
+});
+
+describe('facility scope of schedule changes (G01)', () => {
+  // The doctor works Mondays at Branch 1 and Tuesdays at Branch 2; branchAdmin manages Branch 1 only.
+  const later = (days: number) => new Date(Date.parse(monday) + days * 86_400_000).toISOString().slice(0, 10);
+  const as = (token: string, body: object) => ({ token, body });
+
+  it('weekly sessions: only at a facility the caller manages, and ending one checks its facility', async () => {
+    const add = (facilityId: string) => call('POST', `/v1/practitioners/${doctor}/weekly-sessions`, as(tokens.branchAdmin, { facilityId, weekday: 3, start: '09:00', end: '10:00', slotMinutes: 15, effectiveFrom: '2030-01-01' }));
+    expect((await add(t.facilityId)).status).toBe(201);
+    expect((await add(facility2)).status).toBe(403);
+    const { rows: [branch2Rule] } = await admin.query<{ id: string }>(`SELECT id FROM booking.schedule_rule WHERE facility_id = $1 LIMIT 1`, [facility2]);
+    expect((await call('POST', `/v1/weekly-sessions/${branch2Rule!.id}/end`, as(tokens.branchAdmin, { effectiveTo: '2031-01-01' }))).status).toBe(403);
+    expect((await call('POST', `/v1/weekly-sessions/${randomUUID()}/end`, as(tokens.branchAdmin, { effectiveTo: '2031-01-01' }))).status).toBe(404);
+  });
+
+  it('leave and blocks reach every facility the doctor works at; extra hours only their own', async () => {
+    const exception = (token: string, body: object) => call('POST', `/v1/practitioners/${doctor}/exceptions`, as(token, { onDate: later(23), ...body }));
+    expect((await exception(tokens.branchAdmin, { kind: 'closed', reason: 'Leave' })).status).toBe(403);
+    expect((await exception(tokens.branchAdmin, { kind: 'block', start: '10:00', end: '11:00' })).status).toBe(403);
+    expect((await exception(tokens.branchAdmin, { kind: 'extra_hours', facilityId: t.facilityId, start: '14:00', end: '15:00', slotMinutes: 15 })).status).toBe(201);
+    expect((await exception(tokens.branchAdmin, { kind: 'extra_hours', facilityId: facility2, start: '14:00', end: '15:00', slotMinutes: 15 })).status).toBe(403);
+  });
+
+  it("a day plan must cover every facility it can take sessions from", async () => {
+    const plan = (date: string, blocks: object[]) => call('PUT', `/v1/practitioners/${doctor}/day-plans/${date}`, as(tokens.branchAdmin, { replacesWeekly: true, blocks }));
+    const branch1Block = { facilityId: t.facilityId, start: '09:00', end: '10:00', slotMinutes: 15 };
+    expect((await plan(later(22), [branch1Block])).status).toBe(403); // a Tuesday: replaces the Branch 2 session
+    expect((await plan(later(22), [])).status).toBe(403);
+    expect((await plan(later(21), [branch1Block])).status).toBe(200); // a Monday: Branch 1 only
+    expect((await call('PUT', `/v1/practitioners/${doctor}/day-plans/${later(22)}`, as(tokens.admin, { replacesWeekly: true, blocks: [] }))).status).toBe(200);
+  });
+
+  it('creating a calendar needs scope at one of the doctor\'s facilities', async () => {
+    expect((await call('POST', `/v1/practitioners/${doctor}/calendar`, { token: tokens.branchAdmin })).status).toBe(200);
+  });
+
+  it('facility-scoped readers see only their facilities\' sessions and slots', async () => {
+    const sessions = await call('GET', `/v1/practitioners/${doctor}/sessions?from=${monday}&to=${later(1)}`, { token: tokens.frontDesk });
+    expect(sessions.status).toBe(200);
+    expect(new Set(sessions.body.items.map((s: { facilityId: string }) => s.facilityId))).toEqual(new Set([t.facilityId]));
+    const all = await call('GET', `/v1/practitioners/${doctor}/sessions?from=${monday}&to=${later(1)}`);
+    expect(new Set(all.body.items.map((s: { facilityId: string }) => s.facilityId))).toEqual(new Set([t.facilityId, facility2]));
+    const slots = await call('GET', `/v1/practitioners/${doctor}/slots?from=${later(1)}&to=${later(1)}`, { token: tokens.frontDesk, now: ist(monday, '07:00') });
+    expect(slots.body.items).toEqual([]);
   });
 });
 

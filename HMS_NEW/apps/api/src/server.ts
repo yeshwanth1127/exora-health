@@ -40,7 +40,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function buildServer(deps: ServerDeps): FastifyInstance {
   const app = Fastify({
-    logger: deps.logger ?? false,
+    // Query strings carry patient search terms (names, phones), so request logs keep the path only.
+    logger: deps.logger ? { serializers: { req: (req) => ({ method: req.method, url: req.url.split('?')[0], reqId: req.id, remoteAddress: req.ip }) } } : false,
     // Use the caller's X-Request-Id when it's sane, else a fresh UUID; it is recorded on audit/outbox rows.
     genReqId: (req) => {
       const header = req.headers['x-request-id'];

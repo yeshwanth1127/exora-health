@@ -1,17 +1,21 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { DB, Kysely } from '@hms/db';
-import { authorize } from '../../auth/principal.ts';
+import { authorize, authorizeAny, authorizeEvery, grantedFacilities, type Principal } from '../../auth/principal.ts';
 import {
   addFacilityHoliday,
   addScheduleException,
   addWeeklySession,
   createPractitionerCalendar,
+  dayPlanFacilities,
   endWeeklySession,
   listSessions,
   listSlots,
+  practitionerFacilities,
   saveDayPlan,
+  scheduleRuleFacility,
 } from '../../modules/booking/index.ts';
+import { DomainError } from '@hms/platform';
 import { callerOf, hhmm, isoDate, parse, principalOf, uuid } from '../support.ts';
 
 const StaffParams = z.object({ staffId: uuid });
@@ -61,10 +65,17 @@ const DayPlanBody = z.object({
     .max(20),
 });
 
+/** Keeps rows from facilities the principal may read (a facility-scoped grant sees only its facilities). */
+function visible<T extends { facilityId: string }>(principal: Principal, permission: string, rows: T[]): T[] {
+  authorize(principal, permission);
+  const granted = grantedFacilities(principal, permission);
+  return granted === null ? rows : rows.filter((r) => granted.has(r.facilityId));
+}
+
 export function registerCalendarRoutes(app: FastifyInstance, db: Kysely<DB>) {
   app.post('/v1/practitioners/:staffId/calendar', async (request, reply) => {
     const { staffId } = parse(StaffParams, request.params);
-    authorize(principalOf(request), 'schedules.manage');
+    authorizeAny(principalOf(request), 'schedules.manage', await practitionerFacilities(db, callerOf(request), staffId));
     const result = await createPractitionerCalendar(db, callerOf(request), { staffId });
     return reply.status(result.created ? 201 : 200).send(result);
   });
@@ -79,14 +90,18 @@ export function registerCalendarRoutes(app: FastifyInstance, db: Kysely<DB>) {
   app.post('/v1/weekly-sessions/:scheduleRuleId/end', async (request) => {
     const { scheduleRuleId } = parse(z.object({ scheduleRuleId: uuid }), request.params);
     const body = parse(z.object({ effectiveTo: isoDate }), request.body);
-    authorize(principalOf(request), 'schedules.manage');
+    const facilityId = await scheduleRuleFacility(db, callerOf(request), scheduleRuleId);
+    if (!facilityId) throw new DomainError('not_found', 'schedule rule not found');
+    authorize(principalOf(request), 'schedules.manage', facilityId);
     return endWeeklySession(db, callerOf(request), { scheduleRuleId, ...body });
   });
 
   app.post('/v1/practitioners/:staffId/exceptions', async (request, reply) => {
     const { staffId } = parse(StaffParams, request.params);
     const body = parse(ExceptionBody, request.body);
-    authorize(principalOf(request), 'schedules.manage', body.facilityId);
+    // Extra hours belong to one facility; leave and blocks reach every facility the doctor works at that day.
+    if (body.facilityId) authorize(principalOf(request), 'schedules.manage', body.facilityId);
+    else authorizeEvery(principalOf(request), 'schedules.manage', await practitionerFacilities(db, callerOf(request), staffId, body.onDate));
     return reply.status(201).send(await addScheduleException(db, callerOf(request), { staffId, ...body }));
   });
 
@@ -101,16 +116,16 @@ export function registerCalendarRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const { staffId, planOn } = parse(z.object({ staffId: uuid, planOn: isoDate }), request.params);
     const body = parse(DayPlanBody, request.body);
     const principal = principalOf(request);
-    if (body.blocks.length === 0) authorize(principal, 'schedules.manage');
-    for (const b of body.blocks) authorize(principal, 'schedules.manage', b.facilityId);
+    // A new revision replaces the whole day: cover the new blocks and every facility it can take sessions from.
+    const reach = await dayPlanFacilities(db, callerOf(request), staffId, planOn);
+    authorizeEvery(principal, 'schedules.manage', [...reach, ...body.blocks.map((b) => b.facilityId)]);
     return saveDayPlan(db, callerOf(request), { staffId, planOn, ...body });
   });
 
   app.get('/v1/practitioners/:staffId/sessions', async (request) => {
     const { staffId } = parse(StaffParams, request.params);
     const range = parse(Range, request.query);
-    authorize(principalOf(request), 'appointments.read');
-    return { items: await listSessions(db, callerOf(request), { staffId, ...range }) };
+    return { items: visible(principalOf(request), 'appointments.read', await listSessions(db, callerOf(request), { staffId, ...range })) };
   });
 
   app.get('/v1/practitioners/:staffId/slots', async (request) => {
@@ -122,7 +137,8 @@ export function registerCalendarRoutes(app: FastifyInstance, db: Kysely<DB>) {
       ),
       request.query,
     );
-    authorize(principalOf(request), 'appointments.read', q.facilityId);
+    const principal = principalOf(request);
+    authorize(principal, 'appointments.read', q.facilityId);
     const items = await listSlots(db, callerOf(request), {
       staffId,
       from: q.from,
@@ -130,6 +146,6 @@ export function registerCalendarRoutes(app: FastifyInstance, db: Kysely<DB>) {
       facilityId: q.facilityId,
       includeUnavailable: q.includeUnavailable === 'true',
     });
-    return { items };
+    return { items: visible(principal, 'appointments.read', items) };
   });
 }

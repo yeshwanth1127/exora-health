@@ -105,7 +105,7 @@ export function DesignGuide() {
                 {key === "schedules"
                   ? "Original timeline and local-draft editors restored; complete data and saves pending."
                   : key === "appointments"
-                    ? "Core visits connected; advanced search, staff notes and range edits pending."
+                    ? "Core visits connected; advanced search and range edits pending."
                     : key === "doctors"
                       ? "Directory and editor layout restored; profile writes pending."
                       : "See the original module and parity ledger for full detail."}

@@ -20,7 +20,7 @@ Status convention: **DEFERRED** means backend implementation has not started. A 
 
 | ID | Priority | Required work | Current frontend handling |
 | --- | --- | --- | --- |
-| G01 | P0 | Facility authorization of scheduling reads/writes. Verified 11 Oct: `POST /v1/weekly-sessions/:id/end`, empty-block `PUT .../day-plans/:planOn`, `POST .../calendar`, `GET .../sessions` and facility-less `POST .../exceptions` call `authorize` without a facility, so any one-clinic `schedules.manage` grant passes (`principal.ts:74`) | All seven calendar writes stay unwired until fixed (user decision: frontend waits). Slots use explicit facility. |
+| G01 | P0 | **DONE (Phase 1)** Facility authorization of scheduling reads/writes: every calendar route resolves the facilities it affects (rule facility, doctor's affiliations for leave/blocks, day-plan reach) and requires the permission for each; facility-scoped readers see only their facilities' sessions/slots. Tests in `api.test.ts` | Schedule writes can now be wired (Phase 2). |
 | G02 | P0/P1 | Session context metadata; proposed GET `/v1/session-context`, GET `/v1/me/tenants` | Memory-only identity and permissions; single-tenant context works. Multi-tenant fallback lists authorized IDs until names API exists. |
 | G03 | P0 | Extend GET `/v1/appointments` with search, paging, visit-mode and channel filters | Date-scoped list capped at 500, loaded-row search explicitly labelled; no simulated server paging. |
 | G04 | P1 | Proposed GET `/v1/calendar-board?facilityId&date&staffId` | Original timeline restored with scoped free slots and loaded bookings; complete board/holds/closures/history remain missing. |
@@ -28,13 +28,13 @@ Status convention: **DEFERRED** means backend implementation has not started. A 
 | G06 | P1 | Calendar reads/reversals; proposed GET `/v1/practitioners/:id/exceptions`, POST `/v1/calendar-exceptions/:id/revoke`, holiday read/revoke | Original block/open drafts visible; authoritative reads/scope/reversal remain unavailable. |
 | G07 | P1 | Proposed GET/PUT `/v1/practitioners/:id/weekly-plan`, GET day plan; harden existing PUT day plan | Original weekly editor mounted as a local draft, with day groups and split shifts. Published template/read, preview and Save remain blocked. |
 | G08 | P1 | Proposed POST `/v1/staff-bookings/check`, POST `/v1/staff-bookings`, POST appointment `/move-range` | Strict-slot holds/book/move connected; original exact-minute form is draft only, with Save disabled. |
-| G09 | P1 | Proposed GET/PATCH `/v1/appointments/:id/staff-notes` | Original staff-note field restored; saved state unknown and Save disabled. Clinical notes remain separate. |
+| G09 | — | **DROPPED** (user decision 11 Oct): no ERD table; appointment reason and clinical notes cover the need | Staff-note field removed from the UI inventory. |
 | G10 | P1 conditional | Optional appointment archive/entered-in-error command and filter | Cancel with retained history; no Delete or fabricated archive. |
 | G11 | P1 | Proposed `/v1/waitlist`, entry offers/withdrawal and accept/decline | Waitlist controls deferred. |
 | G12 | P1 | Proposed GET `/v1/operations/summary?facilityId&date` | No fabricated dashboard totals; live scoped worklists only. |
 | G13 | P0 read/P1 write | Proposed directory endpoints for departments, services, rooms and booking quote | Facilities/practitioners connected; service/room/observation catalog and pre-book quote missing. Unknown booked fee stays unknown; seeded pilot vital codes only. |
 | G14 | P1 | Proposed practitioner profile, affiliation, registration and price-list administration. User decision 11 Oct: consultation fee is read-only in the staff UI and changed by an administrator in the price list (effective-dated; booked fee snapshots never rewritten); add a fee read per practitioner/service/mode | Fee shown read-only (unknown until a price read exists). Profile changes are local drafts. |
-| G15 | P0 | Queue/encounter completion and clinical role alignment | No queue-complete shortcut; doctor finishes clinical encounter. Checked-in cancellation disabled in UI. Direct API consistency remains unresolved. |
+| G15 | P0 | **PARTIAL (Phase 1)** Queue complete is refused while the consultation is open (`encounter_open`); finishing the encounter completes the token. Remaining: start sync between token and encounter, nurse/admin completion authority | No queue-complete shortcut; doctor finishes clinical encounter. |
 | G16 | P1 | Proposed staff accounts, roles/grants and care-assignment administration | Workspace permissions read-only; account/grant editors deferred. |
 | G17 | P1 | Proposed GET/PUT module/config settings | Original navigation restored with Pending status pages; unsupported module/config writes remain unavailable. |
 | G18 | P1 | Proposed GET `/v1/audit-events`, bounded export, break-glass review | Audit/export/review controls deferred. |
@@ -54,12 +54,12 @@ Status convention: **DEFERRED** means backend implementation has not started. A 
 | G32 | P2 / separate scope | Inpatient/admission/bed operations | No admission or bed-allocation controls |
 | G33 | P2 / separate scope | Separate public website booking API | Old public book/talk entry points excluded from staff build |
 | G34 | P1 before real video pilot | Staff consent-document metadata and audited publication/retirement administration | Patient reads exact backend document; staff verbal-consent UI deferred. Sample seed consent is for local preview. |
-| G35 | P0 nursing workflow | Fix duplicate self-join in active clinical care-team enrollment | Reproduced 403 chart → 409 self-join → zero persisted nurse participants. Broken control removed; valid existing assignments may record vitals. Break-glass is offered instead for emergencies. |
+| G35 | P0 nursing workflow | **DONE (Phase 1)** Self-join is idempotent; repeat is harmless, one participant row | Self-join control can return. |
 | G36 | P1 | Admin-controlled overbooking, **per clinic** (user decisions 11 Oct): facility-scoped `config_setting`, default off, `appointments.overbook` permission, explicit overbook reservation state outside the EXCLUDE, reason + audit, same-facility overlaps only; default no-double-booking path unchanged. ERD m04 update first | Overbook control stays off until policy and permission are readable. |
 | G37 | P1 | Clinic-specific blocks (user decision 11 Oct): closed/block exceptions may carry a facility; keep all-clinic blocks; scope-aware authorization and reads | Block saves disabled; sheet must offer this-clinic vs all-clinics once available. |
-| G38 | P1 | `encounter.cancelled` has no consumer: cancelling an encounter leaves its appointment checked in and queue token waiting | Encounter cancel not exposed. |
+| G38 | P1 | **DONE (Phase 1)** An encounter linked to an appointment is cancelled through the appointment (which cascades); direct cancel returns 422 `cancel_appointment`. Unscheduled encounter cancel now checks care access | Encounter cancel not exposed. |
 | G39 | P2 | Template schemas stored as jsonb lose field order; add `propertyOrder` | Frontend honours `propertyOrder` when present; SOAP shows jsonb order today. |
-| G40 | P1 | Decided 11 Oct: only the author may mark a note entered in error. `voidNote` currently lets any care-team member with clinical.write do it (`notes.ts:163`); restrict server-side | Entered-in-error offered to the author only. |
+| G40 | P1 | **DONE (Phase 1)** Only the author may mark a note entered in error (403 otherwise) | Entered-in-error offered to the author only. |
 
 ## Next backend tranche
 
@@ -77,6 +77,7 @@ Start with G35 nursing self-join (reproduced), G01 facility scope, G03 server wo
 
 ## Change log
 
+- 2026-10-11 (Phase 1): G01, G35, G38, G40 done; G15 partial; G09 dropped; request logs no longer record query strings. Plan: `docs/prd/backend-integration-phases.md`.
 - 2026-10-11 (later): user decisions recorded (overbooking admin toggle, clinic-specific blocks, read-only fee, schedule writes wait for G01). Wired every remaining safe existing route; added G36–G40. No backend code changed.
 
 - 2026-10-10: 27 source-audited gaps recorded in the master plan.

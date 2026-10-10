@@ -1,7 +1,7 @@
 // Encounter lifecycle: opened from a booking check-in (by the worker) or directly; started by the
 // clinician; finished with a disposition (which completes the appointment) or cancelled.
 import { sql, type DB, type Kysely, type Transaction } from '@hms/db';
-import { conflict, invalid, notFound, preconditionFailed, runCommand, writeOutbox, type EventInput } from '@hms/platform';
+import { invalid, notFound, preconditionFailed, runCommand, writeOutbox, type EventInput } from '@hms/platform';
 import { clock, type Caller } from '../../caller.ts';
 import { ensureEncounterAccess, lockEncounter } from './access.ts';
 
@@ -178,6 +178,10 @@ export async function cancelEncounter(db: Kysely<DB>, caller: Caller, input: { e
   if (!input.reason.trim()) throw invalid('a reason is required');
   return runCommand(db, { ...caller, module: 'clinical', name: 'clinical.cancel_encounter', request: input }, async (ctx) => {
     const enc = await lockEncounter(ctx.tx, input.encounterId);
+    // A booked visit is cancelled through its appointment, which then cancels the encounter, so the
+    // appointment and queue token never outlive it (G38).
+    if (enc.appointment_id) throw preconditionFailed('this encounter belongs to an appointment; cancel the appointment or mark it no-show instead', { reason: 'cancel_appointment', appointmentId: enc.appointment_id });
+    await ensureEncounterAccess(ctx, enc, clock(caller));
     if (enc.status !== 'arrived' && enc.status !== 'planned') throw preconditionFailed(`a ${enc.status} encounter cannot be cancelled`);
     await ctx.tx.updateTable('clinical.encounter').set({ status: 'cancelled', cancel_reason: input.reason }).where('id', '=', enc.id).execute();
     ctx.audit({ action: 'status_change', subjectType: 'clinical.encounter', subjectId: enc.id, patientId: enc.patient_id, reason: input.reason });
@@ -203,13 +207,14 @@ export async function addParticipant(db: Kysely<DB>, caller: Caller, input: { en
     const enc = await lockEncounter(ctx.tx, input.encounterId);
     await ensureEncounterAccess(ctx, enc, now);
     if (enc.status !== 'arrived' && enc.status !== 'in_progress') throw preconditionFailed('participants can only join an active encounter');
-    try {
-      await ctx.tx.insertInto('clinical.encounter_participant').values({ tenant_id: ctx.tenantId, encounter_id: enc.id, staff_id: input.staffId, role: input.role }).execute();
-    } catch (err) {
-      if ((err as { code?: string }).code === '23505') throw conflict('already a participant in that role');
-      throw err;
-    }
-    ctx.audit({ action: 'create', subjectType: 'clinical.encounter_participant', subjectId: enc.id, patientId: enc.patient_id });
+    // Idempotent: self-joining was already enrolled by ensureEncounterAccess, and a repeat is harmless (G35).
+    const added = await ctx.tx
+      .insertInto('clinical.encounter_participant')
+      .values({ tenant_id: ctx.tenantId, encounter_id: enc.id, staff_id: input.staffId, role: input.role })
+      .onConflict((oc) => oc.doNothing())
+      .returning('id')
+      .executeTakeFirst();
+    if (added) ctx.audit({ action: 'create', subjectType: 'clinical.encounter_participant', subjectId: enc.id, patientId: enc.patient_id });
     return { encounterId: enc.id, staffId: input.staffId, role: input.role };
   });
 }

@@ -13,12 +13,12 @@
     "appointments",
     "Appointments",
     "NurseDesk.tsx",
-    "G03; G09; G10; G19",
+    "G03; G10; G19",
     [
       "IST and all-date browsing, server search and paging",
       "Doctor/clinic/status filters and patient detail sheet",
       "Reasoned cancellation/no-show and patient-contact readback",
-      "Administrative staff notes, exact-time moves and archive/delete policy"
+      "Exact-time moves and archive/delete policy"
     ]
   ],
   [
@@ -46,7 +46,7 @@
       "Review affected appointments, other published hours and resolve-before-save",
       "Range appointment/open/block actions with exact start/end",
       "Virtual/in-person choice, clinic choice and explicit overbooking",
-      "Saved staff notes, exact-time move and unblock/reversal"
+      "Exact-time move and unblock/reversal"
     ]
   ],
   [

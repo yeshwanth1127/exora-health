@@ -1,7 +1,7 @@
 // Doctor calendars: the practitioner's bookable calendar, weekly sessions, leave/blocks/extra hours,
 // facility holidays and one-day plans.
 import { sql, type DB, type Kysely, type Transaction } from '@hms/db';
-import { conflict, invalid, notFound, pgCode, preconditionFailed, runCommand } from '@hms/platform';
+import { conflict, invalid, notFound, pgCode, preconditionFailed, runCommand, runQuery } from '@hms/platform';
 import type { Caller } from '../../caller.ts';
 
 const TIME = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
@@ -16,6 +16,39 @@ export async function practitionerResourceId(tx: Transaction<DB>, staffId: strin
     .executeTakeFirst();
   if (!row) throw notFound('practitioner calendar', { staffId });
   return row.id;
+}
+
+// Facility reach of calendar changes, resolved before authorizing (G01). The practitioner's calendar
+// spans every facility they work at, so a change is authorized against each facility it can affect.
+
+/** Facilities the practitioner is affiliated with on a date (all affiliations when no date). */
+export async function practitionerFacilities(db: Kysely<DB>, caller: Caller, staffId: string, onDate?: string): Promise<string[]> {
+  return runQuery(db, caller.tenantId, async (tx) => {
+    let q = tx.selectFrom('catalog.practitioner_affiliation').select('facility_id').distinct().where('staff_id', '=', staffId);
+    if (onDate) q = q.where('valid_from', '<=', onDate).where((eb) => eb.or([eb('valid_to', 'is', null), eb('valid_to', '>', onDate)]));
+    return (await q.execute()).map((r) => r.facility_id);
+  });
+}
+
+export async function scheduleRuleFacility(db: Kysely<DB>, caller: Caller, scheduleRuleId: string): Promise<string | undefined> {
+  return runQuery(db, caller.tenantId, async (tx) => (await tx.selectFrom('booking.schedule_rule').select('facility_id').where('id', '=', scheduleRuleId).executeTakeFirst())?.facility_id);
+}
+
+/** Facilities whose sessions a new day plan can change: that weekday's weekly rules and the current plan's blocks. */
+export async function dayPlanFacilities(db: Kysely<DB>, caller: Caller, staffId: string, planOn: string): Promise<string[]> {
+  return runQuery(db, caller.tenantId, async (tx) => {
+    const { rows } = await sql<{ facility_id: string }>`
+      SELECT r.facility_id FROM booking.schedule_rule r
+      JOIN booking.schedulable_resource sr ON sr.id = r.resource_id AND sr.staff_id = ${staffId}
+      WHERE r.weekday = extract(isodow FROM ${planOn}::date)
+        AND r.effective_from <= ${planOn}::date AND (r.effective_to IS NULL OR r.effective_to > ${planOn}::date)
+      UNION
+      SELECT b.facility_id FROM booking.day_plan_block b
+      JOIN (SELECT dp.id FROM booking.day_plan dp
+            JOIN booking.schedulable_resource sr ON sr.id = dp.resource_id AND sr.staff_id = ${staffId}
+            WHERE dp.plan_on = ${planOn}::date ORDER BY dp.revision DESC LIMIT 1) latest ON latest.id = b.day_plan_id`.execute(tx);
+    return rows.map((r) => r.facility_id);
+  });
 }
 
 /** Appointments still confirmed/checked-in for a resource that overlap a window — to warn the caller. */

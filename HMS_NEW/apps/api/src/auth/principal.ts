@@ -76,3 +76,31 @@ export function authorize(principal: Principal, permission: string, facilityId?:
   }
   if (!ok) throw forbidden(`missing permission ${permission}${facilityId ? ' for this facility' : ''}`, { permission, facilityId: facilityId ?? null });
 }
+
+/** Facilities where the principal holds `permission`: null = every facility, empty = none. */
+export function grantedFacilities(principal: Principal, permission: string): Set<string> | null {
+  const scopes = principal.grants.get(permission);
+  if (scopes?.has(null)) return null;
+  return new Set([...(scopes ?? [])].filter((f): f is string => f !== null));
+}
+
+/**
+ * For a change that reaches several facilities: the permission must cover every one of them.
+ * Reaching no known facility needs an every-facility grant (never "any grant suffices").
+ */
+export function authorizeEvery(principal: Principal, permission: string, facilityIds: Iterable<string>): void {
+  const granted = grantedFacilities(principal, permission);
+  if (granted === null) return;
+  const ids = [...new Set(facilityIds)];
+  const missing = ids.filter((f) => !granted.has(f));
+  if (!ids.length || missing.length) {
+    throw forbidden(`missing permission ${permission} for ${ids.length ? 'every affected facility' : 'all facilities'}`, { permission, facilityIds: missing });
+  }
+}
+
+/** The permission must cover at least one of the facilities. */
+export function authorizeAny(principal: Principal, permission: string, facilityIds: Iterable<string>): void {
+  const granted = grantedFacilities(principal, permission);
+  if (granted === null) return;
+  if (![...facilityIds].some((f) => granted.has(f))) throw forbidden(`missing permission ${permission} for this practitioner's facilities`, { permission });
+}
