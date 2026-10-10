@@ -1,0 +1,37 @@
+import {
+  InMemoryWebStorage,
+  UserManager,
+  WebStorageStateStore,
+} from "oidc-client-ts";
+const authority = import.meta.env.VITE_OIDC_AUTHORITY,
+  clientId = import.meta.env.VITE_OIDC_CLIENT_ID;
+export const devLoginEnabled =
+  import.meta.env.DEV && import.meta.env.VITE_HMS_DEV_LOGIN === "true";
+export const oidc =
+  authority && clientId
+    ? new UserManager({
+        authority,
+        client_id: clientId,
+        redirect_uri: `${location.origin}/staff/callback`,
+        response_type: "code",
+        scope: import.meta.env.VITE_OIDC_SCOPE || "openid profile",
+        userStore: new WebStorageStateStore({
+          store: new InMemoryWebStorage(),
+        }),
+        stateStore: new WebStorageStateStore({ store: sessionStorage }),
+        automaticSilentRenew: false,
+        loadUserInfo: false,
+        ...(import.meta.env.VITE_OIDC_AUDIENCE
+          ? {
+              extraQueryParams: {
+                audience: import.meta.env.VITE_OIDC_AUDIENCE,
+              },
+            }
+          : {}),
+      })
+    : null;
+let callback: ReturnType<UserManager["signinRedirectCallback"]> | undefined;
+export function finishLogin() {
+  if (!oidc) throw new Error("Single sign-on is not configured.");
+  return (callback ??= oidc.signinRedirectCallback());
+}

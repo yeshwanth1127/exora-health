@@ -1,0 +1,183 @@
+[
+  [
+    "overview",
+    "Overview",
+    "operations.tsx",
+    "G12",
+    [
+      "Five clinic metrics and status/channel breakdowns",
+      "Daily booking charts and recent appointments"
+    ]
+  ],
+  [
+    "appointments",
+    "Appointments",
+    "NurseDesk.tsx",
+    "G03; G09; G10; G19",
+    [
+      "IST and all-date browsing, server search and paging",
+      "Doctor/clinic/status filters and patient detail sheet",
+      "Reasoned cancellation/no-show and patient-contact readback",
+      "Administrative staff notes, exact-time moves and archive/delete policy"
+    ]
+  ],
+  [
+    "doctors",
+    "Doctors",
+    "clinic.tsx",
+    "G13; G14",
+    [
+      "Specialties and clinic affiliations in the directory",
+      "Consultation fee, active-in-booking and virtual-consultation editor"
+    ]
+  ],
+  [
+    "schedules",
+    "Schedules",
+    "schedule-timeline.tsx",
+    "G04; G05; G06; G07; G08; G26",
+    [
+      "Doctor-day rows, date navigation and clinic/department/doctor filters",
+      "Compact/meeting/extra-space scales, sticky headers, current-time marker and overlap lanes",
+      "Click details, drag time selection and keyboard/pointer cancellation",
+      "Available/booked/blocked/held periods, reasons and hold expiry",
+      "Weekly doctor picker and repeat-day groups with split shifts",
+      "Effective dates, slot length and split-shift example",
+      "Review affected appointments, other published hours and resolve-before-save",
+      "Range appointment/open/block actions with exact start/end",
+      "Virtual/in-person choice, clinic choice and explicit overbooking",
+      "Saved staff notes, exact-time move and unblock/reversal"
+    ]
+  ],
+  [
+    "waitlist",
+    "Waitlist",
+    "BookingOperations.tsx",
+    "G11; G19",
+    [
+      "Waitlist requests and active filters",
+      "Check availability and offer a slot with notification readback"
+    ]
+  ],
+  [
+    "catalogue",
+    "Hospital catalogue",
+    "operations.tsx",
+    "G13; G14",
+    [
+      "Clinic locations and active status",
+      "Departments and doctor coverage",
+      "Address, directions and arrival instructions in channel editors"
+    ]
+  ],
+  [
+    "operations",
+    "Operations",
+    "operations.tsx",
+    "G12; G19",
+    [
+      "Notification outbox, temporary holds and API readiness",
+      "Event delivery history and refresh"
+    ]
+  ],
+  [
+    "whatsapp",
+    "WhatsApp",
+    "whatsapp.tsx",
+    "G20; G19",
+    [
+      "Overview and module readiness",
+      "Conversation assignment and staff replies",
+      "Doctor content, photos, guides and assets",
+      "Campaign budgets, audience preview and approval",
+      "Follow-up rules and manual triggers",
+      "Delivery history and clinic contact/details"
+    ]
+  ],
+  [
+    "voice",
+    "Voice",
+    "voice.tsx",
+    "G21",
+    [
+      "Call readiness and versioned configuration",
+      "Call history, filters, metrics and appointment handoff",
+      "Consented recordings with expiry and access audit",
+      "Original/English transcript review and search",
+      "Live voice demo and provider interaction"
+    ]
+  ],
+  [
+    "google_business",
+    "Google Business",
+    "growth/GrowthModule.tsx",
+    "G22",
+    [
+      "Branch booking links and capability/readiness status",
+      "Link change history",
+      "Patient journey and website activity"
+    ]
+  ],
+  [
+    "growth_analytics",
+    "Growth analytics",
+    "growth/GrowthModule.tsx",
+    "G22",
+    [
+      "Acquisition/source filters and date range",
+      "Conversion and engagement charts",
+      "Journey, website activity and attribution limits"
+    ]
+  ],
+  [
+    "settings",
+    "Workspace settings",
+    "settings.tsx",
+    "G16; G17",
+    [
+      "Staff accounts and role selection",
+      "Password/account flow (must adapt to OIDC)",
+      "Permission controls and optional module switches",
+      "Demo controls separate from daily operations"
+    ]
+  ],
+  [
+    "activity",
+    "Activity log",
+    "settings.tsx",
+    "G18",
+    [
+      "Filtered activity with paging",
+      "CSV export and permission/care-access review"
+    ]
+  ],
+  [
+    "design",
+    "Design and UX guide",
+    "settings.tsx",
+    "G17",
+    [
+      "Markdown design guide and product decisions"
+    ]
+  ],
+  [
+    "teleconsultations",
+    "Teleconsultations",
+    "feature-concepts.tsx",
+    "G34",
+    [
+      "Original upcoming/waiting/needs-link/all concept tabs",
+      "Call-experience and patient-detail concept sheets; adapt to actual telehealth contracts"
+    ]
+  ],
+  [
+    "loyalty",
+    "Loyalty program",
+    "feature-concepts.tsx",
+    "G23",
+    [
+      "Program, members and patient-view tabs",
+      "Sample membership editor and member details (original design concept)"
+    ]
+  ]
+]

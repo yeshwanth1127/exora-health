@@ -1,8 +1,12 @@
 # HMS_NEW — Frontend Developer Guide
 
+Current selected staff app: [`apps/staff-web`](../apps/staff-web/README.md). Core APIs are connected; see the [implementation checkpoint](plan/STAFF_FRONTEND_INTEGRATION_CHECKPOINT.md) and [missing backend ledger](plan/BACKEND_WORK_LEDGER.md). The original selected frontend is preserved.
+
 As of 2026-10-10. The HMS_NEW backend is ready for the admin dashboard covering five areas: front-desk booking, the queue, doctor consultations, patient records and Virtual OPD (video consultations). Everything lives in this repo under `HMS_NEW/` on `main`. The backend has 117 passing tests.
 
 ## Start here
+
+For integrating the selected existing `hms-monochrome/staff-web`, use the [source-audited integration master plan](plan/STAFF_FRONTEND_INTEGRATION_MASTER_PLAN.md) and its [gap backlog](plan/staff-integration-audit/backend-gap-backlog.csv). The APIs below describe existing capability; they do not establish parity with that frontend. The plan identifies scheduling scope and conflict handling, queue/encounter consistency, nursing-note attestation, and new connected screens that need work before acceptance.
 
 There will be **two separate front-ends**. Know which one you are building:
 
