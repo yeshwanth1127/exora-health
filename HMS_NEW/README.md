@@ -31,7 +31,7 @@ Settings: see `.env.example`.
 | Path | Contents |
 |---|---|
 | `docs/design/erd-v2/` | The ERD: 17 modules, ~230 tables |
-| `docs/plan/` | Schema and backend build plan |
+| `docs/plan/` | Schema and backend build plan; [WEBSITE_PLAN.md](docs/plan/WEBSITE_PLAN.md) for moving the public website in |
 | `docs/adr/` | Architecture decisions |
 | `db/migrations/` | dbmate SQL migrations |
 | `db/seeds/` | `reference/` (all environments), `dev/` (local only) |
