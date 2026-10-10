@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-10-10T18:28:49.770575+00:00",
+  "staticValidation": "PASS",
+  "sourceHashesVerified": 65,
+  "backendRoutePairs": 67,
+  "uiCallSites": 133,
+  "gapRows": 27,
+  "uiFlows": 12,
+  "acceptanceCases": 16,
+  "linksAndEvidencePaths": "PASS",
+  "errors": [],
+  "runtimeBoundary": "No connected workflow, backend test suite, database migration or provider acceptance was run by this audit."
+}

@@ -1,0 +1,25 @@
+{
+  "checkedAt": "2026-10-10T19:09:58.688Z",
+  "environment": "isolated local database hms_staff_integration on 54339; synthetic records only",
+  "coreVisit": [
+    {
+      "confirmation_code": "KKLQR2T4",
+      "appointment_status": "completed",
+      "encounter_status": "finished",
+      "queue_status": "done",
+      "note_status": "signed",
+      "vital_count": 3
+    }
+  ],
+  "walkIn": [
+    {
+      "booking_kind": "walk_in",
+      "appointment_status": "checked_in",
+      "starts_at": null,
+      "ends_at": null,
+      "token_no": 2,
+      "queue_status": "waiting",
+      "encounter_status": "arrived"
+    }
+  ]
+}

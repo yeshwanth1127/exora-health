@@ -1,0 +1,471 @@
+[
+  {
+    "file": "apps/api/src/server.ts",
+    "line": 90,
+    "method": "GET",
+    "path": "/health",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/server.ts",
+    "line": 91,
+    "method": "GET",
+    "path": "/ready",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/server.ts",
+    "line": 102,
+    "method": "POST",
+    "path": "/dev/login",
+    "conditional": "devLogin enabled only"
+  },
+  {
+    "file": "apps/api/src/server.ts",
+    "line": 109,
+    "method": "GET",
+    "path": "/v1/me",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/booking.ts",
+    "line": 54,
+    "method": "POST",
+    "path": "/v1/holds",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/booking.ts",
+    "line": 61,
+    "method": "DELETE",
+    "path": "/v1/holds/:reservationId",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/booking.ts",
+    "line": 67,
+    "method": "POST",
+    "path": "/v1/appointments",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/booking.ts",
+    "line": 75,
+    "method": "GET",
+    "path": "/v1/appointments",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/booking.ts",
+    "line": 99,
+    "method": "GET",
+    "path": "/v1/appointments/:appointmentId",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/booking.ts",
+    "line": 104,
+    "method": "POST",
+    "path": "/v1/appointments/:appointmentId/cancel",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/booking.ts",
+    "line": 111,
+    "method": "POST",
+    "path": "/v1/appointments/:appointmentId/reschedule",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/booking.ts",
+    "line": 119,
+    "method": "POST",
+    "path": "/v1/appointments/:appointmentId/no-show",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/booking.ts",
+    "line": 125,
+    "method": "POST",
+    "path": "/v1/appointments/:appointmentId/check-in",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/booking.ts",
+    "line": 132,
+    "method": "POST",
+    "path": "/v1/walk-ins",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/calendar.ts",
+    "line": 65,
+    "method": "POST",
+    "path": "/v1/practitioners/:staffId/calendar",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/calendar.ts",
+    "line": 72,
+    "method": "POST",
+    "path": "/v1/practitioners/:staffId/weekly-sessions",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/calendar.ts",
+    "line": 79,
+    "method": "POST",
+    "path": "/v1/weekly-sessions/:scheduleRuleId/end",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/calendar.ts",
+    "line": 86,
+    "method": "POST",
+    "path": "/v1/practitioners/:staffId/exceptions",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/calendar.ts",
+    "line": 93,
+    "method": "POST",
+    "path": "/v1/facilities/:facilityId/holidays",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/calendar.ts",
+    "line": 100,
+    "method": "PUT",
+    "path": "/v1/practitioners/:staffId/day-plans/:planOn",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/calendar.ts",
+    "line": 109,
+    "method": "GET",
+    "path": "/v1/practitioners/:staffId/sessions",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/calendar.ts",
+    "line": 116,
+    "method": "GET",
+    "path": "/v1/practitioners/:staffId/slots",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 54,
+    "method": "GET",
+    "path": "/v1/encounters",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 60,
+    "method": "GET",
+    "path": "/v1/appointments/:appointmentId/encounter",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 67,
+    "method": "POST",
+    "path": "/v1/encounters",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 83,
+    "method": "GET",
+    "path": "/v1/encounters/:encounterId",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 89,
+    "method": "POST",
+    "path": "/v1/encounters/:encounterId/start",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 95,
+    "method": "POST",
+    "path": "/v1/encounters/:encounterId/finish",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 105,
+    "method": "POST",
+    "path": "/v1/encounters/:encounterId/cancel",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 112,
+    "method": "POST",
+    "path": "/v1/encounters/:encounterId/participants",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 120,
+    "method": "POST",
+    "path": "/v1/encounters/:encounterId/vitals",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 133,
+    "method": "POST",
+    "path": "/v1/observations/:observationId/correct",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 141,
+    "method": "GET",
+    "path": "/v1/note-templates",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 146,
+    "method": "POST",
+    "path": "/v1/encounters/:encounterId/notes",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 153,
+    "method": "PUT",
+    "path": "/v1/notes/:noteId",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 163,
+    "method": "POST",
+    "path": "/v1/notes/:noteId/sign",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 169,
+    "method": "POST",
+    "path": "/v1/notes/:noteId/entered-in-error",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 177,
+    "method": "POST",
+    "path": "/v1/encounters/:encounterId/diagnoses",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 197,
+    "method": "PATCH",
+    "path": "/v1/conditions/:conditionId",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 211,
+    "method": "GET",
+    "path": "/v1/patients/:patientId/chart",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 217,
+    "method": "POST",
+    "path": "/v1/patients/:patientId/allergies",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 233,
+    "method": "PATCH",
+    "path": "/v1/allergies/:allergyId",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/clinical.ts",
+    "line": 240,
+    "method": "POST",
+    "path": "/v1/patients/:patientId/break-glass",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/directory.ts",
+    "line": 9,
+    "method": "GET",
+    "path": "/v1/facilities",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/directory.ts",
+    "line": 14,
+    "method": "GET",
+    "path": "/v1/practitioners",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/patients.ts",
+    "line": 22,
+    "method": "POST",
+    "path": "/v1/patients",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/patients.ts",
+    "line": 29,
+    "method": "GET",
+    "path": "/v1/patients",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/patients.ts",
+    "line": 38,
+    "method": "GET",
+    "path": "/v1/patients/:patientId",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/queue.ts",
+    "line": 12,
+    "method": "GET",
+    "path": "/v1/queue",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/queue.ts",
+    "line": 18,
+    "method": "POST",
+    "path": "/v1/queue/call-next",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/queue.ts",
+    "line": 26,
+    "method": "POST",
+    "path": "/v1/queue-tokens/:tokenId/start",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/queue.ts",
+    "line": 26,
+    "method": "POST",
+    "path": "/v1/queue-tokens/:tokenId/complete",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/queue.ts",
+    "line": 26,
+    "method": "POST",
+    "path": "/v1/queue-tokens/:tokenId/skip",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/telehealth.ts",
+    "line": 43,
+    "method": "GET",
+    "path": "/v1/teleconsults",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/telehealth.ts",
+    "line": 52,
+    "method": "GET",
+    "path": "/v1/teleconsults/:sessionId",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/telehealth.ts",
+    "line": 58,
+    "method": "GET",
+    "path": "/v1/appointments/:appointmentId/teleconsult",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/telehealth.ts",
+    "line": 65,
+    "method": "POST",
+    "path": "/v1/appointments/:appointmentId/teleconsult/link",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/telehealth.ts",
+    "line": 73,
+    "method": "POST",
+    "path": "/v1/teleconsults/:sessionId/consent",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/telehealth.ts",
+    "line": 80,
+    "method": "POST",
+    "path": "/v1/teleconsults/:sessionId/start",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/telehealth.ts",
+    "line": 86,
+    "method": "POST",
+    "path": "/v1/teleconsults/:sessionId/join",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/telehealth.ts",
+    "line": 92,
+    "method": "POST",
+    "path": "/v1/teleconsults/:sessionId/identity",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/telehealth.ts",
+    "line": 99,
+    "method": "POST",
+    "path": "/v1/teleconsults/:sessionId/end",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/telehealth.ts",
+    "line": 117,
+    "method": "GET",
+    "path": "/tele/v1/session",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/telehealth.ts",
+    "line": 122,
+    "method": "POST",
+    "path": "/tele/v1/session/consent",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/telehealth.ts",
+    "line": 129,
+    "method": "POST",
+    "path": "/tele/v1/session/check-in",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/telehealth.ts",
+    "line": 131,
+    "method": "POST",
+    "path": "/tele/v1/session/join",
+    "conditional": null
+  },
+  {
+    "file": "apps/api/src/http/routes/telehealth.ts",
+    "line": 135,
+    "method": "POST",
+    "path": "/tele/v1/session/leave",
+    "conditional": null
+  }
+]

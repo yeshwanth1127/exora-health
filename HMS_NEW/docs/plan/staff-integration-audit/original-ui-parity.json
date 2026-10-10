@@ -1,0 +1,532 @@
+[
+  {
+    "id": "UI-overview-01",
+    "screen": "overview",
+    "title": "Overview",
+    "detail": "Five clinic metrics and status/channel breakdowns",
+    "original_source": "apps/staff-web/src/modules/operations.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G12",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-overview-02",
+    "screen": "overview",
+    "title": "Overview",
+    "detail": "Daily booking charts and recent appointments",
+    "original_source": "apps/staff-web/src/modules/operations.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G12",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-appointments-01",
+    "screen": "appointments",
+    "title": "Appointments",
+    "detail": "IST and all-date browsing, server search and paging",
+    "original_source": "apps/staff-web/src/modules/NurseDesk.tsx",
+    "current_status": "PARTIAL_CONNECTED",
+    "backend_gaps": "G03; G09; G10; G19",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-appointments-02",
+    "screen": "appointments",
+    "title": "Appointments",
+    "detail": "Doctor/clinic/status filters and patient detail sheet",
+    "original_source": "apps/staff-web/src/modules/NurseDesk.tsx",
+    "current_status": "PARTIAL_CONNECTED",
+    "backend_gaps": "G03; G09; G10; G19",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-appointments-03",
+    "screen": "appointments",
+    "title": "Appointments",
+    "detail": "Reasoned cancellation/no-show and patient-contact readback",
+    "original_source": "apps/staff-web/src/modules/NurseDesk.tsx",
+    "current_status": "PARTIAL_CONNECTED",
+    "backend_gaps": "G03; G09; G10; G19",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-appointments-04",
+    "screen": "appointments",
+    "title": "Appointments",
+    "detail": "Administrative staff notes, exact-time moves and archive/delete policy",
+    "original_source": "apps/staff-web/src/modules/NurseDesk.tsx",
+    "current_status": "PARTIAL_CONNECTED",
+    "backend_gaps": "G03; G09; G10; G19",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-doctors-01",
+    "screen": "doctors",
+    "title": "Doctors",
+    "detail": "Specialties and clinic affiliations in the directory",
+    "original_source": "apps/staff-web/src/modules/clinic.tsx",
+    "current_status": "RESTORED_READ_OR_LOCAL_DRAFT",
+    "backend_gaps": "G13; G14",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-doctors-02",
+    "screen": "doctors",
+    "title": "Doctors",
+    "detail": "Consultation fee, active-in-booking and virtual-consultation editor",
+    "original_source": "apps/staff-web/src/modules/clinic.tsx",
+    "current_status": "RESTORED_READ_OR_LOCAL_DRAFT",
+    "backend_gaps": "G13; G14",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-schedules-01",
+    "screen": "schedules",
+    "title": "Schedules",
+    "detail": "Doctor-day rows, date navigation and clinic/department/doctor filters",
+    "original_source": "apps/staff-web/src/modules/schedule-timeline.tsx",
+    "current_status": "RESTORED_PARTIAL_DATA_OR_LOCAL_DRAFT",
+    "backend_gaps": "G04; G05; G06; G07; G08; G26",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-schedules-02",
+    "screen": "schedules",
+    "title": "Schedules",
+    "detail": "Compact/meeting/extra-space scales, sticky headers, current-time marker and overlap lanes",
+    "original_source": "apps/staff-web/src/modules/schedule-timeline.tsx",
+    "current_status": "RESTORED_PARTIAL_DATA_OR_LOCAL_DRAFT",
+    "backend_gaps": "G04; G05; G06; G07; G08; G26",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-schedules-03",
+    "screen": "schedules",
+    "title": "Schedules",
+    "detail": "Click details, drag time selection and keyboard/pointer cancellation",
+    "original_source": "apps/staff-web/src/modules/schedule-timeline.tsx",
+    "current_status": "RESTORED_PARTIAL_DATA_OR_LOCAL_DRAFT",
+    "backend_gaps": "G04; G05; G06; G07; G08; G26",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-schedules-04",
+    "screen": "schedules",
+    "title": "Schedules",
+    "detail": "Available/booked/blocked/held periods, reasons and hold expiry",
+    "original_source": "apps/staff-web/src/modules/schedule-timeline.tsx",
+    "current_status": "RESTORED_PARTIAL_DATA_OR_LOCAL_DRAFT",
+    "backend_gaps": "G04; G05; G06; G07; G08; G26",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-schedules-05",
+    "screen": "schedules",
+    "title": "Schedules",
+    "detail": "Weekly doctor picker and repeat-day groups with split shifts",
+    "original_source": "apps/staff-web/src/modules/schedule-timeline.tsx",
+    "current_status": "RESTORED_PARTIAL_DATA_OR_LOCAL_DRAFT",
+    "backend_gaps": "G04; G05; G06; G07; G08; G26",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-schedules-06",
+    "screen": "schedules",
+    "title": "Schedules",
+    "detail": "Effective dates, slot length and split-shift example",
+    "original_source": "apps/staff-web/src/modules/schedule-timeline.tsx",
+    "current_status": "RESTORED_PARTIAL_DATA_OR_LOCAL_DRAFT",
+    "backend_gaps": "G04; G05; G06; G07; G08; G26",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-schedules-07",
+    "screen": "schedules",
+    "title": "Schedules",
+    "detail": "Review affected appointments, other published hours and resolve-before-save",
+    "original_source": "apps/staff-web/src/modules/schedule-timeline.tsx",
+    "current_status": "SOURCE_RETAINED_BACKEND_PREVIEW_PENDING",
+    "backend_gaps": "G04; G05; G06; G07; G08; G26",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-schedules-08",
+    "screen": "schedules",
+    "title": "Schedules",
+    "detail": "Range appointment/open/block actions with exact start/end",
+    "original_source": "apps/staff-web/src/modules/schedule-timeline.tsx",
+    "current_status": "RESTORED_PARTIAL_DATA_OR_LOCAL_DRAFT",
+    "backend_gaps": "G04; G05; G06; G07; G08; G26",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-schedules-09",
+    "screen": "schedules",
+    "title": "Schedules",
+    "detail": "Virtual/in-person choice, clinic choice and explicit overbooking",
+    "original_source": "apps/staff-web/src/modules/schedule-timeline.tsx",
+    "current_status": "RESTORED_PARTIAL_DATA_OR_LOCAL_DRAFT",
+    "backend_gaps": "G04; G05; G06; G07; G08; G26",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-schedules-10",
+    "screen": "schedules",
+    "title": "Schedules",
+    "detail": "Saved staff notes, exact-time move and unblock/reversal",
+    "original_source": "apps/staff-web/src/modules/schedule-timeline.tsx",
+    "current_status": "RESTORED_PARTIAL_DATA_OR_LOCAL_DRAFT",
+    "backend_gaps": "G04; G05; G06; G07; G08; G26",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-waitlist-01",
+    "screen": "waitlist",
+    "title": "Waitlist",
+    "detail": "Waitlist requests and active filters",
+    "original_source": "apps/staff-web/src/modules/BookingOperations.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G11; G19",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-waitlist-02",
+    "screen": "waitlist",
+    "title": "Waitlist",
+    "detail": "Check availability and offer a slot with notification readback",
+    "original_source": "apps/staff-web/src/modules/BookingOperations.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G11; G19",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-catalogue-01",
+    "screen": "catalogue",
+    "title": "Hospital catalogue",
+    "detail": "Clinic locations and active status",
+    "original_source": "apps/staff-web/src/modules/operations.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G13; G14",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-catalogue-02",
+    "screen": "catalogue",
+    "title": "Hospital catalogue",
+    "detail": "Departments and doctor coverage",
+    "original_source": "apps/staff-web/src/modules/operations.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G13; G14",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-catalogue-03",
+    "screen": "catalogue",
+    "title": "Hospital catalogue",
+    "detail": "Address, directions and arrival instructions in channel editors",
+    "original_source": "apps/staff-web/src/modules/operations.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G13; G14",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-operations-01",
+    "screen": "operations",
+    "title": "Operations",
+    "detail": "Notification outbox, temporary holds and API readiness",
+    "original_source": "apps/staff-web/src/modules/operations.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G12; G19",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-operations-02",
+    "screen": "operations",
+    "title": "Operations",
+    "detail": "Event delivery history and refresh",
+    "original_source": "apps/staff-web/src/modules/operations.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G12; G19",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-whatsapp-01",
+    "screen": "whatsapp",
+    "title": "WhatsApp",
+    "detail": "Overview and module readiness",
+    "original_source": "apps/staff-web/src/modules/whatsapp.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G20; G19",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-whatsapp-02",
+    "screen": "whatsapp",
+    "title": "WhatsApp",
+    "detail": "Conversation assignment and staff replies",
+    "original_source": "apps/staff-web/src/modules/whatsapp.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G20; G19",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-whatsapp-03",
+    "screen": "whatsapp",
+    "title": "WhatsApp",
+    "detail": "Doctor content, photos, guides and assets",
+    "original_source": "apps/staff-web/src/modules/whatsapp.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G20; G19",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-whatsapp-04",
+    "screen": "whatsapp",
+    "title": "WhatsApp",
+    "detail": "Campaign budgets, audience preview and approval",
+    "original_source": "apps/staff-web/src/modules/whatsapp.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G20; G19",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-whatsapp-05",
+    "screen": "whatsapp",
+    "title": "WhatsApp",
+    "detail": "Follow-up rules and manual triggers",
+    "original_source": "apps/staff-web/src/modules/whatsapp.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G20; G19",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-whatsapp-06",
+    "screen": "whatsapp",
+    "title": "WhatsApp",
+    "detail": "Delivery history and clinic contact/details",
+    "original_source": "apps/staff-web/src/modules/whatsapp.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G20; G19",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-voice-01",
+    "screen": "voice",
+    "title": "Voice",
+    "detail": "Call readiness and versioned configuration",
+    "original_source": "apps/staff-web/src/modules/voice.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G21",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-voice-02",
+    "screen": "voice",
+    "title": "Voice",
+    "detail": "Call history, filters, metrics and appointment handoff",
+    "original_source": "apps/staff-web/src/modules/voice.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G21",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-voice-03",
+    "screen": "voice",
+    "title": "Voice",
+    "detail": "Consented recordings with expiry and access audit",
+    "original_source": "apps/staff-web/src/modules/voice.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G21",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-voice-04",
+    "screen": "voice",
+    "title": "Voice",
+    "detail": "Original/English transcript review and search",
+    "original_source": "apps/staff-web/src/modules/voice.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G21",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-voice-05",
+    "screen": "voice",
+    "title": "Voice",
+    "detail": "Live voice demo and provider interaction",
+    "original_source": "apps/staff-web/src/modules/voice.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G21",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-google_business-01",
+    "screen": "google_business",
+    "title": "Google Business",
+    "detail": "Branch booking links and capability/readiness status",
+    "original_source": "apps/staff-web/src/modules/growth/GrowthModule.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G22",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-google_business-02",
+    "screen": "google_business",
+    "title": "Google Business",
+    "detail": "Link change history",
+    "original_source": "apps/staff-web/src/modules/growth/GrowthModule.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G22",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-google_business-03",
+    "screen": "google_business",
+    "title": "Google Business",
+    "detail": "Patient journey and website activity",
+    "original_source": "apps/staff-web/src/modules/growth/GrowthModule.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G22",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-growth_analytics-01",
+    "screen": "growth_analytics",
+    "title": "Growth analytics",
+    "detail": "Acquisition/source filters and date range",
+    "original_source": "apps/staff-web/src/modules/growth/GrowthModule.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G22",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-growth_analytics-02",
+    "screen": "growth_analytics",
+    "title": "Growth analytics",
+    "detail": "Conversion and engagement charts",
+    "original_source": "apps/staff-web/src/modules/growth/GrowthModule.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G22",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-growth_analytics-03",
+    "screen": "growth_analytics",
+    "title": "Growth analytics",
+    "detail": "Journey, website activity and attribution limits",
+    "original_source": "apps/staff-web/src/modules/growth/GrowthModule.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G22",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-settings-01",
+    "screen": "settings",
+    "title": "Workspace settings",
+    "detail": "Staff accounts and role selection",
+    "original_source": "apps/staff-web/src/modules/settings.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G16; G17",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-settings-02",
+    "screen": "settings",
+    "title": "Workspace settings",
+    "detail": "Password/account flow (must adapt to OIDC)",
+    "original_source": "apps/staff-web/src/modules/settings.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G16; G17",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-settings-03",
+    "screen": "settings",
+    "title": "Workspace settings",
+    "detail": "Permission controls and optional module switches",
+    "original_source": "apps/staff-web/src/modules/settings.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G16; G17",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-settings-04",
+    "screen": "settings",
+    "title": "Workspace settings",
+    "detail": "Demo controls separate from daily operations",
+    "original_source": "apps/staff-web/src/modules/settings.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G16; G17",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-activity-01",
+    "screen": "activity",
+    "title": "Activity log",
+    "detail": "Filtered activity with paging",
+    "original_source": "apps/staff-web/src/modules/settings.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G18",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-activity-02",
+    "screen": "activity",
+    "title": "Activity log",
+    "detail": "CSV export and permission/care-access review",
+    "original_source": "apps/staff-web/src/modules/settings.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G18",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-design-01",
+    "screen": "design",
+    "title": "Design and UX guide",
+    "detail": "Markdown design guide and product decisions",
+    "original_source": "apps/staff-web/src/modules/settings.tsx",
+    "current_status": "NAVIGATION_RESTORED_FULL_DESIGN_RETAINED_PENDING_WIRING",
+    "backend_gaps": "G17",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-teleconsultations-01",
+    "screen": "teleconsultations",
+    "title": "Teleconsultations",
+    "detail": "Original upcoming/waiting/needs-link/all concept tabs",
+    "original_source": "apps/staff-web/src/modules/feature-concepts.tsx",
+    "current_status": "LIVE_WORKFLOW_CONNECTED_CONCEPT_DESIGN_NOT_FULLY_PORTED",
+    "backend_gaps": "G34",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-teleconsultations-02",
+    "screen": "teleconsultations",
+    "title": "Teleconsultations",
+    "detail": "Call-experience and patient-detail concept sheets; adapt to actual telehealth contracts",
+    "original_source": "apps/staff-web/src/modules/feature-concepts.tsx",
+    "current_status": "LIVE_WORKFLOW_CONNECTED_CONCEPT_DESIGN_NOT_FULLY_PORTED",
+    "backend_gaps": "G34",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-loyalty-01",
+    "screen": "loyalty",
+    "title": "Loyalty program",
+    "detail": "Program, members and patient-view tabs",
+    "original_source": "apps/staff-web/src/modules/feature-concepts.tsx",
+    "current_status": "ORIGINAL_CONCEPT_NOT_LIVE_FEATURE",
+    "backend_gaps": "G23",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  },
+  {
+    "id": "UI-loyalty-02",
+    "screen": "loyalty",
+    "title": "Loyalty program",
+    "detail": "Sample membership editor and member details (original design concept)",
+    "original_source": "apps/staff-web/src/modules/feature-concepts.tsx",
+    "current_status": "ORIGINAL_CONCEPT_NOT_LIVE_FEATURE",
+    "backend_gaps": "G23",
+    "backend_owner": "dedicated backend agent; documentation only in this frontend task"
+  }
+]

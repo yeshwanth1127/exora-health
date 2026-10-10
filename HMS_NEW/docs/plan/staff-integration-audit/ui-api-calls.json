@@ -1,0 +1,1066 @@
+[
+  {
+    "file": "src/App.tsx",
+    "line": 201,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/staff/login",
+    "pathExpression": "\"/api/v1/staff/login\""
+  },
+  {
+    "file": "src/App.tsx",
+    "line": 278,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "/api/v1/staff/session",
+    "pathExpression": "\"/api/v1/staff/session\""
+  },
+  {
+    "file": "src/App.tsx",
+    "line": 298,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "{user ? \"/api/v1/staff/modules\" : null}",
+    "pathExpression": "user ? \"/api/v1/staff/modules\" : null"
+  },
+  {
+    "file": "src/App.tsx",
+    "line": 497,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/staff/logout",
+    "pathExpression": "\"/api/v1/staff/logout\""
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 83,
+    "callee": "fetch",
+    "method": "GET",
+    "pathPattern": "{path}",
+    "pathExpression": "path"
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 202,
+    "callee": "request",
+    "method": "GET",
+    "pathPattern": "/api/v1/web/booking/appointments",
+    "pathExpression": "ROOT + \"/appointments\""
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 203,
+    "callee": "request",
+    "method": "GET",
+    "pathPattern": "/api/v1/web/booking/waitlist",
+    "pathExpression": "ROOT + \"/waitlist\""
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 227,
+    "callee": "request",
+    "method": "GET",
+    "pathPattern": "/api/v1/doctors",
+    "pathExpression": "\"/api/v1/doctors\""
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 229,
+    "callee": "request",
+    "method": "DELETE",
+    "pathPattern": "/api/v1/web/booking/holds/{hold.id}",
+    "pathExpression": "ROOT + \"/holds/\" + hold.id"
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 243,
+    "callee": "request",
+    "method": "GET",
+    "pathPattern": "/api/v1/web/booking/config",
+    "pathExpression": "ROOT + \"/config\""
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 244,
+    "callee": "request",
+    "method": "GET",
+    "pathPattern": "/api/v1/doctors",
+    "pathExpression": "\"/api/v1/doctors\""
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 245,
+    "callee": "request",
+    "method": "GET",
+    "pathPattern": "/api/v1/branches",
+    "pathExpression": "\"/api/v1/branches\""
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 271,
+    "callee": "request",
+    "method": "GET",
+    "pathPattern": "/api/v1/web/booking/session",
+    "pathExpression": "ROOT + \"/session\""
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 302,
+    "callee": "request",
+    "method": "GET",
+    "pathPattern": "/api/v1/availability?{new URLSearchParams({\n          doctor_id: doctor,\n          branch_id: branch,\n          start_date: day,\n          end_date: day,\n          consultation_type: kind,\n        })}",
+    "pathExpression": "\"/api/v1/availability?\" +\n        new URLSearchParams({\n          doctor_id: doctor,\n          branch_id: branch,\n          start_date: day,\n          end_date: day,\n          consultation_type: kind,\n        })"
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 326,
+    "callee": "request",
+    "method": "GET",
+    "pathPattern": "/api/v1/web/booking/session",
+    "pathExpression": "ROOT + \"/session\""
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 534,
+    "callee": "request",
+    "method": "POST",
+    "pathPattern": "/api/v1/web/booking/holds",
+    "pathExpression": "ROOT + \"/holds\""
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 610,
+    "callee": "request",
+    "method": "POST",
+    "pathPattern": "/api/v1/web/booking/appointments/{moving.id}/reschedule",
+    "pathExpression": "ROOT +\n                                      \"/appointments/\" +\n                                      moving.id +\n                                      \"/reschedule\""
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 621,
+    "callee": "request",
+    "method": "POST",
+    "pathPattern": "/api/v1/web/booking/appointments",
+    "pathExpression": "ROOT + \"/appointments\""
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 651,
+    "callee": "request",
+    "method": "DELETE",
+    "pathPattern": "/api/v1/web/booking/holds/{hold.id}",
+    "pathExpression": "ROOT + \"/holds/\" + hold.id"
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 711,
+    "callee": "request",
+    "method": "POST",
+    "pathPattern": "/api/v1/web/booking/session",
+    "pathExpression": "ROOT + \"/session\""
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 807,
+    "callee": "request",
+    "method": "POST",
+    "pathPattern": "/api/v1/web/booking/appointments/{v.id}/cancel",
+    "pathExpression": "ROOT +\n                                          \"/appointments/\" +\n                                          v.id +\n                                          \"/cancel\""
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 856,
+    "callee": "request",
+    "method": "POST",
+    "pathPattern": "/api/v1/web/booking/waitlist/{w.id}/accept",
+    "pathExpression": "ROOT + \"/waitlist/\" + w.id + \"/accept\""
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 880,
+    "callee": "request",
+    "method": "DELETE",
+    "pathPattern": "/api/v1/web/booking/waitlist/{w.id}",
+    "pathExpression": "ROOT + \"/waitlist/\" + w.id"
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 924,
+    "callee": "request",
+    "method": "POST",
+    "pathPattern": "/api/v1/web/booking/waitlist",
+    "pathExpression": "ROOT + \"/waitlist\""
+  },
+  {
+    "file": "src/book.tsx",
+    "line": 949,
+    "callee": "request",
+    "method": "DELETE",
+    "pathPattern": "/api/v1/web/booking/session",
+    "pathExpression": "ROOT + \"/session\""
+  },
+  {
+    "file": "src/components/workspace.tsx",
+    "line": 41,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/staff/permissions",
+    "pathExpression": "\"/api/v1/staff/permissions\""
+  },
+  {
+    "file": "src/components/workspace.tsx",
+    "line": 63,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "{path}",
+    "pathExpression": "path"
+  },
+  {
+    "file": "src/lib/api.ts",
+    "line": 29,
+    "callee": "fetch",
+    "method": "options.method ?? \"GET\"",
+    "pathPattern": "{path}",
+    "pathExpression": "path"
+  },
+  {
+    "file": "src/lib/api.ts",
+    "line": 211,
+    "callee": "fetch",
+    "method": "POST",
+    "pathPattern": "{path}",
+    "pathExpression": "path"
+  },
+  {
+    "file": "src/modules/BookingOperations.tsx",
+    "line": 68,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/schedule-exceptions",
+    "pathExpression": "\"/api/v1/admin/schedule-exceptions\""
+  },
+  {
+    "file": "src/modules/BookingOperations.tsx",
+    "line": 69,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/doctors",
+    "pathExpression": "\"/api/v1/admin/doctors\""
+  },
+  {
+    "file": "src/modules/BookingOperations.tsx",
+    "line": 70,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/catalogue",
+    "pathExpression": "\"/api/v1/admin/catalogue\""
+  },
+  {
+    "file": "src/modules/BookingOperations.tsx",
+    "line": 229,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/schedule-exceptions/preview",
+    "pathExpression": "\"/api/v1/admin/schedule-exceptions/preview\""
+  },
+  {
+    "file": "src/modules/BookingOperations.tsx",
+    "line": 270,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/schedule-exceptions",
+    "pathExpression": "\"/api/v1/admin/schedule-exceptions\""
+  },
+  {
+    "file": "src/modules/BookingOperations.tsx",
+    "line": 305,
+    "callee": "api",
+    "method": "DELETE",
+    "pathPattern": "/api/v1/admin/schedule-exceptions/{remove!.id}",
+    "pathExpression": "\"/api/v1/admin/schedule-exceptions/\" + remove!.id"
+  },
+  {
+    "file": "src/modules/BookingOperations.tsx",
+    "line": 338,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "/api/v1/availability?{new URLSearchParams({\n          doctor_id: item.doctor.id,\n          branch_id: item.branch.id,\n          start_date: date,\n          end_date: date,\n          consultation_type: item.consultation_type,\n        })}",
+    "pathExpression": "\"/api/v1/availability?\" +\n        new URLSearchParams({\n          doctor_id: item.doctor.id,\n          branch_id: item.branch.id,\n          start_date: date,\n          end_date: date,\n          consultation_type: item.consultation_type,\n        })"
+  },
+  {
+    "file": "src/modules/BookingOperations.tsx",
+    "line": 422,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/appointments/{item.id}/reschedule",
+    "pathExpression": "\"/api/v1/admin/appointments/\" + item.id + \"/reschedule\""
+  },
+  {
+    "file": "src/modules/BookingOperations.tsx",
+    "line": 446,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/waitlist",
+    "pathExpression": "\"/api/v1/admin/waitlist\""
+  },
+  {
+    "file": "src/modules/BookingOperations.tsx",
+    "line": 447,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/doctors",
+    "pathExpression": "\"/api/v1/admin/doctors\""
+  },
+  {
+    "file": "src/modules/BookingOperations.tsx",
+    "line": 458,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "/api/v1/availability?{new URLSearchParams({\n          doctor_id: item.doctor_id,\n          branch_id: item.branch_id,\n          start_date: date,\n          end_date: date,\n          consultation_type: item.consultation_type,\n        })}",
+    "pathExpression": "\"/api/v1/availability?\" +\n        new URLSearchParams({\n          doctor_id: item.doctor_id,\n          branch_id: item.branch_id,\n          start_date: date,\n          end_date: date,\n          consultation_type: item.consultation_type,\n        })"
+  },
+  {
+    "file": "src/modules/BookingOperations.tsx",
+    "line": 580,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/waitlist/{item!.id}/offer",
+    "pathExpression": "\"/api/v1/admin/waitlist/\" + item!.id + \"/offer\""
+  },
+  {
+    "file": "src/modules/DemoControls.tsx",
+    "line": 92,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/staff/demo/{action}",
+    "pathExpression": "\"/api/v1/staff/demo/\" + action"
+  },
+  {
+    "file": "src/modules/NurseDesk.tsx",
+    "line": 163,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/appointments?{params}",
+    "pathExpression": "`/api/v1/admin/appointments?${params}`"
+  },
+  {
+    "file": "src/modules/NurseDesk.tsx",
+    "line": 205,
+    "callee": "api",
+    "method": "PATCH",
+    "pathPattern": "/api/v1/admin/appointments/{item.id}/status",
+    "pathExpression": "`/api/v1/admin/appointments/${item.id}/status`"
+  },
+  {
+    "file": "src/modules/appointment-actions.tsx",
+    "line": 172,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/schedule-timeline/appointments/{item.id}/move",
+    "pathExpression": "`/api/v1/admin/schedule-timeline/appointments/${item.id}/move`"
+  },
+  {
+    "file": "src/modules/appointment-actions.tsx",
+    "line": 227,
+    "callee": "api",
+    "method": "DELETE",
+    "pathPattern": "/api/v1/admin/schedule-timeline/appointments/{item.id}",
+    "pathExpression": "`/api/v1/admin/schedule-timeline/appointments/${item.id}`"
+  },
+  {
+    "file": "src/modules/appointment-notes.tsx",
+    "line": 37,
+    "callee": "api",
+    "method": "PATCH",
+    "pathPattern": "/api/v1/admin/schedule-timeline/appointments/{item.id}/notes",
+    "pathExpression": "`/api/v1/admin/schedule-timeline/appointments/${item.id}/notes`"
+  },
+  {
+    "file": "src/modules/campaigns.tsx",
+    "line": 71,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/campaigns",
+    "pathExpression": "wa + \"/campaigns\""
+  },
+  {
+    "file": "src/modules/campaigns.tsx",
+    "line": 72,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/templates",
+    "pathExpression": "wa + \"/templates\""
+  },
+  {
+    "file": "src/modules/campaigns.tsx",
+    "line": 73,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/catalogue",
+    "pathExpression": "\"/api/v1/admin/catalogue\""
+  },
+  {
+    "file": "src/modules/campaigns.tsx",
+    "line": 74,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/campaign-assets",
+    "pathExpression": "wa + \"/campaign-assets\""
+  },
+  {
+    "file": "src/modules/campaigns.tsx",
+    "line": 358,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/whatsapp/campaigns/{pause!.id}/pause",
+    "pathExpression": "`${wa}/campaigns/${pause!.id}/pause`"
+  },
+  {
+    "file": "src/modules/campaigns.tsx",
+    "line": 440,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/campaigns/{initial.id}/preview",
+    "pathExpression": "`${wa}/campaigns/${initial.id}/preview`"
+  },
+  {
+    "file": "src/modules/campaigns.tsx",
+    "line": 604,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/whatsapp/campaign-assets",
+    "pathExpression": "wa + \"/campaign-assets\""
+  },
+  {
+    "file": "src/modules/campaigns.tsx",
+    "line": 759,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/whatsapp/campaigns",
+    "pathExpression": "wa + \"/campaigns\""
+  },
+  {
+    "file": "src/modules/campaigns.tsx",
+    "line": 778,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/campaigns/{c.id}/preview",
+    "pathExpression": "`${wa}/campaigns/${c.id}/preview`"
+  },
+  {
+    "file": "src/modules/campaigns.tsx",
+    "line": 829,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/whatsapp/campaigns/{draft!.id}/test",
+    "pathExpression": "`${wa}/campaigns/${draft!.id}/test`"
+  },
+  {
+    "file": "src/modules/campaigns.tsx",
+    "line": 864,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/campaigns/{draft!.id}/preview",
+    "pathExpression": "`${wa}/campaigns/${draft!.id}/preview`"
+  },
+  {
+    "file": "src/modules/campaigns.tsx",
+    "line": 943,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/campaigns/{draft!.id}/preview",
+    "pathExpression": "`${wa}/campaigns/${draft!.id}/preview`"
+  },
+  {
+    "file": "src/modules/campaigns.tsx",
+    "line": 963,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/whatsapp/campaigns/{draft!.id}/approve",
+    "pathExpression": "`${wa}/campaigns/${draft!.id}/approve`"
+  },
+  {
+    "file": "src/modules/campaigns.tsx",
+    "line": 998,
+    "callee": "assetUrl",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/assets/{media.id}",
+    "pathExpression": "media.id"
+  },
+  {
+    "file": "src/modules/clinic.tsx",
+    "line": 57,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/doctors",
+    "pathExpression": "\"/api/v1/admin/doctors\""
+  },
+  {
+    "file": "src/modules/clinic.tsx",
+    "line": 58,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/catalogue",
+    "pathExpression": "\"/api/v1/admin/catalogue\""
+  },
+  {
+    "file": "src/modules/clinic.tsx",
+    "line": 81,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/doctors",
+    "pathExpression": "\"/api/v1/admin/doctors\""
+  },
+  {
+    "file": "src/modules/clinic.tsx",
+    "line": 212,
+    "callee": "api",
+    "method": "PATCH",
+    "pathPattern": "/api/v1/admin/doctors/{edit.id}",
+    "pathExpression": "`/api/v1/admin/doctors/${edit.id}`"
+  },
+  {
+    "file": "src/modules/conversations.tsx",
+    "line": 279,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/conversations?kind={kind}&status={status}&q={encodeURIComponent(search)}&offset={offset}&limit=30",
+    "pathExpression": "`${wa}/conversations?kind=${kind}&status=${status}&q=${encodeURIComponent(search)}&offset=${offset}&limit=30`"
+  },
+  {
+    "file": "src/modules/conversations.tsx",
+    "line": 291,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "{current ? `${wa}/conversations/${current.sender_id}` : null}",
+    "pathExpression": "current ? `${wa}/conversations/${current.sender_id}` : null"
+  },
+  {
+    "file": "src/modules/conversations.tsx",
+    "line": 451,
+    "callee": "api",
+    "method": "PATCH",
+    "pathPattern": "/api/v1/admin/whatsapp/reception/{current.sender_id}",
+    "pathExpression": "`${wa}/reception/${current.sender_id}`"
+  },
+  {
+    "file": "src/modules/conversations.tsx",
+    "line": 495,
+    "callee": "api",
+    "method": "PATCH",
+    "pathPattern": "/api/v1/admin/whatsapp-cases/{c.id}",
+    "pathExpression": "`/api/v1/admin/whatsapp-cases/${c.id}`"
+  },
+  {
+    "file": "src/modules/conversations.tsx",
+    "line": 591,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/whatsapp/reception/{current.sender_id}/reply",
+    "pathExpression": "`${wa}/reception/${current.sender_id}/reply`"
+  },
+  {
+    "file": "src/modules/conversations.tsx",
+    "line": 638,
+    "callee": "api",
+    "method": "PATCH",
+    "pathPattern": "/api/v1/admin/whatsapp/reception/{current!.sender_id}",
+    "pathExpression": "`${wa}/reception/${current!.sender_id}`"
+  },
+  {
+    "file": "src/modules/growth/GrowthModule.tsx",
+    "line": 151,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/growth/catalogue",
+    "pathExpression": "prefix + \"/growth/catalogue\""
+  },
+  {
+    "file": "src/modules/growth/GrowthModule.tsx",
+    "line": 157,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/growth/summary{filters}{(demo ? (filters ? \"&\" : \"?\") + \"include_demo=true\" : \"\")}",
+    "pathExpression": "prefix +\n            \"/growth/summary\" +\n            filters +\n            (demo ? (filters ? \"&\" : \"?\") + \"include_demo=true\" : \"\")"
+  },
+  {
+    "file": "src/modules/growth/GrowthModule.tsx",
+    "line": 166,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/google/booking-links",
+    "pathExpression": "prefix + \"/google/booking-links\""
+  },
+  {
+    "file": "src/modules/growth/GrowthModule.tsx",
+    "line": 167,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/google/capabilities",
+    "pathExpression": "prefix + \"/google/capabilities\""
+  },
+  {
+    "file": "src/modules/growth/GrowthModule.tsx",
+    "line": 168,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/google/changes",
+    "pathExpression": "prefix + \"/google/changes\""
+  },
+  {
+    "file": "src/modules/growth/GrowthModule.tsx",
+    "line": 203,
+    "callee": "api",
+    "method": "PUT",
+    "pathPattern": "/api/v1/admin/google/booking-links/{branch}",
+    "pathExpression": "prefix + \"/google/booking-links/\" + branch"
+  },
+  {
+    "file": "src/modules/growth/GrowthModule.tsx",
+    "line": 212,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/google/changes",
+    "pathExpression": "prefix + \"/google/changes\""
+  },
+  {
+    "file": "src/modules/growth/ModuleSettings.tsx",
+    "line": 41,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "/api/v1/staff/modules",
+    "pathExpression": "\"/api/v1/staff/modules\""
+  },
+  {
+    "file": "src/modules/growth/ModuleSettings.tsx",
+    "line": 60,
+    "callee": "api",
+    "method": "PUT",
+    "pathPattern": "/api/v1/staff/modules/{item.key}",
+    "pathExpression": "\"/api/v1/staff/modules/\" + item.key"
+  },
+  {
+    "file": "src/modules/growth/WebsiteActivity.tsx",
+    "line": 47,
+    "callee": "api",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/growth/website-activity?traffic={traffic}",
+    "pathExpression": "\"/api/v1/admin/growth/website-activity?traffic=\" + traffic"
+  },
+  {
+    "file": "src/modules/operations.tsx",
+    "line": 58,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/analytics",
+    "pathExpression": "\"/api/v1/admin/analytics\""
+  },
+  {
+    "file": "src/modules/operations.tsx",
+    "line": 59,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "{overview ? null : \"/api/v1/admin/operations\"}",
+    "pathExpression": "overview ? null : \"/api/v1/admin/operations\""
+  },
+  {
+    "file": "src/modules/operations.tsx",
+    "line": 62,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "{overview ? null : \"/api/health/ready\"}",
+    "pathExpression": "overview ? null : \"/api/health/ready\""
+  },
+  {
+    "file": "src/modules/operations.tsx",
+    "line": 399,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/catalogue",
+    "pathExpression": "\"/api/v1/admin/catalogue\""
+  },
+  {
+    "file": "src/modules/operations.tsx",
+    "line": 400,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/doctors",
+    "pathExpression": "\"/api/v1/admin/doctors\""
+  },
+  {
+    "file": "src/modules/schedule-range-actions.tsx",
+    "line": 325,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/schedule-exceptions/preview",
+    "pathExpression": "\"/api/v1/admin/schedule-exceptions/preview\""
+  },
+  {
+    "file": "src/modules/schedule-range-actions.tsx",
+    "line": 373,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/schedule-exceptions",
+    "pathExpression": "\"/api/v1/admin/schedule-exceptions\""
+  },
+  {
+    "file": "src/modules/schedule-range-actions.tsx",
+    "line": 444,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/schedule-timeline/open",
+    "pathExpression": "\"/api/v1/admin/schedule-timeline/open\""
+  },
+  {
+    "file": "src/modules/schedule-range-actions.tsx",
+    "line": 499,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "{valid\n      ? \"/api/v1/admin/schedule-timeline/check?\" +\n          new URLSearchParams({\n            doctor_id: range.doctor.id,\n            branch_id: branch,\n            consultation_type: mode,\n            starts_at: startsAt,\n            ends_at: endsAt,\n          })\n      : null}",
+    "pathExpression": "valid\n      ? \"/api/v1/admin/schedule-timeline/check?\" +\n          new URLSearchParams({\n            doctor_id: range.doctor.id,\n            branch_id: branch,\n            consultation_type: mode,\n            starts_at: startsAt,\n            ends_at: endsAt,\n          })\n      : null"
+  },
+  {
+    "file": "src/modules/schedule-range-actions.tsx",
+    "line": 629,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/schedule-timeline/appointments",
+    "pathExpression": "\"/api/v1/admin/schedule-timeline/appointments\""
+  },
+  {
+    "file": "src/modules/schedule-timeline.tsx",
+    "line": 151,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/doctors",
+    "pathExpression": "\"/api/v1/admin/doctors\""
+  },
+  {
+    "file": "src/modules/schedule-timeline.tsx",
+    "line": 152,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/catalogue",
+    "pathExpression": "\"/api/v1/admin/catalogue\""
+  },
+  {
+    "file": "src/modules/schedule-timeline.tsx",
+    "line": 203,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/schedule-timeline?day={day}{chosenBranch === \"all\" ? \"\" : `&branch_id=${encodeURIComponent(chosenBranch)}`}",
+    "pathExpression": "`/api/v1/admin/schedule-timeline?day=${day}${chosenBranch === \"all\" ? \"\" : `&branch_id=${encodeURIComponent(chosenBranch)}`}`"
+  },
+  {
+    "file": "src/modules/schedule-timeline.tsx",
+    "line": 1042,
+    "callee": "api",
+    "method": "DELETE",
+    "pathPattern": "/api/v1/admin/schedule-exceptions/{selected.span.exception_id}",
+    "pathExpression": "`/api/v1/admin/schedule-exceptions/${selected.span.exception_id}`"
+  },
+  {
+    "file": "src/modules/settings.tsx",
+    "line": 64,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "{user.role === \"admin\" ? \"/api/v1/staff/users\" : null}",
+    "pathExpression": "user.role === \"admin\" ? \"/api/v1/staff/users\" : null"
+  },
+  {
+    "file": "src/modules/settings.tsx",
+    "line": 284,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/staff/users",
+    "pathExpression": "\"/api/v1/staff/users\""
+  },
+  {
+    "file": "src/modules/settings.tsx",
+    "line": 353,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/staff/password",
+    "pathExpression": "\"/api/v1/staff/password\""
+  },
+  {
+    "file": "src/modules/settings.tsx",
+    "line": 372,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/staff/design-guide",
+    "pathExpression": "\"/api/v1/staff/design-guide\""
+  },
+  {
+    "file": "src/modules/settings.tsx",
+    "line": 412,
+    "callee": "api",
+    "method": "PUT",
+    "pathPattern": "/api/v1/staff/permissions/{key}",
+    "pathExpression": "`/api/v1/staff/permissions/${key}`"
+  },
+  {
+    "file": "src/modules/settings.tsx",
+    "line": 539,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/staff/audit?{query}&limit={limit}",
+    "pathExpression": "`/api/v1/staff/audit?${query}&limit=${limit}`"
+  },
+  {
+    "file": "src/modules/settings.tsx",
+    "line": 554,
+    "callee": "href",
+    "method": "GET",
+    "pathPattern": "/api/v1/staff/audit.csv?{query}",
+    "pathExpression": "`/api/v1/staff/audit.csv?${query}`"
+  },
+  {
+    "file": "src/modules/voice.tsx",
+    "line": 108,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/staff/voice/sessions/{encodeURIComponent(call.id)}/transcript",
+    "pathExpression": "`/api/v1/staff/voice/sessions/${encodeURIComponent(call.id)}/transcript`"
+  },
+  {
+    "file": "src/modules/voice.tsx",
+    "line": 281,
+    "callee": "recordingBlob",
+    "method": "POST",
+    "pathPattern": "/api/v1/staff/voice/sessions/{encodeURIComponent(call.id)}/recording",
+    "pathExpression": "`/api/v1/staff/voice/sessions/${encodeURIComponent(call.id)}/recording`"
+  },
+  {
+    "file": "src/modules/voice.tsx",
+    "line": 392,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/staff/voice/recording-access",
+    "pathExpression": "\"/api/v1/staff/voice/recording-access\""
+  },
+  {
+    "file": "src/modules/voice.tsx",
+    "line": 431,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/staff/voice?offset={offset}",
+    "pathExpression": "`/api/v1/staff/voice?offset=${offset}`"
+  },
+  {
+    "file": "src/modules/weekly-hours.tsx",
+    "line": 72,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "{branch\n      ? \"/api/v1/admin/schedule-timeline/weekly?\" +\n          new URLSearchParams({\n            doctor_id: doctor.id,\n            branch_id: branch,\n            consultation_type: mode,\n            day: starts,\n          })\n      : null}",
+    "pathExpression": "branch\n      ? \"/api/v1/admin/schedule-timeline/weekly?\" +\n          new URLSearchParams({\n            doctor_id: doctor.id,\n            branch_id: branch,\n            consultation_type: mode,\n            day: starts,\n          })\n      : null"
+  },
+  {
+    "file": "src/modules/weekly-hours.tsx",
+    "line": 250,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/schedule-timeline/weekly/preview",
+    "pathExpression": "\"/api/v1/admin/schedule-timeline/weekly/preview\""
+  },
+  {
+    "file": "src/modules/weekly-hours.tsx",
+    "line": 569,
+    "callee": "api",
+    "method": "PUT",
+    "pathPattern": "/api/v1/admin/schedule-timeline/weekly",
+    "pathExpression": "\"/api/v1/admin/schedule-timeline/weekly\""
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 102,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/operations-config",
+    "pathExpression": "wa + \"/operations-config\""
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 188,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/reception",
+    "pathExpression": "wa + \"/reception\""
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 189,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/campaigns",
+    "pathExpression": "wa + \"/campaigns\""
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 190,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp-assets",
+    "pathExpression": "\"/api/v1/admin/whatsapp-assets\""
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 191,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/templates",
+    "pathExpression": "wa + \"/templates\""
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 523,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "{path}",
+    "pathExpression": "path"
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 526,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp-assets",
+    "pathExpression": "\"/api/v1/admin/whatsapp-assets\""
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 585,
+    "callee": "assetUrl",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/assets/{d.guide.id}",
+    "pathExpression": "d.guide.id"
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 614,
+    "callee": "uploadTo",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/departments/{d.id}/guide",
+    "pathExpression": "`/api/v1/admin/departments/${d.id}/guide`"
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 639,
+    "callee": "assetUrl",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/assets/{d.photo.id}",
+    "pathExpression": "d.photo.id"
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 671,
+    "callee": "uploadTo",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/doctors/{d.id}/photo",
+    "pathExpression": "`/api/v1/admin/doctors/${d.id}/photo`"
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 735,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/followup-rules",
+    "pathExpression": "wa + \"/followup-rules\""
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 736,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/templates",
+    "pathExpression": "wa + \"/templates\""
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 737,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/appointments?status=completed",
+    "pathExpression": "\"/api/v1/admin/appointments?status=completed\""
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 960,
+    "callee": "api",
+    "method": "PUT",
+    "pathPattern": "/api/v1/admin/whatsapp/followup-rules/{edit.kind}",
+    "pathExpression": "`${wa}/followup-rules/${edit.kind}`"
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 996,
+    "callee": "api",
+    "method": "POST",
+    "pathPattern": "/api/v1/admin/whatsapp/appointments/{visit}/followup",
+    "pathExpression": "`${wa}/appointments/${visit}/followup`"
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 1022,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp/outbound",
+    "pathExpression": "wa + \"/outbound\""
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 1023,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/whatsapp-delivery-issues",
+    "pathExpression": "\"/api/v1/admin/whatsapp-delivery-issues\""
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 1153,
+    "callee": "useResource",
+    "method": "GET",
+    "pathPattern": "/api/v1/admin/catalogue",
+    "pathExpression": "\"/api/v1/admin/catalogue\""
+  },
+  {
+    "file": "src/modules/whatsapp.tsx",
+    "line": 1254,
+    "callee": "api",
+    "method": "PATCH",
+    "pathPattern": "/api/v1/admin/whatsapp/branches/{edit.id}",
+    "pathExpression": "`${wa}/branches/${edit.id}`"
+  },
+  {
+    "file": "src/talk.tsx",
+    "line": 38,
+    "callee": "fetch",
+    "method": "body ? \"POST\" : \"GET\"",
+    "pathPattern": "{path}",
+    "pathExpression": "path"
+  },
+  {
+    "file": "src/talk.tsx",
+    "line": 80,
+    "callee": "fetch",
+    "method": "POST",
+    "pathPattern": "/api/v1/web/voice/sessions/end",
+    "pathExpression": "\"/api/v1/web/voice/sessions/end\""
+  },
+  {
+    "file": "src/talk.tsx",
+    "line": 95,
+    "callee": "request",
+    "method": "GET",
+    "pathPattern": "/api/v1/web/voice/config",
+    "pathExpression": "\"/api/v1/web/voice/config\""
+  },
+  {
+    "file": "src/talk.tsx",
+    "line": 134,
+    "callee": "request",
+    "method": "POST",
+    "pathPattern": "/api/v1/web/voice/sessions",
+    "pathExpression": "\"/api/v1/web/voice/sessions\""
+  }
+]
