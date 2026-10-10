@@ -1,6 +1,6 @@
 # HMS_NEW — Schema & Backend Build Plan
 
-Implements the ERD in [`../design/erd-v2/`](../design/erd-v2/README.md). Status: **Phase 5 (clinical core) done** — encounters opened by check-in, vitals, versioned and signed notes, diagnoses/problem list, allergies, care-relationship chart access with break-glass, CORS and dev login for front-ends; 111 tests green. Next: M06 diagnostics (lab/imaging orders and results), then M09/M10 pharmacy and inventory, M11 billing.
+Implements the ERD in [`../design/erd-v2/`](../design/erd-v2/README.md). Status: **Phase 5 (clinical core) done** — encounters opened by check-in, vitals, versioned and signed notes, diagnoses/problem list, allergies, care-relationship chart access with break-glass, CORS and dev login for front-ends. **Virtual OPD** added (teleconsultation sessions, patient join links, consent documents, Jitsi grants — [VIRTUAL_OPD_PLAN.md](VIRTUAL_OPD_PLAN.md)); 117 tests green. Next: M06 diagnostics (lab/imaging orders and results), then M09/M10 pharmacy and inventory, M11 billing.
 
 ## 1. Decisions (locked)
 | # | Decision | Choice |

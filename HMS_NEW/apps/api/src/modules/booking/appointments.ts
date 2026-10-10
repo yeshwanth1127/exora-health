@@ -3,7 +3,7 @@
 // this code: the reservation exclusion constraint rejects any overlapping hold or booking.
 import { randomInt } from 'node:crypto';
 import { sql, type DB, type Kysely, type Transaction } from '@hms/db';
-import { conflict, invalid, notFound, pgCode, preconditionFailed, runCommand, type CommandContext } from '@hms/platform';
+import { conflict, invalid, notFound, pgCode, preconditionFailed, runCommand, writeAudit, writeOutbox, type AuditInput, type CommandContext, type EventInput } from '@hms/platform';
 import { clock, type Caller } from '../../caller.ts';
 import { practitionerResourceId } from './calendar.ts';
 
@@ -280,7 +280,7 @@ async function confirmHeldReservation(
     aggregateType: 'booking.appointment',
     aggregateId: appt.id,
     aggregateVersion: appt.version,
-    payload: { ...result, practitionerStaffId: reservation.staff_id, patientId: details.patientId, bookingPartyId: details.bookingPartyId },
+    payload: { ...result, practitionerStaffId: reservation.staff_id, patientId: details.patientId, bookingPartyId: details.bookingPartyId, visitMode: session.visit_mode },
   });
   return result;
 }
@@ -492,6 +492,31 @@ export async function checkIn(db: Kysely<DB>, caller: Caller, input: { appointme
     const appt = await lockAppointment(ctx.tx, input.appointmentId);
     return checkInLocked(ctx, now, appt, input.patientId);
   });
+}
+
+/**
+ * Event consumer step: a virtual patient entered the waiting room, so they have "arrived". Checks the
+ * appointment in when the patient record is already linked and it is the appointment's day; otherwise
+ * leaves it for the front desk (who link the patient at check-in). Idempotent.
+ */
+export async function checkInVirtualArrival(tx: Transaction<DB>, tenantId: string, appointmentId: string, at: Date, correlationId: string | null): Promise<boolean> {
+  const appt = await lockAppointment(tx, appointmentId);
+  if (appt.status !== 'confirmed' || appt.visit_mode !== 'virtual' || !appt.patient_id) return false;
+  if (appt.session_on !== (await facilityToday(tx, appt.facility_id, at))) return false;
+  const audits: AuditInput[] = [];
+  const events: EventInput[] = [];
+  const ctx: CommandContext = {
+    tx,
+    tenantId,
+    actor: { kind: 'system' },
+    correlationId: correlationId ?? '',
+    audit: (a) => audits.push(a),
+    emit: (e) => events.push(e),
+  };
+  await checkInLocked(ctx, at, appt, undefined);
+  await writeAudit(tx, tenantId, null, correlationId, audits.map((a) => ({ ...a, reason: 'patient entered the virtual waiting room' })));
+  await writeOutbox(tx, tenantId, correlationId, events);
+  return true;
 }
 
 export interface WalkInInput {

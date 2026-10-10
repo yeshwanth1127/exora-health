@@ -831,6 +831,76 @@ export interface ClinicalObservation {
   version: Generated<number>;
 }
 
+export interface ClinicalTeleConsent {
+  accepted_at: Generated<Timestamp>;
+  client_ip_hash: string | null;
+  document_id: string;
+  id: Generated<string>;
+  method: string;
+  note: string | null;
+  recorded_by_staff_id: string | null;
+  session_id: string;
+  tenant_id: string;
+  user_agent_hash: string | null;
+}
+
+export interface ClinicalTeleConsentDocument {
+  body: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  doc_version: string;
+  id: Generated<string>;
+  language: Generated<string>;
+  published_at: Timestamp | null;
+  retired_at: Timestamp | null;
+  tenant_id: string;
+  title: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface ClinicalTeleSession {
+  appointment_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  end_note: string | null;
+  end_outcome: string | null;
+  ended_at: Timestamp | null;
+  ended_by: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  identity_method: string | null;
+  identity_note: string | null;
+  identity_verified_at: Timestamp | null;
+  identity_verified_by: string | null;
+  patient_left_at: Timestamp | null;
+  patient_link_expires_at: Timestamp | null;
+  patient_link_hash: string | null;
+  patient_link_issued_at: Timestamp | null;
+  patient_waiting_since: Timestamp | null;
+  practitioner_staff_id: string;
+  provider: Generated<string>;
+  room_name: string;
+  started_at: Timestamp | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface ClinicalTeleSessionEvent {
+  actor_kind: string;
+  actor_staff_id: string | null;
+  detail: Generated<Json>;
+  event_type: string;
+  id: Generated<string>;
+  occurred_at: Generated<Timestamp>;
+  session_id: string;
+  tenant_id: string;
+}
+
 export interface PatientPatient {
   birth_date: string | null;
   birth_date_estimated: Generated<boolean>;
@@ -1394,6 +1464,10 @@ export interface DB {
   "clinical.encounter_status_history": ClinicalEncounterStatusHistory;
   "clinical.form_template": ClinicalFormTemplate;
   "clinical.observation": ClinicalObservation;
+  "clinical.tele_consent": ClinicalTeleConsent;
+  "clinical.tele_consent_document": ClinicalTeleConsentDocument;
+  "clinical.tele_session": ClinicalTeleSession;
+  "clinical.tele_session_event": ClinicalTeleSessionEvent;
   "patient.patient": PatientPatient;
   "patient.patient_address": PatientPatientAddress;
   "patient.patient_consent": PatientPatientConsent;

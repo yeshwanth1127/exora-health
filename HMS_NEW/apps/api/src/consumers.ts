@@ -3,7 +3,9 @@
 import { sql } from '@hms/db';
 import { writeOutbox } from '@hms/platform';
 import type { EventHandler } from '../../worker/src/dispatcher.ts';
+import { checkInVirtualArrival } from './modules/booking/appointments.ts';
 import { cancelEncounterForAppointment, openEncounterForAppointment } from './modules/clinical/encounters.ts';
+import { closeSessionForAppointment, ensureSessionForAppointment } from './modules/telehealth/sessions.ts';
 
 /** Check-in (booked or walk-in) opens the doctor's encounter. */
 export const openEncounterOnCheckIn: EventHandler = {
@@ -59,4 +61,44 @@ export const completeAppointmentOnEncounterFinished: EventHandler = {
   },
 };
 
-export const consumers: EventHandler[] = [openEncounterOnCheckIn, cancelEncounterOnAppointmentCancelled, completeAppointmentOnEncounterFinished];
+/** A virtual appointment gets its teleconsultation (room, lifecycle) as soon as it is booked. */
+export const createTeleSessionOnVirtualBooking: EventHandler = {
+  consumer: 'clinical.create_tele_session_on_virtual_booking',
+  eventTypes: ['appointment.confirmed'],
+  module: 'clinical',
+  async handle(tx, event) {
+    if (event.payload['visitMode'] !== 'virtual') return;
+    await ensureSessionForAppointment(tx, event.tenantId, String(event.payload['appointmentId']), event.occurredAt);
+  },
+};
+
+/** A cancelled or no-show appointment closes its teleconsultation and revokes the patient link. */
+export const closeTeleSessionWithAppointment: EventHandler = {
+  consumer: 'clinical.close_tele_session_with_appointment',
+  eventTypes: ['appointment.cancelled', 'appointment.no_show'],
+  module: 'clinical',
+  async handle(tx, event) {
+    const outcome = event.eventType === 'appointment.cancelled' ? 'cancelled' : 'no_show';
+    await closeSessionForAppointment(tx, event.tenantId, String(event.payload['appointmentId']), outcome, event.occurredAt);
+  },
+};
+
+/** A virtual patient entering the waiting room has arrived: check the appointment in (opens the encounter). */
+export const checkInOnTeleWaiting: EventHandler = {
+  consumer: 'booking.check_in_on_tele_waiting',
+  eventTypes: ['teleconsult.patient_waiting'],
+  module: 'booking',
+  async handle(tx, event) {
+    const at = typeof event.payload['at'] === 'string' ? new Date(event.payload['at']) : event.occurredAt;
+    await checkInVirtualArrival(tx, event.tenantId, String(event.payload['appointmentId']), at, event.correlationId);
+  },
+};
+
+export const consumers: EventHandler[] = [
+  openEncounterOnCheckIn,
+  cancelEncounterOnAppointmentCancelled,
+  completeAppointmentOnEncounterFinished,
+  createTeleSessionOnVirtualBooking,
+  closeTeleSessionWithAppointment,
+  checkInOnTeleWaiting,
+];

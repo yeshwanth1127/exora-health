@@ -21,7 +21,7 @@ The token's issuer + subject must match an active `platform.user_account`. If on
 | Subject | Who | Can |
 |---|---|---|
 | `ravi` | Ravi Shankar, front desk (Bengaluru) | register patients, book, check in, run the queue |
-| `asha` | Dr Asha Rao, General Medicine (has a council registration, so can sign notes) | queue, encounters, vitals, notes, diagnoses |
+| `asha` | Dr Asha Rao, General Medicine (has a council registration, so can sign notes) | queue, encounters, vitals, notes, diagnoses; Saturday 14:00–16:00 video OPD (Bengaluru) |
 | `meena` | Meena Kumari, nurse (Bengaluru) | vitals, nursing notes |
 | `priya` | Priya Nair, tenant admin | everything except break-glass; schedules |
 | `whatsapp-bot` | WhatsApp booking bot (service account) | find/register patients, book, cancel, reschedule |
@@ -131,10 +131,34 @@ Each endpoint needs one permission, checked **for the facility involved** (a rol
 | `POST /v1/patients/:id/allergies` · `PATCH /v1/allergies/:id` | `clinical.write` + care | Allergies |
 | `POST /v1/patients/:id/break-glass` | `break_glass.use` | Emergency chart access, audited |
 
+### Virtual OPD (teleconsultation)
+Design and rules: [../plan/VIRTUAL_OPD_PLAN.md](../plan/VIRTUAL_OPD_PLAN.md). Book a slot from a session with `visitMode: "virtual"` as usual; the worker creates its teleconsultation.
+
+| Method & path | Permission | Purpose |
+|---|---|---|
+| `GET /v1/teleconsults?facilityId&date&staffId&status` | `teleconsult.read` @ facility | Worklist: status, consent, waiting since, link state, encounter |
+| `GET /v1/teleconsults/:id` · `GET /v1/appointments/:id/teleconsult` | `teleconsult.read` @ facility | Detail with the session's event log |
+| `POST /v1/appointments/:id/teleconsult/link` | `teleconsult.manage` @ facility | Issue (or re-issue, revoking the old) patient join link; returned once, `no-store` |
+| `POST /v1/teleconsults/:id/consent` | `consents.record` @ facility | Staff record verbal consent (`documentVersion`, `note`) |
+| `POST /v1/teleconsults/:id/start` | `teleconsult.conduct` + assigned doctor | `scheduled/waiting → in_progress`; appointment must be checked in |
+| `POST /v1/teleconsults/:id/join` | `teleconsult.conduct` + assigned doctor | Moderator Jitsi grant `{domain, roomName, jwt, expiresAt}` (5 min) |
+| `POST /v1/teleconsults/:id/identity` | `teleconsult.conduct` + assigned doctor | Record how identity was confirmed (`known_patient`, `photo_id`, `abha`, `verified_by_staff`) |
+| `POST /v1/teleconsults/:id/end` | `teleconsult.conduct` + assigned doctor | End the call: `consulted` (needs identity) · `patient_did_not_join` · `technical_failure` (need a note). Finish the encounter separately |
+
+Patient endpoints take the link token in `X-Teleconsult-Token` (no bearer token). The link is `<TELE_PATIENT_LINK_BASE>#t=<token>`; the page reads the fragment.
+
+| Method & path | Purpose |
+|---|---|
+| `GET /tele/v1/session` | Doctor, hospital, times, join window, consent document, `next` (`accept_consent`, `wait_for_start_time`, `enter_waiting_room`, `wait_for_doctor`, `join`, `closed`, `unavailable`), `retryAfterSeconds` |
+| `POST /tele/v1/session/consent` | `{documentVersion, accepted: true}` |
+| `POST /tele/v1/session/check-in` | Enter the waiting room (inside the join window); a linked patient is checked in automatically |
+| `POST /tele/v1/session/join` | Participant Jitsi grant, once the doctor has started |
+| `POST /tele/v1/session/leave` | Record that the patient left (the call can be rejoined) |
+
 🔑 = requires `Idempotency-Key`.
 
 ## Worker
-`pnpm worker:dev` delivers outbox events (exactly once per consumer, retries with exponential backoff, dead-letters after 10 attempts), expires lapsed slot holds every 30 s, keeps monthly audit/outbox partitions ahead daily, and purges expired idempotency records hourly. Registered consumers: `appointment.checked_in` → open encounter; `appointment.cancelled` → cancel a not-yet-started encounter; `encounter.finished` → complete the appointment and its queue token. Still to come: notifications (comms) and charges (billing).
+`pnpm worker:dev` delivers outbox events (exactly once per consumer, retries with exponential backoff, dead-letters after 10 attempts), expires lapsed slot holds every 30 s, keeps monthly audit/outbox partitions ahead daily, and purges expired idempotency records hourly. Registered consumers: `appointment.checked_in` → open encounter; `appointment.cancelled` → cancel a not-yet-started encounter; `encounter.finished` → complete the appointment and its queue token; `appointment.confirmed` (virtual) → create the teleconsultation; `appointment.cancelled`/`no_show` → close it and revoke the link; `teleconsult.patient_waiting` → check the appointment in. Still to come: notifications (comms) and charges (billing).
 
 ## Try it
 ```bash

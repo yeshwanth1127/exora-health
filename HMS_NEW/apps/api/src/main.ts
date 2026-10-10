@@ -13,6 +13,7 @@ const app = buildServer({
   allowClockOverride: config.allowClockOverride,
   logger: true,
   corsOrigins: config.corsOrigins,
+  telehealth: config.telehealth,
   ...(config.auth.mode === 'dev' ? { devLogin: (subject: string) => signDevToken(subject, { secret: (config.auth as { secret: string }).secret }) } : {}),
 });
 

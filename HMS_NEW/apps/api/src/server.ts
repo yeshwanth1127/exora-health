@@ -15,6 +15,8 @@ import { registerCalendarRoutes } from './http/routes/calendar.ts';
 import { registerDirectoryRoutes } from './http/routes/directory.ts';
 import { registerPatientRoutes } from './http/routes/patients.ts';
 import { registerQueueRoutes } from './http/routes/queue.ts';
+import { registerTelehealthRoutes, TELE_TOKEN_HEADER } from './http/routes/telehealth.ts';
+import { loadTelehealthSettings, type TelehealthSettings } from './config.ts';
 
 export interface ServerDeps {
   db: Kysely<DB>;
@@ -29,6 +31,8 @@ export interface ServerDeps {
    * front-end can sign in without an identity provider. Never set in production.
    */
   devLogin?: (subject: string) => Promise<string>;
+  /** Virtual OPD settings (Jitsi signing, join window); defaults to the environment's. */
+  telehealth?: TelehealthSettings;
 }
 
 const REQUEST_ID = /^[A-Za-z0-9_.:-]{8,128}$/;
@@ -47,7 +51,7 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   void app.register(cors, {
     origin: deps.corsOrigins ?? false,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['authorization', 'content-type', 'idempotency-key', 'x-request-id', 'x-tenant-id'],
+    allowedHeaders: ['authorization', 'content-type', 'idempotency-key', 'x-request-id', 'x-tenant-id', TELE_TOKEN_HEADER],
     exposedHeaders: ['x-request-id'],
     maxAge: 600,
   });
@@ -59,6 +63,10 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   });
 
   app.addHook('onRequest', async (request) => {
+    if (deps.allowClockOverride && request.url.startsWith('/tele/v1/')) {
+      const now = request.headers['x-test-now'];
+      if (typeof now === 'string') request.clockOverride = new Date(now);
+    }
     if (!request.url.startsWith('/v1/')) return;
     const header = request.headers.authorization;
     if (!header?.startsWith('Bearer ')) throw new AuthenticationError('missing bearer token');
@@ -116,6 +124,7 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   registerBookingRoutes(app, deps.db);
   registerQueueRoutes(app, deps.db);
   registerClinicalRoutes(app, deps.db);
+  registerTelehealthRoutes(app, deps.db, deps.telehealth ?? loadTelehealthSettings());
   return app;
 }
 

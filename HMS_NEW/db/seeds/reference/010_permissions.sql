@@ -36,7 +36,11 @@ INSERT INTO platform.permission (code, module_code, description, is_sensitive) V
   ('encounters.manage',      'clinical', 'Open, start, finish and cancel encounters',           false),
   ('clinical.read',          'clinical', 'Read charts of patients under your care',             true),
   ('clinical.write',         'clinical', 'Record vitals, notes, diagnoses and allergies',       true),
-  ('clinical.sign',          'clinical', 'Sign clinical notes',                                 true)
+  ('clinical.sign',          'clinical', 'Sign clinical notes',                                 true),
+  -- teleconsultation (Virtual OPD)
+  ('teleconsult.read',       'clinical', 'See the teleconsultation worklist',                   false),
+  ('teleconsult.manage',     'clinical', 'Issue patient join links for teleconsultations',      false),
+  ('teleconsult.conduct',    'clinical', 'Start, join and end your own teleconsultations',      true)
 ON CONFLICT (code) DO UPDATE
   SET module_code = EXCLUDED.module_code,
       description = EXCLUDED.description,

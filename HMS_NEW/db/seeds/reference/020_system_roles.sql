@@ -49,10 +49,11 @@ ON CONFLICT DO NOTHING;
 
 -- Clinical permissions for the built-in roles (tenant_admin already receives every permission above).
 WITH bundle (role_code, permission_code) AS (
-  SELECT 'doctor', unnest(ARRAY['encounters.read', 'encounters.manage', 'clinical.read', 'clinical.write', 'clinical.sign'])
-  UNION ALL SELECT 'nurse', unnest(ARRAY['encounters.read', 'encounters.manage', 'clinical.read', 'clinical.write'])
-  UNION ALL SELECT 'front_desk', unnest(ARRAY['encounters.read'])
-  UNION ALL SELECT 'auditor', unnest(ARRAY['encounters.read'])
+  SELECT 'doctor', unnest(ARRAY['encounters.read', 'encounters.manage', 'clinical.read', 'clinical.write', 'clinical.sign',
+                                'teleconsult.read', 'teleconsult.conduct'])
+  UNION ALL SELECT 'nurse', unnest(ARRAY['encounters.read', 'encounters.manage', 'clinical.read', 'clinical.write', 'teleconsult.read'])
+  UNION ALL SELECT 'front_desk', unnest(ARRAY['encounters.read', 'teleconsult.read', 'teleconsult.manage'])
+  UNION ALL SELECT 'auditor', unnest(ARRAY['encounters.read', 'teleconsult.read'])
   UNION ALL SELECT 'tenant_admin', code FROM platform.permission WHERE module_code = 'clinical'
 )
 INSERT INTO platform.role_permission (role_id, permission_id)
