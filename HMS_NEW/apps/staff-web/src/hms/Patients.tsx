@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,35 +42,32 @@ export function PatientLookup({
 }) {
   const [text, setText] = useState(""),
     [search, setSearch] = useState("");
+  useEffect(() => {
+    // Results follow the text as it is typed; the last keystroke wins.
+    const timer = setTimeout(() => setSearch(text.trim()), 250);
+    return () => clearTimeout(timer);
+  }, [text]);
+  const digits = search.replace(/[\s()-]/g, "");
+  const params = search.startsWith("+")
+    ? { phone: digits, limit: 20 }
+    : /^\d{10}$/.test(digits)
+      ? { phone: `+91${digits}`, limit: 20 }
+      : { q: search, limit: 20 };
   const result = useQuery<{ items: Patient[] }>(
-    search
-      ? `/v1/patients?${query(search.startsWith("+") ? { phone: search, limit: 20 } : { q: search, limit: 20 })}`
-      : null,
+    search.length >= 2 ? `/v1/patients?${query(params)}` : null,
   );
   return (
     <div className="space-y-3">
-      <form
-        className="flex gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setSearch(text.trim());
-        }}
-      >
+      <div className="flex items-center gap-2">
+        <Search className="size-4 text-muted-foreground" />
         <Input
           aria-label="Patient search"
-          placeholder="Name, MRN or +91 phone"
+          placeholder="Type a name, MRN or phone"
+          autoComplete="off"
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
-        <Button
-          type="submit"
-          variant="outline"
-          disabled={text.trim().length < 2}
-        >
-          <Search />
-          Search
-        </Button>
-      </form>
+      </div>
       <ErrorMessage text={result.error} />
       {result.loading && <p className="text-sm">Searching…</p>}
       {result.data?.items.map((p) => (
@@ -91,7 +88,7 @@ export function PatientLookup({
           <span>Select</span>
         </Button>
       ))}
-      {search && result.data?.items.length === 0 && (
+      {search.length >= 2 && result.data?.items.length === 0 && (
         <p className="text-sm text-muted-foreground">
           No match. Check the details before registering a new patient.
         </p>

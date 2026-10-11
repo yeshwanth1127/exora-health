@@ -22,6 +22,8 @@ export interface HoldSlotInput {
   staffId: string;
   slotStart: Date | string;
   holdMinutes?: number;
+  /** The clinic the caller was authorized for; the slot must still belong to it. */
+  facilityId?: string;
 }
 
 export interface HoldResult {
@@ -48,6 +50,7 @@ export async function holdSlot(db: Kysely<DB>, caller: Caller, input: HoldSlotIn
         FROM booking.available_slots(${resourceId}, (${start}::timestamptz)::date - 1, (${start}::timestamptz)::date + 1, ${now})
         WHERE slot_start = ${start}`.execute(ctx.tx);
       if (!slot) throw notFound('bookable slot', { staffId: input.staffId, slotStart: start.toISOString() });
+      if (input.facilityId && slot.facility_id !== input.facilityId) throw conflict('the slot moved to another clinic; pick it again', { reason: 'slot_unavailable' });
       if (slot.status === 'blocked') throw conflict('slot is blocked', { reason: 'slot_blocked' });
       if (slot.status === 'taken') throw conflict('slot is no longer available', { reason: 'slot_unavailable' });
 

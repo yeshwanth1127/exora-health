@@ -62,8 +62,9 @@ export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
   app.post('/v1/holds', async (request, reply) => {
     const body = parse(z.object({ staffId: uuid, slotStart: z.iso.datetime({ offset: true }), holdMinutes: z.number().int().min(1).max(30).optional() }), request.body);
     const facilityId = await slotFacility(db, callerOf(request), body.staffId, new Date(body.slotStart));
+    if (!facilityId) throw new DomainError('not_found', 'slot not found');
     authorize(principalOf(request), 'appointments.book', facilityId);
-    return reply.status(201).send(await holdSlot(db, callerOf(request), body, idempotencyKey(request)));
+    return reply.status(201).send(await holdSlot(db, callerOf(request), { ...body, facilityId }, idempotencyKey(request)));
   });
 
   app.delete('/v1/holds/:reservationId', async (request) => {

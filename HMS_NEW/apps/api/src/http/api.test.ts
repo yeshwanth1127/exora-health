@@ -526,6 +526,10 @@ describe('the booking journey over HTTP', () => {
     expect(reg).toMatchObject({ status: 201, body: { mrn: '000001' } });
     const found = await call('GET', '/v1/patients?phone=%2B919811122233', { token: tokens.frontDesk });
     expect(found.body.items.map((p: { patientId: string }) => p.patientId)).toEqual([reg.body.patientId]);
+    // Type-ahead: a fragment of the name finds her too; LIKE wildcards are literal
+    const typed = await call('GET', '/v1/patients?q=nit', { token: tokens.frontDesk });
+    expect(typed.body.items.map((p: { patientId: string }) => p.patientId)).toContain(reg.body.patientId);
+    expect((await call('GET', '/v1/patients?q=%25%25', { token: tokens.frontDesk })).body.items).toEqual([]);
     const checkedIn = await call('POST', `/v1/appointments/${appointmentId}/check-in`, { token: tokens.frontDesk, idem: true, now: morning, body: { patientId: reg.body.patientId } });
     expect(checkedIn).toMatchObject({ status: 200, body: { tokenNo: 1 } });
 

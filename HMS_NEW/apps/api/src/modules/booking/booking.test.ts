@@ -194,6 +194,11 @@ describe('leave, blocks, holidays and day plans', () => {
     expect(sessions.map((s) => s.source)).toEqual(['day_plan']);
   });
 
+  it('refuses a hold when the slot no longer belongs to the clinic the caller was authorized for', async () => {
+    const at = ist(monday, '07:00');
+    await expectDomainError(holdSlot(db, caller(at), { staffId: doctor2, slotStart: ist(monday, '09:30'), facilityId: facility2 }), 'conflict', 'slot_unavailable');
+  });
+
   it('reports booked appointments that a new block clashes with', async () => {
     const at = ist(monday, '07:00');
     const hold = await holdSlot(db, caller(at), { staffId: doctor2, slotStart: ist(monday, '09:45') });

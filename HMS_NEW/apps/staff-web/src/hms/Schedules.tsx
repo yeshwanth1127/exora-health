@@ -5,20 +5,16 @@ import {
   OriginalResourceContext,
   type OriginalResourceSource,
 } from "@/components/resource-source";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Clinic } from "./Clinic";
 import { useCommand, useQuery, useWorkspace } from "./hooks";
 import { can, today } from "./model";
 import { ErrorMessage, Hint } from "./ui";
 import { scheduleSource } from "./schedule-source";
-import { confirmLeave } from "./leave";
 
 export function Schedules() {
   const { me, facility, practitioners } = useWorkspace();
-  const [day, setDay] = useState(() => today(facility.timezone)),
-    [view, setView] = useState("timeline");
+  const [day, setDay] = useState(() => today(facility.timezone));
   const setting = useQuery<{ enabled: boolean; maxPerSession: number }>(
     `/v1/facilities/${facility.facilityId}/overbooking`,
   );
@@ -48,25 +44,11 @@ export function Schedules() {
           onSaved={() => void setting.refresh()}
         />
       )}
-      <Tabs
-        className="mt-5 mb-5"
-        value={view}
-        onValueChange={(next) => {
-          if (confirmLeave()) setView(next);
-        }}
-      >
-        <TabsList>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="slots">Bookable slots</TabsTrigger>
-        </TabsList>
-      </Tabs>
-      {view === "timeline" ? (
+      <div className="mt-5">
         <OriginalResourceContext.Provider value={source}>
           <ScheduleTimeline day={day} setDay={setDay} />
         </OriginalResourceContext.Provider>
-      ) : (
-        <Clinic page="schedules" />
-      )}
+      </div>
     </>
   );
 }

@@ -23,6 +23,8 @@ export interface PatientSearch {
 export async function searchPatients(db: Kysely<DB>, caller: Caller, s: PatientSearch): Promise<PatientSummary[]> {
   if (!s.q && !s.phone && !s.abhaNumber) throw invalid('give q, phone or abhaNumber');
   const limit = Math.min(s.limit ?? 20, 50);
+  // Substring match for search-as-you-type (short prefixes miss the similarity threshold); wildcards are literal.
+  const contains = s.q ? `%${s.q.toLowerCase().replace(/[\\%_]/g, '\\$&')}%` : null;
   return runQuery(db, caller.tenantId, async (tx) => {
     const { rows } = await sql<PatientSummary>`
       SELECT p.id AS "patientId", p.mrn, p.given_name || coalesce(' ' || p.family_name, '') AS name, p.sex,
@@ -32,7 +34,7 @@ export async function searchPatients(db: Kysely<DB>, caller: Caller, s: PatientS
              p.status
       FROM patient.patient p
       WHERE p.status <> 'merged'
-        AND (${s.q ?? null}::text IS NULL OR p.mrn = ${s.q ?? null} OR p.search_name % lower(${s.q ?? null}))
+        AND (${s.q ?? null}::text IS NULL OR p.mrn = ${s.q ?? null} OR p.search_name % lower(${s.q ?? null}) OR p.search_name LIKE ${contains})
         AND (${s.phone ?? null}::text IS NULL OR EXISTS (
               SELECT 1 FROM patient.patient_contact c WHERE c.patient_id = p.id AND c.kind = 'phone' AND c.value = ${s.phone ?? null}))
         AND (${s.abhaNumber?.replaceAll('-', '') ?? null}::text IS NULL OR EXISTS (
