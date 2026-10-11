@@ -132,6 +132,9 @@ export interface BookingFacilityHoliday {
   holiday_on: string;
   id: Generated<string>;
   name: string;
+  revoke_reason: string | null;
+  revoked_at: Timestamp | null;
+  revoked_by: string | null;
   tenant_id: string;
   updated_at: Generated<Timestamp>;
   updated_by: string | null;
@@ -207,6 +210,9 @@ export interface BookingScheduleException {
   on_date: string;
   reason: string | null;
   resource_id: string;
+  revoke_reason: string | null;
+  revoked_at: Timestamp | null;
+  revoked_by: string | null;
   slot_minutes: number | null;
   start_local: string | null;
   tenant_id: string;
@@ -237,6 +243,8 @@ export interface BookingScheduleRule {
   version: Generated<number>;
   visit_mode: Generated<string>;
   weekday: number;
+  withdrawn_at: Timestamp | null;
+  withdrawn_by: string | null;
 }
 
 export interface BookingWaitlistEntry {

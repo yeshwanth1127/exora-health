@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CalendarClock, Trash2 } from "lucide-react";
-import { api, dateTime, istDateTime } from "@/lib/api";
-import { Action, Field } from "@/components/workspace";
+import { dateTime, istDateTime } from "@/lib/api";
+import { Action, Field, useApi } from "@/components/workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -26,6 +26,7 @@ export function AppointmentActions({
   allowed: Record<string, boolean>;
   onSaved: () => void;
 }) {
+  const api = useApi();
   const [editing, setEditing] = useState(false),
     [deleting, setDeleting] = useState(false);
   const [start, setStart] = useState(istDateTime(new Date(item.starts_at))),
@@ -83,7 +84,7 @@ export function AppointmentActions({
         {canDelete && (
           <Button variant="outline" onClick={() => setDeleting(true)}>
             <Trash2 />
-            Delete appointment
+            Cancel appointment
           </Button>
         )}
       </div>
@@ -195,19 +196,19 @@ export function AppointmentActions({
       <AlertDialog open={deleting} onOpenChange={setDeleting}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this appointment?</AlertDialogTitle>
+            <AlertDialogTitle>Cancel this appointment?</AlertDialogTitle>
             <AlertDialogDescription>
               {item.patient_name} · {dateTime(item.starts_at)}. This frees the
-              time and removes the appointment from active lists. The cancelled
-              record remains in the Deleted filter and audit history.
+              time. The cancelled record and its reason stay in the
+              appointment history and audit log.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Field
-            label="Reason for deleting"
+            label="Reason for cancelling"
             id="delete-reason"
             error={
               deleteReason.trim().length < 2
-                ? "Enter a reason with at least 2 characters to delete."
+                ? "Enter a reason with at least 2 characters to cancel."
                 : undefined
             }
           >
@@ -231,9 +232,9 @@ export function AppointmentActions({
                 setDeleting(false);
                 onSaved();
               }}
-              success="Appointment deleted"
+              success="Appointment cancelled"
             >
-              Delete appointment
+              Cancel appointment
             </Action>
           </AlertDialogFooter>
         </AlertDialogContent>

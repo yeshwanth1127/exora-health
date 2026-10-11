@@ -1,8 +1,8 @@
-import { OriginalResourceContext } from "@/components/resource-source";
+import { OriginalResourceContext, isDraft } from "@/components/resource-source";
 import { useContext, useEffect, useRef, useState } from "react";
 import { Plus, LockKeyhole, CalendarPlus } from "lucide-react";
-import { api, dateTime, type Catalogue } from "@/lib/api";
-import { Action, Choice, Field, useResource } from "@/components/workspace";
+import { dateTime, type Catalogue } from "@/lib/api";
+import { Action, Choice, Field, useApi, useResource } from "@/components/workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -154,7 +154,7 @@ export function ScheduleRangeActions({
           </SheetDescription>
         </SheetHeader>
         <div className="px-4 pb-6 space-y-5">
-          {source && (
+          {isDraft(source) && (
             <Alert>
               <AlertDescription>
                 Draft only. Open, block, exact-time booking and conflict review
@@ -295,6 +295,7 @@ function BlockRange({
   allowed,
   refresh,
 }: Context) {
+  const api = useApi();
   const [editing, setEditing] = useState<DeskAppointment | null>(null);
   const [reason, setReason] = useState(""),
     [preview, setPreview] = useState<DeskAppointment[] | null>(null);
@@ -433,6 +434,7 @@ function BlockRange({
 }
 
 function OpenRange({ range, branch, mode, start, end, saved }: Context) {
+  const api = useApi();
   const [minutes, setMinutes] = useState(range.slotMinutes ?? 30);
   return (
     <div className="space-y-4">
@@ -488,6 +490,7 @@ function BookRange({
   valid,
   onTimeError,
 }: Context) {
+  const api = useApi();
   const [name, setName] = useState(""),
     [phone, setPhone] = useState(""),
     [reason, setReason] = useState(""),

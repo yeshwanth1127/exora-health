@@ -77,6 +77,55 @@ export type Slot = {
   visitMode: string;
   status: "free" | "taken" | "blocked";
 };
+export type Session = {
+  sessionOn: string;
+  facilityId: string;
+  visitMode: string;
+  startsAt: string;
+  endsAt: string;
+  slotMinutes: number | null;
+  maxWalkInTokens: number;
+  source: "weekly" | "day_plan" | "extra_hours";
+};
+export type ScheduleException = {
+  scheduleExceptionId: string;
+  onDate: string;
+  kind: "closed" | "block" | "extra_hours";
+  start: string | null;
+  end: string | null;
+  facilityId: string | null;
+  reason: string | null;
+  revokedAt: string | null;
+};
+export type FacilityHoliday = {
+  facilityHolidayId: string;
+  date: string;
+  name: string;
+  revokedAt: string | null;
+};
+export type WeeklyRule = {
+  scheduleRuleId: string;
+  facilityId: string;
+  weekday: number;
+  start: string;
+  end: string;
+  slotMinutes: number | null;
+  visitMode: string;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+};
+export type WeeklyPlanResult = {
+  affectedAppointmentIds: string[];
+  otherPublishedHours: {
+    facilityId: string;
+    facilityName: string;
+    visitMode: string;
+    weekday: number;
+    start: string;
+    end: string;
+  }[];
+  canSave: boolean;
+};
 export type Hold = {
   reservationId: string;
   slotStart: string;

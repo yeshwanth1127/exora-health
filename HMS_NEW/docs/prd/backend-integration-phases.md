@@ -111,3 +111,14 @@ Scope: `ClinicalRecords.tsx`, `Consultations.tsx`, `Patients.tsx`, `Queue.tsx`, 
 | 9 | The fee input is read-only and never sent, so there's no client-side fee tampering path. Fees come from the server price list at booking. | Info | No change needed |
 
 No high-severity issues were found in the frontend changes. The backend issues the review surfaced are G01, G15, G35, G38 and G40, all fixed in Phase 1.
+
+## Security review of Phase 2
+
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| 1 | Clinic blocks, extra hours and their previews are authorized at that clinic. Blocks without a clinic need `schedules.manage` at every clinic the doctor works at that day (`authorizeReach`). | Info | As designed |
+| 2 | Revoking uses the stored row's scope, never the request body, so a guessed id can't widen reach. Cross-tenant ids are hidden by RLS (404). | Info | Tested |
+| 3 | Weekly plans need `schedules.manage` at the target clinic and a practitioner affiliation on the start date. Replaced rules are withdrawn, never deleted. | Info | Tested |
+| 4 | Weekly preview lists the doctor's hours at other clinics (clinic name, weekday, times), including clinics outside the caller's grant, so overlaps can be explained. It contains no patient data. | Low | Accepted |
+| 5 | Exception, weekly-session and day-plan reads are filtered to the caller's facilities. All-clinic rows stay visible to any reader, the same as the Phase 1 rule for leave. | Info | As designed |
+| 6 | The frontend enables saves only when the source can write. The backend still authorizes every call. Each click mints a new idempotency key; an in-flight request disables the button. Retrying after an unknown outcome is still open under G26. | Low | Open (G26) |

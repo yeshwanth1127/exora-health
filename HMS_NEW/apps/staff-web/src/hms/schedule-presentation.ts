@@ -1,8 +1,41 @@
 import type { Catalogue } from "@/lib/api";
-import type { Doctor } from "@/modules/clinic-types";
+import type { Doctor, TimeBlock } from "@/modules/clinic-types";
 import type { DeskAppointment } from "@/modules/NurseDesk";
 import type { Period } from "@/modules/schedule-timeline";
-import type { Appointment, Facility, Practitioner, Slot } from "./types";
+import type {
+  Appointment,
+  Facility,
+  FacilityHoliday,
+  Practitioner,
+  ScheduleException,
+  Session,
+  Slot,
+} from "./types";
+
+/** Facility-local date and HH:MM of an instant. */
+export function localParts(iso: string, timeZone: string) {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(new Date(iso))
+      .map((x) => [x.type, x.value]),
+  );
+  return { date: `${p.year}-${p.month}-${p.day}`, time: `${p.hour}:${p.minute}` };
+}
+
+export type CalendarDay = {
+  day: string;
+  sessions: Session[];
+  exceptions: ScheduleException[];
+  holidays: FacilityHoliday[];
+};
 
 export function scheduleCatalogue(
   facility: Facility,
@@ -81,6 +114,7 @@ export function scheduleRow(
   slots: Slot[],
   appointments: Appointment[],
   facility: Facility,
+  calendar?: CalendarDay,
 ) {
   const visits = appointments.filter(
     (a) =>
@@ -109,13 +143,69 @@ export function scheduleRow(
         appointment,
       });
   }
-  // Missing closure/hold metadata and taken slots are deliberately not converted into invented periods.
+  let blocks: TimeBlock[] = [],
+    reason = "Holds and their expiry are not shown in this timeline.";
+  if (calendar) {
+    const local = (iso: string) => localParts(iso, facility.timezone).time;
+    blocks = calendar.sessions
+      .filter((x) => x.facilityId === facility.facilityId && x.slotMinutes)
+      .map((x) => ({
+        branch_id: x.facilityId,
+        consultation_type: x.visitMode,
+        starts_at_local: local(x.startsAt),
+        ends_at_local: local(x.endsAt),
+        slot_minutes: x.slotMinutes!,
+      }));
+    // Blocked slots carry the exception that blocks them, so it can be reviewed and unblocked.
+    const applies = (e: ScheduleException) =>
+      !e.revokedAt &&
+      e.kind !== "extra_hours" &&
+      (e.facilityId === null || e.facilityId === facility.facilityId);
+    for (const s of slots) {
+      if (s.facilityId !== facility.facilityId || s.status !== "blocked")
+        continue;
+      const t = local(s.slotStart);
+      const e = calendar.exceptions.find(
+        (x) => applies(x) && x.start && x.start.slice(0, 5) <= t && t < x.end!.slice(0, 5),
+      );
+      periods.push({
+        kind: "blocked",
+        starts_at: s.slotStart,
+        ends_at: s.slotEnd,
+        branch_id: facility.facilityId,
+        consultation_type: s.visitMode,
+        reason: e?.reason ?? "Blocked",
+        exception_id: e?.scheduleExceptionId,
+      });
+    }
+    // Whole-day closures and holidays remove the sessions entirely: show the day as blocked.
+    const dayStart = new Date(`${calendar.day}T00:00:00+05:30`).toISOString(),
+      dayEnd = new Date(`${calendar.day}T23:59:00+05:30`).toISOString();
+    for (const e of calendar.exceptions.filter(
+      (x) => applies(x) && x.kind === "closed" && !x.start,
+    ))
+      periods.push({
+        kind: "blocked",
+        starts_at: dayStart,
+        ends_at: dayEnd,
+        branch_id: e.facilityId,
+        reason: `Closed all day${e.reason ? `: ${e.reason}` : ""}`,
+        exception_id: e.scheduleExceptionId,
+      });
+    for (const h of calendar.holidays.filter((x) => !x.revokedAt))
+      periods.push({
+        kind: "blocked",
+        starts_at: dayStart,
+        ends_at: dayEnd,
+        branch_id: facility.facilityId,
+        reason: `Clinic holiday: ${h.name}`,
+      });
+  }
   return {
     doctor_id: doctor.id,
-    blocks: [],
-    has_override: false,
-    reason:
-      "Published hours, closures and holds require the complete calendar read model.",
+    blocks,
+    has_override: !!calendar?.sessions.some((x) => x.source === "day_plan"),
+    reason,
     periods: periods.sort((a, b) => a.starts_at.localeCompare(b.starts_at)),
     available_slots: periods.filter((p) => p.kind === "available").length,
     bookings: periods.filter((p) => p.kind === "booked").length,

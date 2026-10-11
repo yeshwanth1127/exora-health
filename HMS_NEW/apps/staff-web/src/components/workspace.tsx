@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { OriginalResourceContext } from "./resource-source";
+import { OriginalResourceContext, isDraft } from "./resource-source";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -32,6 +32,20 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+/** Writes for original components: through the resource source when one is provided. */
+export function useApi() {
+  const source = useContext(OriginalResourceContext);
+  return useCallback(
+    <T,>(path: string, options?: { method?: string; body?: unknown }): Promise<T> =>
+      source
+        ? source.write
+          ? source.write<T>(path, options)
+          : Promise.reject(new Error(source.unavailableWrite))
+        : api<T>(path, options),
+    [source],
+  );
+}
 
 export type Permissions = {
   role: string;
@@ -403,8 +417,8 @@ export function Action({
   return (
     <Button
       variant={variant}
-      disabled={disabled || busy || !!source?.unavailableWrite}
-      title={source?.unavailableWrite || undefined}
+      disabled={disabled || busy || isDraft(source)}
+      title={isDraft(source) ? source!.unavailableWrite : undefined}
       onClick={async () => {
         setBusy(true);
         try {

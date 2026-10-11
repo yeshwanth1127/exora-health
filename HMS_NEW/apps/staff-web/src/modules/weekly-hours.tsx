@@ -1,13 +1,14 @@
 import { useContext, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { OriginalResourceContext } from "@/components/resource-source";
+import { OriginalResourceContext, isDraft } from "@/components/resource-source";
 import { confirmLeave, useUnsaved } from "@/hms/leave";
-import { api, dateTime, type Catalogue } from "@/lib/api";
+import { dateTime, type Catalogue } from "@/lib/api";
 import {
   Action,
   Choice,
   Field,
   Resource,
+  useApi,
   useResource,
 } from "@/components/workspace";
 import { Button } from "@/components/ui/button";
@@ -75,7 +76,7 @@ export function WeeklyHours({
           : !b.is_virtual && doctor.branches.some((c) => c.id === b.id)),
   );
   const template = useResource<Template>(
-    branch && !source
+    branch && !isDraft(source)
       ? "/api/v1/admin/schedule-timeline/weekly?" +
           new URLSearchParams({
             doctor_id: doctor.id,
@@ -131,7 +132,7 @@ export function WeeklyHours({
                 : undefined
             }
           />
-          {source && (
+          {isDraft(source) && (
             <Alert>
               <AlertDescription>
                 Draft only. Published weekly hours cannot be loaded yet. Editing
@@ -140,7 +141,7 @@ export function WeeklyHours({
               </AlertDescription>
             </Alert>
           )}
-          {branch && source ? (
+          {branch && isDraft(source) ? (
             <WeeklyEditor
               key={`${branch}:${mode}`}
               initial={{ groups: [], slot_minutes: 30 }}
@@ -196,7 +197,8 @@ function WeeklyEditor({
   onSaved: () => void;
   onClose: () => void;
 }) {
-  const source = useContext(OriginalResourceContext);
+  const draft = isDraft(useContext(OriginalResourceContext));
+  const api = useApi();
   const [minimumDate] = useState(tomorrow);
   const [groups, setGroups] = useState<Group[]>(initial.groups);
   const [from, setFrom] = useState(first),
@@ -332,7 +334,7 @@ function WeeklyEditor({
       <p className="text-sm text-muted-foreground">
         Choose days that share the same hours. Add another range for split
         shifts.{" "}
-        {source
+        {draft
           ? "Unselected days are excluded from this draft."
           : "Unselected days are closed."}
       </p>
@@ -515,7 +517,7 @@ function WeeklyEditor({
       {groups.length === 0 && (
         <Alert>
           <AlertDescription>
-            {source
+            {draft
               ? "No draft day groups yet. Add a group or use the split-shift example. Existing published hours have not been loaded."
               : "All seven days will be closed. Review existing appointments before saving."}
           </AlertDescription>
@@ -526,7 +528,7 @@ function WeeklyEditor({
         id="weekly-slots"
         error={slotError}
         hint={
-          source
+          draft
             ? "The original exact-time booking workflow is retained as a draft; saving needs backend support."
             : "Staff can still book any exact start and end time within these hours."
         }
@@ -542,7 +544,7 @@ function WeeklyEditor({
         />
       </Field>
       <p className="text-xs text-muted-foreground">
-        {source
+        {draft
           ? "This draft has not been checked against published hours, existing bookings or blocks. Nothing is replaced or saved."
           : "This replaces published hours for this clinic and visit type during the dates above. Earlier dates and existing time blocks are kept."}
       </p>

@@ -38,6 +38,11 @@ export function idempotencyKey(request: FastifyRequest): string {
   return key;
 }
 
+/** An Idempotency-Key when the caller sent one (validated), for commands where it is optional. */
+export function optionalIdempotencyKey(request: FastifyRequest): string | undefined {
+  return request.headers['idempotency-key'] === undefined ? undefined : idempotencyKey(request);
+}
+
 export function principalOf(request: FastifyRequest): Principal {
   if (!request.principal) throw new AuthenticationError('not authenticated');
   return request.principal;

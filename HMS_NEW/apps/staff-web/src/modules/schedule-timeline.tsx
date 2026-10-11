@@ -1,4 +1,4 @@
-import { OriginalResourceContext } from "@/components/resource-source";
+import { OriginalResourceContext, isDraft } from "@/components/resource-source";
 import { confirmLeave } from "@/hms/leave";
 import { WeeklyHours } from "./weekly-hours";
 import { useContext, useEffect, useRef, useState } from "react";
@@ -13,8 +13,10 @@ import {
 import {
   Action,
   Choice,
+  Field,
   Resource,
   usePermissions,
+  useApi,
   useResource,
 } from "@/components/workspace";
 import { Button } from "@/components/ui/button";
@@ -29,7 +31,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { api, type Catalogue, dateTime } from "@/lib/api";
+import { type Catalogue, dateTime } from "@/lib/api";
 import {
   ScheduleRangeActions,
   type ScheduleRange,
@@ -42,7 +44,6 @@ import {
   type TimeBlock,
 } from "./clinic-types";
 import type { DeskAppointment } from "./NurseDesk";
-import { AppointmentNotes } from "./appointment-notes";
 import { AppointmentActions } from "./appointment-actions";
 
 export type Period = {
@@ -145,8 +146,10 @@ export function ScheduleTimeline({
   day: string;
   setDay: (day: string) => void;
 }) {
-  const source = useContext(OriginalResourceContext);
+  const draft = isDraft(useContext(OriginalResourceContext));
+  const api = useApi();
   const permissions = usePermissions();
+  const [unblockReason, setUnblockReason] = useState("");
   const canManage =
     permissions.can("schedules.manage") ||
     permissions.can("schedule.block") ||
@@ -505,7 +508,7 @@ export function ScheduleTimeline({
                   aria-hidden
                   className="size-3 rounded-sm border bg-muted"
                 />
-                {source ? "Coverage unknown" : "Not bookable"}
+                {draft ? "Coverage unknown" : "Not bookable"}
               </span>
             </div>
           </header>
@@ -776,7 +779,7 @@ export function ScheduleTimeline({
                       ))}
                       {!row.blocks.length && !row.spans.length && (
                         <p className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
-                          {source
+                          {draft
                             ? "Hours not available in this read model"
                             : "No hours scheduled"}
                         </p>
@@ -872,7 +875,7 @@ export function ScheduleTimeline({
           </div>
           <footer className="px-5 py-3 border-t flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
             <span>
-              {source
+              {draft
                 ? "Outlined ranges use published free slots. This is a partial timeline; missing holds and closure history are not inferred. Range edits are drafts only."
                 : "Thin lines mark published hours. Outlined ranges are free time. Staff can enter exact minutes; booking rechecks every conflict."}
             </span>
@@ -981,7 +984,7 @@ export function ScheduleTimeline({
                 </dl>
                 <Separator />
                 <p className="text-xs text-muted-foreground">
-                  {source
+                  {draft
                     ? "This partial timeline refreshes every minute while visible. Saved administrative notes and exact-time changes await integration."
                     : "Availability refreshes every minute. Booking checks the selected slot again before confirming."}
                 </p>
@@ -995,15 +998,6 @@ export function ScheduleTimeline({
                         </p>
                       </div>
                     )}
-                    <AppointmentNotes
-                      key={selected.span.appointment.id}
-                      item={selected.span.appointment}
-                      canEdit={permissions.can("appointments.create")}
-                      onSaved={() => {
-                        refresh();
-                        setSelected(null);
-                      }}
-                    />
                     <AppointmentActions
                       key={selected.span.appointment.id}
                       item={selected.span.appointment}
@@ -1046,12 +1040,22 @@ export function ScheduleTimeline({
                         {dateTime(selected.span.ends_at)}). Unoccupied published
                         slots become available again.
                       </p>
+                      <Field label="Reason for unblocking" id="unblock-reason">
+                        <Input
+                          id="unblock-reason"
+                          value={unblockReason}
+                          maxLength={240}
+                          onChange={(e) => setUnblockReason(e.target.value)}
+                        />
+                      </Field>
                       <Action
+                        disabled={unblockReason.trim().length < 3}
                         run={async () => {
                           await api(
                             `/api/v1/admin/schedule-exceptions/${selected.span.exception_id}`,
-                            { method: "DELETE" },
+                            { method: "DELETE", body: { reason: unblockReason.trim() } },
                           );
+                          setUnblockReason("");
                           setSelected(null);
                           refresh();
                         }}
