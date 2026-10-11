@@ -190,6 +190,42 @@ Fee changes publish a new version of the default cash price list (active lists a
 | `POST /v1/encounters/:id/births` · `POST /v1/birth-records/:id/report` | `vital_records.record` | Birth record and civil registration report |
 | `POST /v1/encounters/:id/death` · `POST /v1/death-records/:id/certify` | `vital_records.record` | Death record (marks the patient deceased), MCCD and body release |
 
+### Diagnostics (orders, laboratory, imaging)
+ERD [m06-diagnostics](../design/erd-v2/m06-diagnostics.md). An optional module: while `diagnostics` is suspended (`PUT /v1/modules/diagnostics`) every write below is refused with 422 `module_inactive`; reads keep working. "+ care" = the caller also needs a care relationship with the patient. Reads that return results are audited (`view`).
+
+| Method & path | Permission | Purpose |
+|---|---|---|
+| `GET /v1/orderables?facilityId&q&category` | `orders.place` @ facility | Orderable services (lab tests, panels, imaging, procedures…; not consultations, bed days, packages) |
+| `GET /v1/order-sets?facilityId` | `orders.place` @ facility | Your personal sets and the clinic's department sets, with items |
+| `POST /v1/order-sets` 🔑 | `orders.place` (personal) · `order_sets.manage` @ department's clinic | Create a set (`departmentId` null = personal) |
+| `PATCH /v1/order-sets/:id` · `POST /v1/order-sets/:id/retire` | same as create (owner only for personal sets) | Rename / replace items (`version`); retire (never deleted) |
+| `POST /v1/encounters/:id/orders` 🔑 | `orders.place` @ facility + care | Requisition `RQ/{year}/{n}` with items (or `orderSetId`), `priority` (`routine`/`urgent`/`stat`), `clinicalIndication`. Panels expand into child tests; imaging items get a study (accession `{modality}{yy}{n}`, DICOM study UID). Emits `order_item.placed`. Encounter must be open |
+| `GET /v1/encounters/:id/orders` | `results.read` @ facility + care | Orders → items (panel tests nested) → specimens, current results, report (current version + acknowledgements), imaging study |
+| `POST /v1/order-items/:id/cancel` | `orders.cancel` @ facility + care | Cancel (reason) before any result; a panel cancels its tests; the last item cancels the order. Emits `order_item.cancelled`. 422 `already_resulted` after results |
+| `POST /v1/specimens` | `lab.collect` @ every clinic of the items | One specimen for one or more lab tests of one patient: accession `{clinic}-{yy}-{n}`, barcode (unique per tenant). `specimenType` needed when the tests differ |
+| `POST /v1/specimens/:id/recollect` | `lab.collect` @ facility | New specimen for a rejected one (`recollection_of_id`), same tests |
+| `POST /v1/specimens/:id/receive` | `lab.process` @ facility | Received; its tests go in progress |
+| `POST /v1/specimens/:id/reject` | `lab.process` @ facility | `reason` (`haemolysed`, `clotted`, `insufficient`, `mislabelled`, `wrong_container`, `delayed`, `other` + note); tests go back to waiting |
+| `GET /v1/lab/worklist?facilityId&stage` | `collect`: `lab.collect` · `receive`/`result`: `lab.process` · `verify`: `lab.verify` | To collect (incl. recollections), specimens to receive, tests to result, reports to verify — by priority |
+| `GET /v1/order-items/:id/lab` | `lab.process` or `lab.verify` @ facility | Entry/verification view: tests, parameters with the patient's reference range and coded answers, current results with critical-call logs, isolates, report |
+| `POST /v1/order-items/:id/results` | `lab.process` @ facility | Preliminary values per observation definition (`valueNum` / `valueText` / `valueOptionId`). Reference limits are snapshotted by sex and age in days; `abnormalFlag` and `isCritical` computed (critical emits `critical_result.flagged`). The test is `resulted` when every reportable parameter has a value |
+| `POST /v1/result-items/:id/correct` | `lab.process` @ facility | New value supersedes the current one (status `corrected`, reason); says whether the released report needs amending |
+| `POST /v1/result-items/:id/critical-alerts` | `lab.process` or `lab.verify` @ facility | Who was told (staff or name), `channel` (`phone`/`in_person`/`app`), `readBackConfirmed` |
+| `POST /v1/order-items/:id/isolates` · `POST /v1/micro-isolates/:id/susceptibilities` | `lab.process` @ facility | Culture organisms; AST per antibiotic (`disc` + `zoneMm` or `mic` + `micValue`, `S`/`I`/`R`) |
+| `POST /v1/order-items/:id/report` | `lab.process` (lab) · `imaging.report` (imaging) @ facility | Create or save a draft report version (`registered`/`preliminary`) with a snapshot of results or `findings`/`impression`; panels are reported as a whole |
+| `POST /v1/diagnostic-reports/:id/release` | `lab.verify` (lab) · `imaging.report` (imaging) @ facility | Sign out (`version`): new `final` version, results verified, items `released`, imaging study `reported`, `result.released`. Refused: someone who entered any of the results (403 `four_eyes`), unlogged critical values (`critical_not_notified`), missing results (`results_incomplete`), stale `version` |
+| `POST /v1/diagnostic-reports/:id/amend` | as release | `reason` required; new `amended` version; corrected values verified by a second person; `result.amended` |
+| `POST /v1/diagnostic-reports/:id/cancel` | as draft | Cancel an unreleased report (`version`, `reason`) |
+| `POST /v1/diagnostic-reports/:id/acknowledge` | `results.acknowledge` @ facility + care | Once per clinician, with `actionTaken` (409 `already_acknowledged`) |
+| `GET /v1/results/unacknowledged?facilityId` | `results.acknowledge` | Released reports on your orders you haven't acknowledged, critical first |
+| `GET /v1/patients/:id/results` | `results.read` + care | Released reports and verified result trends across visits and merged records (audited) |
+| `GET /v1/imaging/worklist?facilityId&status` | `imaging.manage` or `imaging.report` @ facility | Studies with Form F and report state |
+| `POST /v1/imaging-studies/:id/status` | `imaging.manage` @ facility | `scheduled → arrived → in_progress → completed`, or `cancelled` (reason; cancels the item); same status to change `isObstetric` (ultrasound only), dose, PACS link. An obstetric ultrasound can't be completed without Form F with both declarations (422 `form_f_required`) |
+| `PUT /v1/imaging-studies/:id/form-f` | `pcpndt.manage` @ facility | PC-PNDT Form F (`formData`, `patientDeclared`, `doctorDeclared`, `version` when updating); kept 2 years (`retainUntil`), never deleted, frozen once submitted |
+| `GET /v1/form-f?facilityId&month=YYYY-MM` · `POST /v1/form-f/submit` | `pcpndt.manage` @ facility | Month's register (audited); mark complete forms submitted to the Appropriate Authority |
+
+Built-in roles: `doctor` (orders, order sets, results, acknowledge), `nurse` (`lab.collect`, `results.read`), `lab_technician` (collect, process), `pathologist` (+ `lab.verify`), `radiographer` (`imaging.manage`, `pcpndt.manage`), `radiologist` (+ `imaging.report`); `tenant_admin` has all.
+
 ### Virtual OPD (teleconsultation)
 Design and rules: [../plan/VIRTUAL_OPD_PLAN.md](../plan/VIRTUAL_OPD_PLAN.md). Book a slot from a session with `visitMode: "virtual"` as usual; the worker creates its teleconsultation.
 

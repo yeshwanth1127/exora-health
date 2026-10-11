@@ -17,6 +17,8 @@ Browser walkthroughs are done locally by the product owner. These tests cover th
 | Front desk | `front_desk` | one clinic |
 | Doctor | `doctor` | their clinics |
 | Nurse | `nurse` | one clinic |
+| Lab technician / pathologist | `lab_technician` / `pathologist` | one clinic |
+| Radiographer / radiologist | `radiographer` / `radiologist` | one clinic |
 | Auditor | `auditor` | every clinic |
 
 ## Setting up (administrators)
@@ -56,7 +58,15 @@ Browser walkthroughs are done locally by the product owner. These tests cover th
 | — | Triage, immunizations, care plans, referrals, MLC, births and deaths | Consultations → encounter | `/v1/encounters/:id/triage|immunizations|care-plans|referrals|mlc|births|death` and their follow-ups | records "M05 records" |
 | — | Nurse writes and signs a nursing note | Consultations (nurse) | `POST …/notes` (`nursing`) → `POST /v1/notes/:id/sign` | records "nursing notes (G27)" |
 | — | Exact-time booking | Schedules → drag any range | `POST /v1/holds/range` → `POST /v1/appointments`; `GET /v1/request-outcomes/:key` after a lost response | records "board, range holds" |
+| — | Order tests, panels and imaging; from an order set; save a set | Consultations → encounter → Orders & results → Place order | `GET /v1/orderables?q` · `GET /v1/order-sets` → `POST /v1/encounters/:id/orders` (items or `orderSetId`); `POST /v1/order-sets` | diagnostics "places an order", "order sets" |
+| — | Cancel an order item before results | Consultations → Orders & results → Cancel | `POST /v1/order-items/:id/cancel` (reason) | diagnostics "cancels an item" |
+| — | Collect, receive, reject and recollect specimens | Lab & imaging → Collect / Receive | `GET /v1/lab/worklist?stage=collect` → `POST /v1/specimens`; `stage=receive` → `POST …/receive` or `…/reject` → `POST /v1/specimens/:id/recollect` | diagnostics "specimens" |
+| — | Enter results, correct them, log critical calls, microbiology | Lab & imaging → Enter results | `GET /v1/order-items/:id/lab` → `POST …/results`; `POST /v1/result-items/:id/correct` · `…/critical-alerts`; `POST …/isolates` → `POST /v1/micro-isolates/:id/susceptibilities` | diagnostics "enters results", "correction supersedes", "microbiology" |
+| — | Verify and release a lab report (second person) | Lab & imaging → Verify & release | `GET /v1/lab/worklist?stage=verify` → `POST /v1/order-items/:id/report` → `POST /v1/diagnostic-reports/:id/release` (amend: `…/amend`) | diagnostics "release needs…", "amendment" |
+| — | Read results and acknowledge them | Consultations → Orders & results; Lab & imaging → My results | `GET /v1/encounters/:id/orders`, `GET /v1/results/unacknowledged` → `POST /v1/diagnostic-reports/:id/acknowledge`; `GET /v1/patients/:id/results` | diagnostics "acknowledgement", "reads" |
+| — | Run an imaging study, Form F, report it | Lab & imaging → Imaging | `GET /v1/imaging/worklist` → `POST /v1/imaging-studies/:id/status` → `PUT …/form-f` (obstetric USG) → `POST /v1/order-items/:id/report` → `…/release` | diagnostics "imaging and PC-PNDT" |
+| — | Monthly PC-PNDT Form F submission | Lab & imaging → Form F | `GET /v1/form-f?month` → `POST /v1/form-f/submit` | diagnostics "Form F is kept and submitted monthly" |
 
 ## Not yet possible (out of scope, see the ledger)
 
-WhatsApp, voice, Google Business, growth and loyalty screens (G19–G23) show their original designs with a Pending label; nothing on them saves. Prescriptions, labs, billing, uploads and inpatient care (G28–G33) have no screens.
+WhatsApp, voice, Google Business, growth and loyalty screens (G19–G23) show their original designs with a Pending label; nothing on them saves. Prescriptions, billing, uploads and inpatient care (G28, G30–G33) have no screens. Labs and imaging (G29) are on Consultations → Orders & results and the Lab & imaging page.

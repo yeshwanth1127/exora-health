@@ -13,6 +13,7 @@ const MODULE_ROLE: Record<string, string> = {
   catalog: 'mod_catalog',
   booking: 'mod_booking',
   clinical: 'mod_clinical',
+  diagnostics: 'mod_diagnostics',
 };
 const SCHEMAS = Object.keys(MODULE_ROLE);
 

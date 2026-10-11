@@ -40,6 +40,7 @@ import {
   VitalCorrection,
 } from "./ClinicalRecords";
 import { EncounterRecords } from "./EncounterRecords";
+import { EncounterOrders } from "./Orders";
 import type {
   EncounterDetail,
   EncounterRow,
@@ -441,6 +442,7 @@ function Encounter({
               active={active}
               onChanged={refresh}
             />
+            <EncounterOrders encounterId={row.encounterId} active={active} />
             {assignedDoctor &&
               can("encounters.manage") &&
               result.data.encounter.status === "in_progress" && (

@@ -1089,6 +1089,308 @@ export interface ClinicalTriageAssessment {
   version: Generated<number>;
 }
 
+export interface DiagnosticsCriticalAlert {
+  channel: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  id: Generated<string>;
+  note: string | null;
+  notified_at: Generated<Timestamp>;
+  notified_by: string;
+  notified_to_name: string | null;
+  notified_to_staff_id: string | null;
+  read_back_confirmed: boolean;
+  result_item_id: string;
+  tenant_id: string;
+}
+
+export interface DiagnosticsDiagnosticReport {
+  cancel_reason: string | null;
+  conclusion: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  current_version: Generated<number>;
+  id: Generated<string>;
+  order_item_id: string;
+  patient_id: string;
+  released_at: Timestamp | null;
+  released_by: string | null;
+  report_type: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface DiagnosticsDiagnosticReportVersion {
+  amendment_reason: string | null;
+  body: Generated<Json>;
+  created_at: Generated<Timestamp>;
+  created_by: string;
+  diagnostic_report_id: string;
+  document_id: string | null;
+  form_template_id: string | null;
+  id: Generated<string>;
+  status: string;
+  tenant_id: string;
+  version_no: number;
+}
+
+export interface DiagnosticsImagingStudy {
+  accession_no: string;
+  arrived_at: Timestamp | null;
+  cancel_reason: string | null;
+  contrast_item_id: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  dose_dlp_mgy_cm: Numeric | null;
+  equipment_id: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  is_obstetric: Generated<boolean>;
+  modality: string;
+  order_item_id: string;
+  pacs_url: string | null;
+  patient_id: string;
+  performed_at: Timestamp | null;
+  performed_by: string | null;
+  reservation_id: string | null;
+  scheduled_at: Timestamp | null;
+  started_at: Timestamp | null;
+  status: Generated<string>;
+  study_instance_uid: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface DiagnosticsMicroIsolate {
+  colony_count: string | null;
+  comment: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  entered_by: string;
+  id: Generated<string>;
+  order_item_id: string;
+  organism_concept_id: string | null;
+  organism_name: string;
+  patient_id: string;
+  sequence: number;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface DiagnosticsMicroSusceptibility {
+  antibiotic_item_id: string | null;
+  antibiotic_name: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  entered_by: string;
+  id: Generated<string>;
+  interpretation: string;
+  method: string;
+  mic_value: Numeric | null;
+  micro_isolate_id: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+  zone_mm: Numeric | null;
+}
+
+export interface DiagnosticsOrderItem {
+  cancel_reason: string | null;
+  cancelled_at: Timestamp | null;
+  cancelled_by: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  details: Generated<Json>;
+  id: Generated<string>;
+  panel_parent_item_id: string | null;
+  patient_id: string;
+  performing_department_id: string | null;
+  quantity: Generated<Numeric>;
+  scheduled_at: Timestamp | null;
+  service_item_id: string;
+  service_order_id: string;
+  status: Generated<string>;
+  target_staff_id: string | null;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface DiagnosticsOrderItemStatusHistory {
+  actor_staff_id: string | null;
+  from_status: string | null;
+  id: Generated<string>;
+  occurred_at: Generated<Timestamp>;
+  order_item_id: string;
+  tenant_id: string;
+  to_status: string;
+}
+
+export interface DiagnosticsOrderSet {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  department_id: string | null;
+  id: Generated<string>;
+  name: string;
+  owner_staff_id: string | null;
+  retired_at: Timestamp | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface DiagnosticsOrderSetItem {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  default_details: Generated<Json>;
+  default_priority: Generated<string>;
+  id: Generated<string>;
+  order_set_id: string;
+  removed_at: Timestamp | null;
+  sequence: Generated<number>;
+  service_item_id: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface DiagnosticsPcpndtFormF {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  doctor_declaration_at: Timestamp | null;
+  doctor_declaration_by: string | null;
+  facility_id: string;
+  form_data: Json;
+  id: Generated<string>;
+  imaging_study_id: string;
+  patient_declaration_at: Timestamp | null;
+  patient_id: string;
+  reporting_month: string;
+  retain_until: string;
+  submission_ref: string | null;
+  submitted_by: string | null;
+  submitted_to_authority_at: Timestamp | null;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface DiagnosticsResultAcknowledgement {
+  acknowledged_at: Generated<Timestamp>;
+  action_taken: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  diagnostic_report_id: string;
+  id: Generated<string>;
+  report_version_no: number;
+  staff_id: string;
+  tenant_id: string;
+}
+
+export interface DiagnosticsResultItem {
+  abnormal_flag: string | null;
+  comment: string | null;
+  correction_reason: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  entered_at: Generated<Timestamp>;
+  entered_by: string;
+  id: Generated<string>;
+  integration_message_id: string | null;
+  is_critical: Generated<boolean>;
+  observation_definition_id: string;
+  order_item_id: string;
+  patient_id: string;
+  ref_high: Numeric | null;
+  ref_low: Numeric | null;
+  ref_text: string | null;
+  source: Generated<string>;
+  specimen_id: string | null;
+  status: Generated<string>;
+  superseded_at: Timestamp | null;
+  supersedes_id: string | null;
+  tenant_id: string;
+  unit: string | null;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  value_num: Numeric | null;
+  value_option_id: string | null;
+  value_text: string | null;
+  verified_at: Timestamp | null;
+  verified_by: string | null;
+  version: Generated<number>;
+}
+
+export interface DiagnosticsServiceOrder {
+  clinical_indication: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  encounter_id: string;
+  facility_id: string;
+  id: Generated<string>;
+  order_set_id: string | null;
+  ordered_at: Generated<Timestamp>;
+  ordered_by: string;
+  patient_id: string;
+  priority: Generated<string>;
+  requisition_no: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface DiagnosticsSpecimen {
+  accession_no: string;
+  barcode: string;
+  collected_at: Timestamp | null;
+  collected_by: string | null;
+  collection_site: string | null;
+  container_type: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  patient_id: string;
+  received_at: Timestamp | null;
+  received_by: string | null;
+  recollection_of_id: string | null;
+  rejected_at: Timestamp | null;
+  rejected_by: string | null;
+  rejection_note: string | null;
+  rejection_reason: string | null;
+  specimen_type: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface DiagnosticsSpecimenOrderItem {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  id: Generated<string>;
+  order_item_id: string;
+  patient_id: string;
+  specimen_id: string;
+  tenant_id: string;
+}
+
 export interface PatientPatient {
   birth_date: string | null;
   birth_date_estimated: Generated<boolean>;
@@ -1670,6 +1972,22 @@ export interface DB {
   "clinical.tele_session": ClinicalTeleSession;
   "clinical.tele_session_event": ClinicalTeleSessionEvent;
   "clinical.triage_assessment": ClinicalTriageAssessment;
+  "diagnostics.critical_alert": DiagnosticsCriticalAlert;
+  "diagnostics.diagnostic_report": DiagnosticsDiagnosticReport;
+  "diagnostics.diagnostic_report_version": DiagnosticsDiagnosticReportVersion;
+  "diagnostics.imaging_study": DiagnosticsImagingStudy;
+  "diagnostics.micro_isolate": DiagnosticsMicroIsolate;
+  "diagnostics.micro_susceptibility": DiagnosticsMicroSusceptibility;
+  "diagnostics.order_item": DiagnosticsOrderItem;
+  "diagnostics.order_item_status_history": DiagnosticsOrderItemStatusHistory;
+  "diagnostics.order_set": DiagnosticsOrderSet;
+  "diagnostics.order_set_item": DiagnosticsOrderSetItem;
+  "diagnostics.pcpndt_form_f": DiagnosticsPcpndtFormF;
+  "diagnostics.result_acknowledgement": DiagnosticsResultAcknowledgement;
+  "diagnostics.result_item": DiagnosticsResultItem;
+  "diagnostics.service_order": DiagnosticsServiceOrder;
+  "diagnostics.specimen": DiagnosticsSpecimen;
+  "diagnostics.specimen_order_item": DiagnosticsSpecimenOrderItem;
   "patient.patient": PatientPatient;
   "patient.patient_address": PatientPatientAddress;
   "patient.patient_consent": PatientPatientConsent;

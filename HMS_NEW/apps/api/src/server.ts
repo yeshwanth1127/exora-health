@@ -16,6 +16,7 @@ import { registerAccessRoutes } from './http/routes/access.ts';
 import { registerAdminRoutes } from './http/routes/admin.ts';
 import { registerBoardRoutes } from './http/routes/board.ts';
 import { registerRecordRoutes } from './http/routes/records.ts';
+import { registerDiagnosticsRoutes } from './http/routes/diagnostics.ts';
 import { registerRegistryRoutes } from './http/routes/registry.ts';
 import { registerDirectoryRoutes } from './http/routes/directory.ts';
 import { registerPatientRoutes } from './http/routes/patients.ts';
@@ -147,6 +148,7 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   registerAdminRoutes(app, deps.db);
   registerRegistryRoutes(app, deps.db);
   registerRecordRoutes(app, deps.db);
+  registerDiagnosticsRoutes(app, deps.db);
   registerBoardRoutes(app, deps.db);
   registerTelehealthRoutes(app, deps.db, deps.telehealth ?? loadTelehealthSettings());
   return app;
