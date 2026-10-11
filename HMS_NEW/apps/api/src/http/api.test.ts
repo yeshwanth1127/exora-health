@@ -526,6 +526,106 @@ describe('operations summary (phase 5, G12)', () => {
   });
 });
 
+describe('waitlist (G11)', () => {
+  const addDays = (d: string, n: number) => new Date(Date.parse(d) + n * 86_400_000).toISOString().slice(0, 10);
+  const week = () => addDays(monday, 98); // a Monday: the doctor is at Branch 1 on Mondays, Branch 2 on Tuesdays
+  const now = () => ist(monday, '07:00');
+  const later = (minutes: number) => new Date(Date.parse(now()) + minutes * 60_000).toISOString();
+  const add = (token: string, body: Record<string, unknown> = {}) =>
+    call('POST', '/v1/waitlist', {
+      token,
+      idem: true,
+      now: now(),
+      body: { facilityId: t.facilityId, staffId: doctor, preferredFrom: week(), preferredTo: addDays(week(), 1), bookingParty: { name: 'Waiting Caller', phone: '+919833300001' }, notes: 'Mornings only', ...body },
+    });
+  const freeSlots = async (facilityId: string, on: string) =>
+    (await call('GET', `/v1/practitioners/${doctor}/slots?facilityId=${facilityId}&from=${on}&to=${on}`, { token: tokens.admin, now: now() })).body.items
+      .filter((x: { status: string }) => x.status === 'free')
+      .map((x: { slotStart: string }) => x.slotStart);
+  const offer = (id: string, slotStart: string, token = tokens.frontDesk, at = now()) =>
+    call('POST', `/v1/waitlist/${id}/offer`, { token, idem: true, now: at, body: { slotStart } });
+  const list = (at = now(), facilityId = t.facilityId, token = tokens.frontDesk) =>
+    call('GET', `/v1/waitlist?facilityId=${facilityId}`, { token, now: at });
+  const entry = async (id: string, at = now()) => (await list(at)).body.items.find((e: { waitlistEntryId: string }) => e.waitlistEntryId === id);
+
+  it('front desk and the booking bot add requests at their clinic; nurses and other clinics cannot', async () => {
+    const added = await add(tokens.frontDesk);
+    expect(added).toMatchObject({ status: 201, body: { status: 'waiting' } });
+    expect(await entry(added.body.waitlistEntryId)).toMatchObject({ status: 'waiting', bookingPartyName: 'Waiting Caller', bookingPartyPhone: '+919833300001', notes: 'Mornings only', offer: null });
+    expect((await add(tokens.bot, { bookingParty: { name: 'Bot Caller', phone: '+919833300002', verifiedChannel: 'whatsapp' } })).status).toBe(201);
+    expect((await add(tokens.nurse)).status).toBe(403);
+    expect((await add(tokens.frontDesk, { facilityId: facility2 })).status).toBe(403);
+    expect((await list(now(), facility2)).status).toBe(403);
+    expect((await add(tokens.frontDesk, { preferredTo: addDays(week(), 61) })).status).toBe(400);
+    expect((await add(tokens.frontDesk, { bookingParty: { name: 'No Phone' } })).status).toBe(400);
+  });
+
+  it('offers one slot at a time, within the dates and the clinic; declining frees the slot', async () => {
+    const id = (await add(tokens.frontDesk)).body.waitlistEntryId;
+    const [first, second] = await freeSlots(t.facilityId, week());
+    expect((await offer(id, ist(addDays(week(), 7), '09:00'))).status).toBe(400); // outside the requested dates
+    const branch2 = (await freeSlots(facility2, addDays(week(), 1)))[0];
+    expect((await offer(id, branch2, tokens.admin)).body.error.details.reason).toBe('slot_unavailable'); // the doctor's Branch 2 slot
+
+    const both = await Promise.all([offer(id, first), offer(id, second)]);
+    expect(both.map((r) => r.status).sort()).toEqual([201, 409]);
+    const made = both.find((r) => r.status === 201)!.body;
+    expect(Date.parse(made.expiresAt) - Date.parse(now())).toBe(15 * 60_000);
+    expect(await entry(id)).toMatchObject({ status: 'offered', offer: { offerId: made.offerId } });
+    expect(await freeSlots(t.facilityId, week())).not.toContain(made.slotStart);
+    // The offer's hold can only be released by declining, never through the plain hold route
+    const { rows: [r] } = await admin.query<{ reservation_id: string }>(`SELECT reservation_id FROM booking.waitlist_offer WHERE id = $1`, [made.offerId]);
+    expect((await call('DELETE', `/v1/holds/${r!.reservation_id}`, { token: tokens.frontDesk })).status).toBe(404);
+
+    const declined = await call('POST', `/v1/waitlist-offers/${made.offerId}/decline`, { token: tokens.frontDesk, now: now() });
+    expect(declined).toMatchObject({ status: 200, body: { status: 'waiting' } });
+    expect(await freeSlots(t.facilityId, week())).toContain(made.slotStart);
+    expect((await call('POST', `/v1/waitlist-offers/${made.offerId}/accept`, { token: tokens.frontDesk, idem: true, now: now() })).body.error.details.reason).toBe('offer_expired');
+  });
+
+  it('accepting books the held slot for the caller exactly once', async () => {
+    const id = (await add(tokens.frontDesk)).body.waitlistEntryId;
+    const made = (await offer(id, (await freeSlots(t.facilityId, week()))[0])).body;
+    const key = `accept-${run}`;
+    const accepted = await call('POST', `/v1/waitlist-offers/${made.offerId}/accept`, { token: tokens.frontDesk, idem: key, now: later(5) });
+    expect(accepted).toMatchObject({ status: 201, body: { status: 'confirmed', startsAt: made.slotStart } });
+    const again = await call('POST', `/v1/waitlist-offers/${made.offerId}/accept`, { token: tokens.frontDesk, idem: key, now: later(5) });
+    expect(again.body.appointmentId).toBe(accepted.body.appointmentId);
+    const appt = await call('GET', `/v1/appointments/${accepted.body.appointmentId}`, { token: tokens.frontDesk });
+    expect(appt.body).toMatchObject({ bookingPartyName: 'Waiting Caller', patientId: null, originChannel: 'front_desk' });
+    expect(await entry(id)).toBeUndefined(); // accepted requests leave the active list
+    expect((await call('GET', `/v1/waitlist?facilityId=${t.facilityId}&status=accepted`, { token: tokens.frontDesk })).body.items.map((e: { waitlistEntryId: string }) => e.waitlistEntryId)).toContain(id);
+  });
+
+  it('an unanswered offer lapses after 15 minutes: it cannot be accepted and the request waits again', async () => {
+    const id = (await add(tokens.frontDesk)).body.waitlistEntryId;
+    const made = (await offer(id, (await freeSlots(t.facilityId, week()))[0])).body;
+    expect((await entry(id, later(16))).status).toBe('waiting');
+    const late = await call('POST', `/v1/waitlist-offers/${made.offerId}/accept`, { token: tokens.frontDesk, idem: true, now: later(16) });
+    expect(late.body.error.details.reason).toBe('offer_expired');
+    expect((await offer(id, made.slotStart, tokens.frontDesk, later(16))).status).toBe(201); // can be offered again
+  });
+
+  it('withdrawing needs a reason and releases a pending offer; other clinics cannot act on a request', async () => {
+    const id = (await add(tokens.frontDesk)).body.waitlistEntryId;
+    const made = (await offer(id, (await freeSlots(t.facilityId, week()))[0])).body;
+    expect((await call('POST', `/v1/waitlist/${id}/withdraw`, { token: tokens.frontDesk, body: {} })).status).toBe(400);
+    expect(await call('POST', `/v1/waitlist/${id}/withdraw`, { token: tokens.frontDesk, now: now(), body: { reason: 'Found another doctor' } })).toMatchObject({ status: 200, body: { status: 'withdrawn' } });
+    expect(await freeSlots(t.facilityId, week())).toContain(made.slotStart);
+
+    const elsewhere = await add(tokens.admin, { facilityId: facility2, preferredFrom: addDays(week(), 1), preferredTo: addDays(week(), 1) });
+    expect(elsewhere.status).toBe(201);
+    const slot2 = (await freeSlots(facility2, addDays(week(), 1)))[0];
+    expect((await offer(elsewhere.body.waitlistEntryId, slot2)).status).toBe(403);
+    const adminOffer = await offer(elsewhere.body.waitlistEntryId, slot2, tokens.admin);
+    expect(adminOffer.status).toBe(201);
+    expect((await call('POST', `/v1/waitlist-offers/${adminOffer.body.offerId}/accept`, { token: tokens.frontDesk, idem: true, now: now() })).status).toBe(403);
+    expect((await call('POST', `/v1/waitlist-offers/${adminOffer.body.offerId}/decline`, { token: tokens.frontDesk, now: now() })).status).toBe(403);
+    expect((await call('POST', `/v1/waitlist/${elsewhere.body.waitlistEntryId}/withdraw`, { token: tokens.frontDesk, body: { reason: 'Not mine' } })).status).toBe(403);
+    expect((await call('POST', `/v1/waitlist/${randomUUID()}/withdraw`, { token: tokens.frontDesk, body: { reason: 'Unknown' } })).status).toBe(404);
+  });
+});
+
 describe('validation', () => {
   it('rejects bad input with 400 and the field issues', async () => {
     const res = await call('POST', '/v1/patients', { token: tokens.frontDesk, idem: true, body: { givenName: '', sex: 'x', registeredFacilityId: 'nope', source: 'front_desk' } });

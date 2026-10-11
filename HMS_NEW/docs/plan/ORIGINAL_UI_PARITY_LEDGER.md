@@ -16,7 +16,7 @@ The original current source is `/Users/deepakonda/.codex/worktrees/hms-monochrom
 - The timeline projects existing scoped free-slot and appointment reads into the original presentation. It is explicitly partial: no inferred holds, blocked periods, full closure history or historical free time. Walk-ins do not get invented start/end times. Counts cover loaded records, capped at 500 appointments.
 - Weekly/range/staff-note forms remain local drafts. Saved weekly rules and administrative notes are not interpreted as empty records. All original `Action` saves/previews under this presentation are disabled; no legacy mutation is sent. Normal connected strict-slot booking remains in the Appointments screen.
 - Doctor directory regains specialty/clinic/fee/status/action layout and its booking-profile dialog. Unknown fee stays unknown. Profile changes are local drafts; Save is disabled.
-- Overview, waitlist, catalogue, operations, WhatsApp, voice, Google Business, growth, activity and settings entries are visible with Pending labels/status pages. Their complete original form bodies remain in source; they are **not yet fully ported or wired**. Status-page tabs do not imply functioning provider modules.
+- WhatsApp, voice, Google Business, growth, activity and settings entries are visible with Pending labels/status pages. Their complete original form bodies remain in source; they are **not yet fully ported or wired**. Status-page tabs do not imply functioning provider modules.
 - Design & UX guide now shows the source-derived integration map. Sidebar initials/role and page breadcrumb detail are restored.
 
 ## Feature-level inventory
@@ -41,8 +41,8 @@ The original current source is `/Users/deepakonda/.codex/worktrees/hms-monochrom
 | UI-schedules-08 | Schedules | Range appointment/open/block actions with exact start/end | book one slot connected; free-form range G08 | G04; G05; G06; G07; G08; G26 |
 | UI-schedules-09 | Schedules | Virtual/in-person choice, clinic choice and explicit overbooking | restored partial data or local draft | G04; G05; G06; G07; G08; G26 |
 | UI-schedules-10 | Schedules | Saved staff notes, exact-time move and unblock/reversal | move to a free slot and cancel connected; staff notes dropped | G04; G05; G06; G07; G08; G26 |
-| UI-waitlist-01 | Waitlist | Waitlist requests and active filters | navigation restored full design retained pending wiring | G11; G19 |
-| UI-waitlist-02 | Waitlist | Check availability and offer a slot with notification readback | navigation restored full design retained pending wiring | G11; G19 |
+| UI-waitlist-01 | Waitlist | Waitlist requests and active filters | connected (Phase 6): status and doctor filters, add request | G11 |
+| UI-waitlist-02 | Waitlist | Check availability and offer a slot with notification readback | connected (Phase 6): offer holds the slot 15 minutes, staff record accepted/declined; no message is sent until G19 | G11; G19 |
 | UI-catalogue-01 | Hospital catalogue | Clinic locations and active status | connected read-only (Phase 5): permitted clinics | G13; G14 |
 | UI-catalogue-02 | Hospital catalogue | Departments and doctor coverage | connected read-only (Phase 5): selected clinic departments and doctor counts | G13; G14 |
 | UI-catalogue-03 | Hospital catalogue | Address, directions and arrival instructions in channel editors | navigation restored full design retained pending wiring | G13; G14 |

@@ -42,48 +42,7 @@ export async function holdSlot(db: Kysely<DB>, caller: Caller, input: HoldSlotIn
   const result = await runCommand(
     db,
     { ...caller, module: 'booking', name: 'booking.hold_slot', idempotencyKey, request: input },
-    async (ctx) => {
-      const resourceId = await practitionerResourceId(ctx.tx, input.staffId);
-      const start = new Date(input.slotStart);
-      const { rows: [slot] } = await sql<{ slot_start: Date; slot_end: Date; facility_id: string; status: string }>`
-        SELECT slot_start, slot_end, facility_id, status
-        FROM booking.available_slots(${resourceId}, (${start}::timestamptz)::date - 1, (${start}::timestamptz)::date + 1, ${now})
-        WHERE slot_start = ${start}`.execute(ctx.tx);
-      if (!slot) throw notFound('bookable slot', { staffId: input.staffId, slotStart: start.toISOString() });
-      if (input.facilityId && slot.facility_id !== input.facilityId) throw conflict('the slot moved to another clinic; pick it again', { reason: 'slot_unavailable' });
-      if (slot.status === 'blocked') throw conflict('slot is blocked', { reason: 'slot_blocked' });
-      if (slot.status === 'taken') throw conflict('slot is no longer available', { reason: 'slot_unavailable' });
-
-      // Lapsed holds still occupy the exclusion constraint until expired; clear any on this slot.
-      await ctx.tx
-        .updateTable('booking.reservation')
-        .set({ status: 'expired' })
-        .where('resource_id', '=', resourceId)
-        .where('status', '=', 'held')
-        .where('hold_expires_at', '<=', now)
-        .where(sql<boolean>`period && tstzrange(${slot.slot_start}, ${slot.slot_end})`)
-        .execute();
-
-      const holdExpiresAt = new Date(now.getTime() + holdMinutes * 60_000);
-      try {
-        const { id } = await ctx.tx
-          .insertInto('booking.reservation')
-          .values({
-            tenant_id: ctx.tenantId,
-            resource_id: resourceId,
-            facility_id: slot.facility_id,
-            period: sql`tstzrange(${slot.slot_start}, ${slot.slot_end})`,
-            status: 'held',
-            hold_expires_at: holdExpiresAt,
-          })
-          .returning('id')
-          .executeTakeFirstOrThrow();
-        return { reservationId: id, slotStart: slot.slot_start, slotEnd: slot.slot_end, facilityId: slot.facility_id, holdExpiresAt };
-      } catch (err) {
-        if (pgCode(err) === '23P01') throw conflict('slot is no longer available', { reason: 'slot_unavailable' });
-        throw err;
-      }
-    },
+    (ctx) => placeHold(ctx, now, input, holdMinutes),
   );
   // Results replayed from an idempotency record come back as JSON; restore the dates.
   return {
@@ -94,6 +53,60 @@ export async function holdSlot(db: Kysely<DB>, caller: Caller, input: HoldSlotIn
   };
 }
 
+/**
+ * Holds one free slot inside the caller's transaction. Shared by the hold command and waitlist offers,
+ * so an offer and its hold are created together or not at all.
+ */
+export async function placeHold(
+  ctx: CommandContext,
+  now: Date,
+  input: HoldSlotInput,
+  holdMinutes: number,
+  owner?: { type: 'waitlist_offer'; id: string },
+): Promise<HoldResult> {
+  const resourceId = await practitionerResourceId(ctx.tx, input.staffId);
+  const start = new Date(input.slotStart);
+  const { rows: [slot] } = await sql<{ slot_start: Date; slot_end: Date; facility_id: string; status: string }>`
+    SELECT slot_start, slot_end, facility_id, status
+    FROM booking.available_slots(${resourceId}, (${start}::timestamptz)::date - 1, (${start}::timestamptz)::date + 1, ${now})
+    WHERE slot_start = ${start}`.execute(ctx.tx);
+  if (!slot) throw notFound('bookable slot', { staffId: input.staffId, slotStart: start.toISOString() });
+  if (input.facilityId && slot.facility_id !== input.facilityId) throw conflict('the slot moved to another clinic; pick it again', { reason: 'slot_unavailable' });
+  if (slot.status === 'blocked') throw conflict('slot is blocked', { reason: 'slot_blocked' });
+  if (slot.status === 'taken') throw conflict('slot is no longer available', { reason: 'slot_unavailable' });
+
+  // Lapsed holds still occupy the exclusion constraint until expired; clear any on this slot.
+  await ctx.tx
+    .updateTable('booking.reservation')
+    .set({ status: 'expired' })
+    .where('resource_id', '=', resourceId)
+    .where('status', '=', 'held')
+    .where('hold_expires_at', '<=', now)
+    .where(sql<boolean>`period && tstzrange(${slot.slot_start}, ${slot.slot_end})`)
+    .execute();
+
+  const holdExpiresAt = new Date(now.getTime() + holdMinutes * 60_000);
+  try {
+    const { id } = await ctx.tx
+      .insertInto('booking.reservation')
+      .values({
+        tenant_id: ctx.tenantId,
+        resource_id: resourceId,
+        facility_id: slot.facility_id,
+        period: sql`tstzrange(${slot.slot_start}, ${slot.slot_end})`,
+        status: 'held',
+        hold_expires_at: holdExpiresAt,
+        ...(owner ? { owner_type: owner.type, owner_id: owner.id } : {}),
+      })
+      .returning('id')
+      .executeTakeFirstOrThrow();
+    return { reservationId: id, slotStart: slot.slot_start, slotEnd: slot.slot_end, facilityId: slot.facility_id, holdExpiresAt };
+  } catch (err) {
+    if (pgCode(err) === '23P01') throw conflict('slot is no longer available', { reason: 'slot_unavailable' });
+    throw err;
+  }
+}
+
 export async function releaseHold(db: Kysely<DB>, caller: Caller, input: { reservationId: string }) {
   return runCommand(db, { ...caller, module: 'booking', name: 'booking.release_hold', request: input }, async (ctx) => {
     const row = await ctx.tx
@@ -101,6 +114,8 @@ export async function releaseHold(db: Kysely<DB>, caller: Caller, input: { reser
       .set({ status: 'released' })
       .where('id', '=', input.reservationId)
       .where('status', '=', 'held')
+      // A waitlist offer's hold is released by declining the offer, so the offer can't be left dangling.
+      .where('owner_type', 'is', null)
       .returning('id')
       .executeTakeFirst();
     if (!row) throw notFound('active hold', input);
@@ -167,14 +182,14 @@ export async function consultationFee(tx: Transaction<DB>, healthcareServiceId: 
   return fee ? { priceListItemId: fee.id, unitPriceMinor: fee.unit_price_minor } : null;
 }
 
-async function activePatient(tx: Transaction<DB>, patientId: string): Promise<void> {
+export async function activePatient(tx: Transaction<DB>, patientId: string): Promise<void> {
   const p = await tx.selectFrom('patient.patient').select(['status', 'merged_into_patient_id']).where('id', '=', patientId).executeTakeFirst();
   if (!p) throw notFound('patient', { patientId });
   if (p.status === 'merged') throw preconditionFailed('patient record was merged; use the surviving record', { survivorPatientId: p.merged_into_patient_id });
   if (p.status !== 'active') throw preconditionFailed('patient record is inactive');
 }
 
-async function createBookingParty(ctx: CommandContext, party: BookingPartyInput, patientId: string | null, now: Date): Promise<string> {
+export async function createBookingParty(ctx: CommandContext, party: BookingPartyInput, patientId: string | null, now: Date): Promise<string> {
   const { id } = await ctx.tx
     .insertInto('booking.booking_party')
     .values({
@@ -214,7 +229,7 @@ interface ReservedTime {
  * Turns a held reservation into a confirmed appointment (shared by book and reschedule).
  * The hold must still be live; the session it falls in gives the date, service and visit mode.
  */
-async function confirmHeldReservation(ctx: CommandContext, now: Date, reservationId: string, details: AppointmentDetails): Promise<AppointmentResult> {
+export async function confirmHeldReservation(ctx: CommandContext, now: Date, reservationId: string, details: AppointmentDetails): Promise<AppointmentResult> {
   const reservation = await ctx.tx
     .selectFrom('booking.reservation as r')
     .innerJoin('booking.schedulable_resource as sr', 'sr.id', 'r.resource_id')
@@ -555,7 +570,7 @@ export async function markNoShow(db: Kysely<DB>, caller: Caller, input: { appoin
 // ---------------------------------------------------------------------------
 
 /** Today's date at a facility (its local calendar day). */
-async function facilityToday(tx: Transaction<DB>, facilityId: string, now: Date): Promise<string> {
+export async function facilityToday(tx: Transaction<DB>, facilityId: string, now: Date): Promise<string> {
   const { rows: [r] } = await sql<{ today: string }>`
     SELECT ((${now}::timestamptz) AT TIME ZONE f.timezone)::date::text AS today FROM platform.facility f WHERE f.id = ${facilityId}`.execute(tx);
   if (!r) throw notFound('facility', { facilityId });

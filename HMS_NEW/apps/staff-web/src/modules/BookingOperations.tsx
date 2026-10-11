@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { api, type Catalogue } from "@/lib/api";
+import { api, istDateTime, type Catalogue } from "@/lib/api";
 import {
   Action,
   Choice,
   Field,
   Resource,
+  useApi,
   usePermissions,
   useResource,
 } from "@/components/workspace";
@@ -47,6 +48,9 @@ type Wait = {
   start_date: string;
   end_date: string;
   status: string;
+  notes?: string | null;
+  booked_by?: DeskAppointment["booked_by"];
+  offer?: { id: string; starts_at: string; ends_at: string; expires_at: string } | null;
 };
 const time = (s: string) =>
   new Intl.DateTimeFormat("en-IN", {
@@ -443,48 +447,87 @@ export function RescheduleVisit({
   );
 }
 export function WaitlistDesk() {
-  const r = useResource<Wait[]>("/api/v1/admin/waitlist"),
+  const permissions = usePermissions(),
+    call = useApi(),
+    canBook = permissions.can("appointments.book"),
+    canCancel = permissions.can("appointments.cancel");
+  const [status, setStatus] = useState("active"),
+    [doctorFilter, setDoctorFilter] = useState("all");
+  const r = useResource<Wait[]>(
+      "/api/v1/admin/waitlist?" +
+        new URLSearchParams({
+          status,
+          doctor_id: doctorFilter === "all" ? "" : doctorFilter,
+        }),
+    ),
     d = useResource<Doctor[]>("/api/v1/admin/doctors");
   const [item, setItem] = useState<Wait | null>(null),
     [date, setDate] = useState(""),
-    [slots, setSlots] = useState<Slot[]>([]),
     [chosen, setChosen] = useState(""),
-    [error, setError] = useState("");
-  useEffect(() => {
-    let live = true;
-    setChosen("");
-    setSlots([]);
-    if (!item || !date) return;
-    api<{ slots: Slot[] }>(
-      "/api/v1/availability?" +
-        new URLSearchParams({
-          doctor_id: item.doctor_id,
-          branch_id: item.branch_id,
-          start_date: date,
-          end_date: date,
-          consultation_type: item.consultation_type,
-        }),
-    )
-      .then((r) => {
-        if (live) setSlots(r.slots);
-      })
-      .catch((e) => {
-        if (live) setError(e.message);
-      });
-    return () => {
-      live = false;
-    };
-  }, [item, date]);
+    [adding, setAdding] = useState(false),
+    [form, setForm] = useState({ name: "", phone: "", doctor: "", from: "", to: "", notes: "" }),
+    [withdraw, setWithdraw] = useState<Wait | null>(null),
+    [reason, setReason] = useState(""),
+    [today] = useState(() => istDateTime(new Date()).slice(0, 10));
+  const available = useResource<{ slots: Slot[] }>(
+    item && date
+      ? "/api/v1/availability?" +
+          new URLSearchParams({
+            doctor_id: item.doctor_id,
+            branch_id: item.branch_id,
+            start_date: date,
+            end_date: date,
+            consultation_type: item.consultation_type,
+          })
+      : null,
+  );
+  const slots = available.data?.slots ?? [],
+    set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const answer = (w: Wait, outcome: "accept" | "decline") =>
+    call("/api/v1/admin/waitlist-offers/" + w.offer!.id + "/" + outcome, {
+      method: "POST",
+      body: { idempotency_key: crypto.randomUUID() },
+    }).then(r.refresh);
   return (
     <Card className="mt-6">
-      <CardHeader>
-        <CardTitle>Cancellation waitlist</CardTitle>
-        <CardDescription>
-          Verified, explicitly requested preferences. Offer slots individually;
-          no automatic outbound message is sent.
-        </CardDescription>
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1.5">
+          <CardTitle>Cancellation waitlist</CardTitle>
+          <CardDescription>
+            Verified, explicitly requested preferences. Offer slots individually;
+            no automatic outbound message is sent.
+          </CardDescription>
+        </div>
+        {canBook && (
+          <Button
+            onClick={() => {
+              setForm({ name: "", phone: "", doctor: "", from: today, to: today, notes: "" });
+              setAdding(true);
+            }}
+          >
+            Add request
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
+        <div className="mb-4 grid gap-3 sm:grid-cols-2">
+          <Choice
+            label="Status"
+            value={status}
+            onChange={setStatus}
+            options={[
+              ["active", "Waiting or offered"],
+              ["accepted", "Accepted"],
+              ["withdrawn", "Withdrawn"],
+            ]}
+          />
+          <Choice
+            label="Doctor"
+            value={doctorFilter}
+            onChange={setDoctorFilter}
+            options={[["all", "All doctors"], ...(d.data ?? []).map((a): [string, string] => [a.id, a.name])]}
+          />
+        </div>
         <Resource {...r}>
           {r.data?.length ? (
             r.data.map((w) => (
@@ -494,26 +537,65 @@ export function WaitlistDesk() {
               >
                 <div>
                   <p className="font-medium">
-                    {w.patient_name} · {w.status}
+                    {w.booked_by && !w.booked_by.patient_linked
+                      ? `Booked by ${w.booked_by.name}`
+                      : w.patient_name}{" "}
+                    · {w.status}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {w.phone} ·{" "}
                     {d.data?.find((a) => a.id === w.doctor_id)?.name} ·{" "}
                     {w.start_date} – {w.end_date}
                   </p>
+                  {w.notes && (
+                    <p className="text-sm text-muted-foreground">{w.notes}</p>
+                  )}
+                  {w.offer && (
+                    <p className="text-sm">
+                      Offered {time(w.offer.starts_at)} · held until{" "}
+                      {time(w.offer.expires_at).split(", ").pop()}
+                    </p>
+                  )}
                 </div>
-                {w.status === "waiting" && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setItem(w);
-                      setDate(w.start_date);
-                      setError("");
-                    }}
-                  >
-                    Prepare slot offer
-                  </Button>
-                )}
+                <div className="flex flex-wrap items-start gap-2">
+                  {w.status === "waiting" && canBook && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setItem(w);
+                        setDate(w.start_date < today ? today : w.start_date);
+                        setChosen("");
+                      }}
+                    >
+                      Prepare slot offer
+                    </Button>
+                  )}
+                  {w.status === "offered" && w.offer && canBook && (
+                    <>
+                      <Action run={() => answer(w, "accept")} success="Appointment booked">
+                        Accepted
+                      </Action>
+                      <Action
+                        variant="outline"
+                        run={() => answer(w, "decline")}
+                        success="Slot released; request is waiting again"
+                      >
+                        Declined
+                      </Action>
+                    </>
+                  )}
+                  {(w.status === "waiting" || w.status === "offered") && canCancel && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setWithdraw(w);
+                        setReason("");
+                      }}
+                    >
+                      Withdraw
+                    </Button>
+                  )}
+                </div>
               </div>
             ))
           ) : (
@@ -533,9 +615,9 @@ export function WaitlistDesk() {
           <DialogHeader>
             <DialogTitle>Prepare an expiring offer</DialogTitle>
             <DialogDescription>
-              Saving reserves a real slot briefly. Contact the patient through
-              the approved reception workflow and ask them to refresh offers on
-              the booking page. STOP prevents new proactive offers.
+              Saving holds a real slot for 15 minutes. Phone the caller, then
+              record whether they accepted or declined. Unanswered offers lapse
+              and the request waits again.
             </DialogDescription>
           </DialogHeader>
           <Field
@@ -551,21 +633,24 @@ export function WaitlistDesk() {
               id="offer-date"
               type="date"
               value={date}
-              min={item?.start_date}
+              min={item && item.start_date < today ? today : item?.start_date}
               max={item?.end_date}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={(e) => {
+                setDate(e.target.value);
+                setChosen("");
+              }}
             />
           </Field>
-          {error && (
+          {available.error && (
             <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>{available.error}</AlertDescription>
             </Alert>
           )}
           <Choice
             label="Available time"
             error={
               !chosen
-                ? date && !slots.length
+                ? date && available.fresh && !slots.length
                   ? "No available times on this date. Choose another date."
                   : "Choose a time to offer."
                 : undefined
@@ -577,7 +662,7 @@ export function WaitlistDesk() {
           <Action
             disabled={!chosen}
             run={async () => {
-              await api("/api/v1/admin/waitlist/" + item!.id + "/offer", {
+              await call("/api/v1/admin/waitlist/" + item!.id + "/offer", {
                 method: "POST",
                 body: {
                   ...slots.find((s) => s.starts_at === chosen),
@@ -587,9 +672,99 @@ export function WaitlistDesk() {
               setItem(null);
               r.refresh();
             }}
-            success="Offer saved; reception notification still required"
+            success="Offer saved for 15 minutes; phone the caller now"
           >
             Save expiring offer
+          </Action>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={adding} onOpenChange={setAdding}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add to the waitlist</DialogTitle>
+            <DialogDescription>
+              Record who to call when a slot opens with this doctor. Requests
+              cover up to 60 days.
+            </DialogDescription>
+          </DialogHeader>
+          <Field label="Caller name" id="wait-name">
+            <Input id="wait-name" required maxLength={100} value={form.name} onChange={(e) => set("name")(e.target.value)} />
+          </Field>
+          <Field label="Mobile number" id="wait-phone" hint="10 digits or +country code">
+            <Input id="wait-phone" type="tel" required pattern="(\+[1-9][0-9]{7,14}|[6-9][0-9]{9})" value={form.phone} onChange={(e) => set("phone")(e.target.value.trim())} />
+          </Field>
+          <Choice
+            label="Doctor"
+            value={form.doctor}
+            onChange={set("doctor")}
+            error={!form.doctor ? "Choose a doctor." : undefined}
+            options={(d.data ?? []).map((a) => [a.id, a.name])}
+          />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="From" id="wait-from">
+              <Input id="wait-from" type="date" required min={today} value={form.from} onChange={(e) => set("from")(e.target.value)} />
+            </Field>
+            <Field label="To" id="wait-to" error={form.to && form.to < form.from ? "Must be on or after the start." : undefined}>
+              <Input id="wait-to" type="date" required min={form.from || today} value={form.to} onChange={(e) => set("to")(e.target.value)} />
+            </Field>
+          </div>
+          <Field label="Notes (optional)" id="wait-notes">
+            <Input id="wait-notes" maxLength={500} value={form.notes} onChange={(e) => set("notes")(e.target.value)} />
+          </Field>
+          <Action
+            disabled={!form.name.trim() || !form.phone || !form.doctor || !form.from || !form.to || form.to < form.from}
+            run={async () => {
+              await call("/api/v1/admin/waitlist", {
+                method: "POST",
+                body: {
+                  patient_name: form.name,
+                  phone: form.phone,
+                  doctor_id: form.doctor,
+                  start_date: form.from,
+                  end_date: form.to,
+                  notes: form.notes,
+                  idempotency_key: crypto.randomUUID(),
+                },
+              });
+              setAdding(false);
+              r.refresh();
+            }}
+            success="Added to the waitlist"
+          >
+            Add request
+          </Action>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={!!withdraw}
+        onOpenChange={(v) => {
+          if (!v) setWithdraw(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Withdraw this request</DialogTitle>
+            <DialogDescription>
+              Any slot held for it is released. This is recorded with your reason.
+            </DialogDescription>
+          </DialogHeader>
+          <Field label="Reason" id="wait-reason" error={reason.trim().length < 3 ? "Give a short reason." : undefined}>
+            <Input id="wait-reason" required minLength={3} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
+          </Field>
+          <Action
+            variant="destructive"
+            disabled={reason.trim().length < 3}
+            run={async () => {
+              await call("/api/v1/admin/waitlist/" + withdraw!.id + "/withdraw", {
+                method: "POST",
+                body: { reason: reason.trim() },
+              });
+              setWithdraw(null);
+              r.refresh();
+            }}
+            success="Request withdrawn"
+          >
+            Withdraw request
           </Action>
         </DialogContent>
       </Dialog>

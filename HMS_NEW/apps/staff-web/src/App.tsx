@@ -52,6 +52,7 @@ import { Patients } from "@/hms/Patients";
 import { Appointments } from "@/hms/Appointments";
 import { Doctors } from "@/hms/Doctors";
 import { PendingModule, DesignGuide } from "@/hms/PendingModule";
+import { Waitlist } from "@/hms/Waitlist";
 import { Schedules } from "@/hms/Schedules";
 import { Overview } from "@/hms/Overview";
 import { Catalogue } from "@/hms/Catalogue";
@@ -85,7 +86,6 @@ const navigation = [
     name: "Waitlist",
     icon: ListOrdered,
     permission: "appointments.read",
-    pending: true,
   },
   {
     key: "queue",
@@ -662,6 +662,8 @@ function Directory({
           <Appointments />
         ) : page === "patients" ? (
           <Patients />
+        ) : page === "waitlist" ? (
+          <Waitlist />
         ) : page === "queue" ? (
           <Queue />
         ) : page === "consultations" ? (

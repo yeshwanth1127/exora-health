@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { DB, Kysely } from '@hms/db';
 import { DomainError } from '@hms/platform';
@@ -12,6 +12,14 @@ import {
   holdSlot,
   listAppointments,
   operationsSummary,
+  listWaitlist,
+  addToWaitlist,
+  offerWaitlistSlot,
+  acceptWaitlistOffer,
+  declineWaitlistOffer,
+  withdrawFromWaitlist,
+  waitlistFacility,
+  waitlistOfferFacility,
   recentOutboxEvents,
   getOverbooking,
   markNoShow,
@@ -117,6 +125,70 @@ export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const q = parse(z.object({ limit: z.coerce.number().int().min(1).max(100).optional() }), request.query ?? {});
     authorizeEvery(principalOf(request), 'audit.read', []);
     return { items: await recentOutboxEvents(db, callerOf(request), q.limit ?? 100) };
+  });
+
+  // Waitlist (G11). Each action is authorized at the request's clinic; a request without one needs every clinic.
+  const atClinic = (request: FastifyRequest, permission: string, facilityId: string | null | undefined) => {
+    if (facilityId === undefined) throw new DomainError('not_found', 'waitlist request not found');
+    authorizeEvery(principalOf(request), permission, facilityId ? [facilityId] : []);
+  };
+  const WaitlistParams = z.object({ waitlistEntryId: uuid });
+  const OfferParams = z.object({ offerId: uuid });
+
+  app.get('/v1/waitlist', async (request) => {
+    const q = parse(
+      z.object({ facilityId: uuid, staffId: uuid.optional(), status: z.enum(['waiting', 'offered', 'accepted', 'withdrawn', 'expired']).optional() }),
+      request.query,
+    );
+    authorize(principalOf(request), 'appointments.read', q.facilityId);
+    return { items: await listWaitlist(db, callerOf(request), q) };
+  });
+
+  app.post('/v1/waitlist', async (request, reply) => {
+    const body = parse(
+      z.object({
+        facilityId: uuid,
+        staffId: uuid,
+        preferredFrom: isoDate,
+        preferredTo: isoDate,
+        bookingParty: z.object({
+          name: z.string().trim().min(1).max(100),
+          phone: e164,
+          verifiedChannel: z.enum(['otp_sms', 'whatsapp', 'portal', 'staff']).optional(),
+        }),
+        patientId: uuid.optional(),
+        notes: z.string().trim().max(500).optional(),
+      }),
+      request.body,
+    );
+    authorize(principalOf(request), 'appointments.book', body.facilityId);
+    return reply.status(201).send(await addToWaitlist(db, callerOf(request), body, idempotencyKey(request)));
+  });
+
+  app.post('/v1/waitlist/:waitlistEntryId/offer', async (request, reply) => {
+    const { waitlistEntryId } = parse(WaitlistParams, request.params);
+    const body = parse(z.object({ slotStart: z.iso.datetime({ offset: true }) }), request.body);
+    atClinic(request, 'appointments.book', await waitlistFacility(db, callerOf(request), waitlistEntryId));
+    return reply.status(201).send(await offerWaitlistSlot(db, callerOf(request), { waitlistEntryId, ...body }, idempotencyKey(request)));
+  });
+
+  app.post('/v1/waitlist-offers/:offerId/accept', async (request, reply) => {
+    const { offerId } = parse(OfferParams, request.params);
+    atClinic(request, 'appointments.book', await waitlistOfferFacility(db, callerOf(request), offerId));
+    return reply.status(201).send(await acceptWaitlistOffer(db, callerOf(request), { offerId }, idempotencyKey(request)));
+  });
+
+  app.post('/v1/waitlist-offers/:offerId/decline', async (request) => {
+    const { offerId } = parse(OfferParams, request.params);
+    atClinic(request, 'appointments.book', await waitlistOfferFacility(db, callerOf(request), offerId));
+    return declineWaitlistOffer(db, callerOf(request), { offerId });
+  });
+
+  app.post('/v1/waitlist/:waitlistEntryId/withdraw', async (request) => {
+    const { waitlistEntryId } = parse(WaitlistParams, request.params);
+    const body = parse(z.object({ reason: z.string().trim().min(3).max(500) }), request.body);
+    atClinic(request, 'appointments.cancel', await waitlistFacility(db, callerOf(request), waitlistEntryId));
+    return withdrawFromWaitlist(db, callerOf(request), { waitlistEntryId, reason: body.reason });
   });
 
   app.get('/v1/appointments', async (request) => {
