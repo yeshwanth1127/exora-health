@@ -226,6 +226,31 @@ ERD [m06-diagnostics](../design/erd-v2/m06-diagnostics.md). An optional module: 
 
 Built-in roles: `doctor` (orders, order sets, results, acknowledge), `nurse` (`lab.collect`, `results.read`), `lab_technician` (collect, process), `pathologist` (+ `lab.verify`), `radiographer` (`imaging.manage`, `pcpndt.manage`), `radiologist` (+ `imaging.report`); `tenant_admin` has all.
 
+### Inventory (stores, stock, indents, purchasing, counts)
+ERD [m10-inventory](../design/erd-v2/m10-inventory.md). An optional module: while `inventory` is suspended every write is refused with 422 `module_inactive`. Stock lives in a ledger: `inventory.stock_movement` is append-only and `stock_balance` is maintained by a trigger; on-hand can never go negative (409 `insufficient_stock`, also under concurrent issues). Outward picks are first-expiry-first-out over available, unexpired batches. Quantities are in the item's base unit.
+
+| Method & path | Permission | Purpose |
+|---|---|---|
+| `GET/POST /v1/inventory/items` · `GET/PATCH /v1/inventory/items/:id` | `inventory.read` / `inventory.manage` | Item master (type, base UOM, pack UOMs, batch/expiry/serial tracking, reorder level, HSN/GST); drugs carry a `drugProfile` (generic, strength, form, schedule, controlled/high-alert flags). PATCH needs `version` |
+| `GET/POST /v1/inventory/item-groups` | `inventory.read` / `inventory.manage` | Item groups |
+| `GET/POST /v1/inventory/suppliers` · `PATCH …/:id` | `inventory.read` / `inventory.manage` | Suppliers (GSTIN checked against state code, payment terms) |
+| `GET /v1/inventory/stores?facilityId` · `POST` · `PATCH …/:id` | `inventory.read` / `inventory.manage` @ facility | Stores on a location; a pharmacy store needs a drug licence; parent store in the same clinic |
+| `PUT /v1/inventory/stores/:id/levels/:itemId` | `inventory.manage` @ facility | Min / reorder / max for an item in a store |
+| `GET /v1/inventory/stores/:id/stock` · `…/ledger` | `inventory.read` @ facility | Per-item on hand, usable, low flag and batches; movement history newest first |
+| `GET /v1/inventory/low-stock?facilityId` · `GET /v1/inventory/expiring?facilityId&days` | `inventory.read` @ facility | Below reorder level (store level, else the item's for central/pharmacy stores); batches expiring within `days` |
+| `POST /v1/inventory/batches/:id/status` | `inventory.manage` | `available` / `quarantine` (reason) / `recalled` (emits `inventory.batch_recalled`; can't be released) |
+| `POST /v1/inventory/stores/:id/opening` 🔑 | `inventory.issue` @ facility | Opening stock by batch (batch, expiry, MRP for drugs, cost) |
+| `POST /v1/inventory/stores/:id/adjustments` 🔑 | `inventory.issue` · kind `adjustment` needs `inventory.approve` | `consumption` (FEFO or a named batch), `damage`, `expiry_disposal`, signed `adjustment`; reason required. Emits `inventory.stock_adjusted` |
+| `GET/POST /v1/inventory/requisitions` · `POST …/:id/approve` · `…/cancel` | read / `inventory.indent` @ requesting store · approve: `inventory.approve` (not one's own indent) | Indents between stores of one clinic (`IND/…`); approve per line (≤ requested) |
+| `GET/POST /v1/inventory/transfers` · `POST …/:id/receive` | `inventory.issue` @ issuing store · receive: `inventory.receive` | Dispatch against an approved indent (FEFO, ≤ approved) or ad hoc; receive with short-receipt reasons → `partially_received`/`received` |
+| `GET /v1/inventory/counts?facilityId` · `GET …/:id` · `POST /v1/inventory/stores/:id/counts` · `POST …/:id/record` · `…/submit` · `…/approve` | `inventory.count`; approve: `inventory.approve` (not the counter) | Physical count: snapshot, record by line or batch, submit (all counted), approve posts variances (refused if stock moved since, 422 `stock_moved`) or reject back to open. One open count per store |
+| `GET/POST /v1/inventory/purchase-orders` · `POST …/:id/{approve,send,cancel,close}` | `inventory.purchase`; approve: `inventory.approve` (not the creator) | PO `PO/{year}/{n}` with pack UOMs and GST; send emits `inventory.purchase_order_sent` |
+| `GET/POST /v1/inventory/goods-receipts` 🔑 | `inventory.receive` @ store | GRN against a sent PO or direct: batch, expiry (expired on arrival refused), MRP for drugs, free qty; can't exceed the PO. Emits `inventory.goods_received` |
+| `GET/POST /v1/inventory/supplier-invoices` · `POST …/:id/approve` | `inventory.purchase` / `inventory.approve` @ every GRN's clinic | Three-way match against received value (±₹1); a variance needs a reason to approve; not by who recorded it |
+| `POST /v1/inventory/purchase-returns` 🔑 | `inventory.purchase` @ store | Return batches to the supplier (`PRN/…`) |
+
+Built-in roles: `store_keeper` (everything except `inventory.approve`), `nurse` (+ `inventory.read`, `inventory.indent`, `inventory.receive`); `tenant_admin` has all.
+
 ### Virtual OPD (teleconsultation)
 Design and rules: [../plan/VIRTUAL_OPD_PLAN.md](../plan/VIRTUAL_OPD_PLAN.md). Book a slot from a session with `visitMode: "virtual"` as usual; the worker creates its teleconsultation.
 

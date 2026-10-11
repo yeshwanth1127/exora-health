@@ -3,7 +3,7 @@
 // supersede, documented critical-value calls, and microbiology isolates with susceptibilities.
 import { sql, type DB, type Kysely, type Transaction } from '@hms/db';
 import { conflict, invalid, notFound, pgCode, preconditionFailed, runCommand } from '@hms/platform';
-import { clock, type Caller } from '../../caller.ts';
+import { clock, hospitalDay, type Caller } from '../../caller.ts';
 import { actor, assertDiagnosticsActive, moveItems, nextNo, pad, type ItemRow } from './state.ts';
 
 type SpecimenType = 'whole_blood' | 'serum' | 'plasma' | 'urine' | 'stool' | 'csf' | 'sputum' | 'swab' | 'tissue' | 'fluid' | 'other';
@@ -194,7 +194,7 @@ interface Interpretation {
 
 /** The reference range for this patient (sex, age in days) on the result date, and the value's flag. */
 async function interpret(tx: Transaction<DB>, def: Definition, patient: { sex: string; birth_date: string | null }, v: ResultValue, at: Date): Promise<Interpretation> {
-  const day = at.toISOString().slice(0, 10);
+  const day = hospitalDay(at);
   const age = patient.birth_date ? Math.floor((Date.parse(`${day}T00:00:00Z`) - Date.parse(`${patient.birth_date}T00:00:00Z`)) / 86_400_000) : null;
   const { rows: [range] } = await sql<{ low: string | null; high: string | null; critical_low: string | null; critical_high: string | null; text_range: string | null }>`
     SELECT low, high, critical_low, critical_high, text_range

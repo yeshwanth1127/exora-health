@@ -1391,6 +1391,480 @@ export interface DiagnosticsSpecimenOrderItem {
   tenant_id: string;
 }
 
+export interface InventoryDrugProduct {
+  brand_name: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  default_route: string | null;
+  dosage_form: string;
+  generic_name: string;
+  id: Generated<string>;
+  is_high_alert: Generated<boolean>;
+  is_ndps: Generated<boolean>;
+  is_nlem: Generated<boolean>;
+  item_id: string;
+  manufacturer: string | null;
+  regulatory_schedule: Generated<string>;
+  snomed_concept_id: string | null;
+  strength: string | null;
+  tele_list: string | null;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryGoodsReceipt {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  grn_no: string;
+  id: Generated<string>;
+  purchase_order_id: string | null;
+  received_at: Generated<Timestamp>;
+  received_by: string;
+  store_id: string;
+  supplier_id: string;
+  supplier_invoice_id: string | null;
+  supplier_invoice_ref: string | null;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryGoodsReceiptLine {
+  batch_no: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  expiry_date: string | null;
+  goods_receipt_id: string;
+  id: Generated<string>;
+  item_batch_id: string;
+  item_id: string;
+  mrp_minor: Int8 | null;
+  purchase_order_line_id: string | null;
+  qty_free: Generated<Numeric>;
+  qty_received: Numeric;
+  qty_rejected: Generated<Numeric>;
+  reject_reason: string | null;
+  serial_nos: Generated<string[]>;
+  tenant_id: string;
+  unit_cost_minor: Int8;
+}
+
+export interface InventoryItem {
+  base_uom: string;
+  code: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  deleted_at: Timestamp | null;
+  hsn_code: string | null;
+  id: Generated<string>;
+  is_batch_tracked: Generated<boolean>;
+  is_billable: Generated<boolean>;
+  is_cold_chain: Generated<boolean>;
+  is_expiry_tracked: Generated<boolean>;
+  is_serial_tracked: Generated<boolean>;
+  item_group_id: string | null;
+  item_type: string;
+  name: string;
+  reorder_level: Generated<Numeric>;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryItemBatch {
+  batch_no: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  currency: Generated<string>;
+  expiry_date: string | null;
+  id: Generated<string>;
+  item_id: string;
+  manufactured_on: string | null;
+  mrp_minor: Int8 | null;
+  received_at: Generated<Timestamp>;
+  status: Generated<string>;
+  status_reason: string | null;
+  supplier_id: string | null;
+  tenant_id: string;
+  unit_cost_minor: Generated<Int8>;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryItemGroup {
+  code: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  deleted_at: Timestamp | null;
+  id: Generated<string>;
+  name: string;
+  parent_id: string | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryItemUom {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  factor_to_base: Numeric;
+  id: Generated<string>;
+  is_issue_uom: Generated<boolean>;
+  is_purchase_uom: Generated<boolean>;
+  item_id: string;
+  tenant_id: string;
+  uom: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryPurchaseOrder {
+  approved_at: Timestamp | null;
+  approved_by: string | null;
+  cancel_reason: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string;
+  currency: Generated<string>;
+  expected_on: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  notes: string | null;
+  po_no: string;
+  sent_at: Timestamp | null;
+  status: Generated<string>;
+  store_id: string;
+  supplier_id: string;
+  tax_minor: Generated<Int8>;
+  taxable_minor: Generated<Int8>;
+  tenant_id: string;
+  total_minor: Generated<Int8>;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryPurchaseOrderLine {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  factor_to_base: Numeric;
+  free_qty: Generated<Numeric>;
+  gst_rate_bp: Generated<number>;
+  id: Generated<string>;
+  item_id: string;
+  purchase_order_id: string;
+  quantity: Numeric;
+  received_base_qty: Generated<Numeric>;
+  tenant_id: string;
+  unit_price_minor: Int8;
+  uom: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryPurchaseReturn {
+  created_at: Generated<Timestamp>;
+  created_by: string;
+  debit_note_ref: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  reason: string;
+  return_no: string;
+  returned_at: Generated<Timestamp>;
+  store_id: string;
+  supplier_id: string;
+  tenant_id: string;
+}
+
+export interface InventoryPurchaseReturnLine {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  id: Generated<string>;
+  item_batch_id: string;
+  item_id: string;
+  purchase_return_id: string;
+  quantity: Numeric;
+  tenant_id: string;
+}
+
+export interface InventoryRequisition {
+  approved_at: Timestamp | null;
+  approved_by: string | null;
+  cancel_reason: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  indent_no: string;
+  note: string | null;
+  requested_at: Generated<Timestamp>;
+  requested_by: string;
+  requesting_store_id: string;
+  status: Generated<string>;
+  supplying_store_id: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryRequisitionLine {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  id: Generated<string>;
+  item_id: string;
+  qty_approved: Numeric | null;
+  qty_issued: Generated<Numeric>;
+  qty_requested: Numeric;
+  requisition_id: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventorySerialUnit {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  current_store_id: string | null;
+  id: Generated<string>;
+  item_batch_id: string;
+  item_id: string;
+  patient_id: string | null;
+  serial_no: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryStockAdjustment {
+  adjustment_no: string;
+  created_at: Generated<Timestamp>;
+  created_by: string;
+  department_id: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  kind: string;
+  reason: string;
+  store_id: string;
+  tenant_id: string;
+}
+
+export interface InventoryStockBalance {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  id: Generated<string>;
+  item_batch_id: string;
+  item_id: string;
+  on_hand: Generated<Numeric>;
+  reserved: Generated<Numeric>;
+  store_id: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryStockBalanceDrift {
+  item_batch_id: string | null;
+  ledger_total: Numeric | null;
+  on_hand: Numeric | null;
+  store_id: string | null;
+  tenant_id: string | null;
+}
+
+export interface InventoryStockCount {
+  approved_at: Timestamp | null;
+  approved_by: string | null;
+  count_no: string;
+  counted_at: Timestamp | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  opened_by: string;
+  status: Generated<string>;
+  store_id: string;
+  submitted_by: string | null;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryStockCountLine {
+  counted_qty: Numeric | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  id: Generated<string>;
+  item_batch_id: string;
+  item_id: string;
+  note: string | null;
+  stock_count_id: string;
+  system_qty: Numeric;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryStockMovement {
+  actor_staff_id: string | null;
+  adjustment_id: string | null;
+  count_line_id: string | null;
+  created_at: Generated<Timestamp>;
+  dispense_line_id: string | null;
+  goods_receipt_line_id: string | null;
+  id: Generated<string>;
+  item_batch_id: string;
+  item_id: string;
+  medication_return_id: string | null;
+  movement_type: string;
+  occurred_at: Generated<Timestamp>;
+  patient_id: string | null;
+  procedure_consumable_id: string | null;
+  purchase_return_line_id: string | null;
+  quantity: Numeric;
+  serial_unit_id: string | null;
+  store_id: string;
+  tenant_id: string;
+  transfer_line_id: string | null;
+  unit_cost_minor: Int8;
+}
+
+export interface InventoryStockTransfer {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  dispatched_at: Generated<Timestamp>;
+  dispatched_by: string;
+  facility_id: string;
+  from_store_id: string;
+  id: Generated<string>;
+  received_at: Timestamp | null;
+  received_by: string | null;
+  requisition_id: string | null;
+  status: Generated<string>;
+  tenant_id: string;
+  to_store_id: string;
+  transfer_no: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryStockTransferLine {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  discrepancy_reason: string | null;
+  id: Generated<string>;
+  item_batch_id: string;
+  item_id: string;
+  qty_received: Numeric | null;
+  qty_sent: Numeric;
+  requisition_line_id: string | null;
+  serial_unit_id: string | null;
+  stock_transfer_id: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryStore {
+  can_dispense_to_patient: Generated<boolean>;
+  code: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  drug_licence_no: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  location_id: string | null;
+  name: string;
+  parent_store_id: string | null;
+  status: Generated<string>;
+  store_type: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryStoreItemSetting {
+  bin_location: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  id: Generated<string>;
+  item_id: string;
+  max_level: Numeric | null;
+  min_level: Generated<Numeric>;
+  reorder_qty: Numeric | null;
+  store_id: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventorySupplier {
+  address: string | null;
+  code: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  deleted_at: Timestamp | null;
+  drug_licence_no: string | null;
+  email: string | null;
+  gstin: string | null;
+  id: Generated<string>;
+  name: string;
+  pan: string | null;
+  payment_terms_days: Generated<number>;
+  phone: string | null;
+  state_code: string | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventorySupplierInvoice {
+  approved_at: Timestamp | null;
+  approved_by: string | null;
+  cgst_minor: Generated<Int8>;
+  created_at: Generated<Timestamp>;
+  created_by: string;
+  currency: Generated<string>;
+  due_on: string;
+  expected_minor: Int8;
+  id: Generated<string>;
+  igst_minor: Generated<Int8>;
+  invoice_date: string;
+  invoice_no: string;
+  match_status: string;
+  round_off_minor: Generated<Int8>;
+  sgst_minor: Generated<Int8>;
+  status: Generated<string>;
+  supplier_id: string;
+  taxable_minor: Int8;
+  tenant_id: string;
+  total_minor: Int8;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
 export interface PatientPatient {
   birth_date: string | null;
   birth_date_estimated: Generated<boolean>;
@@ -1988,6 +2462,32 @@ export interface DB {
   "diagnostics.service_order": DiagnosticsServiceOrder;
   "diagnostics.specimen": DiagnosticsSpecimen;
   "diagnostics.specimen_order_item": DiagnosticsSpecimenOrderItem;
+  "inventory.drug_product": InventoryDrugProduct;
+  "inventory.goods_receipt": InventoryGoodsReceipt;
+  "inventory.goods_receipt_line": InventoryGoodsReceiptLine;
+  "inventory.item": InventoryItem;
+  "inventory.item_batch": InventoryItemBatch;
+  "inventory.item_group": InventoryItemGroup;
+  "inventory.item_uom": InventoryItemUom;
+  "inventory.purchase_order": InventoryPurchaseOrder;
+  "inventory.purchase_order_line": InventoryPurchaseOrderLine;
+  "inventory.purchase_return": InventoryPurchaseReturn;
+  "inventory.purchase_return_line": InventoryPurchaseReturnLine;
+  "inventory.requisition": InventoryRequisition;
+  "inventory.requisition_line": InventoryRequisitionLine;
+  "inventory.serial_unit": InventorySerialUnit;
+  "inventory.stock_adjustment": InventoryStockAdjustment;
+  "inventory.stock_balance": InventoryStockBalance;
+  "inventory.stock_balance_drift": InventoryStockBalanceDrift;
+  "inventory.stock_count": InventoryStockCount;
+  "inventory.stock_count_line": InventoryStockCountLine;
+  "inventory.stock_movement": InventoryStockMovement;
+  "inventory.stock_transfer": InventoryStockTransfer;
+  "inventory.stock_transfer_line": InventoryStockTransferLine;
+  "inventory.store": InventoryStore;
+  "inventory.store_item_setting": InventoryStoreItemSetting;
+  "inventory.supplier": InventorySupplier;
+  "inventory.supplier_invoice": InventorySupplierInvoice;
   "patient.patient": PatientPatient;
   "patient.patient_address": PatientPatientAddress;
   "patient.patient_consent": PatientPatientConsent;

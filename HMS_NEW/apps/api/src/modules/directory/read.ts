@@ -1,7 +1,7 @@
 // Facilities and practitioners for booking screens and channels.
 import type { DB, Kysely } from '@hms/db';
 import { runQuery } from '@hms/platform';
-import type { Caller } from '../../caller.ts';
+import { hospitalDay, type Caller } from '../../caller.ts';
 
 export async function listFacilities(db: Kysely<DB>, caller: Caller, opts: { includeInactive?: boolean } = {}) {
   return runQuery(db, caller.tenantId, (tx) => {
@@ -39,8 +39,8 @@ export async function listPractitioners(db: Kysely<DB>, caller: Caller, filter: 
       ])
       .where('s.status', '=', 'active')
       .where('s.is_system_account', '=', false)
-      .where('pa.valid_from', '<=', new Date().toISOString().slice(0, 10))
-      .where((eb) => eb.or([eb('pa.valid_to', 'is', null), eb('pa.valid_to', '>', new Date().toISOString().slice(0, 10))]));
+      .where('pa.valid_from', '<=', hospitalDay(new Date()))
+      .where((eb) => eb.or([eb('pa.valid_to', 'is', null), eb('pa.valid_to', '>', hospitalDay(new Date()))]));
     if (filter.facilityId) q = q.where('pa.facility_id', '=', filter.facilityId);
     if (filter.specialty) q = q.where('sp.code', '=', filter.specialty);
     return q.orderBy('s.display_name').execute();
