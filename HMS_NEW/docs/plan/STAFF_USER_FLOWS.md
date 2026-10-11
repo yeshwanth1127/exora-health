@@ -29,6 +29,7 @@ Browser walkthroughs are done locally by the product owner. These tests cover th
 | — | Change a service's default fee | Hospital catalogue → service Edit | `PUT /v1/healthcare-services/:id/fee` | catalog "creates a bookable service…" |
 | — | Rename staff, change their phone | Workspace settings → Manage; Doctors → Name and contact | `PATCH /v1/staff/:id` | catalog "renames staff…" |
 | — | Grant, remove, deactivate; copy, edit and retire roles | Workspace settings | `POST /v1/staff/:id/grants`, `POST /v1/role-grants/:id/revoke`, `POST /v1/staff/:id/status`, `POST /v1/roles`, `PUT /v1/roles/:id/permissions/:code`, `POST /v1/roles/:id/retire` | access.test; catalog "custom roles" |
+| — | Council registrations, expired invites, module switches, consent documents | Workspace settings | `/v1/staff/:id/registrations`, `…/invite/renew`, `PUT /v1/modules/:module`, `/v1/consent-documents…` | records "M01 administration" |
 | — | Clinic booking policy (overbooking) | Workspace settings → Booking policy | `PUT /v1/facilities/:id/overbooking` | api "overbooking per clinic" |
 | — | Blocks, leave, extra hours, holidays, day plans | Schedules (timeline, Weekly hours) | `POST …/exceptions` (+ `/preview`), `POST /v1/facilities/:id/holidays`, revoke routes, `PUT …/day-plans/:date` | api "facility scope of schedule changes", "schedule scope, reads and reversals", "weekly plan replacement" |
 | F8 | A doctor leaves a clinic | Appointments (cancel/move), Schedules (end hours), Doctors → Stop working here | `POST …/cancel` → `PUT …/weekly-plan` with no sessions → `POST /v1/practitioner-affiliations/:id/end` | flows F8 |
@@ -49,6 +50,12 @@ Browser walkthroughs are done locally by the product owner. These tests cover th
 | — | Video consultation | Teleconsultations | `POST …/teleconsult/link`, `POST /v1/teleconsults/:id/start|join|end` | telehealth.test |
 | — | Daily overview, operations events | Overview, Operations | `GET /v1/operations/summary`, `GET /v1/operations/events` | api "operations summary" |
 | — | Activity log and export | Activity log | `GET /v1/audit-events`, `POST /v1/audit-events/export` | access "activity log (G18)" |
+| — | Review emergency (break-glass) access | Activity log → Break-glass review | `GET /v1/break-glass` → `POST /v1/break-glass/:id/review` | records "M01 administration" |
+| — | Patient registry: identifiers, family, consents, alerts, care team | Patients → patient | `GET …/registry`, identifier/related/consent/flag routes, `POST /v1/care-assignments` | records "M02 registry" |
+| — | Find and merge duplicates | Patients → Duplicate queue | `POST /v1/patient-links` → second person `…/decide` → third person `…/unmerge` | records "duplicates" |
+| — | Triage, immunizations, care plans, referrals, MLC, births and deaths | Consultations → encounter | `/v1/encounters/:id/triage|immunizations|care-plans|referrals|mlc|births|death` and their follow-ups | records "M05 records" |
+| — | Nurse writes and signs a nursing note | Consultations (nurse) | `POST …/notes` (`nursing`) → `POST /v1/notes/:id/sign` | records "nursing notes (G27)" |
+| — | Exact-time booking | Schedules → drag any range | `POST /v1/holds/range` → `POST /v1/appointments`; `GET /v1/request-outcomes/:key` after a lost response | records "board, range holds" |
 
 ## Not yet possible (out of scope, see the ledger)
 

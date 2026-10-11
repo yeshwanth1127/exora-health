@@ -39,6 +39,7 @@ import {
   BreakGlass,
   VitalCorrection,
 } from "./ClinicalRecords";
+import { EncounterRecords } from "./EncounterRecords";
 import type {
   EncounterDetail,
   EncounterRow,
@@ -181,11 +182,13 @@ function Encounter({
   const templates = useQuery<{ items: NoteTemplate[] }>(
     can("clinical.read") ? "/v1/note-templates" : null,
   );
-  // Nursing templates wait for nursing attestation (G27).
+  // Nurses write nursing notes (signed by them, G27); doctors write consultation notes.
+  const nurse = me.staffType === "nurse";
+  const noteKind = nurse ? "nursing" : "consultation";
   const consultTemplates = [
     ...new Map(
       (templates.data?.items ?? [])
-        .filter((t) => t.noteType === "consultation")
+        .filter((t) => t.noteType === noteKind)
         .map((t) => [t.code, t]),
     ).values(),
   ];
@@ -288,7 +291,7 @@ function Encounter({
                   onSaved={refresh}
                 />
               ))}
-              {active && assignedDoctor && can("clinical.write") && (
+              {active && (assignedDoctor || nurse) && can("clinical.write") && (
                 <form
                   className="space-y-3"
                   onSubmit={async (e) => {
@@ -306,7 +309,7 @@ function Encounter({
                                 : {}),
                             }
                           : {
-                              noteType: "consultation",
+                              noteType: noteKind,
                               narrative: narrative.trim(),
                             },
                         true,
@@ -356,7 +359,9 @@ function Encounter({
                     title={
                       template
                         ? "Additional narrative (optional)"
-                        : "New consultation note"
+                        : nurse
+                          ? "New nursing note"
+                          : "New consultation note"
                     }
                     id="new-note"
                   >
@@ -377,12 +382,6 @@ function Encounter({
                     Save draft note
                   </Button>
                 </form>
-              )}
-              {me.staffType === "nurse" && (
-                <Hint>
-                  Nursing notes are deferred until nursing attestation is
-                  supported. Vitals can be recorded now.
-                </Hint>
               )}
             </div>
             <div className="space-y-3">
@@ -434,6 +433,12 @@ function Encounter({
               allergies={result.data.allergies}
               problems={result.data.problems}
               editable={active}
+              onChanged={refresh}
+            />
+            <EncounterRecords
+              encounterId={row.encounterId}
+              records={result.data.records}
+              active={active}
               onChanged={refresh}
             />
             {assignedDoctor &&

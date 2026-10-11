@@ -13,6 +13,10 @@ import { registerClinicalRoutes } from './http/routes/clinical.ts';
 import { registerBookingRoutes } from './http/routes/booking.ts';
 import { registerCalendarRoutes } from './http/routes/calendar.ts';
 import { registerAccessRoutes } from './http/routes/access.ts';
+import { registerAdminRoutes } from './http/routes/admin.ts';
+import { registerBoardRoutes } from './http/routes/board.ts';
+import { registerRecordRoutes } from './http/routes/records.ts';
+import { registerRegistryRoutes } from './http/routes/registry.ts';
 import { registerDirectoryRoutes } from './http/routes/directory.ts';
 import { registerPatientRoutes } from './http/routes/patients.ts';
 import { registerQueueRoutes } from './http/routes/queue.ts';
@@ -140,6 +144,10 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   registerBookingRoutes(app, deps.db);
   registerQueueRoutes(app, deps.db);
   registerClinicalRoutes(app, deps.db);
+  registerAdminRoutes(app, deps.db);
+  registerRegistryRoutes(app, deps.db);
+  registerRecordRoutes(app, deps.db);
+  registerBoardRoutes(app, deps.db);
   registerTelehealthRoutes(app, deps.db, deps.telehealth ?? loadTelehealthSettings());
   return app;
 }

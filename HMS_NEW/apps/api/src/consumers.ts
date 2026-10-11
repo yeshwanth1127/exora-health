@@ -94,7 +94,25 @@ export const checkInOnTeleWaiting: EventHandler = {
   },
 };
 
+/** Starting the consultation starts the patient's queue token, so the queue and the encounter agree (G15). */
+export const startTokenOnEncounterStarted: EventHandler = {
+  consumer: 'booking.start_token_on_encounter_started',
+  eventTypes: ['encounter.started'],
+  module: 'booking',
+  async handle(tx, event) {
+    const appointmentId = event.payload['appointmentId'];
+    if (typeof appointmentId !== 'string') return;
+    await tx
+      .updateTable('booking.queue_token')
+      .set({ status: 'in_service', called_at: sql`coalesce(called_at, now())`, service_started_at: sql`coalesce(service_started_at, now())` })
+      .where('appointment_id', '=', appointmentId)
+      .where('status', 'in', ['waiting', 'called'])
+      .execute();
+  },
+};
+
 export const consumers: EventHandler[] = [
+  startTokenOnEncounterStarted,
   openEncounterOnCheckIn,
   cancelEncounterOnAppointmentCancelled,
   completeAppointmentOnEncounterFinished,

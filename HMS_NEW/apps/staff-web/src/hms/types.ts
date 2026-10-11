@@ -350,6 +350,26 @@ export type EncounterDetail = {
     role: string;
     verificationStatus: string;
   }[];
+  records: EncounterRecords;
+};
+export type CarePlan = {
+  carePlanId: string;
+  title: string;
+  status: string;
+  periodStart: string;
+  periodEnd: string | null;
+  encounterId: string | null;
+  activities: { activityId: string; kind: string; description: string; frequency: string | null; status: string }[];
+};
+export type EncounterRecords = {
+  triage: { triageId: string; triageScale: string; category: string; arrivalMode: string | null; chiefComplaint: string | null; assessedAt: string; reassessDueAt: string | null; assessedBy: string }[];
+  immunizations: { immunizationId: string; vaccine: string; doseNumber: number | null; lotNumber: string | null; administeredAt: string; route: string | null; site: string | null; status: string; notDoneReason: string | null; administeredBy: string }[];
+  carePlans: CarePlan[];
+  referrals: { referralId: string; direction: string; reason: string; urgency: string; status: string; toStaffId: string | null; toStaffName: string | null; toDepartmentName: string | null; externalOrg: string | null; externalDoctor: string | null; referredBy: string; responseNote: string | null; createdAt: string }[];
+  births: { id: string; birth_order: number; sex: string; birth_weight_g: number | null; delivery_method: string; is_live_birth: boolean; born_at: string; civil_registration_ref: string | null }[];
+  death: { id: string; died_at: string; manner: string; cause_chain: unknown; mccd_form: string | null; mccd_issued_at: string | null; body_released_to: string | null; body_released_at: string | null } | null;
+  mlc: { id: string; version: number; mlc_no: string; mlc_type: string; brought_by_name: string | null; incident_place: string | null; police_station: string | null; police_intimated_at: string | null; intimation_ref: string | null; officer_name: string | null; is_pocso: boolean } | null;
+  hasMlc: boolean;
 };
 export type Chart = {
   patient: ClinicalPatient;

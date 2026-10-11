@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { DB, Kysely } from '@hms/db';
-import { DomainError } from '@hms/platform';
+import { DomainError, runQuery } from '@hms/platform';
 import { authorize } from '../../auth/principal.ts';
 import {
   addDiagnosis,
@@ -36,6 +36,9 @@ const NoteParams = z.object({ noteId: uuid });
 const PatientParams = z.object({ patientId: uuid });
 const NoteType = z.enum(['consultation', 'history', 'examination', 'progress', 'nursing', 'procedure', 'discharge_summary', 'referral_letter']);
 const NoteData = z.record(z.string(), z.unknown());
+
+const noteType = (db: Kysely<DB>, caller: ReturnType<typeof callerOf>, noteId: string) =>
+  runQuery(db, caller.tenantId, async (tx) => (await tx.selectFrom('clinical.clinical_note').select('note_type').where('id', '=', noteId).executeTakeFirst())?.note_type);
 
 export function registerClinicalRoutes(app: FastifyInstance, db: Kysely<DB>) {
   /** Facility of an encounter (404 if missing), then the permission for it. */
@@ -83,7 +86,9 @@ export function registerClinicalRoutes(app: FastifyInstance, db: Kysely<DB>) {
   app.get('/v1/encounters/:encounterId', async (request) => {
     const { encounterId } = parse(EncounterParams, request.params);
     await authorizeEncounter(request, encounterId, 'clinical.read');
-    return getEncounterDetail(db, callerOf(request), encounterId);
+    const facilityId = await encounterFacility(db, callerOf(request), encounterId);
+    const mlc = principalOf(request).grants.get('mlc.read');
+    return getEncounterDetail(db, callerOf(request), encounterId, { mlc: !!mlc && (mlc.has(null) || mlc.has(facilityId!)) });
   });
 
   app.post('/v1/encounters/:encounterId/start', async (request) => {
@@ -162,7 +167,13 @@ export function registerClinicalRoutes(app: FastifyInstance, db: Kysely<DB>) {
 
   app.post('/v1/notes/:noteId/sign', async (request) => {
     const { noteId } = parse(NoteParams, request.params);
-    await authorizeRecord(request, 'note', noteId, 'clinical.sign');
+    // Nurses sign their own nursing notes (clinical.sign_nursing, G27); every other note needs clinical.sign.
+    const facilityId = await recordFacility(db, callerOf(request), 'note', noteId);
+    if (!facilityId) throw new DomainError('not_found', 'note not found');
+    const nursing = (await noteType(db, callerOf(request), noteId)) === 'nursing';
+    const p = principalOf(request);
+    const holds = (perm: string) => { const s = p.grants.get(perm); return !!s && (s.has(null) || s.has(facilityId)); };
+    if (!holds('clinical.sign') && !(nursing && holds('clinical.sign_nursing'))) authorize(p, 'clinical.sign', facilityId);
     return signNote(db, callerOf(request), { noteId });
   });
 

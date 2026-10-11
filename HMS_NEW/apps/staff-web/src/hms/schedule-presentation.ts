@@ -35,6 +35,8 @@ export type CalendarDay = {
   sessions: Session[];
   exceptions: ScheduleException[];
   holidays: FacilityHoliday[];
+  /** Live holds (time only, no patient) from the calendar board. */
+  holds?: { startsAt: string; endsAt: string; holdExpiresAt: string; kind: string }[];
 };
 
 export function scheduleCatalogue(
@@ -152,8 +154,16 @@ export function scheduleRow(
       });
   }
   let blocks: TimeBlock[] = [],
-    reason = "Holds and their expiry are not shown in this timeline.";
+    reason = "";
   if (calendar) {
+    for (const h of calendar.holds ?? [])
+      periods.push({
+        kind: "held",
+        starts_at: h.startsAt,
+        ends_at: h.endsAt,
+        branch_id: facility.facilityId,
+        reason: `${h.kind === "waitlist_offer" ? "Offered from the waitlist" : "Being booked"} · held until ${localParts(h.holdExpiresAt, facility.timezone).time}`,
+      });
     const local = (iso: string) => localParts(iso, facility.timezone).time;
     blocks = calendar.sessions
       .filter((x) => x.facilityId === facility.facilityId && x.slotMinutes)

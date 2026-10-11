@@ -39,8 +39,11 @@ export async function resolvePrincipal(db: Kysely<DB>, identity: Identity, reque
     if (!match) throw forbidden('no active account for this identity in the requested tenant');
     account = match;
   } else if (active.length > 1) {
+    // Names come from a definer function that only returns tenants this identity belongs to (G02).
+    const { rows: named } = await sql<{ tenant_id: string; name: string }>`SELECT * FROM platform.tenants_for_identity(${identity.issuer}, ${identity.subject})`.execute(db);
     throw new DomainError('validation', 'this identity has accounts in several tenants; send the X-Tenant-Id header', {
       tenants: active.map((a) => a.tenant_id),
+      tenantNames: named.map((t) => ({ tenantId: t.tenant_id, name: t.name })),
     });
   }
   if (!account.staff_id) throw forbidden('patient portal accounts are not supported by this API yet');

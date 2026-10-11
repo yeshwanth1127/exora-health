@@ -25,6 +25,17 @@ import type {
 } from "./types";
 
 type Body = Record<string, unknown>;
+type Board = {
+  asOf: string;
+  rows: {
+    staffId: string;
+    calendar: boolean;
+    sessions: { startsAt: string; endsAt: string; visitMode: string; slotMinutes: number | null; maxWalkInTokens: number; source: string }[];
+    slots: { slotStart: string; slotEnd: string; visitMode: string; status: string }[];
+    holds: { startsAt: string; endsAt: string; holdExpiresAt: string; kind: string }[];
+    exceptions: { scheduleExceptionId: string; kind: ScheduleException["kind"]; start: string | null; end: string | null; facilityId: string | null; reason: string | null }[];
+  }[];
+};
 type Group = { days: number[]; windows: { start: string; end: string }[] };
 
 const unavailable = (what: string) =>
@@ -34,7 +45,13 @@ const addDays = (day: string, n: number) => {
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
 };
-const key = () => crypto.randomUUID();
+/** One key per intent (G26): retrying the same change after a lost response replays it, not repeats it. */
+const intents = new Map<string, string>();
+const keyFor = (intent: unknown) => {
+  const k = JSON.stringify(intent);
+  if (!intents.has(k)) intents.set(k, crypto.randomUUID());
+  return intents.get(k)!;
+};
 
 export function scheduleSource(
   me: Me,
@@ -151,6 +168,23 @@ export function scheduleSource(
       idempotencyKey: `${operation}:hold`,
       body: { staffId: doctor, slotStart, holdMinutes: 5 },
     });
+  /** Holds the exact time chosen (G08) when it isn't one whole published slot. */
+  const holdExact = (doctor: string, startsAt: string, endsAt: string, mode: string | null, operation: string) =>
+    request<{ reservationId: string }>("/v1/holds/range", {
+      method: "POST",
+      idempotencyKey: `${operation}:range`,
+      body: { staffId: doctor, startsAt, endsAt, holdMinutes: 5, ...(mode ? { visitMode: mode } : {}) },
+    });
+  /** A whole published slot when the time matches one exactly, else the exact range. */
+  async function holdFor(doctor: string, starts: string, ends: string, mode: string | null, operation: string) {
+    try {
+      const slot = await slotAt(doctor, starts, ends, mode);
+      return hold(doctor, slot.slotStart, operation);
+    } catch (e) {
+      if (e instanceof HmsError && e.code === "validation" && e.status === 422) return holdExact(doctor, starts, ends, mode, operation);
+      throw e;
+    }
+  }
 
   /** The original pre-save check, answered from the doctor's slots: overbooking needs a taken slot. */
   async function readCheck(url: URL, signal: AbortSignal) {
@@ -165,7 +199,8 @@ export function scheduleSource(
     if (branch && branch !== facility.facilityId)
       throw new HmsError("Switch clinic to inspect another facility.", 403, "facility_scope");
     const range = { from: date, to: date };
-    const [appointments, holidays] = await Promise.all([
+    // One consistent snapshot of the clinic's day (G04), plus the full appointment rows for the sheets.
+    const [appointments, holidays, board] = await Promise.all([
       request<{ items: Appointment[] }>(
         `/v1/appointments?${query({ facilityId: facility.facilityId, ...range, limit: 500 })}`,
         { signal },
@@ -174,29 +209,18 @@ export function scheduleSource(
         `/v1/facilities/${facility.facilityId}/holidays?${query(range)}`,
         { signal },
       ),
+      request<Board>(`/v1/calendar-board?${query({ facilityId: facility.facilityId, date })}`, { signal }),
     ]);
-    const rows = await Promise.all(
-      doctors.map(async (doctor) => {
-        if (!practitioners.find((p) => p.staffId === doctor.id)?.calendarId)
-          return scheduleRow(doctor, [], appointments.items, facility);
-        const base = `/v1/practitioners/${doctor.id}`;
-        const [slots, sessions, exceptions] = await Promise.all([
-          request<{ items: Slot[] }>(
-            `${base}/slots?${query({ facilityId: facility.facilityId, ...range, includeUnavailable: true })}`,
-            { signal },
-          ),
-          request<{ items: Session[] }>(`${base}/sessions?${query(range)}`, { signal }),
-          request<{ items: ScheduleException[] }>(`${base}/exceptions?${query(range)}`, { signal }),
-        ]);
-        return scheduleRow(doctor, slots.items, appointments.items, facility, {
-          day: date,
-          sessions: sessions.items,
-          exceptions: exceptions.items,
-          holidays: holidays.items,
-        });
-      }),
-    );
-    return { day: date, as_of: new Date().toISOString(), rows };
+    const byDoctor = new Map(board.rows.map((r) => [r.staffId, r]));
+    const rows = doctors.map((doctor) => {
+      const b = byDoctor.get(doctor.id);
+      if (!b?.calendar) return scheduleRow(doctor, [], appointments.items, facility);
+      const slots: Slot[] = b.slots.map((s) => ({ ...s, facilityId: facility.facilityId, status: s.status as Slot["status"] }));
+      const sessions: Session[] = b.sessions.map((s) => ({ ...s, sessionOn: date, facilityId: facility.facilityId, source: s.source as Session["source"] }));
+      const exceptions: ScheduleException[] = b.exceptions.map((e) => ({ ...e, onDate: date, revokedAt: null }));
+      return scheduleRow(doctor, slots, appointments.items, facility, { day: date, sessions, exceptions, holidays: holidays.items, holds: b.holds });
+    });
+    return { day: date, as_of: board.asOf, rows };
   }
 
   return {
@@ -228,31 +252,29 @@ export function scheduleSource(
           const r = await request<{ affectedAppointmentIds: string[] }>(`${base}/preview`, { method: "POST", body: window });
           return { affected_appointments: await appointmentsById(r.affectedAppointmentIds) } as T;
         }
-        return request<T>(base, { method: "POST", idempotencyKey: key(), body: { ...window, kind: "block", reason: b.reason } });
+        const body = { ...window, kind: "block", reason: b.reason };
+        return request<T>(base, { method: "POST", idempotencyKey: keyFor([base, body]), body });
       }
       const unblock = path.match(/^\/api\/v1\/admin\/schedule-exceptions\/([0-9a-f-]{36})$/);
       if (unblock && method === "DELETE")
         return request<T>(`/v1/schedule-exceptions/${unblock[1]}/revoke`, { method: "POST", body: { reason: b.reason } });
       if (path === "/api/v1/admin/schedule-timeline/open") {
         if (b.consultation_type !== "in_person") throw unavailable("Extra virtual hours");
-        return request<T>(`/v1/practitioners/${b.doctor_id}/exceptions`, {
-          method: "POST",
-          idempotencyKey: key(),
-          body: {
-            onDate: b.schedule_date,
-            kind: "extra_hours",
-            facilityId: b.branch_id,
-            start: b.starts_at_local,
-            end: b.ends_at_local,
-            slotMinutes: b.slot_minutes,
-          },
-        });
+        const body = {
+          onDate: b.schedule_date,
+          kind: "extra_hours",
+          facilityId: b.branch_id,
+          start: b.starts_at_local,
+          end: b.ends_at_local,
+          slotMinutes: b.slot_minutes,
+        };
+        return request<T>(`/v1/practitioners/${b.doctor_id}/exceptions`, { method: "POST", idempotencyKey: keyFor(["extra", b.doctor_id, body]), body });
       }
       if (path === "/api/v1/admin/schedule-timeline/weekly/preview" || path === "/api/v1/admin/schedule-timeline/weekly") {
         const preview = path.endsWith("/preview");
         const r = await request<WeeklyPlanResult>(`/v1/practitioners/${b.doctor_id}/weekly-plan${preview ? "/preview" : ""}`, {
           method: preview ? "POST" : "PUT",
-          ...(preview ? {} : { idempotencyKey: key() }),
+          ...(preview ? {} : { idempotencyKey: keyFor(["weekly", b.doctor_id, weeklyBody(b)]) }),
           body: weeklyBody(b),
         });
         return {
@@ -270,8 +292,7 @@ export function scheduleSource(
       if (path === "/api/v1/admin/schedule-timeline/appointments" && method === "POST") {
         const bookingParty = { name: b.patient_name, phone: b.patient_phone };
         if (!b.overbook) {
-          const slot = await slotAt(String(b.doctor_id), String(b.starts_at), String(b.ends_at), String(b.consultation_type));
-          const { reservationId } = await hold(String(b.doctor_id), slot.slotStart, String(b.idempotency_key));
+          const { reservationId } = await holdFor(String(b.doctor_id), String(b.starts_at), String(b.ends_at), String(b.consultation_type), String(b.idempotency_key));
           return request<T>("/v1/appointments", {
             method: "POST",
             idempotencyKey: String(b.idempotency_key),
@@ -295,8 +316,7 @@ export function scheduleSource(
       if (move && method === "POST") {
         // A move is an audited replacement: the new appointment links back through rescheduledFromId.
         const a = await request<Appointment>(`/v1/appointments/${move[1]}`);
-        const slot = await slotAt(a.practitionerStaffId, String(b.starts_at), String(b.ends_at), a.visitMode);
-        const { reservationId } = await hold(a.practitionerStaffId, slot.slotStart, String(b.idempotency_key));
+        const { reservationId } = await holdFor(a.practitionerStaffId, String(b.starts_at), String(b.ends_at), a.visitMode, String(b.idempotency_key));
         return request<T>(`/v1/appointments/${move[1]}/reschedule`, {
           method: "POST",
           idempotencyKey: String(b.idempotency_key),

@@ -7,6 +7,7 @@ import {
 } from "@/components/resource-source";
 import { request } from "./client";
 import { useWorkspace } from "./hooks";
+import { BreakGlassReview } from "./AdminPanels";
 
 type AuditEvent = {
   auditEventId: string;
@@ -85,6 +86,7 @@ export function ActivityLogPage() {
   return (
     <OriginalResourceContext.Provider value={source}>
       <OriginalActivityLog />
+      <BreakGlassReview />
     </OriginalResourceContext.Provider>
   );
 }

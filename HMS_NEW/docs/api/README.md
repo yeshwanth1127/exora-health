@@ -97,6 +97,13 @@ Fee changes publish a new version of the default cash price list (active lists a
 | `GET /v1/patients?q|phone|abhaNumber` | `patients.read` | Search (name typo-tolerant, MRN, phone, ABHA) |
 | `GET /v1/patients/:patientId` | `patients.read` | Patient with identifiers, contacts, home address and `version` |
 | `PATCH /v1/patients/:patientId` | `patients.update` | Demographics, primary phone/email, home address (earlier contacts are ended, not overwritten); `version` required |
+| `GET /v1/patients/:patientId/registry` | `patients.read` | Identifiers, related people, consents, flags (sensitive reasons need `patient_flags.manage`), links |
+| `POST /v1/patients/:id/identifiers` 🔑 · `POST /v1/patient-identifiers/:id/remove` | `patients.update` | Add an identifier; remove retires it with a reason (the value may be registered again) |
+| `POST /v1/patients/:id/related-persons` · `PATCH /v1/related-persons/:id` | `patients.update` | Next of kin, guardian, legal representative (`ended: true` closes) |
+| `POST /v1/patients/:id/consents` · `POST /v1/patient-consents/:id/withdraw` | `patients.update` | General consents (minors need a guardian, representatives their scope) |
+| `POST /v1/patients/:id/flags` · `POST /v1/patient-flags/:id/clear` | `patient_flags.manage` | Alerts on the record |
+| `POST /v1/patients/:id/no-known-allergies` | `clinical.write` + care | Confirm no known allergies |
+| `GET/POST /v1/patient-links` · `POST /v1/patient-links/:id/decide` · `/unmerge` | `patients.merge` | Duplicate proposals; a second person merges, a third may unmerge |
 
 ### Doctor calendars
 | Method & path | Permission | Purpose |
@@ -116,6 +123,9 @@ Fee changes publish a new version of the default cash price list (active lists a
 |---|---|---|
 | `POST /v1/holds` 🔑 | `appointments.book` @ slot's facility | Hold a slot for a few minutes |
 | `DELETE /v1/holds/:reservationId` | `appointments.book` | Release a hold |
+| `POST /v1/holds/range` 🔑 | `appointments.book` @ facility | Hold an exact-minute window (5–240 min) inside a published session; optional `visitMode` |
+| `GET /v1/calendar-board?facilityId&from&to` | `appointments.read` @ facility | Timeline: each doctor's sessions, slots, appointments, holds, exceptions, holidays |
+| `GET /v1/request-outcomes/:key` | signed in | Did a write with this idempotency key land? `unknown`/`in_progress`/`completed` |
 | `POST /v1/appointments` 🔑 | `appointments.book` @ facility | Book a held slot for a patient and/or a booking party |
 | `GET /v1/appointments?from&to&facilityId&staffId&patientId&status` | `appointments.read` | List (facility-scoped staff must pass `facilityId`) |
 | `GET /v1/appointments/:id` | `appointments.read` @ facility | One appointment with patient, booker and token |
@@ -136,6 +146,13 @@ Fee changes publish a new version of the default cash price list (active lists a
 | `PUT /v1/roles/:id/permissions/:code` | `access.manage` @ every facility | Switch a permission on a copied role |
 | `POST /v1/roles/:id/retire` | `access.manage` @ every facility | Retire a copied role nobody holds |
 | `GET /v1/audit-events` · `POST /v1/audit-events/export` | `audit.read` @ every facility | Activity log and audited CSV export |
+| `GET /v1/session-context` | signed in | Tenant, staff, facilities (with names) and permissions |
+| `GET/POST /v1/staff/:id/registrations` · `PATCH /v1/staff-registrations/:id` | `staff.manage` | Council registrations; verifying needs someone other than the holder |
+| `POST /v1/staff/:id/invite/renew` | `staff.manage` + `access.manage` | Re-open an expired invite for 14 days |
+| `GET/POST /v1/care-assignments` · `POST /v1/care-assignments/:id/end` | `access.manage` @ facility | Who may open a patient's chart |
+| `GET /v1/break-glass` · `POST /v1/break-glass/:id/review` | `break_glass.review` @ every facility | Emergency access review (with the charts viewed); not one's own |
+| `GET /v1/modules` · `PUT /v1/modules/:module` | `tenant.manage` @ every facility | Optional module switches (core modules always on) |
+| `GET/POST /v1/consent-documents` · `PATCH /:id` · `POST /:id/publish` · `/retire` | `consent_documents.manage` @ every facility | Consent text drafts, publication (replaces the language's current one) and retirement |
 
 ### Queue
 | Method & path | Permission | Purpose |
@@ -158,13 +175,20 @@ Fee changes publish a new version of the default cash price list (active lists a
 | `GET /v1/note-templates` | `clinical.read` | Published templates (e.g. `opd_consultation` SOAP) |
 | `POST /v1/encounters/:id/notes` 🔑 | `clinical.write` @ facility | New draft note (optionally from a template) |
 | `PUT /v1/notes/:id` | `clinical.write` | Save a new version (`baseVersion` required; signed notes need `amendmentReason`) |
-| `POST /v1/notes/:id/sign` | `clinical.sign` | Author signs; needs a current council registration |
+| `POST /v1/notes/:id/sign` | `clinical.sign` (`clinical.sign_nursing` for nursing notes) | Author signs; needs a current council registration |
 | `POST /v1/notes/:id/entered-in-error` | `clinical.write` | Void a note (reason required) |
 | `POST /v1/encounters/:id/diagnoses` | `clinical.write` @ facility | Diagnosis (new or existing condition); one primary per encounter |
 | `PATCH /v1/conditions/:id` | `clinical.write` + care | Problem-list status (resolved, confirmed…) |
 | `GET /v1/patients/:id/chart` | `clinical.read` + care | Allergies, problems, recent encounters, latest vitals (audited view) |
 | `POST /v1/patients/:id/allergies` · `PATCH /v1/allergies/:id` | `clinical.write` + care | Allergies |
 | `POST /v1/patients/:id/break-glass` | `break_glass.use` | Emergency chart access, audited |
+| `POST /v1/encounters/:id/triage` | `clinical.write` + care | Triage category, complaint, early-warning score |
+| `POST /v1/encounters/:id/mlc` · `PATCH /v1/mlc-records/:id` | `mlc.record` (`mlc.read` to see details) | Medico-legal case, numbered `MLC/{year}/{n}` per clinic |
+| `POST /v1/encounters/:id/immunizations` · `POST /v1/immunizations/:id/entered-in-error` | `clinical.write` + care | Vaccines given (author voids) |
+| `POST /v1/encounters/:id/care-plans` · `POST /v1/care-plans/:id/status` · `POST /v1/care-plan-activities/:id/status` | `clinical.write` + care | Care plans and their activities |
+| `POST /v1/encounters/:id/referrals` · `POST /v1/referrals/:id/respond` · `GET /v1/referrals` | `clinical.write` + care | Internal/external referrals; accepting gives the recipient 30 days of care access |
+| `POST /v1/encounters/:id/births` · `POST /v1/birth-records/:id/report` | `vital_records.record` | Birth record and civil registration report |
+| `POST /v1/encounters/:id/death` · `POST /v1/death-records/:id/certify` | `vital_records.record` | Death record (marks the patient deceased), MCCD and body release |
 
 ### Virtual OPD (teleconsultation)
 Design and rules: [../plan/VIRTUAL_OPD_PLAN.md](../plan/VIRTUAL_OPD_PLAN.md). Book a slot from a session with `visitMode: "virtual"` as usual; the worker creates its teleconsultation.

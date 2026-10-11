@@ -21,7 +21,7 @@ export interface StaffAccountView {
   email: string | null;
   /** Staff record version, for PATCH /v1/staff/:id. */
   version: number;
-  account: { status: string; linked: boolean } | null;
+  account: { status: string; linked: boolean; inviteExpiresAt: string | null } | null;
   grants: { grantId: string; roleId: string; roleName: string; facilityId: string | null; facilityName: string | null }[];
 }
 
@@ -41,7 +41,7 @@ export async function listStaffAccounts(db: Kysely<DB>, caller: Caller, facility
       )
       SELECT s.id AS "staffId", s.display_name AS "displayName", s.employee_no AS "employeeNo", s.staff_type AS "staffType",
              s.status, s.phone, s.version, coalesce(ua.email::text, s.email::text) AS email,
-             CASE WHEN ua.id IS NULL THEN NULL ELSE jsonb_build_object('status', ua.status, 'linked', ua.identity_subject IS NOT NULL) END AS account,
+             CASE WHEN ua.id IS NULL THEN NULL ELSE jsonb_build_object('status', ua.status, 'linked', ua.identity_subject IS NOT NULL, 'inviteExpiresAt', ua.invite_expires_at) END AS account,
              coalesce((SELECT jsonb_agg(jsonb_build_object('grantId', g.id, 'roleId', g.role_id, 'roleName', g.role_name,
                                                            'facilityId', g.facility_id, 'facilityName', g.facility_name)
                                         ORDER BY g.facility_name NULLS FIRST, g.role_name)
@@ -169,7 +169,7 @@ export async function createStaffAccount(db: Kysely<DB>, caller: Caller, input: 
         .executeTakeFirstOrThrow();
       const account = await ctx.tx
         .insertInto('platform.user_account')
-        .values({ tenant_id: ctx.tenantId, staff_id: staff.id, email, status: 'invited', created_by: ctx.actor.staffId ?? null })
+        .values({ tenant_id: ctx.tenantId, staff_id: staff.id, email, status: 'invited', invite_expires_at: sql`now() + interval '14 days'`, created_by: ctx.actor.staffId ?? null })
         .returning('id')
         .executeTakeFirstOrThrow();
       ctx.audit({ action: 'create', subjectType: 'platform.staff', subjectId: staff.id, diff: { displayName: input.displayName.trim(), employeeNo: input.employeeNo, staffType: input.staffType } });

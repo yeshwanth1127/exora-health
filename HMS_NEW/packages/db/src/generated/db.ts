@@ -680,6 +680,63 @@ export interface ClinicalAllergyIntolerance {
   version: Generated<number>;
 }
 
+export interface ClinicalBirthRecord {
+  apgar_1: number | null;
+  apgar_5: number | null;
+  attended_by: string;
+  baby_patient_id: string | null;
+  birth_order: Generated<number>;
+  birth_weight_g: number | null;
+  born_at: Timestamp;
+  civil_registration_ref: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  delivery_method: string;
+  encounter_id: string;
+  gestation_weeks: number | null;
+  id: Generated<string>;
+  is_live_birth: boolean;
+  mother_patient_id: string;
+  reported_at: Timestamp | null;
+  sex: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface ClinicalCarePlan {
+  authored_by: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  encounter_id: string | null;
+  id: Generated<string>;
+  patient_id: string;
+  period_end: string | null;
+  period_start: Generated<string>;
+  status: Generated<string>;
+  tenant_id: string;
+  title: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface ClinicalCarePlanActivity {
+  care_plan_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  description: string;
+  frequency: string | null;
+  id: Generated<string>;
+  kind: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
 export interface ClinicalClinicalNote {
   author_staff_id: string;
   created_at: Generated<Timestamp>;
@@ -731,6 +788,30 @@ export interface ClinicalCondition {
   updated_at: Generated<Timestamp>;
   updated_by: string | null;
   verification_status: Generated<string>;
+  version: Generated<number>;
+}
+
+export interface ClinicalDeathRecord {
+  body_released_at: Timestamp | null;
+  body_released_to: string | null;
+  cause_chain: Json;
+  certified_by: string | null;
+  contributing_conditions: Generated<Json>;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  died_at: Timestamp;
+  encounter_id: string;
+  id: Generated<string>;
+  is_mlc: Generated<boolean>;
+  manner: string;
+  mccd_form: string | null;
+  mccd_issued_at: Timestamp | null;
+  patient_id: string;
+  post_mortem_required: Generated<boolean>;
+  pronounced_by: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
   version: Generated<number>;
 }
 
@@ -814,6 +895,60 @@ export interface ClinicalFormTemplate {
   tenant_id: string | null;
 }
 
+export interface ClinicalImmunization {
+  administered_at: Timestamp;
+  administered_by: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  dose_number: number | null;
+  encounter_id: string | null;
+  id: Generated<string>;
+  item_batch_id: string | null;
+  lot_number: string | null;
+  not_done_reason: string | null;
+  patient_id: string;
+  route: string | null;
+  site: string | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  vaccine: string;
+  vaccine_concept_id: string | null;
+  version: Generated<number>;
+}
+
+export interface ClinicalMlcRecord {
+  brought_by_name: string | null;
+  brought_by_phone: string | null;
+  brought_by_relation: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  encounter_id: string;
+  evidence_handover: Generated<Json>;
+  facility_id: string;
+  id: Generated<string>;
+  incident_at: Timestamp | null;
+  incident_place: string | null;
+  injury_details: Generated<Json>;
+  intimation_mode: string | null;
+  intimation_ref: string | null;
+  is_pocso: Generated<boolean>;
+  mlc_no: string;
+  mlc_type: string;
+  officer_badge_no: string | null;
+  officer_name: string | null;
+  patient_id: string;
+  police_intimated_at: Timestamp | null;
+  police_station: string | null;
+  recorded_by: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+  wound_certificate_document_id: string | null;
+}
+
 export interface ClinicalObservation {
   category: string;
   code: string;
@@ -837,6 +972,31 @@ export interface ClinicalObservation {
   updated_by: string | null;
   value_num: Numeric | null;
   value_text: string | null;
+  version: Generated<number>;
+}
+
+export interface ClinicalReferral {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  direction: string;
+  encounter_id: string;
+  external_doctor: string | null;
+  external_org: string | null;
+  id: Generated<string>;
+  patient_id: string;
+  reason: string;
+  referred_by: string;
+  responded_at: Timestamp | null;
+  responded_by: string | null;
+  response_note: string | null;
+  status: Generated<string>;
+  tenant_id: string;
+  to_department_id: string | null;
+  to_facility_id: string | null;
+  to_staff_id: string | null;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  urgency: Generated<string>;
   version: Generated<number>;
 }
 
@@ -908,6 +1068,25 @@ export interface ClinicalTeleSessionEvent {
   occurred_at: Generated<Timestamp>;
   session_id: string;
   tenant_id: string;
+}
+
+export interface ClinicalTriageAssessment {
+  arrival_mode: string | null;
+  assessed_at: Generated<Timestamp>;
+  assessed_by: string;
+  category: string;
+  chief_complaint: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  encounter_id: string;
+  id: Generated<string>;
+  patient_id: string;
+  reassess_due_at: Timestamp | null;
+  tenant_id: string;
+  triage_scale: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
 }
 
 export interface PatientPatient {
@@ -1025,6 +1204,9 @@ export interface PatientPatientIdentifier {
   is_primary: Generated<boolean>;
   issuer: string | null;
   patient_id: string;
+  removed_at: Timestamp | null;
+  removed_by: string | null;
+  removed_reason: string | null;
   system: string;
   tenant_id: string;
   updated_at: Generated<Timestamp>;
@@ -1417,6 +1599,7 @@ export interface PlatformUserAccount {
   id: Generated<string>;
   identity_issuer: string | null;
   identity_subject: string | null;
+  invite_expires_at: Timestamp | null;
   last_login_at: Timestamp | null;
   mfa_enrolled: Generated<boolean>;
   patient_id: string | null;
@@ -1466,19 +1649,27 @@ export interface DB {
   "catalog.team_fee_rule": CatalogTeamFeeRule;
   "catalog.terminology_concept": CatalogTerminologyConcept;
   "clinical.allergy_intolerance": ClinicalAllergyIntolerance;
+  "clinical.birth_record": ClinicalBirthRecord;
+  "clinical.care_plan": ClinicalCarePlan;
+  "clinical.care_plan_activity": ClinicalCarePlanActivity;
   "clinical.clinical_note": ClinicalClinicalNote;
   "clinical.clinical_note_version": ClinicalClinicalNoteVersion;
   "clinical.condition": ClinicalCondition;
+  "clinical.death_record": ClinicalDeathRecord;
   "clinical.encounter": ClinicalEncounter;
   "clinical.encounter_diagnosis": ClinicalEncounterDiagnosis;
   "clinical.encounter_participant": ClinicalEncounterParticipant;
   "clinical.encounter_status_history": ClinicalEncounterStatusHistory;
   "clinical.form_template": ClinicalFormTemplate;
+  "clinical.immunization": ClinicalImmunization;
+  "clinical.mlc_record": ClinicalMlcRecord;
   "clinical.observation": ClinicalObservation;
+  "clinical.referral": ClinicalReferral;
   "clinical.tele_consent": ClinicalTeleConsent;
   "clinical.tele_consent_document": ClinicalTeleConsentDocument;
   "clinical.tele_session": ClinicalTeleSession;
   "clinical.tele_session_event": ClinicalTeleSessionEvent;
+  "clinical.triage_assessment": ClinicalTriageAssessment;
   "patient.patient": PatientPatient;
   "patient.patient_address": PatientPatientAddress;
   "patient.patient_consent": PatientPatientConsent;

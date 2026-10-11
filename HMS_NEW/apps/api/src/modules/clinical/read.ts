@@ -3,6 +3,8 @@
 import { sql, type DB, type Kysely, type Transaction } from '@hms/db';
 import { notFound, runCommand, runQuery } from '@hms/platform';
 import { clock, type Caller } from '../../caller.ts';
+import { mergedFamily } from '../patient/registry.ts';
+import { carePlansWhere, encounterRecords } from './records.ts';
 import { assertChartAccess } from './access.ts';
 
 export interface WorklistFilter {
@@ -142,7 +144,7 @@ async function patientSummary(tx: Transaction<DB>, patientId: string) {
 }
 
 /** One encounter with its vitals, notes (current versions) and diagnoses, plus allergies and problems. */
-export async function getEncounterDetail(db: Kysely<DB>, caller: Caller, encounterId: string) {
+export async function getEncounterDetail(db: Kysely<DB>, caller: Caller, encounterId: string, opts: { mlc?: boolean } = {}) {
   const now = clock(caller);
   return runCommand(db, { ...caller, module: 'clinical', name: 'clinical.view_encounter' }, async (ctx) => {
     const e = await ctx.tx.selectFrom('clinical.encounter').selectAll().where('id', '=', encounterId).executeTakeFirst();
@@ -167,6 +169,8 @@ export async function getEncounterDetail(db: Kysely<DB>, caller: Caller, encount
       },
       ...(await patientSummary(ctx.tx, e.patient_id)),
       ...(await encounterContent(ctx.tx, e.id)),
+      // Triage, MLC (with mlc.read), immunizations, care plans, referrals, births and death on this visit.
+      records: await encounterRecords(ctx.tx, e.id, { mlc: !!opts.mlc }),
     };
   });
 }
@@ -179,13 +183,15 @@ export async function getPatientChart(db: Kysely<DB>, caller: Caller, patientId:
     if (!exists) throw notFound('patient', { patientId });
     await assertChartAccess(ctx.tx, ctx.actor.staffId, patientId, now);
     ctx.audit({ action: 'view', subjectType: 'patient.chart', subjectId: patientId, patientId });
-    const [summary, encounters, latestVitals] = await Promise.all([
+    // A merged record's history belongs to its survivor, so the chart reads the whole family.
+    const family = await mergedFamily(ctx.tx, patientId);
+    const [summary, encounters, latestVitals, immunizations, carePlans] = await Promise.all([
       patientSummary(ctx.tx, patientId),
       ctx.tx
         .selectFrom('clinical.encounter as e')
         .innerJoin('platform.staff as s', 's.id', 'e.attending_staff_id')
         .select(['e.id as encounterId', 'e.encounter_no as encounterNo', 'e.status', 'e.encounter_class as encounterClass', 'e.arrived_at as arrivedAt', 'e.disposition', 's.display_name as attendingName'])
-        .where('e.patient_id', '=', patientId)
+        .where('e.patient_id', 'in', family)
         .where('e.status', 'not in', ['entered_in_error'])
         .orderBy('e.arrived_at', 'desc')
         .limit(20)
@@ -193,10 +199,18 @@ export async function getPatientChart(db: Kysely<DB>, caller: Caller, patientId:
       sql<{ code: string; display: string; valueNum: string | null; valueText: string | null; unit: string | null; effectiveAt: Date }>`
         SELECT DISTINCT ON (code) code, display, value_num AS "valueNum", value_text AS "valueText", unit, effective_at AS "effectiveAt"
         FROM clinical.observation
-        WHERE patient_id = ${patientId} AND status = 'final'
+        WHERE patient_id = ANY(${family}::uuid[]) AND status = 'final'
         ORDER BY code, effective_at DESC`.execute(ctx.tx),
+      ctx.tx
+        .selectFrom('clinical.immunization')
+        .select(['id as immunizationId', 'vaccine', 'dose_number as doseNumber', 'administered_at as administeredAt', 'status'])
+        .where('patient_id', 'in', family)
+        .where('status', '<>', 'entered_in_error')
+        .orderBy('administered_at', 'desc')
+        .execute(),
+      carePlansWhere(ctx.tx, 'patient_id', patientId),
     ]);
-    return { ...summary, encounters, latestVitals: latestVitals.rows };
+    return { ...summary, encounters, latestVitals: latestVitals.rows, immunizations, carePlans, mergedPatientIds: family.filter((id) => id !== patientId) };
   });
 }
 

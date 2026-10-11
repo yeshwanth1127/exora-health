@@ -40,7 +40,7 @@ export async function searchPatients(db: Kysely<DB>, caller: Caller, s: PatientS
               SELECT 1 FROM patient.patient_contact c WHERE c.patient_id = p.id AND c.kind = 'phone' AND c.value = ${s.phone ?? null}))
         AND (${s.abhaNumber?.replaceAll('-', '') ?? null}::text IS NULL OR EXISTS (
               SELECT 1 FROM patient.patient_identifier i
-              WHERE i.patient_id = p.id AND i.system = 'abha_number' AND i.value = ${s.abhaNumber?.replaceAll('-', '') ?? null}))
+              WHERE i.patient_id = p.id AND i.removed_at IS NULL AND i.system = 'abha_number' AND i.value = ${s.abhaNumber?.replaceAll('-', '') ?? null}))
       ORDER BY CASE WHEN ${s.q ?? null}::text IS NULL THEN 0 ELSE similarity(p.search_name, lower(${s.q ?? ''})) END DESC, p.mrn
       LIMIT ${limit}`.execute(tx);
     return rows;
@@ -70,7 +70,7 @@ export async function getPatient(db: Kysely<DB>, caller: Caller, patientId: stri
     const p = await tx.selectFrom('patient.patient').selectAll().where('id', '=', patientId).executeTakeFirst();
     if (!p) throw notFound('patient', { patientId });
     const [identifiers, contacts, address] = await Promise.all([
-      tx.selectFrom('patient.patient_identifier').select(['system', 'value', 'verified_at', 'is_primary']).where('patient_id', '=', patientId).execute(),
+      tx.selectFrom('patient.patient_identifier').select(['system', 'value', 'verified_at', 'is_primary']).where('patient_id', '=', patientId).where('removed_at', 'is', null).execute(),
       tx.selectFrom('patient.patient_contact').select(['kind', 'value', 'is_primary']).where('patient_id', '=', patientId).where('valid_to', 'is', null).execute(),
       patientEditView(tx, patientId),
     ]);

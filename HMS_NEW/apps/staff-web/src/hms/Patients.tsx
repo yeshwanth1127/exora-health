@@ -34,6 +34,7 @@ import {
   Status,
 } from "./ui";
 import { AllergiesProblems, BreakGlass } from "./ClinicalRecords";
+import { DuplicateQueue, PatientRegistry } from "./PatientRegistry";
 import type { Chart, Patient, PatientDetail } from "./types";
 
 export function PatientLookup({
@@ -221,6 +222,7 @@ export function Patients() {
       </Card>
       {/* Remounting starts the list again at page 1 for a new clinic or a new registration. */}
       <ClinicPatients key={`${facility.facilityId}:${registered}`} onSelect={setSelected} />
+      {can("patients.merge") && <DuplicateQueue />}
       <Sheet open={register} onOpenChange={setRegister}>
         <SheetContent className="overflow-y-auto sm:max-w-lg">
           <SheetHeader>
@@ -393,6 +395,7 @@ function PatientRecord({ patientId }: { patientId: string }) {
             </>
           )
         )}
+        {d && !editing && <PatientRegistry patientId={patientId} onMerged={() => void detail.refresh()} />}
         {can("clinical.read") && (
           <Button variant="outline" onClick={() => setChart((v) => !v)}>
             {chart ? "Hide chart" : "Open patient chart"}

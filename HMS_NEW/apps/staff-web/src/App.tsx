@@ -56,6 +56,7 @@ import { PendingModule, DesignGuide } from "@/hms/PendingModule";
 import { Waitlist } from "@/hms/Waitlist";
 import { ActivityLogPage } from "@/hms/ActivityLog";
 import { SettingsPage } from "@/hms/Settings";
+import { ConsentDocuments, ModuleSwitches, Registrations } from "@/hms/AdminPanels";
 import { Schedules } from "@/hms/Schedules";
 import { Overview } from "@/hms/Overview";
 import { Catalogue } from "@/hms/Catalogue";
@@ -193,7 +194,7 @@ function StaffApp() {
   const [me, setMe] = useState<Me | null>(null),
     [facilities, setFacilities] = useState<Facility[]>([]),
     [facilityId, setFacilityId] = useState("");
-  const [tenantOptions, setTenantOptions] = useState<string[]>([]),
+  const [tenantOptions, setTenantOptions] = useState<{ tenantId: string; name: string }[]>([]),
     [token, setToken] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
@@ -234,7 +235,9 @@ function StaffApp() {
       setMe(identity);
     } catch (e) {
       if (e instanceof HmsError && Array.isArray(e.details.tenants)) {
-        setTenantOptions(e.details.tenants as string[]);
+        // Hospital names come with the choice (G02); fall back to the id for any without one.
+        const names = new Map(((e.details.tenantNames as { tenantId: string; name: string }[] | undefined) ?? []).map((t) => [t.tenantId, t.name]));
+        setTenantOptions((e.details.tenants as string[]).map((id) => ({ tenantId: id, name: names.get(id) ?? id })));
       } else setError(e instanceof Error ? e.message : "Sign-in failed.");
     } finally {
       setBusy(false);
@@ -307,15 +310,15 @@ function StaffApp() {
               {tenantOptions.length > 0 ? (
                 <div className="space-y-3">
                   <p className="text-sm">Choose your hospital account.</p>
-                  {tenantOptions.map((id) => (
+                  {tenantOptions.map((t) => (
                     <Button
-                      key={id}
+                      key={t.tenantId}
                       variant="outline"
                       className="w-full"
                       disabled={busy}
-                      onClick={() => void accept(token, id)}
+                      onClick={() => void accept(token, t.tenantId)}
                     >
-                      {id}
+                      {t.name}
                     </Button>
                   ))}
                 </div>
@@ -733,6 +736,9 @@ function Settings({ me }: { me: Me }) {
   return (
     <div className="space-y-6">
       <SettingsPage />
+      <ModuleSwitches />
+      <Registrations />
+      <ConsentDocuments />
       <Card>
         <CardContent className="pt-6 space-y-2">
           <p className="text-sm font-medium">Your access</p>

@@ -797,7 +797,7 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
           <CardHeader>
             <CardTitle className="text-base">Optional modules</CardTitle>
             <CardDescription>
-              WhatsApp, voice and growth tools are switched on here once their services are connected.
+              Switch hospital modules (billing, pharmacy, WhatsApp, insurance…) on or off in Modules below.
             </CardDescription>
           </CardHeader>
         </Card>
