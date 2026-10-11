@@ -46,8 +46,8 @@ The original current source is `/Users/deepakonda/.codex/worktrees/hms-monochrom
 | UI-catalogue-01 | Hospital catalogue | Clinic locations and active status | connected read-only (Phase 5): permitted clinics | G13; G14 |
 | UI-catalogue-02 | Hospital catalogue | Departments and doctor coverage | connected read-only (Phase 5): selected clinic departments and doctor counts | G13; G14 |
 | UI-catalogue-03 | Hospital catalogue | Address, directions and arrival instructions in channel editors | navigation restored full design retained pending wiring | G13; G14 |
-| UI-operations-01 | Operations | Notification outbox, temporary holds and API readiness | navigation restored full design retained pending wiring | G12; G19 |
-| UI-operations-02 | Operations | Event delivery history and refresh | navigation restored full design retained pending wiring | G12; G19 |
+| UI-operations-01 | Operations | Notification outbox, temporary holds and API readiness | connected (Phase 5): live holds, readiness; messages "—" until G19 | G12; G19 |
+| UI-operations-02 | Operations | Event delivery history and refresh | connected (Phase 5): outbox events, refresh | G12; G19 |
 | UI-whatsapp-01 | WhatsApp | Overview and module readiness | navigation restored full design retained pending wiring | G20; G19 |
 | UI-whatsapp-02 | WhatsApp | Conversation assignment and staff replies | navigation restored full design retained pending wiring | G20; G19 |
 | UI-whatsapp-03 | WhatsApp | Doctor content, photos, guides and assets | navigation restored full design retained pending wiring | G20; G19 |

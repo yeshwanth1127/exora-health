@@ -217,6 +217,43 @@ export async function operationsSummary(db: Kysely<DB>, caller: Caller, facility
   });
 }
 
+export interface OutboxEventView {
+  eventId: string;
+  eventType: string;
+  aggregateType: string;
+  aggregateId: string;
+  occurredAt: Date;
+  processedAt: Date | null;
+  attempts: number;
+  status: 'processed' | 'pending' | 'retrying' | 'dead_lettered';
+}
+
+/**
+ * The tenant's latest outbox events, newest first: metadata only. Payloads and error text can carry
+ * patient data, so they are never returned.
+ */
+export async function recentOutboxEvents(db: Kysely<DB>, caller: Caller, limit: number): Promise<OutboxEventView[]> {
+  return runQuery(db, caller.tenantId, async (tx) => {
+    const rows = await tx
+      .selectFrom('platform.outbox_event')
+      .select(['id', 'event_type', 'aggregate_type', 'aggregate_id', 'occurred_at', 'processed_at', 'dead_lettered_at', 'attempts'])
+      .orderBy('occurred_at', 'desc')
+      .orderBy('id', 'desc')
+      .limit(limit)
+      .execute();
+    return rows.map((r) => ({
+      eventId: r.id,
+      eventType: r.event_type,
+      aggregateType: r.aggregate_type,
+      aggregateId: r.aggregate_id,
+      occurredAt: r.occurred_at,
+      processedAt: r.processed_at,
+      attempts: r.attempts,
+      status: r.dead_lettered_at ? 'dead_lettered' : r.processed_at ? 'processed' : r.attempts > 0 ? 'retrying' : 'pending',
+    }));
+  });
+}
+
 export async function getAppointment(db: Kysely<DB>, caller: Caller, appointmentId: string): Promise<AppointmentView> {
   return runQuery(db, caller.tenantId, async (tx) => {
     const row = await baseQuery(tx).where('a.id', '=', appointmentId).executeTakeFirst();

@@ -77,6 +77,7 @@ Keep the new screens (Patients, Queue, Consultations) and bring back the origina
 | G12, UI-overview-01/02 | `GET /v1/operations/summary?facilityId&date` (`appointments.read` at that clinic) feeds the original Overview. It returns appointment totals, the status and channel mix, doctors with published hours, live holds, bookings per clinic-local day for 14 days and the ten latest bookings. Pending messages and voice sessions are `null` (no store yet, G19/G21) and display as "—", never 0. |
 
 | UI-catalogue-01/02 | The original Hospital catalogue, read-only: clinics the user can access (`GET /v1/facilities`) and the selected clinic's departments (`GET /v1/facilities/:id/directory`, `catalog.read` there) with doctors counted. No backend change. |
+| G12, UI-operations-01/02 | `GET /v1/operations/events?limit` returns the tenant's latest outbox events (type, record id, times, attempts, status) for users with `audit.read` at every clinic. It feeds the original Operations page with live holds and `/ready`. The menu shows Operations only to those users. |
 | Timeline "Booked by" | The timeline sheet shows the booker's name and phone on their own line, and an unregistered booking reads "Booked by …". The Patient field still never shows the caller. |
 
 Acceptance: a front desk user books and moves a visit from the timeline in the browser, and a retry returns the same appointment. The overview counts equal the stored rows for that clinic, and another clinic's overview returns 403.
@@ -169,3 +170,4 @@ No high-severity issues were found in the frontend changes. The backend issues t
 | 4 | Unknown messaging and voice counts are `null`, so the dashboard can't present fabricated zeros. | Info | As designed |
 | 5 | The caller (booking party) is never shown as the patient. An existing frontend rule test enforces this, extended to check the booker is reported separately. | Info | Tested |
 | 6 | The catalogue is read-only and lists only clinics the user holds a permission at; departments come from the directory read, which authorizes `catalog.read` at that clinic. | Info | Verified in browser |
+| 7 | The outbox spans every clinic and module, including clinical events, so the events read uses `authorizeEvery(audit.read, [])`. A single-clinic administrator or front desk gets 403. Payloads and `last_error` are never selected, because either can carry patient data. Results are tenant-scoped by RLS and verified against the tenant's own rows. | Info | Tested (a mutation to plain `authorize` fails the test) |

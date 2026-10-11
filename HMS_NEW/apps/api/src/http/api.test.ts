@@ -502,6 +502,24 @@ describe('operations summary (phase 5, G12)', () => {
     expect((await summary()).body.summary.activeHolds).toBe(s.summary.activeHolds + 1);
   });
 
+  it('lists the tenant\'s latest outbox events, metadata only, to tenant-wide auditors', async () => {
+    const res = await call('GET', '/v1/operations/events?limit=20', { token: tokens.admin });
+    expect(res.status).toBe(200);
+    const { rows } = await admin.query<{ id: string }>(
+      `SELECT id FROM platform.outbox_event WHERE tenant_id = $1 ORDER BY occurred_at DESC, id DESC LIMIT 20`,
+      [t.tenantId],
+    );
+    expect(rows.length).toBeGreaterThan(0);
+    expect(res.body.items.map((e: { eventId: string }) => e.eventId)).toEqual(rows.map((r) => r.id));
+    for (const e of res.body.items) {
+      expect(Object.keys(e).sort()).toEqual(['aggregateId', 'aggregateType', 'attempts', 'eventId', 'eventType', 'occurredAt', 'processedAt', 'status']);
+    }
+    // A Branch 1 administrator and front desk can't see events from every clinic
+    expect((await call('GET', '/v1/operations/events', { token: tokens.branchAdmin })).status).toBe(403);
+    expect((await call('GET', '/v1/operations/events', { token: tokens.frontDesk })).status).toBe(403);
+    expect((await call('GET', '/v1/operations/events?limit=1000', { token: tokens.admin })).status).toBe(400);
+  });
+
   it("is limited to the caller's clinics", async () => {
     expect((await call('GET', `/v1/operations/summary?facilityId=${facility2}&date=${monday}`, { token: tokens.frontDesk })).status).toBe(403);
     expect((await call('GET', `/v1/operations/summary?facilityId=${t.facilityId}`, { token: tokens.frontDesk })).status).toBe(400);

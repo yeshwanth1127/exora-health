@@ -1,4 +1,5 @@
-// Mounts the original Overview, answered by GET /v1/operations/summary for the chosen clinic.
+// Mounts the original Overview and Operations pages. Overview reads GET /v1/operations/summary for the chosen
+// clinic; Operations adds the tenant's outbox events (audit.read for every clinic) and API readiness.
 import { useMemo } from "react";
 import { OperationsModule } from "@/modules/operations";
 import {
@@ -10,6 +11,14 @@ import { useWorkspace } from "./hooks";
 import { today } from "./model";
 import type { Appointment } from "./types";
 
+type OutboxEvent = {
+  eventId: string;
+  eventType: string;
+  aggregateId: string;
+  occurredAt: string;
+  processedAt: string | null;
+  status: string;
+};
 type Summary = {
   summary: Record<string, number | null>;
   dailyBookings: { date: string; bookings: number }[];
@@ -18,7 +27,7 @@ type Summary = {
   recent: Appointment[];
 };
 
-export function Overview() {
+export function Overview({ page = "overview" }: { page?: "overview" | "operations" }) {
   const { me, facility } = useWorkspace();
   const source = useMemo<OriginalResourceSource>(
     () => ({
@@ -26,6 +35,24 @@ export function Overview() {
       permissions: { role: me.staffType, allowed: {}, staff: [] },
       unavailableWrite: "Nothing on this page saves.",
       async read<T>(path: string, signal: AbortSignal): Promise<T> {
+        if (path === "/api/v1/admin/operations") {
+          const { items } = await request<{ items: OutboxEvent[] }>(
+            "/v1/operations/events?limit=100",
+            { signal },
+          );
+          return items.map((e) => ({
+            id: e.eventId,
+            event_type: e.eventType,
+            aggregate_id: e.aggregateId,
+            created_at: e.occurredAt,
+            processed_at: e.processedAt,
+            status: e.status,
+          })) as T;
+        }
+        if (path === "/api/health/ready") {
+          const r = await fetch("/ready", { signal, cache: "no-store" });
+          return { ready: r.ok } as T;
+        }
         if (path !== "/api/v1/admin/analytics")
           throw new Error("Not available on this page.");
         const r = await request<Summary>(
@@ -73,7 +100,7 @@ export function Overview() {
   );
   return (
     <OriginalResourceContext.Provider value={source}>
-      <OperationsModule page="overview" />
+      <OperationsModule page={page} />
     </OriginalResourceContext.Provider>
   );
 }

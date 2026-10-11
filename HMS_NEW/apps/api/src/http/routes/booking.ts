@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { DB, Kysely } from '@hms/db';
 import { DomainError } from '@hms/platform';
-import { authorize } from '../../auth/principal.ts';
+import { authorize, authorizeEvery } from '../../auth/principal.ts';
 import {
   bookAppointment,
   bookWalkIn,
@@ -12,6 +12,7 @@ import {
   holdSlot,
   listAppointments,
   operationsSummary,
+  recentOutboxEvents,
   getOverbooking,
   markNoShow,
   overbookAppointment,
@@ -109,6 +110,13 @@ export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const q = parse(z.object({ facilityId: uuid, date: isoDate }), request.query);
     authorize(principalOf(request), 'appointments.read', q.facilityId);
     return operationsSummary(db, callerOf(request), q.facilityId, q.date);
+  });
+
+  // The outbox spans every clinic and module (clinical included), so it needs audit.read for every clinic.
+  app.get('/v1/operations/events', async (request) => {
+    const q = parse(z.object({ limit: z.coerce.number().int().min(1).max(100).optional() }), request.query ?? {});
+    authorizeEvery(principalOf(request), 'audit.read', []);
+    return { items: await recentOutboxEvents(db, callerOf(request), q.limit ?? 100) };
   });
 
   app.get('/v1/appointments', async (request) => {

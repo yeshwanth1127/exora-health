@@ -129,8 +129,9 @@ const navigation = [
     key: "operations",
     name: "Operations",
     icon: Activity,
-    permission: "appointments.read",
-    pending: true,
+    permission: "audit.read",
+    // The event log spans every clinic, so the grant must too (the API enforces the same).
+    everyClinic: true,
   },
   {
     key: "doctors",
@@ -381,7 +382,11 @@ function StaffApp() {
         </Button>
       </div>
     );
-  const visible = navigation.filter((n) => can(me, n.permission, facilityId));
+  const visible = navigation.filter((n) =>
+    "everyClinic" in n
+      ? (me.permissions[n.permission] ?? []).includes("*")
+      : can(me, n.permission, facilityId),
+  );
   const extraPages = [
     "settings",
     "activity",
@@ -649,6 +654,8 @@ function Directory({
           <Empty>This page is not available for your clinic permissions.</Empty>
         ) : page === "catalogue" ? (
           <Catalogue />
+        ) : page === "operations" ? (
+          <Overview page="operations" />
         ) : page === "overview" ? (
           <Overview />
         ) : page === "appointments" ? (
@@ -668,7 +675,6 @@ function Directory({
         ) : page === "design" ? (
           <DesignGuide />
         ) : [
-            "operations",
             "whatsapp",
             "voice",
             "google_business",

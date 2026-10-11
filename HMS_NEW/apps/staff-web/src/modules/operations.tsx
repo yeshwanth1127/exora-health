@@ -351,8 +351,8 @@ function ActivityPage({ overview }: { overview: boolean }) {
             <CardHeader>
               <CardTitle>Event outbox</CardTitle>
               <CardDescription>
-                Most recent 100 booking events. A processed event is separate
-                from a patient delivery receipt.
+                Most recent 100 events across all clinics. A processed event is
+                separate from a patient delivery receipt.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -378,9 +378,7 @@ function ActivityPage({ overview }: { overview: boolean }) {
                         {e.processed_at ? dateTime(e.processed_at) : "Pending"}
                       </TableCell>
                       <TableCell>
-                        <StateBadge
-                          value={e.processed_at ? "processed" : "pending"}
-                        />
+                        <StateBadge value={e.status} />
                       </TableCell>
                     </TableRow>
                   ))}
