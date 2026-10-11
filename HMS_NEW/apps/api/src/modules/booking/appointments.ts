@@ -145,7 +145,7 @@ interface ResolvedFee {
 }
 
 /** Consultation fee from the active default price list: doctor-specific price first, then the generic one. */
-async function consultationFee(tx: Transaction<DB>, healthcareServiceId: string | null, staffId: string, on: string, visitMode: string): Promise<ResolvedFee | null> {
+export async function consultationFee(tx: Transaction<DB>, healthcareServiceId: string | null, staffId: string, on: string, visitMode: string): Promise<ResolvedFee | null> {
   if (!healthcareServiceId) return null;
   const { rows: [fee] } = await sql<{ id: string; unit_price_minor: number }>`
     SELECT pli.id, pli.unit_price_minor

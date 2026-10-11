@@ -1,7 +1,9 @@
 // Booking read models for the API.
 import { sql, type DB, type Kysely } from '@hms/db';
-import { notFound, runQuery } from '@hms/platform';
+import { invalid, notFound, runQuery } from '@hms/platform';
 import type { Caller } from '../../caller.ts';
+import { consultationFee } from './appointments.ts';
+import { practitionerResourceId } from './calendar.ts';
 
 export interface AppointmentView {
   appointmentId: string;
@@ -78,17 +80,60 @@ export interface AppointmentFilter {
   from: string;
   to: string;
   status?: string | undefined;
+  /** Patient or booker name, phone digits, MRN or confirmation code. */
+  q?: string | undefined;
+  /** From a previous page's nextCursor. */
+  cursor?: string | undefined;
   limit?: number | undefined;
 }
 
-export async function listAppointments(db: Kysely<DB>, caller: Caller, f: AppointmentFilter): Promise<AppointmentView[]> {
+type Cursor = [sessionOn: string, startsAt: string | null, id: string];
+const encodeCursor = (c: Cursor) => Buffer.from(JSON.stringify(c)).toString('base64url');
+function decodeCursor(raw: string): Cursor {
+  try {
+    const c = JSON.parse(Buffer.from(raw, 'base64url').toString()) as unknown;
+    if (
+      Array.isArray(c) && c.length === 3 &&
+      /^\d{4}-\d{2}-\d{2}$/.test(String(c[0])) &&
+      (c[1] === null || !Number.isNaN(Date.parse(String(c[1])))) &&
+      /^[0-9a-f-]{36}$/.test(String(c[2]))
+    ) return c as Cursor;
+  } catch { /* falls through */ }
+  throw invalid('cursor is not valid; start again from the first page');
+}
+const likeEscape = (v: string) => v.replace(/[\\%_]/g, '\\$&');
+
+/** Appointments in a date range, in visit order (date, start time, walk-ins last), one page at a time. */
+export async function listAppointments(db: Kysely<DB>, caller: Caller, f: AppointmentFilter): Promise<{ items: AppointmentView[]; nextCursor: string | null }> {
+  const limit = Math.min(f.limit ?? 200, 500);
+  const after = f.cursor ? decodeCursor(f.cursor) : null;
   return runQuery(db, caller.tenantId, async (tx) => {
     let q = baseQuery(tx).where('a.session_on', '>=', f.from).where('a.session_on', '<=', f.to);
     if (f.facilityId) q = q.where('a.facility_id', '=', f.facilityId);
     if (f.staffId) q = q.where('a.practitioner_staff_id', '=', f.staffId);
     if (f.patientId) q = q.where('a.patient_id', '=', f.patientId);
     if (f.status) q = q.where('a.status', '=', f.status);
-    return (await q.orderBy('a.session_on').orderBy('a.starts_at').limit(Math.min(f.limit ?? 200, 500)).execute()) as AppointmentView[];
+    const term = f.q?.trim().toLowerCase();
+    if (term) {
+      const like = `%${likeEscape(term)}%`;
+      const digits = term.replace(/\D/g, '');
+      const phone = digits.length >= 4 ? `%${digits}` : null;
+      q = q.where(sql<boolean>`(
+        a.confirmation_code = upper(${term}) OR lower(p.mrn) = ${term}
+        OR lower(p.given_name || coalesce(' ' || p.family_name, '')) LIKE ${like} OR lower(bp.name) LIKE ${like}
+        OR (${phone}::text IS NOT NULL AND (bp.phone LIKE ${phone} OR EXISTS (
+              SELECT 1 FROM patient.patient_contact c
+              WHERE c.patient_id = a.patient_id AND c.kind = 'phone' AND c.valid_to IS NULL AND c.value LIKE ${phone}))))`);
+    }
+    const sortStart = sql`coalesce(a.starts_at, 'infinity'::timestamptz)`;
+    if (after) q = q.where(sql<boolean>`(a.session_on, ${sortStart}, a.id) > (${after[0]}::date, coalesce(${after[1]}::timestamptz, 'infinity'::timestamptz), ${after[2]}::uuid)`);
+    const rows = (await q.orderBy('a.session_on').orderBy(sortStart).orderBy('a.id').limit(limit + 1).execute()) as AppointmentView[];
+    const items = rows.slice(0, limit);
+    const last = items.at(-1);
+    return {
+      items,
+      nextCursor: rows.length > limit && last ? encodeCursor([String(last.sessionOn).slice(0, 10), last.startsAt ? new Date(last.startsAt).toISOString() : null, last.appointmentId]) : null,
+    };
   });
 }
 
@@ -124,5 +169,28 @@ export async function slotFacility(db: Kysely<DB>, caller: Caller, staffId: stri
       WHERE sr.staff_id = ${staffId} AND s.slot_start = ${slotStart}
       LIMIT 1`.execute(tx);
     return r?.facility_id;
+  });
+}
+
+/**
+ * What the doctor charges at a clinic: one row per service and visit mode they hold sessions for in the
+ * two weeks from `on`, priced exactly as booking prices it (the session's service, date and mode).
+ */
+export async function quoteFees(db: Kysely<DB>, caller: Caller, input: { staffId: string; facilityId: string; on: string }) {
+  return runQuery(db, caller.tenantId, async (tx) => {
+    const resourceId = await practitionerResourceId(tx, input.staffId);
+    const { rows } = await sql<{ healthcare_service_id: string | null; service_name: string | null; visit_mode: string; session_on: string }>`
+      SELECT DISTINCT ON (s.healthcare_service_id, s.visit_mode)
+             s.healthcare_service_id, hs.name AS service_name, s.visit_mode, s.session_on::text
+      FROM booking.sessions(${resourceId}, ${input.on}::date, ${input.on}::date + 13) s
+      LEFT JOIN catalog.healthcare_service hs ON hs.id = s.healthcare_service_id
+      WHERE s.facility_id = ${input.facilityId} AND s.slot_minutes IS NOT NULL
+      ORDER BY s.healthcare_service_id, s.visit_mode, s.session_on`.execute(tx);
+    return Promise.all(
+      rows.map(async (r) => {
+        const fee = await consultationFee(tx, r.healthcare_service_id, input.staffId, r.session_on, r.visit_mode);
+        return { healthcareServiceId: r.healthcare_service_id, serviceName: r.service_name, visitMode: r.visit_mode, pricedOn: r.session_on, feeMinor: fee?.unitPriceMinor ?? null };
+      }),
+    );
   });
 }

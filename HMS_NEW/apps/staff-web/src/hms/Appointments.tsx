@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CalendarPlus, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,16 +43,29 @@ export function Appointments() {
     [staffId, setStaffId] = useState("all"),
     [status, setStatus] = useState("all"),
     [mode, setMode] = useState("all"),
-    [text, setText] = useState("");
+    [text, setText] = useState(""),
+    [search, setSearch] = useState(""),
+    // Cursors of the pages before the current one; the last entry is the current page's cursor.
+    [pages, setPages] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null),
     [book, setBook] = useState(false);
-  const result = useQuery<{ items: Appointment[] }>(
-    `/v1/appointments?${query({ facilityId: facility.facilityId, from: date, to: date, staffId: staffId === "all" ? undefined : staffId, status: status === "all" ? undefined : status, limit: 500 })}`,
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(text.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [text]);
+  const filters = JSON.stringify([date, staffId, status, search]);
+  const [pagedFor, setPagedFor] = useState(filters);
+  if (pagedFor !== filters) {
+    setPagedFor(filters);
+    setPages([]);
+  }
+  const result = useQuery<{ items: Appointment[]; nextCursor: string | null }>(
+    `/v1/appointments?${query({ facilityId: facility.facilityId, from: date, to: date, staffId: staffId === "all" ? undefined : staffId, status: status === "all" ? undefined : status, q: search.length >= 2 ? search : undefined, cursor: pages.at(-1), limit: 100 })}`,
     10000,
   );
   const items = filterLoadedAppointments(
     result.data?.items ?? [],
-    text,
+    "",
     mode === "all" ? "" : mode,
   );
   return (
@@ -135,15 +148,15 @@ export function Appointments() {
           <div className="flex items-center gap-2">
             <Search className="size-4 text-muted-foreground" />
             <Input
-              aria-label="Filter loaded appointments"
-              placeholder="Filter loaded names, phone, MRN or confirmation"
+              aria-label="Search appointments"
+              placeholder="Search name, phone, MRN or confirmation code"
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            Search filters this loaded day only (up to 500 records). Full server
-            search and paging are pending.
+            Searches this day on the server (at least 2 characters). 100
+            appointments per page.
           </p>
         </CardContent>
         <LoadingState {...result}>
@@ -197,6 +210,26 @@ export function Appointments() {
           </Table>
           {items.length === 0 && (
             <Empty>No matching appointments for this day.</Empty>
+          )}
+          {(pages.length > 0 || result.data?.nextCursor) && (
+            <div className="flex justify-end gap-2 p-3">
+              <Button
+                variant="outline"
+                disabled={!pages.length}
+                onClick={() => setPages((p) => p.slice(0, -1))}
+              >
+                Previous page
+              </Button>
+              <Button
+                variant="outline"
+                disabled={!result.data?.nextCursor}
+                onClick={() =>
+                  setPages((p) => [...p, result.data!.nextCursor!])
+                }
+              >
+                Next page
+              </Button>
+            </div>
           )}
           {result.data?.items.length === 500 && (
             <div className="p-4">

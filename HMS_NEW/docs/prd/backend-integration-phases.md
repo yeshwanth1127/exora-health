@@ -134,3 +134,13 @@ No high-severity issues were found in the frontend changes. The backend issues t
 | 5 | Overbook requests require `Idempotency-Key`, so a retry can't use up two places. The frontend reuses one key per unchanged form. | Info | As designed |
 | 6 | Overbook reasons are limited to 3–500 characters by both the API and a database CHECK, and render as React text. | Info | No change needed |
 | 7 | `holdSlot` has the same gap as #1: it authorizes the slot's clinic, then re-reads the slot. A weekly-plan change that moves the slot to another clinic in between could let a hold land there. This is pre-existing and needs a concurrent schedule change at the same instant. | Low | Open, follow-up |
+
+## Security review of Phase 4
+
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| 1 | Directory and fee reads need `catalog.read` at the requested clinic. A branch-scoped user can't read another branch. | Info | Tested |
+| 2 | Search terms are bound parameters. `%` and `_` are escaped, so a search can't widen into match-all. Request logs keep the path only (Phase 1), so names and phones in `q` aren't logged. | Info | Tested |
+| 3 | The cursor is opaque but carries no authority: it is validated, and each page re-applies the caller's facility filter and permission. A tampered cursor returns 400. | Info | Tested |
+| 4 | The fee read reuses booking's price lookup, so the quote can't drift from what is charged. Fees stay read-only in the UI. | Info | As designed |
+| 5 | Template v2 is a new published version, not an edit, so signed notes keep the schema they were validated against. | Info | As designed |

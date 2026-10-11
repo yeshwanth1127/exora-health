@@ -42,3 +42,36 @@ export async function listPractitioners(db: Kysely<DB>, caller: Caller, filter: 
     return q.orderBy('s.display_name').execute();
   });
 }
+
+/** A clinic's active departments, the services they offer, and its consult rooms. */
+export async function facilityDirectory(db: Kysely<DB>, caller: Caller, facilityId: string) {
+  return runQuery(db, caller.tenantId, async (tx) => {
+    const [departments, services, consultRooms] = await Promise.all([
+      tx
+        .selectFrom('platform.department as d')
+        .leftJoin('catalog.specialty as sp', 'sp.id', 'd.specialty_id')
+        .select(['d.id as departmentId', 'd.code', 'd.name', 'd.kind', 'sp.code as specialty'])
+        .where('d.facility_id', '=', facilityId)
+        .where('d.status', '=', 'active')
+        .orderBy('d.name')
+        .execute(),
+      tx
+        .selectFrom('catalog.healthcare_service as hs')
+        .innerJoin('platform.department as d', 'd.id', 'hs.department_id')
+        .select(['hs.id as healthcareServiceId', 'hs.code', 'hs.name', 'hs.department_id as departmentId', 'hs.service_mode as serviceMode', 'hs.default_duration_min as defaultDurationMin'])
+        .where('d.facility_id', '=', facilityId)
+        .where('hs.status', '=', 'active')
+        .orderBy('hs.name')
+        .execute(),
+      tx
+        .selectFrom('platform.location')
+        .select(['id as locationId', 'code', 'name', 'department_id as departmentId'])
+        .where('facility_id', '=', facilityId)
+        .where('kind', '=', 'consult_room')
+        .where('status', '=', 'active')
+        .orderBy('name')
+        .execute(),
+    ]);
+    return { facilityId, departments, services, consultRooms };
+  });
+}

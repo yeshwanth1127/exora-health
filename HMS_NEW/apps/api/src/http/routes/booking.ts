@@ -112,6 +112,8 @@ export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
           staffId: uuid.optional(),
           patientId: uuid.optional(),
           status: z.enum(['confirmed', 'checked_in', 'completed', 'cancelled', 'no_show']).optional(),
+          q: z.string().trim().min(2).max(100).optional(),
+          cursor: z.string().max(300).optional(),
           limit: z.coerce.number().int().min(1).max(500).optional(),
         })
         .refine((r) => r.to >= r.from, 'to must not be before from'),
@@ -123,7 +125,7 @@ export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
       throw new DomainError('validation', 'facilityId is required for your access level');
     }
     authorize(principal, 'appointments.read', q.facilityId);
-    return { items: await listAppointments(db, callerOf(request), q) };
+    return listAppointments(db, callerOf(request), q);
   });
 
   app.get('/v1/appointments/:appointmentId', async (request) => {

@@ -408,6 +408,73 @@ describe('overbooking per clinic (phase 3)', () => {
   });
 });
 
+describe('directory, fees, templates and appointment search (phase 4)', () => {
+  const later = (days: number) => new Date(Date.parse(monday) + days * 86_400_000).toISOString().slice(0, 10);
+  const day = () => later(70); // a Monday
+  const now = () => ist(monday, '07:00');
+  const booked: Array<{ appointmentId: string; confirmationCode: string; feeMinor: number | null }> = [];
+  beforeAll(async () => {
+    const people = [['Lakshmi Narayan', '+919822200001'], ['Ravi Teja', '+919822200002'], ['Lakshmi Devi', '+919822200003'], ['100% Sure', '+919822200004']];
+    for (const [i, [name, phone]] of people.entries()) {
+      const hold = await call('POST', '/v1/holds', { token: tokens.frontDesk, idem: true, now: now(), body: { staffId: doctor, slotStart: ist(day(), `09:${String(i * 15).padStart(2, '0')}`) } });
+      const res = await call('POST', '/v1/appointments', { token: tokens.frontDesk, idem: true, now: now(), body: { reservationId: hold.body.reservationId, bookingParty: { name, phone }, originChannel: 'front_desk' } });
+      expect(res.status).toBe(201);
+      booked.push(res.body);
+    }
+  });
+
+  it("reads a clinic's departments, services and consult rooms within facility scope", async () => {
+    const dir = await call('GET', `/v1/facilities/${t.facilityId}/directory`, { token: tokens.frontDesk });
+    expect(dir.body.departments).toMatchObject([{ code: 'GM', name: 'General Medicine' }]);
+    expect(dir.body.services).toMatchObject([{ code: 'GM-OPD', serviceMode: 'in_person' }]);
+    expect(dir.body.consultRooms).toEqual([]);
+    expect((await call('GET', `/v1/facilities/${facility2}/directory`, { token: tokens.frontDesk })).status).toBe(403);
+  });
+
+  it('quotes the fee booking charges, from the active price list', async () => {
+    const fees = await call('GET', `/v1/practitioners/${doctor}/fees?facilityId=${t.facilityId}&on=${day()}`, { token: tokens.frontDesk });
+    expect(fees.body.items).toMatchObject([{ serviceName: 'GM OPD', visitMode: 'in_person', pricedOn: day(), feeMinor: 50000 }]);
+    expect(fees.body.items[0].feeMinor).toBe(booked[0]!.feeMinor);
+    expect((await call('GET', `/v1/practitioners/${doctor}/fees?facilityId=${facility2}&on=${day()}`)).body.items).toMatchObject([{ feeMinor: null, visitMode: 'in_person' }]); // no service, so no price
+    expect((await call('GET', `/v1/practitioners/${doctor}/fees?facilityId=${facility2}&on=${day()}`, { token: tokens.frontDesk })).status).toBe(403);
+  });
+
+  it('note templates carry their field order', async () => {
+    const { body } = await call('GET', '/v1/note-templates');
+    const soap = body.items.filter((x: { code: string }) => x.code === 'opd_consultation');
+    expect(soap).toHaveLength(1);
+    expect(soap[0].schema.propertyOrder).toEqual(['subjective', 'objective', 'assessment', 'plan']);
+  });
+
+  it('searches by name, phone digits and confirmation code; wildcards are literal', async () => {
+    const search = async (q: string) =>
+      (await call('GET', `/v1/appointments?from=${day()}&to=${day()}&facilityId=${t.facilityId}&q=${encodeURIComponent(q)}`, { token: tokens.frontDesk })).body.items.map((a: { bookingPartyName: string }) => a.bookingPartyName);
+    expect(await search('lakshmi')).toEqual(['Lakshmi Narayan', 'Lakshmi Devi']);
+    expect(await search('2200002')).toEqual(['Ravi Teja']);
+    expect(await search(booked[2]!.confirmationCode.toLowerCase())).toEqual(['Lakshmi Devi']);
+    expect(await search('0%')).toEqual(['100% Sure']);
+    expect(await search('__')).toEqual([]);
+    expect((await call('GET', `/v1/appointments?from=${day()}&to=${day()}&facilityId=${t.facilityId}&q=a`, { token: tokens.frontDesk })).status).toBe(400);
+  });
+
+  it('pages deterministically with a cursor, and rejects a tampered cursor', async () => {
+    const url = (extra: string) => `/v1/appointments?from=${day()}&to=${day()}&facilityId=${t.facilityId}${extra}`;
+    const all = (await call('GET', url(''), { token: tokens.frontDesk })).body;
+    expect(all.nextCursor).toBeNull();
+    const paged: string[] = [];
+    let cursor: string | null = null;
+    do {
+      const page: { status: number; body: { items: Array<{ appointmentId: string }>; nextCursor: string | null } } = await call('GET', url(`&limit=1${cursor ? `&cursor=${cursor}` : ''}`), { token: tokens.frontDesk });
+      expect(page.body.items.length).toBeLessThanOrEqual(1);
+      paged.push(...page.body.items.map((a) => a.appointmentId));
+      cursor = page.body.nextCursor;
+    } while (cursor);
+    expect(paged).toEqual(all.items.map((a: { appointmentId: string }) => a.appointmentId));
+    expect(paged).toHaveLength(4);
+    expect((await call('GET', url('&cursor=bm90LWEtY3Vyc29y'), { token: tokens.frontDesk })).status).toBe(400);
+  });
+});
+
 describe('validation', () => {
   it('rejects bad input with 400 and the field issues', async () => {
     const res = await call('POST', '/v1/patients', { token: tokens.frontDesk, idem: true, body: { givenName: '', sex: 'x', registeredFacilityId: 'nope', source: 'front_desk' } });
