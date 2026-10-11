@@ -2030,6 +2030,219 @@ export interface PatientRelatedPerson {
   version: Generated<number>;
 }
 
+export interface PharmacyControlledDrugRegister {
+  batch_no: string | null;
+  dispense_id: string | null;
+  dispense_no: string | null;
+  dispensed_at: Timestamp | null;
+  dispensed_by: string | null;
+  facility_id: string | null;
+  generic_name: string | null;
+  is_ndps: boolean | null;
+  item_name: string | null;
+  mrn: string | null;
+  patient_id: string | null;
+  patient_name: string | null;
+  prescriber_name: string | null;
+  prescriber_staff_id: string | null;
+  quantity: Numeric | null;
+  regulatory_schedule: string | null;
+  returned_qty: Numeric | null;
+  store_id: string | null;
+  tenant_id: string | null;
+}
+
+export interface PharmacyDispense {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  dispense_no: string;
+  dispense_type: string;
+  dispensed_at: Generated<Timestamp>;
+  dispensed_by: string;
+  encounter_id: string;
+  facility_id: string;
+  handed_over_at: Timestamp | null;
+  handed_over_to: string | null;
+  id: Generated<string>;
+  patient_id: string;
+  patient_indent_id: string | null;
+  prescription_id: string | null;
+  status: Generated<string>;
+  store_id: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface PharmacyDispenseLine {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  discount_minor: Generated<Int8>;
+  dispense_id: string;
+  id: Generated<string>;
+  item_batch_id: string;
+  item_id: string;
+  mrp_snapshot_minor: Int8 | null;
+  patient_indent_line_id: string | null;
+  prescription_item_id: string | null;
+  price_list_item_id: string | null;
+  quantity: Numeric;
+  returned_qty: Generated<Numeric>;
+  serial_unit_id: string | null;
+  substituted_from_item_id: string | null;
+  substitution_approved_by: string | null;
+  tenant_id: string;
+  unit_price_minor: Int8;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface PharmacyMedicationAdministration {
+  administered_at: Timestamp | null;
+  administered_by: string;
+  created_at: Generated<Timestamp>;
+  dispense_line_id: string | null;
+  dose_given: Numeric | null;
+  dose_unit: string | null;
+  encounter_id: string;
+  id: Generated<string>;
+  is_prn: Generated<boolean>;
+  patient_id: string;
+  prescription_item_id: string;
+  prn_reason: string | null;
+  reason: string | null;
+  recorded_at: Generated<Timestamp>;
+  requires_witness: Generated<boolean>;
+  route: string | null;
+  scheduled_at: Timestamp | null;
+  site: string | null;
+  status: string;
+  tenant_id: string;
+  witness_staff_id: string | null;
+}
+
+export interface PharmacyMedicationReturn {
+  created_at: Generated<Timestamp>;
+  dispense_line_id: string;
+  id: Generated<string>;
+  is_restockable: boolean;
+  patient_id: string;
+  quantity: Numeric;
+  reason: string;
+  received_at: Generated<Timestamp>;
+  received_by: string;
+  store_id: string;
+  tenant_id: string;
+}
+
+export interface PharmacyPatientIndent {
+  cancel_reason: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  encounter_id: string;
+  facility_id: string;
+  id: Generated<string>;
+  notes: string | null;
+  patient_id: string;
+  pharmacy_store_id: string;
+  requested_at: Generated<Timestamp>;
+  requested_by: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+  ward_store_id: string | null;
+}
+
+export interface PharmacyPatientIndentLine {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  id: Generated<string>;
+  item_id: string;
+  patient_indent_id: string;
+  prescription_item_id: string | null;
+  qty_dispensed: Generated<Numeric>;
+  qty_requested: Numeric;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface PharmacyPharmacyVerification {
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  notes: string | null;
+  outcome: string;
+  prescription_id: string;
+  tenant_id: string;
+  verified_at: Generated<Timestamp>;
+  verified_by: string;
+}
+
+export interface PharmacyPrescription {
+  advice: string | null;
+  cancel_reason: string | null;
+  cancelled_at: Timestamp | null;
+  cancelled_by: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  encounter_id: string;
+  facility_id: string;
+  id: Generated<string>;
+  patient_id: string;
+  prescriber_staff_id: string;
+  scan_document_id: string | null;
+  setting: string;
+  signed_at: Timestamp | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  valid_until: string | null;
+  version: Generated<number>;
+}
+
+export interface PharmacyPrescriptionItem {
+  brand_name: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  dose: Numeric;
+  dose_unit: string;
+  duration_unit: string | null;
+  duration_value: number | null;
+  food_relation: Generated<string>;
+  frequency_code: string;
+  frequency_text: string | null;
+  generic_name: string;
+  id: Generated<string>;
+  instructions: string | null;
+  is_prn: Generated<boolean>;
+  item_id: string;
+  line_no: number;
+  override_reason: string | null;
+  prescription_id: string;
+  prn_min_interval_minutes: number | null;
+  quantity_dispensed: Generated<Numeric>;
+  quantity_prescribed: Numeric | null;
+  route: string;
+  start_at: Timestamp | null;
+  status: Generated<string>;
+  stop_at: Timestamp | null;
+  stop_reason: string | null;
+  stopped_by: string | null;
+  strength: string | null;
+  substitution_allowed: Generated<boolean>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+  warnings: Generated<Json>;
+}
+
 export interface PlatformAuditEvent {
   action: string;
   actor_staff_id: string | null;
@@ -2496,6 +2709,16 @@ export interface DB {
   "patient.patient_identifier": PatientPatientIdentifier;
   "patient.patient_link": PatientPatientLink;
   "patient.related_person": PatientRelatedPerson;
+  "pharmacy.controlled_drug_register": PharmacyControlledDrugRegister;
+  "pharmacy.dispense": PharmacyDispense;
+  "pharmacy.dispense_line": PharmacyDispenseLine;
+  "pharmacy.medication_administration": PharmacyMedicationAdministration;
+  "pharmacy.medication_return": PharmacyMedicationReturn;
+  "pharmacy.patient_indent": PharmacyPatientIndent;
+  "pharmacy.patient_indent_line": PharmacyPatientIndentLine;
+  "pharmacy.pharmacy_verification": PharmacyPharmacyVerification;
+  "pharmacy.prescription": PharmacyPrescription;
+  "pharmacy.prescription_item": PharmacyPrescriptionItem;
   "platform.audit_event": PlatformAuditEvent;
   "platform.care_assignment": PlatformCareAssignment;
   "platform.config_setting": PlatformConfigSetting;

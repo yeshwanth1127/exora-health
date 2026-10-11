@@ -41,6 +41,7 @@ import {
 } from "./ClinicalRecords";
 import { EncounterRecords } from "./EncounterRecords";
 import { EncounterOrders } from "./Orders";
+import { EncounterMar, EncounterPrescriptions } from "./Prescriptions";
 import type {
   EncounterDetail,
   EncounterRow,
@@ -443,6 +444,8 @@ function Encounter({
               onChanged={refresh}
             />
             <EncounterOrders encounterId={row.encounterId} active={active} />
+            <EncounterPrescriptions encounterId={row.encounterId} active={active} />
+            <EncounterMar encounterId={row.encounterId} active={active} />
             {assignedDoctor &&
               can("encounters.manage") &&
               result.data.encounter.status === "in_progress" && (

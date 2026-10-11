@@ -22,6 +22,7 @@ import {
   Video,
   FlaskConical,
   Package,
+  Pill,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +69,8 @@ import { Teleconsultations } from "@/hms/Teleconsultations";
 import { Laboratory } from "@/hms/Laboratory";
 import { Inventory } from "@/hms/Inventory";
 import { LAB_PAGE_PERMISSIONS } from "@/hms/diagnostics";
+import { PHARMACY_PAGE_PERMISSIONS } from "@/hms/medicines";
+import { Pharmacy } from "@/hms/Pharmacy";
 import { PatientVideo } from "@/hms/PatientVideo";
 import type { Facility, Me, Practitioner } from "@/hms/types";
 
@@ -121,6 +124,13 @@ const navigation = [
     permission: "lab.collect",
     // Collectors, lab staff, radiology and clinicians acknowledging results each see their own tabs.
     anyOf: LAB_PAGE_PERMISSIONS,
+  },
+  {
+    key: "pharmacy",
+    name: "Pharmacy",
+    icon: Pill,
+    permission: "pharmacy.dispense",
+    anyOf: PHARMACY_PAGE_PERMISSIONS,
   },
   {
     key: "inventory",
@@ -734,6 +744,8 @@ function Directory({
           <Teleconsultations />
         ) : page === "laboratory" ? (
           <Laboratory />
+        ) : page === "pharmacy" ? (
+          <Pharmacy />
         ) : page === "inventory" ? (
           <Inventory />
         ) : page === "schedules" ? (

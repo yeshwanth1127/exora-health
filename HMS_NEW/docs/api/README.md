@@ -251,6 +251,29 @@ ERD [m10-inventory](../design/erd-v2/m10-inventory.md). An optional module: whil
 
 Built-in roles: `store_keeper` (everything except `inventory.approve`), `nurse` (+ `inventory.read`, `inventory.indent`, `inventory.receive`); `tenant_admin` has all.
 
+### Pharmacy (prescriptions, verification, dispensing, MAR, register)
+ERD [m09-pharmacy](../design/erd-v2/m09-pharmacy.md). An optional module: while `pharmacy` is suspended every write is refused with 422 `module_inactive`. A prescription is written as a draft and frozen once signed (database trigger). Dispensing goes through `inventory.post_patient_movement`, which checks the store, batch, quantity and patient against the dispense line and posts each line once; the stock ledger refuses overselling (409 `insufficient_stock`). The bill for a dispense is M11's job (it consumes `pharmacy.dispensed` / `pharmacy.medication_returned`).
+
+| Method & path | Permission | Purpose |
+|---|---|---|
+| `GET /v1/pharmacy/drugs?q` | `prescriptions.read` | Search active drugs (generic or brand) with schedule and high-alert flags |
+| `POST /v1/encounters/:id/prescriptions` 🔑 · `GET` | `prescriptions.write` / `prescriptions.read`, chart access | Draft prescription on an open encounter; setting follows the encounter class. Lines need a route (or the drug's default) and, outside inpatient, a quantity. GET also returns the visit's patient indents |
+| `POST /v1/prescriptions/:id/sign` 🔑 | `prescriptions.write`, prescriber only | Needs a medical registration. Checks allergies and duplicate therapy; warnings need an `overrides` reason per line (422 `override_required` lists them). Teleconsultation can't carry Schedule X, NDPS or tele-prohibited drugs. Emits `prescription.signed` |
+| `POST /v1/prescriptions/:id/cancel` 🔑 | `prescriptions.write`, prescriber only | Cancel with a reason; once dispensing has started, stop the lines instead |
+| `POST /v1/prescription-items/:id/{stop,hold,resume}` 🔑 | `prescriptions.write`, chart access | Change one line; reason required to stop or hold |
+| `POST /v1/prescriptions/:id/verify` 🔑 | `pharmacy.verify` (not one's own prescription) | `approved` → verified; `query`/`rejected` (notes required) → on hold |
+| `GET /v1/pharmacy/queue?facilityId&stage` | `pharmacy.verify` or `pharmacy.dispense` @ facility | `verify`, `dispense` or `indents` work list |
+| `GET /v1/prescriptions/:id/dispensing?storeId` · `GET /v1/patient-indents/:id/dispensing` | `pharmacy.verify` or `pharmacy.dispense` | Patient, allergies, lines, stock and batches at the store, generic alternatives, earlier dispenses |
+| `POST /v1/dispenses` 🔑 · `GET /v1/dispenses?facilityId` | `pharmacy.dispense` @ store | Dispense against a verified prescription or a ward indent from a dispensing store (`DSP/{year}/{n}`). FEFO or a named batch; price ≤ MRP; substitutes only when allowed and equivalent; never more than prescribed. Emits `pharmacy.dispensed` |
+| `POST /v1/dispenses/:id/hand-over` 🔑 | `pharmacy.dispense` | Record who collected a prepared dispense |
+| `POST /v1/dispense-lines/:id/returns` 🔑 | `pharmacy.dispense` | Return (≤ dispensed − returned); restockable returns go back to the batch. Emits `pharmacy.medication_returned` |
+| `GET /v1/pharmacy/register?facilityId&from&to` | `pharmacy.registers` @ facility | Schedule H1 / X / NDPS register (audited) |
+| `POST /v1/encounters/:id/patient-indents` 🔑 · `POST /v1/patient-indents/:id/cancel` | `pharmacy.indent` (cancel also `pharmacy.dispense`) | Ward request to the pharmacy for a patient; drugs must be on an active line of this patient's prescription |
+| `GET /v1/encounters/:id/mar` · `GET /v1/pharmacy/witnesses?facilityId` | `prescriptions.read` / `medication.administer` | Medication chart; staff who can witness a dose |
+| `POST /v1/prescription-items/:id/administrations` 🔑 | `medication.administer`, chart access | Chart a dose: a scheduled slot is charted as given once; PRN needs an indication and respects the minimum interval (422 `too_soon`); NDPS, Schedule X and high-alert drugs need a witness at the clinic (not oneself). Emits `medication.administered` |
+
+Built-in roles: `pharmacist` (verify, dispense, registers, plus stock read/indent/issue/receive/count), `doctor` (+ `prescriptions.read/write`), `nurse` (+ `prescriptions.read`, `pharmacy.indent`, `medication.administer`); `tenant_admin` has all.
+
 ### Virtual OPD (teleconsultation)
 Design and rules: [../plan/VIRTUAL_OPD_PLAN.md](../plan/VIRTUAL_OPD_PLAN.md). Book a slot from a session with `visitMode: "virtual"` as usual; the worker creates its teleconsultation.
 

@@ -15,6 +15,7 @@ const MODULE_ROLE: Record<string, string> = {
   clinical: 'mod_clinical',
   diagnostics: 'mod_diagnostics',
   inventory: 'mod_inventory',
+  pharmacy: 'mod_pharmacy',
 };
 const SCHEMAS = Object.keys(MODULE_ROLE);
 
