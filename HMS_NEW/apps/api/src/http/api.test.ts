@@ -475,6 +475,39 @@ describe('directory, fees, templates and appointment search (phase 4)', () => {
   });
 });
 
+describe('operations summary (phase 5, G12)', () => {
+  const at = () => ist(monday, '07:00');
+  const summary = () => call('GET', `/v1/operations/summary?facilityId=${t.facilityId}&date=${monday}`, { token: tokens.frontDesk, now: at() });
+
+  it("summarises one clinic exactly as stored, and counts live holds", async () => {
+    const before = await summary();
+    expect(before.status).toBe(200);
+    const { rows: [stored] } = await admin.query(
+      `SELECT count(*)::int AS total, count(*) FILTER (WHERE origin_channel = 'front_desk')::int AS desk FROM booking.appointment WHERE facility_id = $1`,
+      [t.facilityId],
+    );
+    const s = before.body;
+    expect(s.summary).toMatchObject({ appointmentsTotal: stored.total, pendingNotifications: null, voiceSessions: null });
+    expect(s.byStatus.reduce((n: number, x: { value: number }) => n + x.value, 0)).toBe(stored.total);
+    expect(s.byChannel.find((x: { label: string }) => x.label === 'front_desk')?.value ?? 0).toBe(stored.desk);
+    expect(s.dailyBookings).toHaveLength(14);
+    expect(s.dailyBookings.at(-1).date).toBe(monday);
+    expect(s.recent.length).toBeGreaterThan(0);
+    expect(s.recent.every((a: { facilityId: string }) => a.facilityId === t.facilityId)).toBe(true);
+
+    const day = new Date(Date.parse(monday) + 84 * 86_400_000).toISOString().slice(0, 10);
+    const slots = await call('GET', `/v1/practitioners/${doctor}/slots?facilityId=${t.facilityId}&from=${day}&to=${day}`, { token: tokens.frontDesk, now: at() });
+    const free = slots.body.items.find((x: { status: string }) => x.status === 'free');
+    expect((await call('POST', '/v1/holds', { token: tokens.frontDesk, idem: true, now: at(), body: { staffId: doctor, slotStart: free.slotStart } })).status).toBe(201);
+    expect((await summary()).body.summary.activeHolds).toBe(s.summary.activeHolds + 1);
+  });
+
+  it("is limited to the caller's clinics", async () => {
+    expect((await call('GET', `/v1/operations/summary?facilityId=${facility2}&date=${monday}`, { token: tokens.frontDesk })).status).toBe(403);
+    expect((await call('GET', `/v1/operations/summary?facilityId=${t.facilityId}`, { token: tokens.frontDesk })).status).toBe(400);
+  });
+});
+
 describe('validation', () => {
   it('rejects bad input with 400 and the field issues', async () => {
     const res = await call('POST', '/v1/patients', { token: tokens.frontDesk, idem: true, body: { givenName: '', sex: 'x', registeredFacilityId: 'nope', source: 'front_desk' } });

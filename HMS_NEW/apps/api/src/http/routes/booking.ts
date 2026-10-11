@@ -11,6 +11,7 @@ import {
   getAppointment,
   holdSlot,
   listAppointments,
+  operationsSummary,
   getOverbooking,
   markNoShow,
   overbookAppointment,
@@ -101,6 +102,13 @@ export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const body = parse(z.object({ enabled: z.boolean() }), request.body);
     authorize(principalOf(request), 'config.manage', facilityId);
     return setOverbooking(db, callerOf(request), { facilityId, enabled: body.enabled });
+  });
+
+  // Clinic overview (G12): the same appointment data the list shows, so the same permission at that clinic.
+  app.get('/v1/operations/summary', async (request) => {
+    const q = parse(z.object({ facilityId: uuid, date: isoDate }), request.query);
+    authorize(principalOf(request), 'appointments.read', q.facilityId);
+    return operationsSummary(db, callerOf(request), q.facilityId, q.date);
   });
 
   app.get('/v1/appointments', async (request) => {

@@ -32,8 +32,8 @@ export function Schedules() {
       <Hint>
         Blocks and extra hours apply to this clinic. Weekly hours replace this
         clinic's hours from the chosen date, and are checked against bookings
-        and the doctor's hours at other clinics before saving. Book patients
-        from Booking; exact-time booking from the timeline is not available yet.
+        and the doctor's hours at other clinics before saving. Click a free
+        slot to book it; open an appointment to move or cancel it.
         {overbooking &&
           ` Overbooking is on: open a booked appointment to add up to ${setting.data?.maxPerSession} extra per doctor session, with a reason.`}
       </Hint>

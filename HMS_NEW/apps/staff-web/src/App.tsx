@@ -53,6 +53,7 @@ import { Appointments } from "@/hms/Appointments";
 import { Doctors } from "@/hms/Doctors";
 import { PendingModule, DesignGuide } from "@/hms/PendingModule";
 import { Schedules } from "@/hms/Schedules";
+import { Overview } from "@/hms/Overview";
 import { Queue } from "@/hms/Queue";
 import { Consultations } from "@/hms/Consultations";
 import { Teleconsultations } from "@/hms/Teleconsultations";
@@ -64,8 +65,7 @@ const navigation = [
     key: "overview",
     name: "Overview",
     icon: LayoutDashboard,
-    permission: "catalog.read",
-    pending: true,
+    permission: "appointments.read",
   },
   {
     key: "appointments",
@@ -647,6 +647,8 @@ function Directory({
         <ErrorMessage text={error} />
         {!allowed ? (
           <Empty>This page is not available for your clinic permissions.</Empty>
+        ) : page === "overview" ? (
+          <Overview />
         ) : page === "appointments" ? (
           <Appointments />
         ) : page === "patients" ? (
@@ -664,7 +666,6 @@ function Directory({
         ) : page === "design" ? (
           <DesignGuide />
         ) : [
-            "overview",
             "catalogue",
             "operations",
             "whatsapp",

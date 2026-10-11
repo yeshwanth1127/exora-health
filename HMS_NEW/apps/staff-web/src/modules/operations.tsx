@@ -93,7 +93,9 @@ function ActivityPage({ overview }: { overview: boolean }) {
         [
           "Voice bookings",
           s.voice_bookings,
-          `${s.voice_sessions_total ?? 0} call sessions`,
+          s.voice_sessions_total == null
+            ? "Call sessions not connected"
+            : `${s.voice_sessions_total} call sessions`,
         ],
       ]
     : [
@@ -136,7 +138,7 @@ function ActivityPage({ overview }: { overview: boolean }) {
               <CardHeader>
                 <CardDescription>{label}</CardDescription>
                 <CardTitle className="text-3xl tabular-nums">
-                  {value ?? 0}
+                  {value ?? "—"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground">
@@ -152,7 +154,7 @@ function ActivityPage({ overview }: { overview: boolean }) {
                 <CardHeader>
                   <CardTitle>Daily bookings</CardTitle>
                   <CardDescription>
-                    Last 14 days · records created, using UTC dates.
+                    Last 14 days · bookings made, by clinic date.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -321,7 +323,9 @@ function ActivityPage({ overview }: { overview: boolean }) {
                             {a.branch?.name}
                           </p>
                         </TableCell>
-                        <TableCell>{dateTime(a.starts_at)}</TableCell>
+                        <TableCell>
+                          {a.starts_at ? dateTime(a.starts_at) : "Walk-in"}
+                        </TableCell>
                         <TableCell>
                           <StateBadge value={a.origin_channel} />
                         </TableCell>

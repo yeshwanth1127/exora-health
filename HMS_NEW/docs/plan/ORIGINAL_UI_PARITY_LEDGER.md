@@ -23,8 +23,8 @@ The original current source is `/Users/deepakonda/.codex/worktrees/hms-monochrom
 
 | UI ID | Screen | Original detail | Current state | Backend ledger |
 | --- | --- | --- | --- | --- |
-| UI-overview-01 | Overview | Five clinic metrics and status/channel breakdowns | navigation restored full design retained pending wiring | G12 |
-| UI-overview-02 | Overview | Daily booking charts and recent appointments | navigation restored full design retained pending wiring | G12 |
+| UI-overview-01 | Overview | Five clinic metrics and status/channel breakdowns | connected (Phase 5) | G12 |
+| UI-overview-02 | Overview | Daily booking charts and recent appointments | connected (Phase 5) | G12 |
 | UI-appointments-01 | Appointments | IST and all-date browsing, server search and paging | partial connected | G03; G09; G10; G19 |
 | UI-appointments-02 | Appointments | Doctor/clinic/status filters and patient detail sheet | partial connected | G03; G09; G10; G19 |
 | UI-appointments-03 | Appointments | Reasoned cancellation/no-show and patient-contact readback | partial connected | G03; G09; G10; G19 |
@@ -38,9 +38,9 @@ The original current source is `/Users/deepakonda/.codex/worktrees/hms-monochrom
 | UI-schedules-05 | Schedules | Weekly doctor picker and repeat-day groups with split shifts | restored partial data or local draft | G04; G05; G06; G07; G08; G26 |
 | UI-schedules-06 | Schedules | Effective dates, slot length and split-shift example | restored partial data or local draft | G04; G05; G06; G07; G08; G26 |
 | UI-schedules-07 | Schedules | Review affected appointments, other published hours and resolve-before-save | source retained backend preview pending | G04; G05; G06; G07; G08; G26 |
-| UI-schedules-08 | Schedules | Range appointment/open/block actions with exact start/end | restored partial data or local draft | G04; G05; G06; G07; G08; G26 |
+| UI-schedules-08 | Schedules | Range appointment/open/block actions with exact start/end | book one slot connected; free-form range G08 | G04; G05; G06; G07; G08; G26 |
 | UI-schedules-09 | Schedules | Virtual/in-person choice, clinic choice and explicit overbooking | restored partial data or local draft | G04; G05; G06; G07; G08; G26 |
-| UI-schedules-10 | Schedules | Saved staff notes, exact-time move and unblock/reversal | restored partial data or local draft | G04; G05; G06; G07; G08; G26 |
+| UI-schedules-10 | Schedules | Saved staff notes, exact-time move and unblock/reversal | move to a free slot and cancel connected; staff notes dropped | G04; G05; G06; G07; G08; G26 |
 | UI-waitlist-01 | Waitlist | Waitlist requests and active filters | navigation restored full design retained pending wiring | G11; G19 |
 | UI-waitlist-02 | Waitlist | Check availability and offer a slot with notification readback | navigation restored full design retained pending wiring | G11; G19 |
 | UI-catalogue-01 | Hospital catalogue | Clinic locations and active status | navigation restored full design retained pending wiring | G13; G14 |

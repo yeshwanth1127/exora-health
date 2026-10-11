@@ -1,7 +1,7 @@
 // Booking read models for the API.
 import { sql, type DB, type Kysely } from '@hms/db';
 import { invalid, notFound, runQuery } from '@hms/platform';
-import type { Caller } from '../../caller.ts';
+import { clock, type Caller } from '../../caller.ts';
 import { consultationFee } from './appointments.ts';
 import { practitionerResourceId } from './calendar.ts';
 
@@ -133,6 +133,86 @@ export async function listAppointments(db: Kysely<DB>, caller: Caller, f: Appoin
     return {
       items,
       nextCursor: rows.length > limit && last ? encodeCursor([String(last.sessionOn).slice(0, 10), last.startsAt ? new Date(last.startsAt).toISOString() : null, last.appointmentId]) : null,
+    };
+  });
+}
+
+export interface OperationsSummary {
+  date: string;
+  summary: {
+    appointmentsTotal: number;
+    appointmentsUpcoming: number;
+    retained: number;
+    activeDoctors: number;
+    scheduleRules: number;
+    activeHolds: number;
+    voiceBookings: number;
+    /** No notification or voice-call store exists yet (G19, G21): unknown, never zero. */
+    pendingNotifications: null;
+    voiceSessions: null;
+  };
+  dailyBookings: { date: string; bookings: number }[];
+  byStatus: { label: string; value: number }[];
+  byChannel: { label: string; value: number }[];
+  recent: AppointmentView[];
+}
+
+/**
+ * One clinic's overview as of `on`: appointment totals and mix, doctors with published hours, live holds,
+ * bookings made in the 14 days ending `on` (clinic-local dates, reschedule replacements excluded) and the
+ * ten latest bookings.
+ */
+// ponytail: all-time counts scan the clinic's appointments; add a date window or rollup when that is slow.
+export async function operationsSummary(db: Kysely<DB>, caller: Caller, facilityId: string, on: string): Promise<OperationsSummary> {
+  const now = clock(caller);
+  return runQuery(db, caller.tenantId, async (tx) => {
+    const [{ rows: [totals] }, { rows: [hours] }, { rows: [holds] }, { rows: daily }, { rows: mix }, recent] = await Promise.all([
+      sql<{ total: number; upcoming: number; retained: number; voice: number }>`
+        SELECT count(*)::int AS total,
+               count(*) FILTER (WHERE status = 'confirmed' AND session_on >= ${on}::date)::int AS upcoming,
+               count(*) FILTER (WHERE status IN ('confirmed', 'checked_in', 'completed'))::int AS retained,
+               count(*) FILTER (WHERE origin_channel = 'voice')::int AS voice
+        FROM booking.appointment WHERE facility_id = ${facilityId}`.execute(tx),
+      sql<{ rules: number; doctors: number }>`
+        SELECT count(*)::int AS rules, count(DISTINCT r.resource_id)::int AS doctors
+        FROM booking.schedule_rule r
+        WHERE r.facility_id = ${facilityId} AND r.withdrawn_at IS NULL
+          AND r.effective_from <= ${on}::date AND (r.effective_to IS NULL OR r.effective_to > ${on}::date)`.execute(tx),
+      sql<{ n: number }>`
+        SELECT count(*)::int AS n FROM booking.reservation
+        WHERE facility_id = ${facilityId} AND status = 'held' AND hold_expires_at > ${now}`.execute(tx),
+      sql<{ date: string; bookings: number }>`
+        SELECT d::date::text AS date, count(a.id)::int AS bookings
+        FROM generate_series(${on}::date - 13, ${on}::date, interval '1 day') d
+        LEFT JOIN booking.appointment a
+          ON a.facility_id = ${facilityId} AND a.rescheduled_from_id IS NULL
+         AND (a.created_at AT TIME ZONE (SELECT timezone FROM platform.facility WHERE id = ${facilityId}))::date = d::date
+        GROUP BY d ORDER BY d`.execute(tx),
+      sql<{ kind: 'status' | 'channel'; label: string; value: number }>`
+        SELECT 'status' AS kind, status AS label, count(*)::int AS value FROM booking.appointment WHERE facility_id = ${facilityId} GROUP BY status
+        UNION ALL
+        SELECT 'channel', origin_channel, count(*)::int FROM booking.appointment WHERE facility_id = ${facilityId} GROUP BY origin_channel
+        ORDER BY value DESC, label`.execute(tx),
+      baseQuery(tx).where('a.facility_id', '=', facilityId).orderBy('a.created_at', 'desc').orderBy('a.id', 'desc').limit(10).execute(),
+    ]);
+    const pick = (kind: string) => mix.filter((m) => m.kind === kind).map(({ label, value }) => ({ label, value }));
+    return {
+      date: on,
+      summary: {
+        appointmentsTotal: totals!.total,
+        appointmentsUpcoming: totals!.upcoming,
+        retained: totals!.retained,
+        activeDoctors: hours!.doctors,
+        scheduleRules: hours!.rules,
+        activeHolds: holds!.n,
+        voiceBookings: totals!.voice,
+        pendingNotifications: null,
+        voiceSessions: null,
+      },
+      dailyBookings: daily,
+      byStatus: pick('status'),
+      byChannel: pick('channel'),
+      recent: recent as AppointmentView[],
     };
   });
 }

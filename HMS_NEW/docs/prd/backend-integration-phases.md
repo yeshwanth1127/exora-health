@@ -67,6 +67,17 @@ Close the security and lifecycle gaps first, then add the missing scheduling and
 | G39 | Note templates carry `propertyOrder`. |
 | G03 | Appointment search across name, phone, MRN and confirmation code, with cursor paging. |
 
+### Phase 5: Restore the original ops screens (approved in chat, 11 October: "bring back the design wherever necessary … go at your own discretion")
+
+Keep the new screens (Patients, Queue, Consultations) and bring back the original behaviour where the current screens lost it.
+
+| Gap / UI ID | Change |
+|---|---|
+| UI-schedules-08 / -10 | The original timeline range sheet books one published slot (hold, then book). The original appointment sheet moves a visit to another free slot at the same clinic (hold, then reschedule, so the replacement links back). Both reuse the operation's idempotency key, so a retried save returns the first result. Free-form ranges stay G08. |
+| G12, UI-overview-01/02 | `GET /v1/operations/summary?facilityId&date` (`appointments.read` at that clinic) feeds the original Overview. It returns appointment totals, the status and channel mix, doctors with published hours, live holds, bookings per clinic-local day for 14 days and the ten latest bookings. Pending messages and voice sessions are `null` (no store yet, G19/G21) and display as "—", never 0. |
+
+Acceptance: a front desk user books and moves a visit from the timeline in the browser, and a retry returns the same appointment. The overview counts equal the stored rows for that clinic, and another clinic's overview returns 403.
+
 ### Deferred (each needs its own PRD)
 
 | Gaps | Reason |
@@ -144,3 +155,13 @@ No high-severity issues were found in the frontend changes. The backend issues t
 | 3 | The cursor is opaque but carries no authority: it is validated, and each page re-applies the caller's facility filter and permission. A tampered cursor returns 400. | Info | Tested |
 | 4 | The fee read reuses booking's price lookup, so the quote can't drift from what is charged. Fees stay read-only in the UI. | Info | As designed |
 | 5 | Template v2 is a new published version, not an edit, so signed notes keep the schema they were validated against. | Info | As designed |
+
+## Security review of Phase 5
+
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| 1 | Timeline booking and moves call the existing `/v1/holds`, `/v1/appointments` and `/reschedule` routes. Each authorizes `appointments.book` / `appointments.reschedule` at the slot's clinic, and holds are bound to that clinic (race fix f80e6fc). The adapter adds no authority; the buttons follow the same facility-scoped `can()`. | Info | Tested (nurse gets 403) |
+| 2 | A retried save replays the same hold and booking through their idempotency keys, so it can't take two slots. A slot someone else holds or booked is refused by the backend, not by a client pre-check. | Info | Tested in browser and adapter smoke |
+| 3 | The overview needs `appointments.read` at the requested clinic and filters every aggregate and the recent list by that clinic. It exposes the same appointment fields the list already shows. | Info | Tested (403 for another clinic; a mutation dropping the clinic filter fails the test) |
+| 4 | Unknown messaging and voice counts are `null`, so the dashboard can't present fabricated zeros. | Info | As designed |
+| 5 | The caller (booking party) is never shown as the patient. An existing frontend rule test enforces this, so unregistered bookings still read "Patient not linked". | Info | Tested |
