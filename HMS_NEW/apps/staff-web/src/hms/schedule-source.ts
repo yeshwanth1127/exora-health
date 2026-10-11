@@ -41,6 +41,7 @@ export function scheduleSource(
   facility: Facility,
   practitioners: Practitioner[],
   day: string,
+  overbooking: boolean,
 ): OriginalResourceSource {
   const catalogue = scheduleCatalogue(facility, practitioners),
     doctors = scheduleDoctors(facility, practitioners);
@@ -51,7 +52,11 @@ export function scheduleSource(
     "schedule.block": manage,
     // Exact-time booking and moves need the staff range-booking contract (G08); book from Booking.
     "appointments.create": false,
-    "appointments.overbook": false,
+    // Overbooking needs the clinic switch and the permission; the backend enforces both and the cap.
+    "appointments.overbook":
+      overbooking &&
+      can(me, "appointments.book", facility.facilityId) &&
+      can(me, "appointments.overbook", facility.facilityId),
     // The original Delete is a reasoned cancellation; the record and audit history stay.
     "appointments.delete": can(me, "appointments.cancel", facility.facilityId),
   };
@@ -111,6 +116,23 @@ export function scheduleSource(
     return { groups, slot_minutes: rules[0]?.slotMinutes ?? 30 };
   }
 
+  /** The original pre-save check, answered from the doctor's slots: overbooking needs a taken slot. */
+  async function readCheck(url: URL, signal: AbortSignal) {
+    const p = url.searchParams;
+    const starts = p.get("starts_at")!,
+      ends = p.get("ends_at")!;
+    const date = local(starts).date;
+    const { items } = await request<{ items: Slot[] }>(
+      `/v1/practitioners/${p.get("doctor_id")}/slots?${query({ facilityId: facility.facilityId, from: date, to: date, includeUnavailable: true })}`,
+      { signal },
+    );
+    const slot = items.find((s) => Date.parse(s.slotStart) === Date.parse(starts));
+    if (!slot || Date.parse(slot.slotEnd) !== Date.parse(ends))
+      throw new HmsError("Choose a slot's exact start and end time from the doctor's published hours.", 422, "validation");
+    if (slot.status === "blocked") throw new HmsError("This time is blocked.", 409, "slot_blocked");
+    return { overlapping_bookings: slot.status === "taken" ? 1 : 0 };
+  }
+
   async function readBoard(url: URL, signal: AbortSignal) {
     const date = url.searchParams.get("day") ?? day;
     const branch = url.searchParams.get("branch_id");
@@ -163,6 +185,8 @@ export function scheduleSource(
         return (await readBoard(url, signal)) as T;
       if (url.pathname === "/api/v1/admin/schedule-timeline/weekly")
         return (await readWeekly(url)) as T;
+      if (url.pathname === "/api/v1/admin/schedule-timeline/check")
+        return (await readCheck(url, signal)) as T;
       throw unavailable("Exact-time booking checks");
     },
     async write<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
@@ -216,6 +240,22 @@ export function scheduleSource(
             end: h.end,
           })),
         } as T;
+      }
+      if (path === "/api/v1/admin/schedule-timeline/appointments" && method === "POST") {
+        // Exact-time booking of free time needs G08; only overbooking a taken slot is connected here.
+        if (!b.overbook) throw unavailable("Exact-time booking");
+        return request<T>("/v1/appointments/overbook", {
+          method: "POST",
+          idempotencyKey: String(b.idempotency_key),
+          body: {
+            staffId: b.doctor_id,
+            slotStart: b.starts_at,
+            bookingParty: { name: b.patient_name, phone: b.patient_phone },
+            originChannel: "front_desk",
+            ...(b.reason ? { reason: b.reason } : {}),
+            overbookReason: b.overbook_reason,
+          },
+        });
       }
       const cancel = path.match(/^\/api\/v1\/admin\/schedule-timeline\/appointments\/([0-9a-f-]{36})$/);
       if (cancel && method === "DELETE")

@@ -29,6 +29,8 @@ export interface AppointmentView {
   tokenStatus: string | null;
   rescheduledFromId: string | null;
   cancelReason: string | null;
+  /** Set when this visit was overbooked into a taken slot. */
+  overbookReason: string | null;
 }
 
 function baseQuery(db: Kysely<DB> | Parameters<Parameters<typeof runQuery>[2]>[0]) {
@@ -38,6 +40,7 @@ function baseQuery(db: Kysely<DB> | Parameters<Parameters<typeof runQuery>[2]>[0
     .leftJoin('patient.patient as p', 'p.id', 'a.patient_id')
     .leftJoin('booking.booking_party as bp', 'bp.id', 'a.booking_party_id')
     .leftJoin('booking.queue_token as q', 'q.appointment_id', 'a.id')
+    .leftJoin('booking.reservation as r', 'r.id', 'a.reservation_id')
     .select([
       'a.id as appointmentId',
       'a.confirmation_code as confirmationCode',
@@ -64,6 +67,7 @@ function baseQuery(db: Kysely<DB> | Parameters<Parameters<typeof runQuery>[2]>[0
       'q.status as tokenStatus',
       'a.rescheduled_from_id as rescheduledFromId',
       'a.cancel_reason as cancelReason',
+      'r.overbook_reason as overbookReason',
     ]);
 }
 

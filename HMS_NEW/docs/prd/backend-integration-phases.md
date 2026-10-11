@@ -122,3 +122,15 @@ No high-severity issues were found in the frontend changes. The backend issues t
 | 4 | Weekly preview lists the doctor's hours at other clinics (clinic name, weekday, times), including clinics outside the caller's grant, so overlaps can be explained. It contains no patient data. | Low | Accepted |
 | 5 | Exception, weekly-session and day-plan reads are filtered to the caller's facilities. All-clinic rows stay visible to any reader, the same as the Phase 1 rule for leave. | Info | As designed |
 | 6 | The frontend enables saves only when the source can write. The backend still authorizes every call. Each click mints a new idempotency key; an in-flight request disables the button. Retrying after an unknown outcome is still open under G26. | Low | Open (G26) |
+
+## Security review of Phase 3
+
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| 1 | Overbooking needs `appointments.book` and `appointments.overbook` at the slot's clinic. The clinic is resolved from the slot on the server, and the command rejects the slot if it has moved to another clinic since authorization. | Info | Tested |
+| 2 | The clinic switch is checked inside the booking transaction, against the slot's clinic. Turning it on or off needs `config.manage` at that clinic; a branch administrator can't change another branch. Each change is a new versioned row, and audited. | Info | Tested |
+| 3 | The cap of 3 per session is counted under the doctor's resource row lock. Removing the lock lets 5 concurrent requests through, which the concurrency test catches. | Info | Tested |
+| 4 | `overbooked` sits outside the `EXCLUDE` predicate, so holds and normal bookings still can't overlap. Overbooking is refused into free, blocked or unpublished time. | Info | Tested |
+| 5 | Overbook requests require `Idempotency-Key`, so a retry can't use up two places. The frontend reuses one key per unchanged form. | Info | As designed |
+| 6 | Overbook reasons are limited to 3–500 characters by both the API and a database CHECK, and render as React text. | Info | No change needed |
+| 7 | `holdSlot` has the same gap as #1: it authorizes the slot's clinic, then re-reads the slot. A weekly-plan change that moves the slot to another clinic in between could let a hold land there. This is pre-existing and needs a concurrent schedule change at the same instant. | Low | Open, follow-up |

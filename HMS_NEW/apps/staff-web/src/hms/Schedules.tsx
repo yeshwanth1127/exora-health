@@ -6,10 +6,12 @@ import {
   type OriginalResourceSource,
 } from "@/components/resource-source";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Clinic } from "./Clinic";
-import { useWorkspace } from "./hooks";
-import { today } from "./model";
-import { Hint } from "./ui";
+import { useCommand, useQuery, useWorkspace } from "./hooks";
+import { can, today } from "./model";
+import { ErrorMessage, Hint } from "./ui";
 import { scheduleSource } from "./schedule-source";
 import { confirmLeave } from "./leave";
 
@@ -17,9 +19,13 @@ export function Schedules() {
   const { me, facility, practitioners } = useWorkspace();
   const [day, setDay] = useState(() => today(facility.timezone)),
     [view, setView] = useState("timeline");
+  const setting = useQuery<{ enabled: boolean; maxPerSession: number }>(
+    `/v1/facilities/${facility.facilityId}/overbooking`,
+  );
+  const overbooking = setting.data?.enabled === true;
   const source = useMemo<OriginalResourceSource>(
-    () => scheduleSource(me, facility, practitioners, day),
-    [me, facility, practitioners, day],
+    () => scheduleSource(me, facility, practitioners, day, overbooking),
+    [me, facility, practitioners, day, overbooking],
   );
   return (
     <>
@@ -32,7 +38,16 @@ export function Schedules() {
         clinic's hours from the chosen date, and are checked against bookings
         and the doctor's hours at other clinics before saving. Book patients
         from Booking; exact-time booking from the timeline is not available yet.
+        {overbooking &&
+          ` Overbooking is on: open a booked appointment to add up to ${setting.data?.maxPerSession} extra per doctor session, with a reason.`}
       </Hint>
+      {can(me, "config.manage", facility.facilityId) && setting.data && (
+        <OverbookingSwitch
+          facilityId={facility.facilityId}
+          enabled={overbooking}
+          onSaved={() => void setting.refresh()}
+        />
+      )}
       <Tabs
         className="mt-5 mb-5"
         value={view}
@@ -53,5 +68,42 @@ export function Schedules() {
         <Clinic page="schedules" />
       )}
     </>
+  );
+}
+
+/** Clinic administrators turn overbooking on or off for this clinic only. */
+function OverbookingSwitch({
+  facilityId,
+  enabled,
+  onSaved,
+}: {
+  facilityId: string;
+  enabled: boolean;
+  onSaved: () => void;
+}) {
+  const cmd = useCommand();
+  return (
+    <div className="mt-4 flex items-center justify-between gap-4 rounded-md border p-3">
+      <Label htmlFor="clinic-overbooking" className="font-normal">
+        Allow overbooking at this clinic (at most 3 per doctor session)
+      </Label>
+      <Switch
+        id="clinic-overbooking"
+        checked={enabled}
+        disabled={cmd.busy}
+        onCheckedChange={async (next) => {
+          if (
+            await cmd.run(
+              `/v1/facilities/${facilityId}/overbooking`,
+              { enabled: next },
+              false,
+              "PUT",
+            )
+          )
+            onSaved();
+        }}
+      />
+      <ErrorMessage text={cmd.error} />
+    </div>
   );
 }

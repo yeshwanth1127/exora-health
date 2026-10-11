@@ -69,6 +69,7 @@ export type Appointment = {
   tokenStatus: string | null;
   rescheduledFromId: string | null;
   cancelReason: string | null;
+  overbookReason: string | null;
 };
 export type Slot = {
   slotStart: string;

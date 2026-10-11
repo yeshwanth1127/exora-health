@@ -11,10 +11,13 @@ import {
   getAppointment,
   holdSlot,
   listAppointments,
+  getOverbooking,
   markNoShow,
+  overbookAppointment,
   releaseHold,
   rescheduleAppointment,
   reservationFacility,
+  setOverbooking,
   slotFacility,
 } from '../../modules/booking/index.ts';
 import { callerOf, e164, idempotencyKey, isoDate, parse, principalOf, uuid } from '../support.ts';
@@ -23,25 +26,30 @@ const AppointmentParams = z.object({ appointmentId: uuid });
 const Priority = z.enum(['normal', 'senior_citizen', 'emergency', 'vip']);
 const VisitType = z.enum(['new', 'follow_up', 'review', 'procedure']);
 
-const BookBody = z
-  .object({
-    reservationId: uuid,
-    patientId: uuid.optional(),
-    bookingParty: z
-      .object({
-        name: z.string().trim().min(1).max(100),
-        phone: e164.optional(),
-        email: z.email().optional(),
-        verifiedChannel: z.enum(['otp_sms', 'whatsapp', 'portal', 'staff']).optional(),
-      })
-      .refine((p) => p.phone || p.email, 'bookingParty needs a phone or email')
-      .optional(),
-    visitType: VisitType.optional(),
-    originChannel: z.enum(['web', 'portal', 'whatsapp', 'voice', 'front_desk', 'referral']),
-    priority: Priority.optional(),
-    reason: z.string().max(500).optional(),
-  })
-  .refine((b) => b.patientId || b.bookingParty, 'give patientId, bookingParty, or both');
+const BookFields = z.object({
+  patientId: uuid.optional(),
+  bookingParty: z
+    .object({
+      name: z.string().trim().min(1).max(100),
+      phone: e164.optional(),
+      email: z.email().optional(),
+      verifiedChannel: z.enum(['otp_sms', 'whatsapp', 'portal', 'staff']).optional(),
+    })
+    .refine((p) => p.phone || p.email, 'bookingParty needs a phone or email')
+    .optional(),
+  visitType: VisitType.optional(),
+  originChannel: z.enum(['web', 'portal', 'whatsapp', 'voice', 'front_desk', 'referral']),
+  priority: Priority.optional(),
+  reason: z.string().max(500).optional(),
+});
+const party = (b: { patientId?: string | undefined; bookingParty?: unknown }) => !!(b.patientId || b.bookingParty);
+const BookBody = BookFields.extend({ reservationId: uuid }).refine(party, 'give patientId, bookingParty, or both');
+const OverbookBody = BookFields.extend({
+  staffId: uuid,
+  slotStart: z.iso.datetime({ offset: true }),
+  overbookReason: z.string().trim().min(3).max(500),
+}).refine(party, 'give patientId, bookingParty, or both');
+const FacilityParams = z.object({ facilityId: uuid });
 
 export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
   /** Loads an appointment and checks the permission for its facility (404 before 403). */
@@ -70,6 +78,28 @@ export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
     if (!facilityId) throw new DomainError('not_found', 'reservation not found');
     authorize(principalOf(request), 'appointments.book', facilityId);
     return reply.status(201).send(await bookAppointment(db, callerOf(request), body, idempotencyKey(request)));
+  });
+
+  app.post('/v1/appointments/overbook', async (request, reply) => {
+    const body = parse(OverbookBody, request.body);
+    const facilityId = await slotFacility(db, callerOf(request), body.staffId, new Date(body.slotStart));
+    if (!facilityId) throw new DomainError('not_found', 'slot not found');
+    authorize(principalOf(request), 'appointments.book', facilityId);
+    authorize(principalOf(request), 'appointments.overbook', facilityId);
+    return reply.status(201).send(await overbookAppointment(db, callerOf(request), { ...body, facilityId }, idempotencyKey(request)));
+  });
+
+  app.get('/v1/facilities/:facilityId/overbooking', async (request) => {
+    const { facilityId } = parse(FacilityParams, request.params);
+    authorize(principalOf(request), 'appointments.read', facilityId);
+    return getOverbooking(db, callerOf(request), facilityId);
+  });
+
+  app.put('/v1/facilities/:facilityId/overbooking', async (request) => {
+    const { facilityId } = parse(FacilityParams, request.params);
+    const body = parse(z.object({ enabled: z.boolean() }), request.body);
+    authorize(principalOf(request), 'config.manage', facilityId);
+    return setOverbooking(db, callerOf(request), { facilityId, enabled: body.enabled });
   });
 
   app.get('/v1/appointments', async (request) => {

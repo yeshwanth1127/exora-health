@@ -332,6 +332,82 @@ describe('weekly plan replacement (G07)', () => {
   });
 });
 
+describe('overbooking per clinic (phase 3)', () => {
+  const later = (days: number) => new Date(Date.parse(monday) + days * 86_400_000).toISOString().slice(0, 10);
+  const day = () => later(63); // a Monday: Branch 1 session 09:00–11:00, 15-minute slots
+  const now = () => ist(monday, '07:00');
+  let n = 0;
+  const party = () => ({ name: `Overbook ${++n}`, phone: `+9198100${String(n).padStart(5, '0')}` });
+  const book = async (time: string) => {
+    const hold = await call('POST', '/v1/holds', { token: tokens.frontDesk, idem: true, now: now(), body: { staffId: doctor, slotStart: ist(day(), time) } });
+    const booked = await call('POST', '/v1/appointments', { token: tokens.frontDesk, idem: true, now: now(), body: { reservationId: hold.body.reservationId, bookingParty: party(), originChannel: 'front_desk' } });
+    expect(booked.status).toBe(201);
+    return booked.body.appointmentId as string;
+  };
+  const overbook = (time: string, token = tokens.frontDesk, extra: object = {}) =>
+    call('POST', '/v1/appointments/overbook', {
+      token,
+      idem: true,
+      now: now(),
+      body: { staffId: doctor, slotStart: ist(day(), time), bookingParty: party(), originChannel: 'front_desk', overbookReason: 'Urgent review', ...extra },
+    });
+  const toggle = (enabled: boolean, token = tokens.branchAdmin, facilityId = t.facilityId) =>
+    call('PUT', `/v1/facilities/${facilityId}/overbooking`, { token, now: now(), body: { enabled } });
+
+  it('is off by default; only a clinic administrator can turn it on for their clinic', async () => {
+    await book('09:00');
+    expect(await overbook('09:00')).toMatchObject({ body: { error: { details: { reason: 'overbooking_disabled' } } } });
+    expect((await toggle(true, tokens.frontDesk)).status).toBe(403);
+    expect((await toggle(true, tokens.branchAdmin, facility2)).status).toBe(403);
+    expect(await toggle(true)).toMatchObject({ status: 200, body: { enabled: true, maxPerSession: 3 } });
+    expect((await call('GET', `/v1/facilities/${t.facilityId}/overbooking`, { token: tokens.frontDesk, now: now() })).body).toMatchObject({ enabled: true });
+    expect((await call('GET', `/v1/facilities/${facility2}/overbooking`, { now: now() })).body).toMatchObject({ enabled: false });
+    const { rows } = await admin.query(`SELECT count(*)::int AS n FROM platform.audit_event WHERE subject_type = 'platform.config_setting' AND tenant_id = $1`, [t.tenantId]);
+    expect(rows[0].n).toBe(1);
+  });
+
+  it('needs the overbook permission, a reason, and a taken, unblocked slot', async () => {
+    expect(await overbook('09:00', tokens.nurse)).toMatchObject({ status: 403, body: { error: { details: { permission: 'appointments.book' } } } });
+    expect(await overbook('09:00', tokens.bot)).toMatchObject({ status: 403, body: { error: { details: { permission: 'appointments.overbook' } } } });
+    expect((await overbook('09:00', tokens.frontDesk, { overbookReason: '' })).status).toBe(400);
+    expect(await overbook('09:15')).toMatchObject({ status: 409, body: { error: { details: { reason: 'slot_free' } } } });
+    await book('10:30');
+    expect((await call('POST', `/v1/practitioners/${doctor}/exceptions`, { body: { onDate: day(), kind: 'block', facilityId: t.facilityId, start: '10:30', end: '10:45' } })).status).toBe(201);
+    expect(await overbook('10:30')).toMatchObject({ status: 409, body: { error: { details: { reason: 'slot_blocked' } } } });
+  });
+
+  it('allows at most three per session, even under concurrency, and leaves double-booking protection intact', async () => {
+    await book('09:30');
+    const results = await Promise.all(['09:00', '09:00', '09:30', '09:30', '09:00'].map((time) => overbook(time)));
+    expect(results.map((r) => r.status).sort()).toEqual([201, 201, 201, 409, 409]);
+    expect(results.filter((r) => r.status === 409).every((r) => r.body.error.details.reason === 'overbook_limit')).toBe(true);
+    const made = results.filter((r) => r.status === 201).map((r) => r.body.appointmentId as string);
+
+    const read = await call('GET', `/v1/appointments/${made[0]}`, { token: tokens.frontDesk });
+    expect(read.body).toMatchObject({ status: 'confirmed', overbookReason: 'Urgent review', feeMinor: 50000 });
+    const { rows } = await admin.query(`SELECT reason FROM platform.audit_event WHERE subject_id = $1 AND action = 'create'`, [made[0]]);
+    expect(rows[0].reason).toBe('Overbooked: Urgent review');
+    // Normal holds still can't overlap a booked slot
+    expect(await call('POST', '/v1/holds', { token: tokens.frontDesk, idem: true, now: now(), body: { staffId: doctor, slotStart: ist(day(), '09:00') } })).toMatchObject({ status: 409 });
+
+    // Cancelling an overbook frees one place in the session
+    expect((await call('POST', `/v1/appointments/${made[0]}/cancel`, { token: tokens.frontDesk, body: { reason: 'Patient called' } })).status).toBe(200);
+    expect((await overbook('09:00')).status).toBe(201);
+    expect(await overbook('09:30')).toMatchObject({ status: 409, body: { error: { details: { reason: 'overbook_limit' } } } });
+  });
+
+  it('turning it off stops new overbooks', async () => {
+    const off = await call('PUT', `/v1/facilities/${t.facilityId}/overbooking`, { token: tokens.branchAdmin, now: ist(monday, '07:05'), body: { enabled: false } });
+    expect(off).toMatchObject({ status: 200, body: { enabled: false } });
+    expect(await toggle(true)).toMatchObject({ status: 409, body: { error: { details: { reason: 'concurrent_change' } } } }); // same instant as the first change
+    const late = await call('POST', '/v1/appointments/overbook', {
+      token: tokens.frontDesk, idem: true, now: ist(monday, '07:10'),
+      body: { staffId: doctor, slotStart: ist(day(), '09:30'), bookingParty: party(), originChannel: 'front_desk', overbookReason: 'Urgent review' },
+    });
+    expect(late).toMatchObject({ body: { error: { details: { reason: 'overbooking_disabled' } } } });
+  });
+});
+
 describe('validation', () => {
   it('rejects bad input with 400 and the field issues', async () => {
     const res = await call('POST', '/v1/patients', { token: tokens.frontDesk, idem: true, body: { givenName: '', sex: 'x', registeredFacilityId: 'nope', source: 'front_desk' } });

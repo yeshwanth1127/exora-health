@@ -101,6 +101,7 @@ export function scheduleAppointment(
     starts_at: a.startsAt,
     ends_at: a.endsAt,
     consultation_type: a.visitMode,
+    overbooking_reason: a.overbookReason,
     doctor: { id: a.practitionerStaffId, name: a.practitionerName },
     branch: {
       id: facility.facilityId,

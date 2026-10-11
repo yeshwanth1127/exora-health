@@ -28,6 +28,7 @@ INSERT INTO platform.permission (code, module_code, description, is_sensitive) V
   ('appointments.book',      'booking',  'Book appointments',                                   false),
   ('appointments.reschedule','booking',  'Reschedule appointments',                             false),
   ('appointments.cancel',    'booking',  'Cancel appointments',                                 false),
+  ('appointments.overbook',  'booking',  'Overbook a taken slot where the clinic allows it',    false),
   ('appointments.check_in',  'booking',  'Check patients in',                                   false),
   ('schedules.manage',       'booking',  'Edit schedules, exceptions and day plans',            false),
   ('queue.manage',           'booking',  'Issue, call and skip queue tokens',                   false),

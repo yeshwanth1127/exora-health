@@ -71,8 +71,11 @@ export function ScheduleRangeActions({
     [end, setEnd] = useState(timeValue(range.end)),
     [branch, setBranch] = useState(range.branch),
     [mode, setMode] = useState(range.mode ?? "in_person"),
+    bookCapability = range.overbook
+      ? "appointments.overbook"
+      : "appointments.create",
     [action, setAction] = useState(() =>
-      permissions.can("appointments.create")
+      permissions.can(bookCapability)
         ? "book"
         : permissions.can("schedule.block")
           ? "block"
@@ -244,7 +247,7 @@ export function ScheduleRangeActions({
             aria-label="Time range action"
           >
             {[
-              ["book", "Appointment", CalendarPlus, "appointments.create"],
+              ["book", "Appointment", CalendarPlus, bookCapability],
               ["block", "Block time", LockKeyhole, "schedule.block"],
               ["open", "Open time", Plus, "schedules.manage"],
             ].map(([key, title, Icon, capability]) => {
@@ -265,7 +268,7 @@ export function ScheduleRangeActions({
             })}
           </div>
           <div key={`${action}:${branch}:${mode}`}>
-            {action === "book" && permissions.can("appointments.create") && (
+            {action === "book" && permissions.can(bookCapability) && (
               <BookRange {...context} />
             )}
             {valid &&
@@ -494,7 +497,7 @@ function BookRange({
   const [name, setName] = useState(""),
     [phone, setPhone] = useState(""),
     [reason, setReason] = useState(""),
-    [notes, setNotes] = useState(""),
+    [overbookReason, setOverbookReason] = useState(""),
     [error, setError] = useState<{ key: string; message: string } | null>(null);
   const draftKey = JSON.stringify([
     range.doctor.id,
@@ -506,7 +509,7 @@ function BookRange({
     name,
     phone,
     reason,
-    notes,
+    overbookReason,
   ]);
   const visibleError = error?.key === draftKey ? error.message : "";
   const operation = useRef({ signature: "", key: "" });
@@ -544,9 +547,11 @@ function BookRange({
         </Button>
       ) : valid && check.fresh && check.data ? (
         <p className="text-sm text-muted-foreground">
-          {check.data.overlapping_bookings
-            ? `${check.data.overlapping_bookings} appointments overlap this range. Reception will coordinate the visits.`
-            : "This time is available. We check it again when you save."}
+          {range.overbook && !check.data.overlapping_bookings
+            ? "This time is free now. Book it from Booking instead."
+            : check.data.overlapping_bookings
+              ? `${check.data.overlapping_bookings} appointments overlap this range. Reception will coordinate the visits.`
+              : "This time is available. We check it again when you save."}
         </p>
       ) : null}
       <Field
@@ -599,14 +604,26 @@ function BookRange({
           onChange={(e) => setReason(e.target.value)}
         />
       </Field>
-      <Field label="Staff notes · optional" id="timeline-staff-notes">
-        <Textarea
-          id="timeline-staff-notes"
-          maxLength={2000}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        />
-      </Field>
+      {range.overbook && (
+        <Field
+          label="Reason for the extra appointment"
+          id="timeline-overbook-reason"
+          error={
+            overbookReason.trim().length < 3
+              ? "Enter a reason with at least 3 characters."
+              : undefined
+          }
+          hint="At most 3 extra appointments per doctor session. The reason is recorded with the booking."
+        >
+          <Textarea
+            id="timeline-overbook-reason"
+            aria-invalid={overbookReason.trim().length < 3}
+            maxLength={500}
+            value={overbookReason}
+            onChange={(e) => setOverbookReason(e.target.value)}
+          />
+        </Field>
+      )}
       {visibleError && (
         <Alert variant="destructive">
           <AlertDescription>{visibleError}</AlertDescription>
@@ -627,7 +644,10 @@ function BookRange({
           !check.data ||
           !check.fresh ||
           name.trim().length < 2 ||
-          !validPhone
+          !validPhone ||
+          (!!range.overbook &&
+            (!check.data.overlapping_bookings ||
+              overbookReason.trim().length < 3))
         }
         run={async () => {
           const body = {
@@ -639,7 +659,9 @@ function BookRange({
             patient_name: name.trim(),
             patient_phone: normalizedPhone,
             reason: reason.trim() || null,
-            staff_notes: notes.trim() || null,
+            ...(range.overbook
+              ? { overbook: true, overbook_reason: overbookReason.trim() }
+              : {}),
           };
           const signature = JSON.stringify(body);
           if (operation.current.signature !== signature)
@@ -664,7 +686,7 @@ function BookRange({
         }}
         success="Appointment booked"
       >
-        Book appointment
+        {range.overbook ? "Add extra appointment" : "Book appointment"}
       </Action>
     </div>
   );

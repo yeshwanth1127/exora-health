@@ -171,6 +171,7 @@ export interface BookingReservation {
   hold_expires_at: Timestamp | null;
   id: Generated<string>;
   idempotency_key: string | null;
+  overbook_reason: string | null;
   owner_id: string | null;
   owner_type: string | null;
   period: string;
