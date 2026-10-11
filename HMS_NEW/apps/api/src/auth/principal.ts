@@ -19,9 +19,18 @@ export interface Principal {
 export const forbidden = (message: string, details?: Record<string, unknown>) => new DomainError('forbidden', message, details);
 
 export async function resolvePrincipal(db: Kysely<DB>, identity: Identity, requestedTenantId: string | undefined): Promise<Principal> {
-  const { rows: accounts } = await sql<{ tenant_id: string; user_account_id: string; staff_id: string | null; patient_id: string | null; status: string }>`
-    SELECT * FROM platform.accounts_for_identity(${identity.issuer}, ${identity.subject})`.execute(db);
-  const active = accounts.filter((a) => a.status === 'active');
+  const lookup = async () =>
+    (
+      await sql<{ tenant_id: string; user_account_id: string; staff_id: string | null; patient_id: string | null; status: string }>`
+        SELECT * FROM platform.accounts_for_identity(${identity.issuer}, ${identity.subject})`.execute(db)
+    ).rows.filter((a) => a.status === 'active');
+  let active = await lookup();
+  // First sign-in after a staff invite: link open invites for this verified email, then look again.
+  if (identity.verifiedEmail && (!active.length || (requestedTenantId && !active.some((a) => a.tenant_id === requestedTenantId)))) {
+    const { rows } = await sql<{ linked: number }>`
+      SELECT platform.link_staff_invites(${identity.issuer}, ${identity.subject}, ${identity.verifiedEmail}) AS linked`.execute(db);
+    if (rows[0]!.linked > 0) active = await lookup();
+  }
   if (!active.length) throw forbidden('no active account for this identity');
 
   let account = active[0]!;

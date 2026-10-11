@@ -31,7 +31,7 @@ export interface ServerDeps {
    * Development only: enables POST /dev/login, which signs a token for a seeded identity so a local
    * front-end can sign in without an identity provider. Never set in production.
    */
-  devLogin?: (subject: string) => Promise<string>;
+  devLogin?: (subject: string, email?: string) => Promise<string>;
   /** Virtual OPD settings (Jitsi signing, join window); defaults to the environment's. */
   telehealth?: TelehealthSettings;
 }
@@ -102,9 +102,9 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   if (deps.devLogin) {
     const devLogin = deps.devLogin;
     app.post('/dev/login', async (request) => {
-      const { subject } = parse(z.object({ subject: z.string().trim().min(1).max(100) }), request.body);
-      // The token is only useful if the subject has an account; /v1/me will say who it is.
-      return { token: await devLogin(subject), tokenType: 'Bearer', note: 'development login — disabled outside AUTH_MODE=dev' };
+      const { subject, email } = parse(z.object({ subject: z.string().trim().min(1).max(100), email: z.email().optional() }), request.body);
+      // The token is only useful if the subject has an account (or `email` has an open staff invite); /v1/me says who it is.
+      return { token: await devLogin(subject, email), tokenType: 'Bearer', note: 'development login — disabled outside AUTH_MODE=dev' };
     });
   }
 

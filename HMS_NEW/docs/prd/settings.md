@@ -66,7 +66,9 @@ No new permissions. `staff.manage` and `access.manage` are already seeded, and o
 ## Rules (security)
 
 - **No escalation.** You can grant a role at a clinic only if you yourself hold every permission in that role at that clinic, or at every clinic for an every-clinic grant. A Branch 1 administrator can't create an every-clinic administrator.
-- **No lockout.** You can't revoke your own `access.manage` grant or deactivate yourself. The last active every-clinic `access.manage` holder in the tenant can't be revoked or deactivated.
+  - The one exception is emergency chart access (`break_glass.use`). Whoever reviews its use at that clinic (`break_glass.review`) may grant it without holding it. Otherwise no administrator could set up a doctor, because the built-in Administrator role deliberately lacks it.
+  - Nobody grants roles to themselves.
+- **No lockout.** You can't revoke your own `access.manage` grant or deactivate yourself. The last active every-clinic `access.manage` holder in the tenant can't be revoked or deactivated. Access changes in a tenant run one at a time (transaction advisory lock), so two administrators can't remove each other at the same moment.
 - **System and integration accounts** (`is_system_account`, the `booking_agent` role) are not listed, granted or changed here.
 - **Email linking:**
   - An invite links only when the sign-in token carries the same email **and** `email_verified: true`, from the one configured issuer.

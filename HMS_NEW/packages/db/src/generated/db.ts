@@ -1413,8 +1413,8 @@ export interface PlatformUserAccount {
   email: string | null;
   failed_login_count: Generated<number>;
   id: Generated<string>;
-  identity_issuer: string;
-  identity_subject: string;
+  identity_issuer: string | null;
+  identity_subject: string | null;
   last_login_at: Timestamp | null;
   mfa_enrolled: Generated<boolean>;
   patient_id: string | null;

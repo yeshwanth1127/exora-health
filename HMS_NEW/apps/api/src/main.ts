@@ -14,7 +14,7 @@ const app = buildServer({
   logger: true,
   corsOrigins: config.corsOrigins,
   telehealth: config.telehealth,
-  ...(config.auth.mode === 'dev' ? { devLogin: (subject: string) => signDevToken(subject, { secret: (config.auth as { secret: string }).secret }) } : {}),
+  ...(config.auth.mode === 'dev' ? { devLogin: (subject: string, email?: string) => signDevToken(subject, { secret: (config.auth as { secret: string }).secret, email: email ?? '' }) } : {}),
 });
 
 const shutdown = async (signal: string) => {
