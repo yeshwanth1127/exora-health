@@ -64,17 +64,39 @@ Each endpoint needs one permission, checked **for the facility involved** (a rol
 | `GET /v1/me` | any | Caller, tenant, permissions |
 
 ### Directory
+Edits name the row `version` they were made from; a newer row returns 409 `stale_version`. Switching something off is refused (409) while it is still in use (`in_use`, `future_appointments`, `published_hours`, `last_facility`).
+
 | Method & path | Permission | Purpose |
 |---|---|---|
-| `GET /v1/facilities` | `catalog.read` | Active facilities |
+| `GET /v1/facilities?includeInactive` | `catalog.read` | Facilities (inactive ones only for `facility.manage` holders) |
+| `GET /v1/facilities/:id` | `catalog.read` @ facility | Full details: address, phone, email, directions link, arrival instructions, version |
+| `POST /v1/facilities` 🔑 | `facility.manage` @ every facility | Open a clinic (code fixed afterwards) |
+| `PATCH /v1/facilities/:id` | `facility.manage` @ facility | Edit details or switch on/off |
+| `GET /v1/facilities/:id/directory?includeInactive` | `catalog.read` @ facility | Departments, services, consult rooms (inactive rows for managers) |
+| `POST /v1/facilities/:id/departments` 🔑 · `PATCH /v1/departments/:id` | `facility.manage` @ facility | Departments |
+| `POST /v1/facilities/:id/consult-rooms` 🔑 · `PATCH /v1/consult-rooms/:id` | `facility.manage` @ facility | Consult rooms |
+| `POST /v1/departments/:id/services` 🔑 · `PATCH /v1/healthcare-services/:id` | `catalog.manage` @ facility (+ `pricing.manage` for an opening fee) | Bookable services and their billing item |
+| `PUT /v1/healthcare-services/:id/fee` | `pricing.manage` @ facility | Default fee (`mode`, `feeMinor` or null, `effectiveFrom`) |
+| `GET /v1/facilities/:id/price-book?on` | `catalog.read` @ facility | Service and doctor fees in force on/after a date |
+| `GET /v1/specialties` | `catalog.read` | Reference specialties |
 | `GET /v1/practitioners?facilityId&specialty` | `catalog.read` | Doctors with current affiliations |
+| `GET /v1/practitioners/:staffId/profile?facilityId` | `catalog.read` @ facility | Profile, all affiliations, calendar, contact, versions |
+| `PUT /v1/practitioners/:staffId/profile` | `catalog.manage` @ every facility the doctor works at | Booking profile (specialty, qualifications, languages, video visits, public page) |
+| `POST /v1/practitioners/:staffId/affiliations` 🔑 | `catalog.manage` @ facility | Add the doctor to a department |
+| `POST /v1/practitioner-affiliations/:id/end` | `catalog.manage` @ facility | Stop working there from a date (needs no booked visits or weekly hours left) |
+| `GET /v1/practitioners/:staffId/fees?facilityId&on` | `catalog.read` @ facility | Fee quote for the next two weeks of sessions, as booking prices it |
+| `PUT /v1/practitioners/:staffId/fees` | `pricing.manage` @ the service's facility | Doctor's own fee; `feeMinor: null` returns to the service fee |
+| `PATCH /v1/staff/:staffId` | `staff.manage` @ every facility they hold a grant at | Display name, phone |
+
+Fee changes publish a new version of the default cash price list (active lists are frozen); appointments keep their fee snapshot and price item.
 
 ### Patients
 | Method & path | Permission | Purpose |
 |---|---|---|
 | `POST /v1/patients` 🔑 | `patients.register` @ `registeredFacilityId` | Register; returns `patientId`, `mrn` |
 | `GET /v1/patients?q|phone|abhaNumber` | `patients.read` | Search (name typo-tolerant, MRN, phone, ABHA) |
-| `GET /v1/patients/:patientId` | `patients.read` | Patient with identifiers and contacts |
+| `GET /v1/patients/:patientId` | `patients.read` | Patient with identifiers, contacts, home address and `version` |
+| `PATCH /v1/patients/:patientId` | `patients.update` | Demographics, primary phone/email, home address (earlier contacts are ended, not overwritten); `version` required |
 
 ### Doctor calendars
 | Method & path | Permission | Purpose |
@@ -84,6 +106,7 @@ Each endpoint needs one permission, checked **for the facility involved** (a rol
 | `POST /v1/weekly-sessions/:id/end` | `schedules.manage` | End a weekly session from a date |
 | `POST /v1/practitioners/:staffId/exceptions` | `schedules.manage` | Leave (`closed`), `block`, `extra_hours`; returns clashing appointments |
 | `POST /v1/facilities/:facilityId/holidays` | `schedules.manage` @ facility | Facility holiday; returns clashing appointments |
+| `PUT /v1/practitioners/:staffId/weekly-plan` (`POST …/preview`) | `schedules.manage` @ facility | Replace weekly hours; optional `healthcareServiceId`/`consultLocationId` (default: as replaced, else the clinic's one matching service) |
 | `PUT /v1/practitioners/:staffId/day-plans/:date` | `schedules.manage` @ each block's facility | One-day plan (new revision) |
 | `GET /v1/practitioners/:staffId/sessions?from&to` | `appointments.read` | Effective sessions per day |
 | `GET /v1/practitioners/:staffId/slots?from&to&facilityId&includeUnavailable` | `appointments.read` | Bookable slots (≤ 31 days) |
@@ -101,6 +124,18 @@ Each endpoint needs one permission, checked **for the facility involved** (a rol
 | `POST /v1/appointments/:id/no-show` | `appointments.check_in` @ facility | After the slot ends |
 | `POST /v1/appointments/:id/check-in` 🔑 | `appointments.check_in` @ facility | On the day; links `patientId` if needed; issues a token |
 | `POST /v1/walk-ins` 🔑 | `appointments.check_in` @ facility | Walk-in straight into today's queue (capacity-limited) |
+
+### Workspace administration
+| Method & path | Permission | Purpose |
+|---|---|---|
+| `GET /v1/staff-accounts?facilityId` | `access.manage` @ facility | Staff with access there, their grants and versions |
+| `POST /v1/staff-accounts` 🔑 | `staff.manage` + `access.manage` @ scope | Invite by work email with a first role |
+| `POST /v1/staff/:id/grants` 🔑 · `POST /v1/role-grants/:id/revoke` | `access.manage` @ scope | Give or remove a role (reason required to remove) |
+| `POST /v1/staff/:id/status` | `staff.manage` @ every facility they work at | Deactivate or reactivate |
+| `GET /v1/roles` · `POST /v1/roles` 🔑 | `access.manage` (copy: @ every facility) | Roles and permissions; copy a role |
+| `PUT /v1/roles/:id/permissions/:code` | `access.manage` @ every facility | Switch a permission on a copied role |
+| `POST /v1/roles/:id/retire` | `access.manage` @ every facility | Retire a copied role nobody holds |
+| `GET /v1/audit-events` · `POST /v1/audit-events/export` | `audit.read` @ every facility | Activity log and audited CSV export |
 
 ### Queue
 | Method & path | Permission | Purpose |

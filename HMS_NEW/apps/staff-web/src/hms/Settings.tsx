@@ -18,6 +18,8 @@ type StaffAccount = {
   staffType: string;
   status: string;
   email: string | null;
+  phone: string | null;
+  version: number;
   account: { status: string; linked: boolean } | null;
   grants: { grantId: string; roleName: string; facilityName: string | null }[];
 };
@@ -31,6 +33,8 @@ const paths = {
   grants: new RegExp(`^/api/v1/staff/users/${uuid}/grants$`, "i"),
   status: new RegExp(`^/api/v1/staff/users/${uuid}/status$`, "i"),
   revoke: new RegExp(`^/api/v1/staff/grants/${uuid}/revoke$`, "i"),
+  user: new RegExp(`^/api/v1/staff/users/${uuid}$`, "i"),
+  retire: new RegExp(`^/api/v1/staff/roles/${uuid}/retire$`, "i"),
   permission: new RegExp(`^/api/v1/staff/roles/${uuid}/permissions/([a-z_]+(?:\\.[a-z_]+)+)$`, "i"),
 };
 const titleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replaceAll("_", " ");
@@ -49,6 +53,7 @@ export function SettingsPage() {
           "staff.view": can(me, "access.manage", at),
           "staff.create": can(me, "access.manage", at) && can(me, "staff.manage", at),
           "staff.status": can(me, "staff.manage", at),
+          "staff.edit": can(me, "staff.manage", at),
           "access.everywhere": everywhere,
           "booking.policy": can(me, "config.manage", at),
         },
@@ -63,6 +68,8 @@ export function SettingsPage() {
             name: s.displayName,
             employee_no: s.employeeNo,
             email: s.email,
+            phone: s.phone,
+            version: s.version,
             staff_type: s.staffType,
             status: s.status !== "active" ? "disabled" : !s.account ? "no_login" : s.account.linked ? "active" : "invited",
             is_you: s.staffId === me.staffId,
@@ -90,7 +97,14 @@ export function SettingsPage() {
         let m: RegExpExecArray | null;
         if (options.method === "PUT" && (m = paths.permission.exec(path)))
           return request<T>(`/v1/roles/${m[1]}/permissions/${m[2]}`, { method: "PUT", body: { allowed: b.allowed === true } });
+        if (options.method === "PATCH" && (m = paths.user.exec(path)))
+          return request<T>(`/v1/staff/${m[1]}`, {
+            method: "PATCH",
+            body: { version: b.version, displayName: b.name, phone: b.phone ? b.phone : null },
+          });
         if (options.method !== "POST") throw new Error("Not available on this page.");
+        if ((m = paths.retire.exec(path)))
+          return request<T>(`/v1/roles/${m[1]}/retire`, { method: "POST", body: { reason: b.reason } });
         if (path === "/api/v1/staff/users")
           return request<T>("/v1/staff-accounts", {
             method: "POST",

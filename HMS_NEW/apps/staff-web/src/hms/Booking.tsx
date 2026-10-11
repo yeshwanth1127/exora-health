@@ -20,14 +20,21 @@ export function Booking({
 }) {
   const { facility, practitioners, can } = useWorkspace(),
     cmd = useCommand();
-  const [staffId, setStaffId] = useState(
-      move?.practitionerStaffId ?? practitioners[0]?.staffId ?? "",
-    ),
+  const bookable = practitioners.filter((p) => p.calendarId);
+  const [chosen, setStaffId] = useState(move?.practitionerStaffId ?? ""),
     [date, setDate] = useState(move?.sessionOn ?? today(facility.timezone));
+  // The doctor list loads after the sheet can open, so the first bookable doctor is the default once known.
+  const staffId = chosen || bookable[0]?.staffId || "";
   const [patient, setPatient] = useState<Patient | null>(null),
     [register, setRegister] = useState(false),
+    // A phone caller can be booked before they are registered; the desk links the patient at check-in.
+    [caller, setCaller] = useState(false),
+    [callerName, setCallerName] = useState(""),
+    [callerPhone, setCallerPhone] = useState(""),
     [hold, setHold] = useState<Hold | null>(null),
     [reason, setReason] = useState("");
+  const callerReady = caller && callerName.trim().length > 0 && /^\+[1-9][0-9]{7,14}$/.test(callerPhone);
+  const who = !!move || !!patient || callerReady;
   const [clock, setClock] = useState(() => Date.now()),
     [result, setResult] = useState<BookingResult | null>(null);
   useUnsaved(cmd.unknown);
@@ -99,14 +106,35 @@ export function Booking({
             Change patient
           </Button>
         </div>
+      ) : caller ? (
+        <div className="space-y-3 border rounded-lg p-4">
+          <p className="text-sm font-medium">Caller (not registered yet)</p>
+          <Field title="Caller's name" id="caller-name">
+            <Input id="caller-name" value={callerName} maxLength={100} disabled={!!hold || cmd.busy} onChange={(e) => setCallerName(e.target.value)} />
+          </Field>
+          <Field title="Caller's phone (with country code)" id="caller-phone">
+            <Input id="caller-phone" type="tel" placeholder="+919876543210" value={callerPhone} disabled={!!hold || cmd.busy} onChange={(e) => setCallerPhone(e.target.value.trim())} />
+          </Field>
+          <p className="text-xs text-muted-foreground">
+            The patient is registered and linked when they arrive, before check-in.
+          </p>
+          <Button variant="ghost" disabled={!!hold || cmd.busy} onClick={() => setCaller(false)}>
+            Find a registered patient instead
+          </Button>
+        </div>
       ) : (
         <>
           <PatientLookup onSelect={setPatient} />
-          {can("patients.register") && (
-            <Button variant="ghost" onClick={() => setRegister((v) => !v)}>
-              {register ? "Back to search" : "Register a new patient"}
+          <div className="flex flex-wrap gap-2">
+            {can("patients.register") && (
+              <Button variant="ghost" onClick={() => setRegister((v) => !v)}>
+                {register ? "Back to search" : "Register a new patient"}
+              </Button>
+            )}
+            <Button variant="ghost" onClick={() => setCaller(true)}>
+              Book for a caller who isn't registered
             </Button>
-          )}
+          </div>
           {register && (
             <RegisterPatient
               onCreated={(p) => {
@@ -123,11 +151,15 @@ export function Booking({
           value={staffId}
           onChange={setStaffId}
           disabled={!!hold || cmd.busy}
-          options={practitioners
-            .filter((p) => p.calendarId)
-            .map((p) => ({ value: p.staffId, label: p.name }))}
+          options={bookable.map((p) => ({ value: p.staffId, label: p.name }))}
         />
       </Field>
+      {!bookable.length && (
+        <Hint>
+          No doctor here has a calendar yet. Set one up on the Doctors page, then give them weekly hours in
+          Schedules.
+        </Hint>
+      )}
       <Field title="Date" id="booking-date">
         <Input
           id="booking-date"
@@ -166,7 +198,7 @@ export function Booking({
                 <Button
                   key={s.slotStart}
                   variant="outline"
-                  disabled={cmd.busy || (!move && !patient)}
+                  disabled={cmd.busy || !who}
                   className="h-auto py-3 flex-col"
                   onClick={async () => {
                     const value = await cmd.run<Hold>(
@@ -188,7 +220,11 @@ export function Booking({
               ))}
           </div>
           {slots.data?.items.filter((s) => s.status === "free").length ===
-            0 && <Empty>No bookable slots on this day.</Empty>}
+            0 && (
+            <Empty>
+              No bookable slots on this day. Try another date, or check the doctor's weekly hours in Schedules.
+            </Empty>
+          )}
         </LoadingState>
       )}
       <Field
@@ -209,7 +245,7 @@ export function Booking({
       </p>
       <ErrorMessage text={cmd.error} />
       <Button
-        disabled={cmd.busy || !hold || seconds === 0 || (!move && !patient)}
+        disabled={cmd.busy || !hold || seconds === 0 || !who}
         onClick={async () => {
           if (!hold) return;
           const path = move
@@ -222,7 +258,9 @@ export function Booking({
               }
             : {
                 reservationId: hold.reservationId,
-                patientId: patient!.patientId,
+                ...(patient
+                  ? { patientId: patient.patientId }
+                  : { bookingParty: { name: callerName.trim(), phone: callerPhone } }),
                 originChannel: "front_desk",
                 ...(reason ? { reason } : {}),
               };

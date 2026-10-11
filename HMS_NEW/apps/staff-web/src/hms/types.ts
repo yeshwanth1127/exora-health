@@ -13,6 +13,103 @@ export type Facility = {
   city: string | null;
   timezone: string;
   facilityType: string;
+  status?: string;
+};
+export type FacilityDetail = {
+  facilityId: string;
+  code: string;
+  name: string;
+  facilityType: string;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  district: string | null;
+  pincode: string | null;
+  stateCode: string;
+  phone: string | null;
+  email: string | null;
+  timezone: string;
+  directionsUrl: string | null;
+  arrivalInstructions: string | null;
+  status: string;
+  version: number;
+};
+export type Department = {
+  departmentId: string;
+  code: string;
+  name: string;
+  kind: string;
+  specialty: string | null;
+  specialtyName: string | null;
+  status: string;
+  version: number;
+};
+export type HealthcareService = {
+  healthcareServiceId: string;
+  code: string;
+  name: string;
+  departmentId: string;
+  serviceMode: "in_person" | "virtual" | "both";
+  defaultDurationMin: number;
+  isPublic: boolean;
+  status: string;
+  version: number;
+};
+export type ConsultRoom = {
+  locationId: string;
+  code: string;
+  name: string;
+  departmentId: string | null;
+  status: string;
+  version: number;
+};
+export type ClinicDirectory = {
+  facilityId: string;
+  departments: Department[];
+  services: HealthcareService[];
+  consultRooms: ConsultRoom[];
+};
+export type PriceMode = "in_person" | "virtual" | "any";
+export type PriceBookItem = {
+  healthcareServiceId: string;
+  staffId: string | null;
+  mode: PriceMode;
+  feeMinor: number;
+  validFrom: string;
+  validTo: string | null;
+};
+export type Specialty = { code: string; name: string };
+export type PractitionerDetail = {
+  staffId: string;
+  displayName: string;
+  staffType: string;
+  status: string;
+  phone: string | null;
+  email: string | null;
+  staffVersion: number;
+  calendarId: string | null;
+  profile: {
+    specialty: string | null;
+    specialtyName: string | null;
+    qualifications: string[];
+    bio: string | null;
+    experienceYears: number | null;
+    languages: string[];
+    acceptsVirtual: boolean;
+    publicSlug: string | null;
+    published: boolean;
+    version: number;
+  } | null;
+  affiliations: {
+    affiliationId: string;
+    facilityId: string;
+    facilityName: string;
+    departmentId: string;
+    departmentName: string;
+    roleTitle: string | null;
+    validFrom: string;
+    validTo: string | null;
+  }[];
 };
 export type Practitioner = {
   staffId: string;
@@ -40,8 +137,22 @@ export type PatientDetail = {
   familyName: string | null;
   sex: string;
   birthDate: string | null;
+  birthDateEstimated?: boolean;
+  preferredLanguage?: string | null;
+  bloodGroup?: string | null;
+  maritalStatus?: string | null;
+  occupation?: string | null;
   status: string;
+  version: number;
   contacts: { kind: string; value: string; is_primary: boolean }[];
+  address: {
+    line1: string | null;
+    line2: string | null;
+    city: string | null;
+    district: string | null;
+    stateCode: string | null;
+    pincode: string | null;
+  } | null;
 };
 export type Appointment = {
   appointmentId: string;

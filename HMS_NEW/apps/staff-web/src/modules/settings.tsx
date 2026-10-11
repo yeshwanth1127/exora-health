@@ -698,6 +698,8 @@ type StaffRow = {
   status: "active" | "invited" | "disabled" | "no_login";
   is_you: boolean;
   grants: { id: string; role: string; clinic: string }[];
+  phone?: string | null;
+  version?: number;
 };
 type RoleRow = {
   id: string;
@@ -720,6 +722,7 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
     canView = permissions.can("staff.view"),
     canCreate = permissions.can("staff.create"),
     canStatus = permissions.can("staff.status"),
+    canEdit = permissions.can("staff.edit"),
     everywhere = permissions.can("access.everywhere");
   const users = useResource<StaffRow[]>(canView ? "/api/v1/staff/users" : null),
     roles = useResource<{ roles: RoleRow[]; permissions: PermissionRow[] }>(canView ? "/api/v1/staff/roles" : null);
@@ -741,6 +744,9 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
     [roleId, setRoleId] = useState(""),
     [copying, setCopying] = useState(false),
     [copyName, setCopyName] = useState(""),
+    [retiring, setRetiring] = useState(false),
+    [retireReason, setRetireReason] = useState(""),
+    [details, setDetails] = useState({ name: "", phone: "" }),
     [error, setError] = useState("");
   const set = (k: keyof typeof blank) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
   const roleOptions = (roles.data?.roles ?? []).map((r): [string, string] => [r.id, r.name]);
@@ -861,6 +867,7 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
                           size="sm"
                           onClick={() => {
                             setPerson(u);
+                            setDetails({ name: u.name, phone: u.phone ?? "" });
                             setReason("");
                             setGrantRoleId("");
                             setGrantScope("here");
@@ -898,6 +905,17 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
                       }}
                     >
                       Make a copy
+                    </Button>
+                  )}
+                  {everywhere && role && !role.built_in && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setRetireReason("");
+                        setRetiring(true);
+                      }}
+                    >
+                      Retire role
                     </Button>
                   )}
                 </div>
@@ -1034,6 +1052,55 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
                 : "Changes apply on their next action and are recorded with your reason."}
             </DialogDescription>
           </DialogHeader>
+          {canEdit && person && person.version !== undefined && (
+            <div className="space-y-3 border-b pb-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field
+                  label="Full name"
+                  id="staff-edit-name"
+                  error={details.name.trim().length < 2 ? "Enter a full name with at least 2 characters." : undefined}
+                >
+                  <Input
+                    id="staff-edit-name"
+                    value={details.name}
+                    maxLength={100}
+                    onChange={(e) => setDetails((d) => ({ ...d, name: e.target.value }))}
+                  />
+                </Field>
+                <Field
+                  label="Work phone"
+                  id="staff-edit-phone"
+                  error={details.phone && !/^\+[1-9][0-9]{7,14}$/.test(details.phone) ? "Use the international format, e.g. +919876543210." : undefined}
+                >
+                  <Input
+                    id="staff-edit-phone"
+                    type="tel"
+                    value={details.phone}
+                    placeholder="+919876543210"
+                    onChange={(e) => setDetails((d) => ({ ...d, phone: e.target.value.trim() }))}
+                  />
+                </Field>
+              </div>
+              <Action
+                variant="outline"
+                disabled={
+                  details.name.trim().length < 2 ||
+                  (!!details.phone && !/^\+[1-9][0-9]{7,14}$/.test(details.phone)) ||
+                  (details.name.trim() === person.name && details.phone === (person.phone ?? ""))
+                }
+                run={async () => {
+                  await call(`/api/v1/staff/users/${person.id}`, {
+                    method: "PATCH",
+                    body: { version: person.version, name: details.name.trim(), phone: details.phone },
+                  });
+                  refreshPerson(person.id);
+                }}
+                success="Details saved"
+              >
+                Save name and phone
+              </Action>
+            </div>
+          )}
           <div className="space-y-3">
             {person?.grants.map((g) => (
               <div key={g.id} className="flex items-center justify-between gap-3 border-b pb-2 text-sm">
@@ -1141,6 +1208,33 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
             success="Role copied"
           >
             Make a copy
+          </Action>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={retiring} onOpenChange={setRetiring}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Retire {role?.name}</DialogTitle>
+            <DialogDescription>
+              Nobody can be given this role afterwards. Remove it from everyone who holds it first; the change is
+              recorded in the activity log.
+            </DialogDescription>
+          </DialogHeader>
+          <Field label="Reason" id="retire-reason" error={retireReason.trim().length < 3 ? "Give a reason." : undefined}>
+            <Input id="retire-reason" value={retireReason} maxLength={500} onChange={(e) => setRetireReason(e.target.value)} />
+          </Field>
+          <Action
+            variant="destructive"
+            disabled={retireReason.trim().length < 3}
+            run={async () => {
+              await call(`/api/v1/staff/roles/${role!.id}/retire`, { method: "POST", body: { reason: retireReason.trim() } });
+              setRetiring(false);
+              setRoleId("");
+              roles.refresh();
+            }}
+            success="Role retired"
+          >
+            Retire role
           </Action>
         </DialogContent>
       </Dialog>

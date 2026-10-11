@@ -14,6 +14,8 @@ export type Workspace = {
   facility: Facility;
   practitioners: Practitioner[];
   go: (page: string) => void;
+  /** Loads the clinic's doctors again (after a doctor is added, edited or leaves). */
+  reloadPractitioners?: () => void;
 };
 export const WorkspaceContext = createContext<Workspace | null>(null);
 export function useWorkspace() {
@@ -119,6 +121,7 @@ export function useQuery<T>(path: string | null, pollMs = 0) {
 export function useCommand() {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
+    [failure, setFailure] = useState<HmsError | null>(null),
     [unknown, setUnknown] = useState(false);
   const keys = useRef(new IntentKeys()),
     inFlight = useRef(false),
@@ -140,6 +143,7 @@ export function useCommand() {
     inFlight.current = true;
     setBusy(true);
     setError("");
+    setFailure(null);
     try {
       const result = await request<T>(path, {
         method,
@@ -154,6 +158,7 @@ export function useCommand() {
         unknown || (e instanceof HmsError && e.code === "outcome_unknown");
       setUnknown(uncertain);
       uncertainIntent.current = uncertain ? fingerprint : "";
+      setFailure(e instanceof HmsError ? e : null);
       setError(
         e instanceof Error ? e.message : "The change could not be saved.",
       );
@@ -167,10 +172,13 @@ export function useCommand() {
     run,
     busy,
     error,
+    /** The last refusal, for reacting to its code (e.g. a stale version). */
+    failure,
     unknown,
     reconciled: () => {
       setUnknown(false);
       setError("");
+      setFailure(null);
     },
   };
 }

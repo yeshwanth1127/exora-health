@@ -29,8 +29,8 @@ The original current source is `/Users/deepakonda/.codex/worktrees/hms-monochrom
 | UI-appointments-02 | Appointments | Doctor/clinic/status filters and patient detail sheet | partial connected | G03; G09; G10; G19 |
 | UI-appointments-03 | Appointments | Reasoned cancellation/no-show and patient-contact readback | partial connected | G03; G09; G10; G19 |
 | UI-appointments-04 | Appointments | Administrative staff notes, exact-time moves and archive/delete policy | partial connected | G03; G09; G10; G19 |
-| UI-doctors-01 | Doctors | Specialties and clinic affiliations in the directory | restored read or local draft | G13; G14 |
-| UI-doctors-02 | Doctors | Consultation fee, active-in-booking and virtual-consultation editor | restored read or local draft | G13; G14 |
+| UI-doctors-01 | Doctors | Specialties and clinic affiliations in the directory | connected: profile (specialty, qualifications, languages, bio, video visits, public page) and clinics (add, stop working here) save | G13; G14 |
+| UI-doctors-02 | Doctors | Consultation fee, active-in-booking and virtual-consultation editor | connected: per-service doctor fee from a date, service fee fallback, calendar set-up; "active in booking" is the clinic affiliation | G13; G14 |
 | UI-schedules-01 | Schedules | Doctor-day rows, date navigation and clinic/department/doctor filters | restored partial data or local draft | G04; G05; G06; G07; G08; G26 |
 | UI-schedules-02 | Schedules | Compact/meeting/extra-space scales, sticky headers, current-time marker and overlap lanes | restored partial data or local draft | G04; G05; G06; G07; G08; G26 |
 | UI-schedules-03 | Schedules | Click details, drag time selection and keyboard/pointer cancellation | restored partial data or local draft | G04; G05; G06; G07; G08; G26 |
@@ -43,9 +43,9 @@ The original current source is `/Users/deepakonda/.codex/worktrees/hms-monochrom
 | UI-schedules-10 | Schedules | Saved staff notes, exact-time move and unblock/reversal | move to a free slot and cancel connected; staff notes dropped | G04; G05; G06; G07; G08; G26 |
 | UI-waitlist-01 | Waitlist | Waitlist requests and active filters | connected (Phase 6): status and doctor filters, add request | G11 |
 | UI-waitlist-02 | Waitlist | Check availability and offer a slot with notification readback | connected (Phase 6): offer holds the slot 15 minutes, staff record accepted/declined; no message is sent until G19 | G11; G19 |
-| UI-catalogue-01 | Hospital catalogue | Clinic locations and active status | connected read-only (Phase 5): permitted clinics | G13; G14 |
-| UI-catalogue-02 | Hospital catalogue | Departments and doctor coverage | connected read-only (Phase 5): selected clinic departments and doctor counts | G13; G14 |
-| UI-catalogue-03 | Hospital catalogue | Address, directions and arrival instructions in channel editors | navigation restored full design retained pending wiring | G13; G14 |
+| UI-catalogue-01 | Hospital catalogue | Clinic locations and active status | connected: clinics listed, added, edited and switched off/on (every-clinic administrators see inactive ones) | G13; G14 |
+| UI-catalogue-02 | Hospital catalogue | Departments and doctor coverage | connected: departments, bookable services (default fee) and consult rooms added, edited and switched off | G13; G14 |
+| UI-catalogue-03 | Hospital catalogue | Address, directions and arrival instructions in channel editors | connected: address, phone, email, directions link and arrival instructions edited in the catalogue; channel editors read them once G20 exists | G13; G14 |
 | UI-operations-01 | Operations | Notification outbox, temporary holds and API readiness | connected (Phase 5): live holds, readiness; messages "—" until G19 | G12; G19 |
 | UI-operations-02 | Operations | Event delivery history and refresh | connected (Phase 5): outbox events, refresh | G12; G19 |
 | UI-whatsapp-01 | WhatsApp | Overview and module readiness | navigation restored full design retained pending wiring | G20; G19 |

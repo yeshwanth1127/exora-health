@@ -39,6 +39,14 @@ export interface ServerDeps {
 const REQUEST_ID = /^[A-Za-z0-9_.:-]{8,128}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export interface RouteEntry {
+  method: string;
+  url: string;
+}
+const routeTables = new WeakMap<FastifyInstance, RouteEntry[]>();
+/** Every route the server registered (method and pattern), e.g. for the frontend coverage test. */
+export const routesOf = (app: FastifyInstance): readonly RouteEntry[] => routeTables.get(app) ?? [];
+
 export function buildServer(deps: ServerDeps): FastifyInstance {
   const app = Fastify({
     // Query strings carry patient search terms (names, phones), so request logs keep the path only.
@@ -59,6 +67,11 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   });
   app.decorateRequest('principal', null);
   app.decorateRequest('clockOverride', undefined);
+  const table: RouteEntry[] = [];
+  routeTables.set(app, table);
+  app.addHook('onRoute', (route) => {
+    for (const method of [route.method].flat()) if (method !== 'HEAD') table.push({ method, url: route.url });
+  });
 
   app.addHook('onSend', async (request, reply) => {
     reply.header('x-request-id', request.id);

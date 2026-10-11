@@ -208,6 +208,8 @@ describe('staff accounts and access (G16)', () => {
     const second = await create(tokens.admin, { displayName: 'Second Admin', employeeNo: `S-${run}`, email: `second.${run}@clinic.example`, roleId: roles.tenant_admin, facilityId: null });
     const secondToken = await signIn(`second-${run}`, `second.${run}@clinic.example`);
     expect((await me(secondToken)).status).toBe(200);
+    // accessOnly also manages access everywhere and would let both succeed, so it is set aside for the race.
+    await admin.query(`UPDATE platform.staff SET status = 'inactive' WHERE id = $1`, [people.accessOnly]);
     const both = await Promise.all([status(second.body.staffId, 'inactive'), status(people.admin, 'inactive', secondToken)]);
     expect(both.map((r) => r.status)).not.toEqual([200, 200]);
     const { rows } = await admin.query(`SELECT s.id FROM platform.staff s WHERE s.tenant_id = $1 AND s.status = 'active' AND s.id = ANY($2::uuid[])`, [t.tenantId, [people.admin, second.body.staffId]]);

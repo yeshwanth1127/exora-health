@@ -1159,10 +1159,12 @@ export interface PlatformEmergencyAccessGrant {
 export interface PlatformFacility {
   address_line1: string | null;
   address_line2: string | null;
+  arrival_instructions: string | null;
   city: string | null;
   code: string;
   created_at: Generated<Timestamp>;
   created_by: string | null;
+  directions_url: string | null;
   district: string | null;
   email: string | null;
   facility_type: string;

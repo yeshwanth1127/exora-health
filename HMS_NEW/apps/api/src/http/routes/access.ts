@@ -12,6 +12,7 @@ import {
   listAuditEvents,
   listRoles,
   listStaffAccounts,
+  retireRole,
   revokeGrant,
   setRolePermission,
   setStaffStatus,
@@ -59,6 +60,13 @@ export function registerAccessRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const { allowed } = parse(z.object({ allowed: z.boolean() }), request.body);
     authorizeEvery(principalOf(request), 'access.manage', []);
     return setRolePermission(db, callerOf(request), { ...params, allowed });
+  });
+
+  app.post('/v1/roles/:roleId/retire', async (request) => {
+    const { roleId } = parse(z.object({ roleId: uuid }), request.params);
+    const { reason } = parse(z.object({ reason: Reason }), request.body);
+    authorizeEvery(principalOf(request), 'access.manage', []);
+    return retireRole(db, callerOf(request), { roleId, reason });
   });
 
   app.get('/v1/staff-accounts', async (request) => {

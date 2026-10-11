@@ -23,6 +23,7 @@ import { useCommand, useQuery, useWorkspace } from "./hooks";
 import { query } from "./client";
 import { useUnsaved } from "./leave";
 import { label, needsCareAccess } from "./model";
+import { E164, PINCODE, blankToNull, changedFields, isStale } from "./forms";
 import {
   Choice,
   Empty,
@@ -337,20 +338,61 @@ function ClinicPatients({
 function PatientRecord({ patientId }: { patientId: string }) {
   const { can } = useWorkspace();
   const detail = useQuery<PatientDetail>(`/v1/patients/${patientId}`);
-  const [chart, setChart] = useState(false);
+  const [chart, setChart] = useState(false),
+    [editing, setEditing] = useState(false);
+  const d = detail.data;
+  const address = d?.address
+    ? [d.address.line1, d.address.line2, d.address.city, d.address.district, d.address.pincode].filter(Boolean).join(", ")
+    : "";
   return (
     <div className="p-6 space-y-5">
       <LoadingState {...detail}>
-        <p className="text-sm">
-          {detail.data &&
-            `${label(detail.data.sex)} · ${detail.data.birthDate ?? "Date of birth not recorded"}`}
-        </p>
-        {detail.data?.contacts.map((c) => (
-          <p key={`${c.kind}:${c.value}`} className="text-sm">
-            {label(c.kind)}: {c.value}
-          </p>
-        ))}
-        <Hint>Demographic editing is not available yet.</Hint>
+        {d && editing ? (
+          <EditPatient
+            key={d.version}
+            d={d}
+            onDone={(saved) => {
+              setEditing(false);
+              if (saved) void detail.refresh();
+            }}
+          />
+        ) : (
+          d && (
+            <>
+              <p className="text-sm">
+                {label(d.sex)} · {d.birthDate ?? "Date of birth not recorded"}
+                {d.birthDateEstimated ? " (estimated)" : ""}
+              </p>
+              {d.contacts.map((c) => (
+                <p key={`${c.kind}:${c.value}`} className="text-sm">
+                  {label(c.kind)}: {c.value}
+                </p>
+              ))}
+              {address && <p className="text-sm">Address: {address}</p>}
+              {[
+                ["Preferred language", d.preferredLanguage],
+                ["Blood group", d.bloodGroup],
+                ["Marital status", d.maritalStatus && label(d.maritalStatus)],
+                ["Occupation", d.occupation],
+              ]
+                .filter(([, v]) => v)
+                .map(([k, v]) => (
+                  <p key={k as string} className="text-sm">
+                    {k}: {v}
+                  </p>
+                ))}
+              {d.status === "merged" ? (
+                <Hint>This record was merged into another one; edit the surviving record.</Hint>
+              ) : (
+                can("patients.update") && (
+                  <Button variant="outline" onClick={() => setEditing(true)}>
+                    Edit details
+                  </Button>
+                )
+              )}
+            </>
+          )
+        )}
         {can("clinical.read") && (
           <Button variant="outline" onClick={() => setChart((v) => !v)}>
             {chart ? "Hide chart" : "Open patient chart"}
@@ -425,5 +467,133 @@ export function PatientChart({
         </div>
       )}
     </LoadingState>
+  );
+}
+
+const BLOOD = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+const MARITAL = ["single", "married", "divorced", "widowed", "separated", "unknown"];
+
+/** Demographics, primary phone and email, and home address; the API refuses a stale form (409). */
+function EditPatient({ d, onDone }: { d: PatientDetail; onDone: (saved: boolean) => void }) {
+  const cmd = useCommand();
+  const contact = (kind: string) => d.contacts.find((c) => c.kind === kind && c.is_primary)?.value ?? d.contacts.find((c) => c.kind === kind)?.value ?? "";
+  const start = {
+    givenName: d.givenName,
+    familyName: d.familyName ?? "",
+    sex: d.sex,
+    birthDate: d.birthDate ?? "",
+    birthDateEstimated: !!d.birthDateEstimated,
+    phone: contact("phone"),
+    email: contact("email"),
+    preferredLanguage: d.preferredLanguage ?? "",
+    bloodGroup: d.bloodGroup ?? "none",
+    maritalStatus: d.maritalStatus ?? "none",
+    occupation: d.occupation ?? "",
+    line1: d.address?.line1 ?? "",
+    line2: d.address?.line2 ?? "",
+    city: d.address?.city ?? "",
+    district: d.address?.district ?? "",
+    stateCode: d.address?.stateCode ?? "",
+    pincode: d.address?.pincode ?? "",
+  };
+  const [f, setF] = useState(start);
+  const set = (k: keyof typeof start) => (v: string | boolean) => setF((x) => ({ ...x, [k]: v }));
+  const dirty = JSON.stringify(f) !== JSON.stringify(start);
+  useUnsaved(dirty || cmd.unknown);
+  const problems = [
+    !f.givenName.trim() && "Enter the given name.",
+    f.phone && !E164.test(f.phone) && "Use the international phone format, e.g. +919876543210.",
+    f.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email) && "Check the email address.",
+    f.pincode && !PINCODE.test(f.pincode) && "A pincode is 6 digits.",
+    f.stateCode && !/^[0-9]{2}$/.test(f.stateCode) && "The state code is 2 digits (Karnataka is 29).",
+  ].filter(Boolean) as string[];
+  const addressKeys = ["line1", "line2", "city", "district", "stateCode", "pincode"] as const;
+  const addressChanged = addressKeys.some((k) => f[k] !== start[k]);
+  const text = (k: keyof typeof start, title: string, props: Record<string, unknown> = {}) => (
+    <Field title={title} id={`pt-${k}`}>
+      <Input id={`pt-${k}`} value={String(f[k])} onChange={(e) => set(k)(e.target.value)} {...props} />
+    </Field>
+  );
+  return (
+    <form
+      className="space-y-4"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const fields = {
+          givenName: f.givenName,
+          familyName: f.familyName,
+          sex: f.sex,
+          birthDate: f.birthDate,
+          birthDateEstimated: f.birthDateEstimated,
+          phone: f.phone,
+          email: f.email,
+          preferredLanguage: f.preferredLanguage,
+          bloodGroup: f.bloodGroup === "none" ? null : f.bloodGroup,
+          maritalStatus: f.maritalStatus === "none" ? null : f.maritalStatus,
+          occupation: f.occupation,
+        };
+        const before = { ...start, bloodGroup: start.bloodGroup === "none" ? null : start.bloodGroup, maritalStatus: start.maritalStatus === "none" ? null : start.maritalStatus };
+        const body = {
+          version: d.version,
+          ...changedFields(before, fields),
+          ...(addressChanged
+            ? { address: Object.fromEntries(addressKeys.map((k) => [k, blankToNull(f[k])])) }
+            : {}),
+        };
+        if (await cmd.run(`/v1/patients/${d.patientId}`, body, false, "PATCH")) onDone(true);
+      }}
+    >
+      <h3 className="font-semibold">Edit details</h3>
+      <div className="grid grid-cols-2 gap-3">
+        {text("givenName", "Given name", { maxLength: 100, required: true })}
+        {text("familyName", "Family name", { maxLength: 100 })}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field title="Sex" id="pt-sex">
+          <Choice label="Sex" value={f.sex} onChange={set("sex")} options={["unknown", "female", "male", "other"].map((v) => ({ value: v, label: label(v) }))} />
+        </Field>
+        {text("birthDate", "Date of birth", { type: "date" })}
+      </div>
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={f.birthDateEstimated} onChange={(e) => set("birthDateEstimated")(e.target.checked)} />
+        Date of birth is estimated
+      </label>
+      <div className="grid grid-cols-2 gap-3">
+        {text("phone", "Phone (with country code)", { type: "tel", placeholder: "+919876543210" })}
+        {text("email", "Email", { type: "email", maxLength: 254 })}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {text("preferredLanguage", "Preferred language", { maxLength: 40 })}
+        {text("occupation", "Occupation", { maxLength: 80 })}
+        <Field title="Blood group" id="pt-blood">
+          <Choice label="Blood group" value={f.bloodGroup} onChange={set("bloodGroup")} options={[{ value: "none", label: "Not recorded" }, ...BLOOD.map((v) => ({ value: v, label: v }))]} />
+        </Field>
+        <Field title="Marital status" id="pt-marital">
+          <Choice label="Marital status" value={f.maritalStatus} onChange={set("maritalStatus")} options={[{ value: "none", label: "Not recorded" }, ...MARITAL.map((v) => ({ value: v, label: label(v) }))]} />
+        </Field>
+      </div>
+      <h4 className="text-sm font-medium">Home address</h4>
+      {text("line1", "Address line 1", { maxLength: 200 })}
+      {text("line2", "Address line 2", { maxLength: 200 })}
+      <div className="grid grid-cols-2 gap-3">
+        {text("city", "City", { maxLength: 80 })}
+        {text("district", "District", { maxLength: 80 })}
+        {text("stateCode", "State code", { inputMode: "numeric", maxLength: 2 })}
+        {text("pincode", "Pincode", { inputMode: "numeric", maxLength: 6 })}
+      </div>
+      <p className="text-xs text-muted-foreground">Earlier phone numbers and addresses stay on record. The change is logged with your name.</p>
+      {problems.map((x) => (
+        <p key={x} className="text-sm text-destructive">{x}</p>
+      ))}
+      <ErrorMessage text={isStale(cmd.failure) ? "Someone else changed this patient first. Close and reopen to see their change." : cmd.error} />
+      <div className="flex gap-2">
+        <Button type="submit" disabled={cmd.busy || !dirty || problems.length > 0}>
+          {cmd.busy ? "Saving…" : "Save details"}
+        </Button>
+        <Button type="button" variant="ghost" disabled={cmd.busy} onClick={() => onDone(false)}>
+          Cancel
+        </Button>
+      </div>
+    </form>
   );
 }

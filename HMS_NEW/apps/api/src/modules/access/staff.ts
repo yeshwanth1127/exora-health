@@ -19,6 +19,8 @@ export interface StaffAccountView {
   status: string;
   phone: string | null;
   email: string | null;
+  /** Staff record version, for PATCH /v1/staff/:id. */
+  version: number;
   account: { status: string; linked: boolean } | null;
   grants: { grantId: string; roleId: string; roleName: string; facilityId: string | null; facilityName: string | null }[];
 }
@@ -38,7 +40,7 @@ export async function listStaffAccounts(db: Kysely<DB>, caller: Caller, facility
         WHERE g.revoked_at IS NULL AND g.valid_from <= now() AND (g.valid_to IS NULL OR g.valid_to > now())
       )
       SELECT s.id AS "staffId", s.display_name AS "displayName", s.employee_no AS "employeeNo", s.staff_type AS "staffType",
-             s.status, s.phone, coalesce(ua.email::text, s.email::text) AS email,
+             s.status, s.phone, s.version, coalesce(ua.email::text, s.email::text) AS email,
              CASE WHEN ua.id IS NULL THEN NULL ELSE jsonb_build_object('status', ua.status, 'linked', ua.identity_subject IS NOT NULL) END AS account,
              coalesce((SELECT jsonb_agg(jsonb_build_object('grantId', g.id, 'roleId', g.role_id, 'roleName', g.role_name,
                                                            'facilityId', g.facility_id, 'facilityName', g.facility_name)

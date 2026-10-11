@@ -458,6 +458,37 @@ export async function getDayPlan(db: Kysely<DB>, caller: Caller, input: { staffI
 
 // ---- weekly plan replacement (G07) --------------------------------------------------------------
 
+/**
+ * The service new weekly hours offer: the one the plan names (checked to be at that clinic, active and
+ * offered in that mode), else — when there are no hours to copy it from — the clinic's single active
+ * service for that mode in the doctor's departments there. Without a service a booking can't be priced.
+ */
+async function weeklyOffer(
+  tx: Transaction<DB>,
+  input: { staffId: string; facilityId: string; visitMode: string; effectiveFrom: string; healthcareServiceId?: string | null | undefined; consultLocationId?: string | null | undefined },
+  copied: string | null,
+): Promise<string | null> {
+  if (input.consultLocationId) {
+    const room = await tx.selectFrom('platform.location').select('id').where('id', '=', input.consultLocationId).where('facility_id', '=', input.facilityId)
+      .where('kind', '=', 'consult_room').where('status', '=', 'active').executeTakeFirst();
+    if (!room) throw invalid('choose an active consult room at this clinic');
+  }
+  const { rows } = await sql<{ id: string }>`
+    SELECT hs.id FROM catalog.healthcare_service hs JOIN platform.department d ON d.id = hs.department_id
+    WHERE d.facility_id = ${input.facilityId} AND hs.status = 'active' AND d.status = 'active'
+      AND hs.service_mode IN (${input.visitMode}, 'both')
+      AND (${input.healthcareServiceId ?? null}::uuid IS NOT NULL AND hs.id = ${input.healthcareServiceId ?? null}::uuid
+           OR ${input.healthcareServiceId ?? null}::uuid IS NULL AND EXISTS (
+             SELECT 1 FROM catalog.practitioner_affiliation pa WHERE pa.staff_id = ${input.staffId} AND pa.department_id = d.id
+               AND pa.valid_from <= ${input.effectiveFrom}::date AND (pa.valid_to IS NULL OR pa.valid_to > ${input.effectiveFrom}::date)))`.execute(tx);
+  if (input.healthcareServiceId) {
+    if (!rows.length) throw invalid('choose an active service at this clinic that is offered for this visit type');
+    return input.healthcareServiceId;
+  }
+  if (input.healthcareServiceId === null) return null;
+  return copied ?? (rows.length === 1 ? rows[0]!.id : null);
+}
+
 export interface WeeklyPlanInput {
   staffId: string;
   facilityId: string;
@@ -466,6 +497,9 @@ export interface WeeklyPlanInput {
   effectiveTo?: string | null; // exclusive; null = keeps repeating
   slotMinutes: number;
   sessions: Array<{ weekday: number; start: string; end: string }>;
+  /** The service and room the hours offer. Omitted: as the replaced hours (or the clinic's one service for the mode). */
+  healthcareServiceId?: string | null | undefined;
+  consultLocationId?: string | null | undefined;
 }
 
 export interface WeeklyPlanResult {
@@ -537,7 +571,8 @@ export async function replaceWeeklyPlan(db: Kysely<DB>, caller: Caller, input: W
           await tx.updateTable('booking.schedule_rule').set({ withdrawn_at: now, withdrawn_by: ctx.actor.staffId ?? null }).where('id', '=', r.id).execute();
         }
       }
-      // New sessions keep the service, room and walk-in capacity of the hours they replace.
+      const offer = await weeklyOffer(tx, input, existing[0]?.healthcare_service_id ?? null);
+      // New sessions keep the service, room and walk-in capacity of the hours they replace, unless the plan names them.
       for (const x of input.sessions) {
         const like = existing.find((r) => r.weekday === x.weekday) ?? existing[0];
         try {
@@ -547,8 +582,8 @@ export async function replaceWeeklyPlan(db: Kysely<DB>, caller: Caller, input: W
               tenant_id: ctx.tenantId,
               resource_id: resourceId,
               facility_id: input.facilityId,
-              consult_location_id: like?.consult_location_id ?? null,
-              healthcare_service_id: like?.healthcare_service_id ?? null,
+              consult_location_id: input.consultLocationId !== undefined ? input.consultLocationId : (like?.consult_location_id ?? null),
+              healthcare_service_id: input.healthcareServiceId !== undefined ? offer : (like?.healthcare_service_id ?? offer),
               weekday: x.weekday,
               start_local: x.start,
               end_local: x.end,

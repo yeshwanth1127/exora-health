@@ -1,73 +1,806 @@
-// Mounts the original Hospital catalogue (read-only): the clinics this user can access, and the
-// selected clinic's departments from GET /v1/facilities/:id/directory with its doctors counted.
-import { useMemo } from "react";
-import { OperationsModule } from "@/modules/operations";
+// Hospital catalogue: the clinics this user can access, and the selected clinic's details, departments,
+// bookable services (with their default fee) and consult rooms. Everything shown can be changed here by
+// someone holding the permission at this clinic: facility.manage (clinic details, departments, rooms),
+// catalog.manage (services) and pricing.manage (fees). The API enforces each; buttons only follow it.
+import { useState, type ReactNode } from "react";
+import { Pencil, Plus, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
-  OriginalResourceContext,
-  type OriginalResourceSource,
-} from "@/components/resource-source";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { PageTitle } from "@/components/workspace";
 import { request } from "./client";
-import { useWorkspace } from "./hooks";
-import { permittedFacilities } from "./model";
-import type { Facility } from "./types";
+import { useCommand, useQuery, useWorkspace } from "./hooks";
+import { label, money, today } from "./model";
+import { useUnsaved } from "./leave";
+import {
+  CODE,
+  E164,
+  PINCODE,
+  changedFields,
+  isStale,
+  minorToRupees,
+  refusal,
+  rupeesToMinor,
+} from "./forms";
+import { Choice, Empty, ErrorMessage, Field, Hint, LoadingState, Status } from "./ui";
+import type {
+  ClinicDirectory,
+  ConsultRoom,
+  Department,
+  Facility,
+  FacilityDetail,
+  HealthcareService,
+  PriceBookItem,
+  Specialty,
+} from "./types";
 
-type Directory = { departments: { departmentId: string; name: string }[] };
+type Editing =
+  | { kind: "clinic"; detail: FacilityDetail | null }
+  | { kind: "department"; row: Department | null }
+  | { kind: "service"; row: HealthcareService | null }
+  | { kind: "room"; row: ConsultRoom | null };
+
+const REASONS: Record<string, string> = {
+  stale_version: "Someone else saved this first. Close the form and open it again to see their change.",
+  in_use: "It is still in use. Change what uses it first (services, doctors or weekly hours).",
+  future_appointments: "Visits are still booked here. Move or cancel them first.",
+  published_hours: "Doctors still have weekly hours here. End those hours first in Schedules.",
+  last_facility: "The hospital needs at least one active clinic.",
+  duplicate_code: "That code is already used. Choose another.",
+};
+
+/** The fee booking would charge for a service today: its own any-mode price. */
+const defaultFee = (items: PriceBookItem[], serviceId: string, on: string) =>
+  items.find(
+    (i) =>
+      i.healthcareServiceId === serviceId &&
+      i.staffId === null &&
+      i.mode === "any" &&
+      i.validFrom <= on &&
+      (!i.validTo || i.validTo > on),
+  );
 
 export function Catalogue() {
-  const { me, facility, practitioners } = useWorkspace();
-  const source = useMemo<OriginalResourceSource>(() => {
-    const directory = (signal: AbortSignal) =>
-      request<Directory>(`/v1/facilities/${facility.facilityId}/directory`, {
-        signal,
-      });
-    return {
-      scope: `${me.tenantId}:${facility.facilityId}:${me.staffId}`,
-      permissions: { role: me.staffType, allowed: {}, staff: [] },
-      unavailableWrite: "Nothing on this page saves.",
-      async read<T>(path: string, signal: AbortSignal): Promise<T> {
-        if (path === "/api/v1/admin/catalogue") {
-          const [facilities, dir] = await Promise.all([
-            request<{ items: Facility[] }>("/v1/facilities", { signal }),
-            directory(signal),
-          ]);
-          return {
-            // The API lists active clinics only.
-            branches: permittedFacilities(me, facilities.items).map((f) => ({
-              id: f.facilityId,
-              name: f.name,
-              area: f.city ?? "",
-              is_active: true,
-              is_virtual: f.facilityType === "virtual",
-              address: "",
-              directions_url: "",
-              arrival_instructions: "",
-            })),
-            departments: dir.departments.map((d) => ({
-              id: d.departmentId,
-              name: d.name,
-              slug: "",
-              is_active: true,
-            })),
-          } as T;
-        }
-        if (path === "/api/v1/admin/doctors") {
-          // Affiliations carry the department name, so doctors are matched to this clinic's departments by name.
-          const { departments } = await directory(signal);
-          return practitioners.map((p) => ({
-            id: p.staffId,
-            name: p.name,
-            departments: departments
-              .filter((d) => d.name === p.department)
-              .map((d) => ({ id: d.departmentId })),
-          })) as T;
-        }
-        throw new Error("Not available on this page.");
-      },
-    };
-  }, [me, facility, practitioners]);
+  const { me, facility, practitioners, can } = useWorkspace();
+  const at = facility.facilityId;
+  const day = today(facility.timezone);
+  const manageClinic = can("facility.manage"),
+    manageServices = can("catalog.manage"),
+    pricing = can("pricing.manage");
+  const everywhere = (me.permissions["facility.manage"] ?? []).includes("*");
+  const facilities = useQuery<{ items: Facility[] }>(
+    `/v1/facilities${everywhere ? "?includeInactive=true" : ""}`,
+  );
+  const detail = useQuery<FacilityDetail>(`/v1/facilities/${at}`);
+  const directory = useQuery<ClinicDirectory>(
+    `/v1/facilities/${at}/directory?includeInactive=${manageClinic || manageServices}`,
+  );
+  const prices = useQuery<{ items: PriceBookItem[] }>(
+    `/v1/facilities/${at}/price-book?on=${day}`,
+  );
+  const [editing, setEditing] = useState<Editing | null>(null);
+  const refresh = () => {
+    void facilities.refresh();
+    void detail.refresh();
+    void directory.refresh();
+    void prices.refresh();
+  };
+  const departments = directory.data?.departments ?? [];
+  const deptName = (id: string | null) =>
+    departments.find((d) => d.departmentId === id)?.name ?? "—";
+  // The directory names a doctor's department, so doctors are matched to this clinic's departments by name.
+  const doctorsIn = (d: Department) =>
+    practitioners.filter((p) => p.department === d.name).length;
   return (
-    <OriginalResourceContext.Provider value={source}>
-      <OperationsModule page="catalogue" />
-    </OriginalResourceContext.Provider>
+    <>
+      <PageTitle
+        title="Hospital catalogue"
+        description="Clinic locations, departments, services and rooms available to patients and agents."
+        action={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={refresh}>
+              <RefreshCw />
+              Refresh
+            </Button>
+            {everywhere && (
+              <Button onClick={() => setEditing({ kind: "clinic", detail: null })}>
+                <Plus />
+                Add clinic
+              </Button>
+            )}
+          </div>
+        }
+      />
+      <div className="grid lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Clinic branches</CardTitle>
+            <CardDescription>
+              {facilities.data?.items.length ?? 0} locations. Switch clinic at the top to manage another.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <LoadingState {...facilities}>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Clinic</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(facilities.data?.items ?? []).map((f) => (
+                    <TableRow key={f.facilityId}>
+                      <TableCell>
+                        {f.name}
+                        {f.facilityId === at && (
+                          <span className="text-xs text-muted-foreground"> · selected</span>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {f.city ?? ""} {label(f.facilityType)}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <Status value={f.status ?? "active"} />
+                      </TableCell>
+                      <TableCell>
+                        {f.status === "inactive" && everywhere && (
+                          <Reactivate facilityId={f.facilityId} onDone={refresh} />
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </LoadingState>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-start justify-between gap-3">
+            <div>
+              <CardTitle>{facility.name}</CardTitle>
+              <CardDescription>What patients and booking channels are told about this clinic.</CardDescription>
+            </div>
+            {manageClinic && detail.data && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditing({ kind: "clinic", detail: detail.data })}
+              >
+                <Pencil />
+                Edit details
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            <LoadingState {...detail}>
+              {detail.data && <ClinicSummary d={detail.data} />}
+            </LoadingState>
+          </CardContent>
+        </Card>
+      </div>
+      <LoadingState {...directory}>
+        <Section
+          title="Departments"
+          description={`${departments.length} departments with their doctors at this clinic.`}
+          add={manageClinic ? () => setEditing({ kind: "department", row: null }) : undefined}
+          addLabel="Add department"
+        >
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Department</TableHead>
+                <TableHead>Specialty</TableHead>
+                <TableHead>Doctors</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {departments.map((d) => (
+                <TableRow key={d.departmentId}>
+                  <TableCell>
+                    {d.name}
+                    <p className="text-xs text-muted-foreground">{d.code} · {label(d.kind)}</p>
+                  </TableCell>
+                  <TableCell>{d.specialtyName ?? "—"}</TableCell>
+                  <TableCell>{doctorsIn(d)}</TableCell>
+                  <TableCell>
+                    <Status value={d.status} />
+                  </TableCell>
+                  <TableCell>
+                    {manageClinic && (
+                      <Button variant="ghost" size="sm" onClick={() => setEditing({ kind: "department", row: d })}>
+                        Edit
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {!departments.length && <Empty>No departments at this clinic yet.</Empty>}
+        </Section>
+        <Section
+          title="Bookable services"
+          description="What patients book, by visit type, with the default consultation fee. Doctors can have their own fee (Doctors page)."
+          add={manageServices && departments.some((d) => d.status === "active") ? () => setEditing({ kind: "service", row: null }) : undefined}
+          addLabel="Add service"
+        >
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Service</TableHead>
+                <TableHead>Department</TableHead>
+                <TableHead>Visit type</TableHead>
+                <TableHead>Default fee</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(directory.data?.services ?? []).map((s) => {
+                const fee = defaultFee(prices.data?.items ?? [], s.healthcareServiceId, day);
+                return (
+                  <TableRow key={s.healthcareServiceId}>
+                    <TableCell>
+                      {s.name}
+                      <p className="text-xs text-muted-foreground">
+                        {s.code} · {s.defaultDurationMin} min{s.isPublic ? "" : " · staff only"}
+                      </p>
+                    </TableCell>
+                    <TableCell>{deptName(s.departmentId)}</TableCell>
+                    <TableCell>{s.serviceMode === "both" ? "In person and video" : s.serviceMode === "virtual" ? "Video" : "In person"}</TableCell>
+                    <TableCell>{fee ? money(fee.feeMinor) : "Not priced"}</TableCell>
+                    <TableCell>
+                      <Status value={s.status} />
+                    </TableCell>
+                    <TableCell>
+                      {(manageServices || pricing) && (
+                        <Button variant="ghost" size="sm" onClick={() => setEditing({ kind: "service", row: s })}>
+                          Edit
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+          {!directory.data?.services.length && <Empty>No bookable services yet. Add a department first, then its services.</Empty>}
+        </Section>
+        <Section
+          title="Consult rooms"
+          description="Rooms doctors see patients in."
+          add={manageClinic ? () => setEditing({ kind: "room", row: null }) : undefined}
+          addLabel="Add room"
+        >
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Room</TableHead>
+                <TableHead>Department</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(directory.data?.consultRooms ?? []).map((r) => (
+                <TableRow key={r.locationId}>
+                  <TableCell>
+                    {r.name}
+                    <p className="text-xs text-muted-foreground">{r.code}</p>
+                  </TableCell>
+                  <TableCell>{deptName(r.departmentId)}</TableCell>
+                  <TableCell>
+                    <Status value={r.status} />
+                  </TableCell>
+                  <TableCell>
+                    {manageClinic && (
+                      <Button variant="ghost" size="sm" onClick={() => setEditing({ kind: "room", row: r })}>
+                        Edit
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {!directory.data?.consultRooms.length && <Empty>No consult rooms yet.</Empty>}
+        </Section>
+      </LoadingState>
+      {!manageClinic && !manageServices && (
+        <p className="mt-4 text-xs text-muted-foreground">
+          Read-only: a clinic administrator changes these details.
+        </p>
+      )}
+      <Sheet
+        open={!!editing}
+        onOpenChange={(open) => {
+          if (!open) setEditing(null);
+        }}
+      >
+        <SheetContent className="overflow-y-auto sm:max-w-lg">
+          {editing?.kind === "clinic" && (
+            <ClinicForm detail={editing.detail} onSaved={() => { setEditing(null); refresh(); }} />
+          )}
+          {editing?.kind === "department" && (
+            <DepartmentForm row={editing.row} onSaved={() => { setEditing(null); refresh(); }} />
+          )}
+          {editing?.kind === "service" && (
+            <ServiceForm
+              row={editing.row}
+              departments={departments.filter((d) => d.status === "active" || d.departmentId === editing.row?.departmentId)}
+              fee={editing.row ? defaultFee(prices.data?.items ?? [], editing.row.healthcareServiceId, day) : undefined}
+              onSaved={() => { setEditing(null); refresh(); }}
+            />
+          )}
+          {editing?.kind === "room" && (
+            <RoomForm row={editing.row} departments={departments} onSaved={() => { setEditing(null); refresh(); }} />
+          )}
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+}
+
+function Section({
+  title,
+  description,
+  add,
+  addLabel,
+  children,
+}: {
+  title: string;
+  description: string;
+  add?: () => void;
+  addLabel: string;
+  children: ReactNode;
+}) {
+  return (
+    <Card className="mt-6">
+      <CardHeader className="flex flex-row items-start justify-between gap-3">
+        <div>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </div>
+        {add && (
+          <Button variant="outline" size="sm" onClick={add}>
+            <Plus />
+            {addLabel}
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
+  );
+}
+
+function ClinicSummary({ d }: { d: FacilityDetail }) {
+  const address = [d.addressLine1, d.addressLine2, d.city, d.district, d.pincode].filter(Boolean).join(", ");
+  const rows: [string, ReactNode][] = [
+    ["Address", address || "Not recorded"],
+    ["Phone", d.phone ?? "Not recorded"],
+    ["Email", d.email ?? "Not recorded"],
+    [
+      "Directions",
+      d.directionsUrl ? (
+        <a key="directions" className="underline" href={d.directionsUrl} target="_blank" rel="noreferrer noopener">
+          Map link
+        </a>
+      ) : (
+        "Not recorded"
+      ),
+    ],
+    ["Arrival instructions", d.arrivalInstructions ?? "Not recorded"],
+    ["Type · time zone", `${label(d.facilityType)} · ${d.timezone}`],
+    ["Status", <Status key="s" value={d.status} />],
+  ];
+  return (
+    <dl className="grid gap-3 text-sm">
+      {rows.map(([k, v]) => (
+        <div key={k} className="grid grid-cols-3 gap-3">
+          <dt className="text-muted-foreground">{k}</dt>
+          <dd className="col-span-2 whitespace-pre-line">{v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function Reactivate({ facilityId, onDone }: { facilityId: string; onDone: () => void }) {
+  const cmd = useCommand();
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={cmd.busy}
+        onClick={async () => {
+          const d = await request<FacilityDetail>(`/v1/facilities/${facilityId}`).catch(() => null);
+          if (!d) return;
+          if (await cmd.run(`/v1/facilities/${facilityId}`, { version: d.version, status: "active" }, false, "PATCH")) onDone();
+        }}
+      >
+        Switch on
+      </Button>
+      <ErrorMessage text={cmd.error} />
+    </>
+  );
+}
+
+/** Explains a refusal by its reason code, else shows the server's message. */
+function Refused({ cmd }: { cmd: ReturnType<typeof useCommand> }) {
+  const reason = refusal(cmd.failure);
+  return <ErrorMessage text={(reason && REASONS[reason]) || (isStale(cmd.failure) ? REASONS.stale_version : cmd.error)} />;
+}
+
+function StatusSwitch({ id, active, onChange, disabled }: { id: string; active: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <Label htmlFor={id}>Active</Label>
+      <Switch id={id} checked={active} disabled={disabled} onCheckedChange={onChange} />
+    </div>
+  );
+}
+
+const FACILITY_TYPES = ["hospital", "clinic", "diagnostic_centre", "pharmacy", "virtual"];
+
+function ClinicForm({ detail, onSaved }: { detail: FacilityDetail | null; onSaved: () => void }) {
+  const cmd = useCommand();
+  const start = {
+    code: detail?.code ?? "",
+    name: detail?.name ?? "",
+    facilityType: detail?.facilityType ?? "clinic",
+    addressLine1: detail?.addressLine1 ?? "",
+    addressLine2: detail?.addressLine2 ?? "",
+    city: detail?.city ?? "",
+    district: detail?.district ?? "",
+    pincode: detail?.pincode ?? "",
+    stateCode: detail?.stateCode ?? "29",
+    phone: detail?.phone ?? "",
+    email: detail?.email ?? "",
+    timezone: detail?.timezone ?? "Asia/Kolkata",
+    directionsUrl: detail?.directionsUrl ?? "",
+    arrivalInstructions: detail?.arrivalInstructions ?? "",
+    active: (detail?.status ?? "active") === "active",
+  };
+  const [f, setF] = useState(start);
+  const set = (k: keyof typeof start) => (v: string | boolean) => setF((x) => ({ ...x, [k]: v }));
+  const { code, active, ...fields } = f;
+  const changes = detail
+    ? { ...changedFields(detail, fields), ...(active !== (detail.status === "active") ? { status: active ? "active" : "inactive" } : {}) }
+    : null;
+  useUnsaved(detail ? Object.keys(changes!).length > 0 : !!(f.name || f.code));
+  const problems = [
+    f.name.trim().length < 2 && "Enter the clinic name.",
+    !detail && !CODE.test(code) && "Use a short code of letters, digits, _ or -.",
+    !/^[0-9]{2}$/.test(f.stateCode) && "The GST state code is 2 digits (Karnataka is 29).",
+    f.pincode && !PINCODE.test(f.pincode) && "A pincode is 6 digits.",
+    f.phone && !E164.test(f.phone) && "Use the international phone format, e.g. +918012345678.",
+    f.directionsUrl && !/^https:\/\/\S{3,}$/.test(f.directionsUrl) && "A directions link starts with https://.",
+  ].filter(Boolean) as string[];
+  const text = (k: keyof typeof start, title: string, props: Record<string, unknown> = {}) => (
+    <Field title={title} id={`clinic-${k}`}>
+      <Input id={`clinic-${k}`} value={String(f[k])} onChange={(e) => set(k)(e.target.value)} {...props} />
+    </Field>
+  );
+  return (
+    <form
+      className="p-6 space-y-4"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const ok = detail
+          ? await cmd.run(`/v1/facilities/${detail.facilityId}`, { version: detail.version, ...changes }, false, "PATCH")
+          : await cmd.run("/v1/facilities", { code, ...changedFields({}, fields) }, true);
+        if (ok) onSaved();
+      }}
+    >
+      <SheetHeader className="p-0">
+        <SheetTitle>{detail ? `Edit ${detail.name}` : "Add clinic"}</SheetTitle>
+        <SheetDescription>
+          {detail ? `Code ${detail.code}. Changes are recorded in the activity log.` : "The code can't be changed later."}
+        </SheetDescription>
+      </SheetHeader>
+      {!detail && text("code", "Code", { maxLength: 30, placeholder: "IND" })}
+      {text("name", "Name", { maxLength: 120 })}
+      <Field title="Type" id="clinic-type">
+        <Choice label="Clinic type" value={f.facilityType} onChange={set("facilityType")} options={FACILITY_TYPES.map((v) => ({ value: v, label: label(v) }))} />
+      </Field>
+      {text("addressLine1", "Address line 1", { maxLength: 200 })}
+      {text("addressLine2", "Address line 2", { maxLength: 200 })}
+      <div className="grid grid-cols-2 gap-3">
+        {text("city", "City", { maxLength: 80 })}
+        {text("district", "District", { maxLength: 80 })}
+        {text("pincode", "Pincode", { inputMode: "numeric", maxLength: 6 })}
+        {text("stateCode", "GST state code", { inputMode: "numeric", maxLength: 2 })}
+      </div>
+      {text("phone", "Phone", { type: "tel", placeholder: "+918012345678" })}
+      {text("email", "Email", { type: "email", maxLength: 254 })}
+      {text("timezone", "Time zone", { maxLength: 64 })}
+      {text("directionsUrl", "Directions link (https)", { type: "url", maxLength: 500 })}
+      <Field title="Arrival instructions" id="clinic-arrival">
+        <Textarea id="clinic-arrival" maxLength={1000} value={f.arrivalInstructions} onChange={(e) => set("arrivalInstructions")(e.target.value)} />
+      </Field>
+      {detail && (
+        <>
+          <StatusSwitch id="clinic-active" active={active} onChange={set("active")} />
+          {!active && detail.status === "active" && (
+            <Hint>Switching a clinic off needs no booked visits or weekly hours left there.</Hint>
+          )}
+        </>
+      )}
+      {problems.map((p) => (
+        <p key={p} className="text-sm text-destructive">{p}</p>
+      ))}
+      <Refused cmd={cmd} />
+      <Button type="submit" disabled={cmd.busy || problems.length > 0 || (!!detail && !Object.keys(changes!).length)}>
+        {cmd.busy ? "Saving…" : detail ? "Save clinic" : "Add clinic"}
+      </Button>
+    </form>
+  );
+}
+
+function DepartmentForm({ row, onSaved }: { row: Department | null; onSaved: () => void }) {
+  const { facility } = useWorkspace(),
+    cmd = useCommand();
+  const specialties = useQuery<{ items: Specialty[] }>("/v1/specialties");
+  const [code, setCode] = useState(row?.code ?? ""),
+    [name, setName] = useState(row?.name ?? ""),
+    [kind, setKind] = useState(row?.kind ?? "clinical"),
+    [specialty, setSpecialty] = useState(row?.specialty ?? "none"),
+    [active, setActive] = useState((row?.status ?? "active") === "active");
+  const body = {
+    name: name.trim(),
+    kind,
+    specialty: specialty === "none" ? null : specialty,
+  };
+  const changes = row
+    ? { ...changedFields({ name: row.name, kind: row.kind, specialty: row.specialty }, body), ...(active !== (row.status === "active") ? { status: active ? "active" : "inactive" } : {}) }
+    : null;
+  useUnsaved(row ? Object.keys(changes!).length > 0 : !!(code || name));
+  const valid = name.trim().length >= 2 && (!!row || CODE.test(code));
+  return (
+    <form
+      className="p-6 space-y-4"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const ok = row
+          ? await cmd.run(`/v1/departments/${row.departmentId}`, { version: row.version, ...changes }, false, "PATCH")
+          : await cmd.run(`/v1/facilities/${facility.facilityId}/departments`, { code: code.trim(), ...body }, true);
+        if (ok) onSaved();
+      }}
+    >
+      <SheetHeader className="p-0">
+        <SheetTitle>{row ? `Edit ${row.name}` : "Add department"}</SheetTitle>
+        <SheetDescription>{facility.name}</SheetDescription>
+      </SheetHeader>
+      {!row && (
+        <Field title="Code" id="dept-code">
+          <Input id="dept-code" value={code} maxLength={30} placeholder="ENT" onChange={(e) => setCode(e.target.value)} />
+        </Field>
+      )}
+      <Field title="Name" id="dept-name">
+        <Input id="dept-name" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} />
+      </Field>
+      <Field title="Kind" id="dept-kind">
+        <Choice label="Department kind" value={kind} onChange={setKind} options={["clinical", "diagnostic", "support", "administrative"].map((v) => ({ value: v, label: label(v) }))} />
+      </Field>
+      <Field title="Specialty" id="dept-specialty">
+        <Choice
+          label="Specialty"
+          value={specialty}
+          onChange={setSpecialty}
+          options={[{ value: "none", label: "None" }, ...(specialties.data?.items ?? []).map((s) => ({ value: s.code, label: s.name }))]}
+        />
+      </Field>
+      {row && <StatusSwitch id="dept-active" active={active} onChange={setActive} />}
+      <Refused cmd={cmd} />
+      <Button type="submit" disabled={cmd.busy || !valid || (!!row && !Object.keys(changes!).length)}>
+        {cmd.busy ? "Saving…" : row ? "Save department" : "Add department"}
+      </Button>
+    </form>
+  );
+}
+
+function ServiceForm({
+  row,
+  departments,
+  fee,
+  onSaved,
+}: {
+  row: HealthcareService | null;
+  departments: Department[];
+  fee: PriceBookItem | undefined;
+  onSaved: () => void;
+}) {
+  const { facility, can } = useWorkspace(),
+    cmd = useCommand();
+  const manage = can("catalog.manage"),
+    pricing = can("pricing.manage");
+  const [departmentId, setDepartmentId] = useState(row?.departmentId ?? departments[0]?.departmentId ?? ""),
+    [code, setCode] = useState(row?.code ?? ""),
+    [name, setName] = useState(row?.name ?? ""),
+    [mode, setMode] = useState<HealthcareService["serviceMode"]>(row?.serviceMode ?? "in_person"),
+    [duration, setDuration] = useState(String(row?.defaultDurationMin ?? 15)),
+    [isPublic, setIsPublic] = useState(row?.isPublic ?? true),
+    [active, setActive] = useState((row?.status ?? "active") === "active"),
+    [feeText, setFeeText] = useState(minorToRupees(fee?.feeMinor)),
+    [feeFrom, setFeeFrom] = useState(today(facility.timezone));
+  const minutes = Number(duration);
+  const feeMinor = rupeesToMinor(feeText);
+  const feeChanged = feeMinor !== undefined && feeMinor !== (fee?.feeMinor ?? null);
+  const fields = { name: name.trim(), serviceMode: mode, defaultDurationMin: minutes, isPublic };
+  const changes = row
+    ? {
+        ...changedFields({ name: row.name, serviceMode: row.serviceMode, defaultDurationMin: row.defaultDurationMin, isPublic: row.isPublic }, fields),
+        ...(active !== (row.status === "active") ? { status: active ? "active" : "inactive" } : {}),
+      }
+    : null;
+  const dirty = row ? Object.keys(changes!).length > 0 || feeChanged : !!(code || name);
+  useUnsaved(dirty);
+  const valid =
+    name.trim().length >= 2 &&
+    Number.isInteger(minutes) && minutes >= 5 && minutes <= 480 &&
+    feeMinor !== undefined &&
+    (!!row || (CODE.test(code) && !!departmentId));
+  return (
+    <form
+      className="p-6 space-y-4"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!row) {
+          const made = await cmd.run(
+            `/v1/departments/${departmentId}/services`,
+            { code: code.trim(), ...fields, ...(pricing && feeMinor !== null ? { feeMinor } : {}) },
+            true,
+          );
+          if (made) onSaved();
+          return;
+        }
+        if (Object.keys(changes!).length && !(await cmd.run(`/v1/healthcare-services/${row.healthcareServiceId}`, { version: row.version, ...changes }, false, "PATCH"))) return;
+        if (feeChanged && !(await cmd.run(`/v1/healthcare-services/${row.healthcareServiceId}/fee`, { mode: "any", feeMinor, effectiveFrom: feeFrom }, false, "PUT"))) return;
+        onSaved();
+      }}
+    >
+      <SheetHeader className="p-0">
+        <SheetTitle>{row ? `Edit ${row.name}` : "Add bookable service"}</SheetTitle>
+        <SheetDescription>{facility.name}</SheetDescription>
+      </SheetHeader>
+      {!row && (
+        <>
+          <Field title="Department" id="svc-dept">
+            <Choice label="Department" value={departmentId} onChange={setDepartmentId} options={departments.map((d) => ({ value: d.departmentId, label: d.name }))} />
+          </Field>
+          <Field title="Code" id="svc-code">
+            <Input id="svc-code" value={code} maxLength={30} placeholder="ENT-OPD" onChange={(e) => setCode(e.target.value)} />
+          </Field>
+        </>
+      )}
+      <fieldset disabled={!manage} className="space-y-4">
+        <Field title="Name" id="svc-name">
+          <Input id="svc-name" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} />
+        </Field>
+        <Field title="Visit type" id="svc-mode">
+          <Choice
+            label="Visit type"
+            value={mode}
+            disabled={!manage}
+            onChange={(v) => setMode(v as HealthcareService["serviceMode"])}
+            options={[
+              { value: "in_person", label: "In person" },
+              { value: "virtual", label: "Video" },
+              { value: "both", label: "In person and video" },
+            ]}
+          />
+        </Field>
+        <Field title="Usual length (minutes)" id="svc-duration">
+          <Input id="svc-duration" type="number" min={5} max={480} value={duration} onChange={(e) => setDuration(e.target.value)} />
+        </Field>
+        <div className="flex items-center justify-between gap-4">
+          <Label htmlFor="svc-public">Bookable by patients (website, WhatsApp, voice)</Label>
+          <Switch id="svc-public" checked={isPublic} disabled={!manage} onCheckedChange={setIsPublic} />
+        </div>
+        {row && <StatusSwitch id="svc-active" active={active} onChange={setActive} disabled={!manage} />}
+      </fieldset>
+      <fieldset disabled={!pricing} className="space-y-4 border-t pt-4">
+        <Field title="Default consultation fee (₹)" id="svc-fee">
+          <Input id="svc-fee" inputMode="decimal" value={feeText} placeholder="Not priced" onChange={(e) => setFeeText(e.target.value)} />
+        </Field>
+        {feeMinor === undefined && <p className="text-sm text-destructive">Enter the fee in rupees, e.g. 500 or 450.50.</p>}
+        {row && feeChanged && (
+          <Field title="New fee applies from" id="svc-fee-from">
+            <Input id="svc-fee-from" type="date" min={today(facility.timezone)} value={feeFrom} onChange={(e) => setFeeFrom(e.target.value)} />
+          </Field>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {pricing
+            ? "Bookings already made keep the fee they were booked at. Clearing the fee leaves the service unpriced from that date."
+            : "Only someone who manages prices can change fees."}
+        </p>
+      </fieldset>
+      <Refused cmd={cmd} />
+      <Button type="submit" disabled={cmd.busy || !valid || !dirty}>
+        {cmd.busy ? "Saving…" : row ? "Save service" : "Add service"}
+      </Button>
+    </form>
+  );
+}
+
+function RoomForm({ row, departments, onSaved }: { row: ConsultRoom | null; departments: Department[]; onSaved: () => void }) {
+  const { facility } = useWorkspace(),
+    cmd = useCommand();
+  const [code, setCode] = useState(row?.code ?? ""),
+    [name, setName] = useState(row?.name ?? ""),
+    [departmentId, setDepartmentId] = useState(row?.departmentId ?? "none"),
+    [active, setActive] = useState((row?.status ?? "active") === "active");
+  const fields = { name: name.trim(), departmentId: departmentId === "none" ? null : departmentId };
+  const changes = row
+    ? { ...changedFields({ name: row.name, departmentId: row.departmentId }, fields), ...(active !== (row.status === "active") ? { status: active ? "active" : "inactive" } : {}) }
+    : null;
+  useUnsaved(row ? Object.keys(changes!).length > 0 : !!(code || name));
+  const valid = name.trim().length >= 2 && (!!row || CODE.test(code));
+  return (
+    <form
+      className="p-6 space-y-4"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const ok = row
+          ? await cmd.run(`/v1/consult-rooms/${row.locationId}`, { version: row.version, ...changes }, false, "PATCH")
+          : await cmd.run(`/v1/facilities/${facility.facilityId}/consult-rooms`, { code: code.trim(), ...fields }, true);
+        if (ok) onSaved();
+      }}
+    >
+      <SheetHeader className="p-0">
+        <SheetTitle>{row ? `Edit ${row.name}` : "Add consult room"}</SheetTitle>
+        <SheetDescription>{facility.name}</SheetDescription>
+      </SheetHeader>
+      {!row && (
+        <Field title="Code" id="room-code">
+          <Input id="room-code" value={code} maxLength={30} placeholder="C-1" onChange={(e) => setCode(e.target.value)} />
+        </Field>
+      )}
+      <Field title="Name" id="room-name">
+        <Input id="room-name" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} />
+      </Field>
+      <Field title="Department" id="room-dept">
+        <Choice
+          label="Room department"
+          value={departmentId}
+          onChange={setDepartmentId}
+          options={[{ value: "none", label: "Shared" }, ...departments.map((d) => ({ value: d.departmentId, label: d.name }))]}
+        />
+      </Field>
+      {row && <StatusSwitch id="room-active" active={active} onChange={setActive} />}
+      <Refused cmd={cmd} />
+      <Button type="submit" disabled={cmd.busy || !valid || (!!row && !Object.keys(changes!).length)}>
+        {cmd.busy ? "Saving…" : row ? "Save room" : "Add room"}
+      </Button>
+    </form>
   );
 }

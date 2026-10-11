@@ -87,3 +87,20 @@ export async function setRolePermission(db: Kysely<DB>, caller: Caller, input: {
     return { roleId: input.roleId, permission: input.permission, allowed: input.allowed };
   });
 }
+
+/** Retires a clinic-owned role nobody holds any more. Built-in roles and roles still granted stay. */
+export async function retireRole(db: Kysely<DB>, caller: Caller, input: { roleId: string; reason: string }) {
+  return runCommand(db, { ...caller, module: 'platform', name: 'platform.retire_role' }, async (ctx) => {
+    await lockAccess(ctx);
+    const role = await ctx.tx.selectFrom('platform.role').select(['tenant_id', 'status', 'name']).where('id', '=', input.roleId).forUpdate().executeTakeFirst();
+    if (!role || role.status !== 'active') throw notFound('role not found');
+    if (role.tenant_id === null) throw conflict("built-in roles can't be retired", { reason: 'built_in' });
+    const { rows: [held] } = await sql<{ n: number }>`
+      SELECT count(*)::int AS n FROM platform.role_grant
+      WHERE role_id = ${input.roleId} AND revoked_at IS NULL AND (valid_to IS NULL OR valid_to > now())`.execute(ctx.tx);
+    if (held!.n) throw conflict('remove this role from everyone who holds it first', { reason: 'in_use', grants: held!.n });
+    await ctx.tx.updateTable('platform.role').set({ status: 'inactive', updated_by: ctx.actor.staffId ?? null }).where('id', '=', input.roleId).execute();
+    ctx.audit({ action: 'status_change', subjectType: 'platform.role', subjectId: input.roleId, reason: input.reason, diff: { status: ['active', 'inactive'] } });
+    return { roleId: input.roleId, status: 'inactive' };
+  });
+}

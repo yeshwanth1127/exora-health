@@ -658,7 +658,8 @@ function Directory({
   go: (page: string) => void;
 }) {
   const [practitioners, setPractitioners] = useState<Practitioner[]>([]),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [reloads, setReloads] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
     void request<{ items: Practitioner[] }>(
@@ -672,9 +673,17 @@ function Directory({
         if (e.name !== "AbortError") setError(e.message);
       });
     return () => controller.abort();
-  }, [facility.facilityId]);
+  }, [facility.facilityId, reloads]);
   return (
-    <WorkspaceContext.Provider value={{ me, facility, practitioners, go }}>
+    <WorkspaceContext.Provider
+      value={{
+        me,
+        facility,
+        practitioners,
+        go,
+        reloadPractitioners: () => setReloads((n) => n + 1),
+      }}
+    >
       <main className="workspace-content flex-1">
         <ErrorMessage text={error} />
         {!allowed ? (

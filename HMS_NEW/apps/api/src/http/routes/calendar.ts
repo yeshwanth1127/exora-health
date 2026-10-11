@@ -93,6 +93,9 @@ const WeeklyPlanBody = z.object({
   effectiveTo: isoDate.nullable().optional(),
   slotMinutes: z.number().int().min(5).max(240),
   sessions: z.array(z.object({ weekday: z.number().int().min(1).max(7), start: hhmm, end: hhmm })).max(50),
+  // What the hours offer; omitted keeps what the replaced hours offered (or the clinic's one matching service).
+  healthcareServiceId: uuid.nullable().optional(),
+  consultLocationId: uuid.nullable().optional(),
 });
 
 const ClosureBody = z.object({ onDate: isoDate, start: hhmm.optional(), end: hhmm.optional(), facilityId: uuid.optional() });
