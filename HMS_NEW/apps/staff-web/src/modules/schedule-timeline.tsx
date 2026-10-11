@@ -798,7 +798,7 @@ export function ScheduleTimeline({
                             width: `${((span.end - span.start) / (end - start)) * 100}%`,
                             top: 32 + span.lane * 64,
                           }}
-                          aria-label={`${row.doctor.name}: ${states[span.kind]}, ${clock(span.start)} to ${clock(span.end)}${span.appointment ? `, ${span.appointment.patient_name}` : ""}`}
+                          aria-label={`${row.doctor.name}: ${states[span.kind]}, ${clock(span.start)} to ${clock(span.end)}${span.appointment ? `, ${span.appointment.patient_name}` : ""}${span.appointment?.booked_by ? `, booked by ${span.appointment.booked_by.name}` : ""}`}
                           title={`${states[span.kind]} · ${clock(span.start)}–${clock(span.end)} · ${clinic(span.branch_id)}`}
                           onClick={() => {
                             if (span.kind === "available" && canManage)
@@ -815,7 +815,10 @@ export function ScheduleTimeline({
                           <span className="min-w-0 text-left w-full">
                             <span className="block truncate font-medium">
                               {span.kind === "booked"
-                                ? (span.appointment?.patient_name ?? "Booked")
+                                ? span.appointment?.booked_by &&
+                                  !span.appointment.booked_by.patient_linked
+                                  ? `Booked by ${span.appointment.booked_by.name}`
+                                  : (span.appointment?.patient_name ?? "Booked")
                                 : span.kind === "blocked"
                                   ? (span.reason ?? "Blocked")
                                   : states[span.kind]}
@@ -967,6 +970,21 @@ export function ScheduleTimeline({
                           {selected.span.appointment.patient_name}
                         </dd>
                       </div>
+                      {selected.span.appointment.booked_by && (
+                        <div>
+                          <dt className="text-xs text-muted-foreground">
+                            Booked by
+                          </dt>
+                          <dd className="mt-1">
+                            {selected.span.appointment.booked_by.name}
+                            {selected.span.appointment.booked_by.phone && (
+                              <span className="block text-xs text-muted-foreground tabular-nums">
+                                {selected.span.appointment.booked_by.phone}
+                              </span>
+                            )}
+                          </dd>
+                        </div>
+                      )}
                       <div>
                         <dt className="text-xs text-muted-foreground">
                           Status / reference

@@ -53,6 +53,8 @@ export interface DeskAppointment {
   patient_name: string;
   patient_phone: string;
   patient_email?: string;
+  /** Who made the booking (caller or relative); shown on its own, never as the patient. */
+  booked_by?: { name: string; phone: string | null; patient_linked: boolean } | null;
   reason?: string;
   staff_notes?: string | null;
   overbooking_reason?: string | null;

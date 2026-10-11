@@ -96,6 +96,13 @@ export function scheduleAppointment(
       a.patientName ??
       (a.patientId ? "Patient name unavailable" : "Patient not linked"),
     patient_phone: "", // Booking-party phone is not patient contact data.
+    booked_by: a.bookingPartyName
+      ? {
+          name: a.bookingPartyName,
+          phone: a.bookingPartyPhone,
+          patient_linked: !!a.patientId,
+        }
+      : null,
     status: a.status,
     origin_channel: a.originChannel,
     starts_at: a.startsAt,

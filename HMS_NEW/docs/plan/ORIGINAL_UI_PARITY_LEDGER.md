@@ -43,8 +43,8 @@ The original current source is `/Users/deepakonda/.codex/worktrees/hms-monochrom
 | UI-schedules-10 | Schedules | Saved staff notes, exact-time move and unblock/reversal | move to a free slot and cancel connected; staff notes dropped | G04; G05; G06; G07; G08; G26 |
 | UI-waitlist-01 | Waitlist | Waitlist requests and active filters | navigation restored full design retained pending wiring | G11; G19 |
 | UI-waitlist-02 | Waitlist | Check availability and offer a slot with notification readback | navigation restored full design retained pending wiring | G11; G19 |
-| UI-catalogue-01 | Hospital catalogue | Clinic locations and active status | navigation restored full design retained pending wiring | G13; G14 |
-| UI-catalogue-02 | Hospital catalogue | Departments and doctor coverage | navigation restored full design retained pending wiring | G13; G14 |
+| UI-catalogue-01 | Hospital catalogue | Clinic locations and active status | connected read-only (Phase 5): permitted clinics | G13; G14 |
+| UI-catalogue-02 | Hospital catalogue | Departments and doctor coverage | connected read-only (Phase 5): selected clinic departments and doctor counts | G13; G14 |
 | UI-catalogue-03 | Hospital catalogue | Address, directions and arrival instructions in channel editors | navigation restored full design retained pending wiring | G13; G14 |
 | UI-operations-01 | Operations | Notification outbox, temporary holds and API readiness | navigation restored full design retained pending wiring | G12; G19 |
 | UI-operations-02 | Operations | Event delivery history and refresh | navigation restored full design retained pending wiring | G12; G19 |

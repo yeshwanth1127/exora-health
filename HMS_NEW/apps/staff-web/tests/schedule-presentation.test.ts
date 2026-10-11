@@ -71,6 +71,12 @@ test("timeline never invents walk-in slot times or substitutes booker contact", 
       ?.patient_name,
     "Actual patient",
   );
+  // The booker is reported separately, never as the patient.
+  assert.deepEqual(scheduleAppointment(visit, facility)?.booked_by, {
+    name: "Booker",
+    phone: "+919876543210",
+    patient_linked: false,
+  });
 });
 test("partial timeline includes only permitted facility and doctor visits", () => {
   const doctor = scheduleDoctors(facility, [practitioner])[0];
