@@ -50,8 +50,11 @@ export function scheduleSource(
   const allowed = {
     "schedules.manage": manage,
     "schedule.block": manage,
-    // Exact-time booking and moves need the staff range-booking contract (G08); book from Booking.
-    "appointments.create": false,
+    // Booking and moves take one published slot (hold, then book or reschedule); free-form ranges stay G08.
+    "appointments.create": can(me, "appointments.book", facility.facilityId),
+    "appointments.reschedule":
+      can(me, "appointments.book", facility.facilityId) &&
+      can(me, "appointments.reschedule", facility.facilityId),
     // Overbooking needs the clinic switch and the permission; the backend enforces both and the cap.
     "appointments.overbook":
       overbooking &&
@@ -116,20 +119,43 @@ export function scheduleSource(
     return { groups, slot_minutes: rules[0]?.slotMinutes ?? 30 };
   }
 
+  /** The one published slot at this clinic that the chosen time must match exactly. */
+  async function slotAt(doctor: string, starts: string, ends: string, mode: string | null, signal?: AbortSignal) {
+    const date = local(starts).date;
+    const { items } = await request<{ items: Slot[] }>(
+      `/v1/practitioners/${doctor}/slots?${query({ facilityId: facility.facilityId, from: date, to: date, includeUnavailable: true })}`,
+      { signal },
+    );
+    const at = Date.parse(starts);
+    const slot = items.find((s) => Date.parse(s.slotStart) === at && Date.parse(s.slotEnd) === Date.parse(ends));
+    if (!slot) {
+      const near = items.find((s) => Date.parse(s.slotStart) <= at && at < Date.parse(s.slotEnd));
+      throw new HmsError(
+        near
+          ? `Appointments here are one slot each: choose ${local(near.slotStart).time}–${local(near.slotEnd).time}.`
+          : "Choose a time inside the doctor's published hours at this clinic.",
+        422,
+        "validation",
+      );
+    }
+    if (mode && slot.visitMode !== mode)
+      throw new HmsError(`This slot is for ${slot.visitMode === "virtual" ? "virtual" : "in-person"} visits.`, 422, "validation");
+    if (slot.status === "blocked") throw new HmsError("This time is blocked.", 409, "slot_blocked");
+    return slot;
+  }
+  /** Holds one slot briefly. The same key replays the same hold, so a retried save returns the first
+   * booking; a slot someone else holds or booked is refused by the backend. */
+  const hold = (doctor: string, slotStart: string, operation: string) =>
+    request<{ reservationId: string }>("/v1/holds", {
+      method: "POST",
+      idempotencyKey: `${operation}:hold`,
+      body: { staffId: doctor, slotStart, holdMinutes: 5 },
+    });
+
   /** The original pre-save check, answered from the doctor's slots: overbooking needs a taken slot. */
   async function readCheck(url: URL, signal: AbortSignal) {
     const p = url.searchParams;
-    const starts = p.get("starts_at")!,
-      ends = p.get("ends_at")!;
-    const date = local(starts).date;
-    const { items } = await request<{ items: Slot[] }>(
-      `/v1/practitioners/${p.get("doctor_id")}/slots?${query({ facilityId: facility.facilityId, from: date, to: date, includeUnavailable: true })}`,
-      { signal },
-    );
-    const slot = items.find((s) => Date.parse(s.slotStart) === Date.parse(starts));
-    if (!slot || Date.parse(slot.slotEnd) !== Date.parse(ends))
-      throw new HmsError("Choose a slot's exact start and end time from the doctor's published hours.", 422, "validation");
-    if (slot.status === "blocked") throw new HmsError("This time is blocked.", 409, "slot_blocked");
+    const slot = await slotAt(p.get("doctor_id")!, p.get("starts_at")!, p.get("ends_at")!, p.get("consultation_type"), signal);
     return { overlapping_bookings: slot.status === "taken" ? 1 : 0 };
   }
 
@@ -242,19 +268,39 @@ export function scheduleSource(
         } as T;
       }
       if (path === "/api/v1/admin/schedule-timeline/appointments" && method === "POST") {
-        // Exact-time booking of free time needs G08; only overbooking a taken slot is connected here.
-        if (!b.overbook) throw unavailable("Exact-time booking");
+        const bookingParty = { name: b.patient_name, phone: b.patient_phone };
+        if (!b.overbook) {
+          const slot = await slotAt(String(b.doctor_id), String(b.starts_at), String(b.ends_at), String(b.consultation_type));
+          const { reservationId } = await hold(String(b.doctor_id), slot.slotStart, String(b.idempotency_key));
+          return request<T>("/v1/appointments", {
+            method: "POST",
+            idempotencyKey: String(b.idempotency_key),
+            body: { reservationId, bookingParty, originChannel: "front_desk", ...(b.reason ? { reason: b.reason } : {}) },
+          });
+        }
         return request<T>("/v1/appointments/overbook", {
           method: "POST",
           idempotencyKey: String(b.idempotency_key),
           body: {
             staffId: b.doctor_id,
             slotStart: b.starts_at,
-            bookingParty: { name: b.patient_name, phone: b.patient_phone },
+            bookingParty,
             originChannel: "front_desk",
             ...(b.reason ? { reason: b.reason } : {}),
             overbookReason: b.overbook_reason,
           },
+        });
+      }
+      const move = path.match(/^\/api\/v1\/admin\/schedule-timeline\/appointments\/([0-9a-f-]{36})\/move$/);
+      if (move && method === "POST") {
+        // A move is an audited replacement: the new appointment links back through rescheduledFromId.
+        const a = await request<Appointment>(`/v1/appointments/${move[1]}`);
+        const slot = await slotAt(a.practitionerStaffId, String(b.starts_at), String(b.ends_at), a.visitMode);
+        const { reservationId } = await hold(a.practitionerStaffId, slot.slotStart, String(b.idempotency_key));
+        return request<T>(`/v1/appointments/${move[1]}/reschedule`, {
+          method: "POST",
+          idempotencyKey: String(b.idempotency_key),
+          body: { newReservationId: reservationId, reason: b.reason },
         });
       }
       const cancel = path.match(/^\/api\/v1\/admin\/schedule-timeline\/appointments\/([0-9a-f-]{36})$/);

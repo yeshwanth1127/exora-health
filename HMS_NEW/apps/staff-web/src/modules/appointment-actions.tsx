@@ -57,7 +57,7 @@ export function AppointmentActions({
     end === istDateTime(new Date(item.ends_at));
   const valid = !startError && !endError && !unchanged;
   const canMove =
-    allowed["appointments.create"] &&
+    (allowed["appointments.reschedule"] ?? allowed["appointments.create"]) &&
     item.status === "confirmed" &&
     new Date(item.starts_at).getTime() > now &&
     !item.deleted_at;

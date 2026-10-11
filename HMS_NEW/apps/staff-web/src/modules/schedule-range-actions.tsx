@@ -548,7 +548,7 @@ function BookRange({
       ) : valid && check.fresh && check.data ? (
         <p className="text-sm text-muted-foreground">
           {range.overbook && !check.data.overlapping_bookings
-            ? "This time is free now. Book it from Booking instead."
+            ? "This time is free now. Use Book appointment instead."
             : check.data.overlapping_bookings
               ? `${check.data.overlapping_bookings} appointments overlap this range. Reception will coordinate the visits.`
               : "This time is available. We check it again when you save."}
