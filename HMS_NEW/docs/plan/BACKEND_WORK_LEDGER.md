@@ -35,8 +35,8 @@ Status convention: **DEFERRED** means backend implementation has not started. A 
 | G13 | P0 read/P1 write | **PARTIAL (Phase 4)** `GET /v1/facilities/:id/directory` (departments, services, consult rooms) and `GET /v1/practitioners/:id/fees` (booking quote). Observation definitions and directory writes remain | Fee read connected on Doctors. The directory read is available to screens but not yet consumed. |
 | G14 | P1 | **PARTIAL (Phase 4)** Fee read per practitioner/service/mode, priced as booking prices it (equals `fee_snapshot_minor`). Profile, affiliation, registration and price-list administration remain | Doctors page shows fees read-only. Profile changes are local drafts. |
 | G15 | P0 | **PARTIAL (Phase 1)** Queue complete is refused while the consultation is open (`encounter_open`); finishing the encounter completes the token. Remaining: start sync between token and encounter, nurse/admin completion authority | No queue-complete shortcut; doctor finishes clinical encounter. |
-| G16 | P1 | Proposed staff accounts, roles/grants and care-assignment administration | Workspace permissions read-only; account/grant editors deferred. |
-| G17 | P1 | Proposed GET/PUT module/config settings | Original navigation restored with Pending status pages; unsupported module/config writes remain unavailable. |
+| G16 | P1 | **PARTIAL (Settings phase B)** `GET/POST /v1/staff-accounts` (email invites, linked on first sign-in with a verified email), `POST /v1/staff/:id/grants`, `POST /v1/role-grants/:id/revoke`, `POST /v1/staff/:id/status`, `GET/POST /v1/roles`, `PUT /v1/roles/:id/permissions/:code`. No escalation, no self-grant, lockout invariant under an advisory lock. Care assignments remain | Original Settings mounted: staff table, Add staff, Manage (access, deactivate), role copies with permission switches. |
+| G17 | P1 | **PARTIAL** overbooking policy only (existing `GET/PUT /v1/facilities/:id/overbooking`). Module switches remain | Booking policy card connected; Optional modules card says they arrive with their services. |
 | G18 | P1 | **PARTIAL (Settings phase A)** `GET /v1/audit-events` (actor, record id or MRN, action, dates; up to 500 per page) and `POST /v1/audit-events/export` (up to 5,000 rows, itself audited), both `audit.read` at every clinic. Break-glass review remains | Original Activity log mounted; CSV built client-side with formula cells defused. |
 | G19 | P1 manual/P2 provider | Patient-change notification/readback contract and communications worker | Manual-contact notice after booking/move/cancel; no queued/delivered claim or durable backend task yet. |
 | G20 | P2 | WhatsApp administration/inbox/assets/campaign module | Original WhatsApp/inbox/campaign source preserved but not mounted. |
@@ -69,7 +69,7 @@ Start with G35 nursing self-join (reproduced), G01 facility scope, G03 server wo
 
 - Production OIDC requires a registered client, issuer/audience/scopes and callback origin matching the API. Wiring can be present while provider sign-in remains unverified.
 - Original timeline and weekly/range controls are visible again. Complete board data and persisted edits still require G04–G09.
-- Admin user/grant/config/audit screens need G16–G18.
+- Admin screens: staff, grants, roles and the activity log are connected. Care assignments, module switches and break-glass review still need G16–G18.
 - Virtual OPD requires separate real-provider/video acceptance; local token/state tests are not proof of a completed video visit.
 - Existing observation correction, allergy/problem editing, note entered-in-error, emergency access and template APIs still need their respective frontend flows and acceptance. These are UI work remaining, not newly missing backend endpoints.
 - Prescriptions, billing, labs and inpatient workflows need the separate backend work listed above.

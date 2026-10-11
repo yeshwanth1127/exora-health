@@ -94,3 +94,20 @@ No new permissions. `staff.manage` and `access.manage` are already seeded, and o
 - The activity log filters work; export returns at most 5,000 rows and appears in the log itself; non-auditors get 403.
 - A duplicate employee number or email gives 409, and a retry with the same key returns the same staff member.
 - Backend suite, root typecheck and frontend checks pass. A security review is recorded here before commit.
+
+## Security review (11 October 2026, before commit)
+
+- **Authorization is on the server.** Every route checks its permission at the record's clinic (or at every clinic for every-clinic records). Records are read under tenant RLS first: an id from another tenant returns 404. A record at a clinic you don't manage returns 403. The frontend only hides controls.
+- **No escalation.** `assertCanGrant` compares the role's permissions with yours at that scope, under the tenant's advisory lock. The break-glass exception is narrow: only `break_glass.use`, only for holders of `break_glass.review` at that scope. The integration role (`booking_agent`) and system accounts are never listed, granted or changed. Role copies and permission switches need `access.manage` at every clinic, and a switch can only turn on a permission you hold at every clinic.
+- **No lockout.** Self-grant, revoking your own access and changing your own status are refused, and the UI hides them for your own row. The every-clinic-administrator invariant is checked inside the same locked transaction as revoke, deactivate and switch-off. A deterministic race test replays two administrators removing each other.
+- **Email linking.**
+  - Linking needs `email_verified: true` from the configured issuer, and the `SECURITY DEFINER` function runs with a fixed `search_path`.
+  - It links only open invites for active staff in live tenants where the identity has no account, and every link is audited.
+  - Bug found and fixed in review: inside that `search_path`, citext's case-insensitive `=` isn't visible. The function now compares `lower()` text, backed by a matching index. Verified by a test and in the browser, where a mixed-case sign-in email linked correctly.
+- **Audit.** Every write is recorded with its reason. The activity log needs `audit.read` at every clinic because it carries patient record ids. Export is capped at 5,000 rows and is itself audited. CSV cells starting with `= + - @`, tab or CR are prefixed with an apostrophe.
+- **Input validation.** Zod on every body and query: reasons 3–500 characters, UUID path params, `from <= to`, a limit of 500 or less. LIKE wildcards in the person filter are escaped. The frontend adapter accepts only UUID-shaped legacy paths and sends only `/v1` requests.
+- **Mutation testing.** Every guard was weakened one at a time (clinic scope, escalation, self rules, the administrator invariant, role-switch scope), and each mutant failed at least one test. Three survived the first run (branch-scope revoke, the invariant under concurrency, role-switch scope), so tests were added for them.
+- **Known limits.**
+  - A wrong invite email gives that address's owner access. The dialog warns, and deactivating revokes it on the next request.
+  - Invites don't expire. Revisit when invite emails are sent.
+  - Staff type is a fixed category (admin, doctor, nurse, technician, pharmacist, support, other). What someone can do comes from their roles.

@@ -48,12 +48,14 @@ import { can, permittedFacilities, practitionersFor } from "@/hms/model";
 import { WorkspaceContext } from "@/hms/hooks";
 import { confirmLeave } from "@/hms/leave";
 import { Choice, Empty, ErrorMessage, Hint } from "@/hms/ui";
+import { Input } from "@/components/ui/input";
 import { Patients } from "@/hms/Patients";
 import { Appointments } from "@/hms/Appointments";
 import { Doctors } from "@/hms/Doctors";
 import { PendingModule, DesignGuide } from "@/hms/PendingModule";
 import { Waitlist } from "@/hms/Waitlist";
 import { ActivityLogPage } from "@/hms/ActivityLog";
+import { SettingsPage } from "@/hms/Settings";
 import { Schedules } from "@/hms/Schedules";
 import { Overview } from "@/hms/Overview";
 import { Catalogue } from "@/hms/Catalogue";
@@ -335,13 +337,13 @@ function StaffApp() {
                   {devLoginEnabled ? (
                     <DevSignIn
                       busy={busy}
-                      onLogin={async (subject) => {
+                      onLogin={async (subject, email) => {
                         setBusy(true);
                         setError("");
                         try {
                           const result = await request<{ token: string }>(
                             "/dev/login",
-                            { method: "POST", body: { subject } },
+                            { method: "POST", body: { subject, ...(email ? { email } : {}) } },
                           );
                           await accept(result.token);
                         } catch (e) {
@@ -589,9 +591,10 @@ function DevSignIn({
   onLogin,
 }: {
   busy: boolean;
-  onLogin: (subject: string) => Promise<void>;
+  onLogin: (subject: string, email?: string) => Promise<void>;
 }) {
-  const [subject, setSubject] = useState("ravi");
+  const [subject, setSubject] = useState("ravi"),
+    [email, setEmail] = useState("");
   return (
     <Card>
       <CardContent className="pt-5 space-y-4">
@@ -616,6 +619,26 @@ function DevSignIn({
           onClick={() => void onLogin(subject)}
         >
           Open workspace
+        </Button>
+        <label htmlFor="dev-email" className="block space-y-1.5 text-sm">
+          <span className="font-medium">Or an invited work email</span>
+          <Input
+            id="dev-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value.trim())}
+          />
+          <span className="block text-xs text-muted-foreground">
+            Signs in as a new identity whose email the provider has verified.
+          </span>
+        </label>
+        <Button
+          variant="outline"
+          className="w-full"
+          disabled={busy || !email.includes("@")}
+          onClick={() => void onLogin(`invite:${email.toLowerCase()}`, email)}
+        >
+          Sign in with email
         </Button>
       </CardContent>
     </Card>
@@ -700,41 +723,25 @@ function Directory({
 function Settings({ me }: { me: Me }) {
   return (
     <div className="space-y-6">
-      <div className="page-title">
-        <div>
-          <h1>Workspace settings</h1>
-          <p>Your signed-in account and available access.</p>
-        </div>
-        <Activity className="size-5" />
-      </div>
+      <SettingsPage />
       <Card>
-        <CardContent className="pt-6 space-y-3">
-          <p>{me.displayName}</p>
-          <p className="text-sm text-muted-foreground">
-            {me.staffType} · Hospital account {me.tenantId}
-          </p>
-          <p className="text-sm">
-            Staff and permission administration, pricing edits and activity
-            exports will be available after the corresponding backend work.
-          </p>
+        <CardContent className="pt-6 space-y-2">
+          <p className="text-sm font-medium">Your access</p>
+          {Object.entries(me.permissions).map(([permission, scopes]) => (
+            <div
+              key={permission}
+              className="flex justify-between border-b py-2 text-xs gap-4"
+            >
+              <span>{permission}</span>
+              <span className="text-muted-foreground">
+                {scopes.includes("*")
+                  ? "All clinics"
+                  : `${scopes.length} clinic(s)`}
+              </span>
+            </div>
+          ))}
         </CardContent>
       </Card>
-      <PendingModule page="settings" />
-      <div className="space-y-2">
-        {Object.entries(me.permissions).map(([permission, scopes]) => (
-          <div
-            key={permission}
-            className="flex justify-between border-b py-2 text-xs gap-4"
-          >
-            <span>{permission}</span>
-            <span className="text-muted-foreground">
-              {scopes.includes("*")
-                ? "All clinics"
-                : `${scopes.length} clinic(s)`}
-            </span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

@@ -688,3 +688,514 @@ export function ActivityLog() {
     </>
   );
 }
+
+type StaffRow = {
+  id: string;
+  name: string;
+  employee_no: string;
+  email: string | null;
+  staff_type: string;
+  status: "active" | "invited" | "disabled" | "no_login";
+  is_you: boolean;
+  grants: { id: string; role: string; clinic: string }[];
+};
+type RoleRow = {
+  id: string;
+  name: string;
+  built_in: boolean;
+  permissions: string[];
+};
+type PermissionRow = { key: string; label: string; module: string };
+const STAFF_TYPES = ["admin", "doctor", "nurse", "technician", "pharmacist", "support", "other"];
+const titleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/**
+ * Workspace settings on the HMS API: staff invited by work email, roles granted per clinic, role
+ * copies with the original permission switches, and the clinic's booking policy. Sign-in itself is
+ * the hospital's identity provider, so there are no passwords here.
+ */
+export function WorkspaceSettings({ account }: { account: { name: string; detail: string } }) {
+  const permissions = usePermissions(),
+    call = useApi(),
+    canView = permissions.can("staff.view"),
+    canCreate = permissions.can("staff.create"),
+    canStatus = permissions.can("staff.status"),
+    everywhere = permissions.can("access.everywhere");
+  const users = useResource<StaffRow[]>(canView ? "/api/v1/staff/users" : null),
+    roles = useResource<{ roles: RoleRow[]; permissions: PermissionRow[] }>(canView ? "/api/v1/staff/roles" : null);
+  const blank = {
+    name: "",
+    employee: "",
+    type: "admin",
+    email: "",
+    phone: "",
+    role: "",
+    scope: "here",
+  };
+  const [adding, setAdding] = useState(false),
+    [form, setForm] = useState(blank),
+    [person, setPerson] = useState<StaffRow | null>(null),
+    [reason, setReason] = useState(""),
+    [grantRoleId, setGrantRoleId] = useState(""),
+    [grantScope, setGrantScope] = useState("here"),
+    [roleId, setRoleId] = useState(""),
+    [copying, setCopying] = useState(false),
+    [copyName, setCopyName] = useState(""),
+    [error, setError] = useState("");
+  const set = (k: keyof typeof blank) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const roleOptions = (roles.data?.roles ?? []).map((r): [string, string] => [r.id, r.name]);
+  const scopeOptions: [string, string][] = [
+    ["here", "This clinic"],
+    ...(everywhere ? [["every", "Every clinic"] as [string, string]] : []),
+  ];
+  const role = roles.data?.roles.find((r) => r.id === (roleId || roles.data?.roles[0]?.id));
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
+  const refreshPerson = (id: string) => {
+    users.refresh();
+    setReason("");
+    setPerson((p) => (p?.id === id ? null : p));
+  };
+  const toggle = async (key: string, allowed: boolean) => {
+    setError("");
+    try {
+      await call(`/api/v1/staff/roles/${role!.id}/permissions/${key}`, {
+        method: "PUT",
+        body: { allowed },
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not update the role.");
+    } finally {
+      roles.refresh();
+    }
+  };
+  return (
+    <>
+      <PageTitle
+        title="Workspace settings"
+        description="Staff accounts, roles and the clinic's booking policy are managed in one place."
+      />
+      <div className="grid md:grid-cols-2 gap-5 mb-7">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Your account</CardTitle>
+            <CardDescription>
+              {account.name} · {account.detail}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">
+            Sign-in and passwords are managed by your hospital's sign-in provider. This workspace never stores
+            passwords.
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Optional modules</CardTitle>
+            <CardDescription>
+              WhatsApp, voice and growth tools are switched on here once their services are connected.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+      {permissions.can("booking.policy") && <BookingPolicy />}
+      {canView && (
+        <>
+          <SectionTitle
+            title="Staff accounts"
+            description="Each person signs in with their own work email. Access is given per clinic."
+            action={
+              canCreate && (
+                <Button
+                  onClick={() => {
+                    setForm({
+                      ...blank,
+                      role: roles.data?.roles.find((r) => r.name === "Front desk")?.id ?? "",
+                    });
+                    setAdding(true);
+                  }}
+                >
+                  <Plus />
+                  Add staff member
+                </Button>
+              )
+            }
+          />
+          <Resource {...users}>
+            <Card className="p-0 mb-7">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Work email</TableHead>
+                    <TableHead>Roles</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.data?.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell className="whitespace-normal">
+                        {u.name}
+                        {u.is_you && " (you)"}
+                        <span className="block text-xs text-muted-foreground">
+                          {u.employee_no} · {titleCase(u.staff_type)}
+                        </span>
+                      </TableCell>
+                      <TableCell>{u.email ?? "—"}</TableCell>
+                      <TableCell className="whitespace-normal text-xs">
+                        {u.grants.map((g) => `${g.role} · ${g.clinic}`).join(", ") || "No access"}
+                      </TableCell>
+                      <TableCell>
+                        {
+                          {
+                            active: "Active",
+                            invited: "Invited (not signed in yet)",
+                            disabled: "Disabled",
+                            no_login: "No sign-in",
+                          }[u.status]
+                        }
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setPerson(u);
+                            setReason("");
+                            setGrantRoleId("");
+                            setGrantScope("here");
+                          }}
+                        >
+                          Manage
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          </Resource>
+          <Card className="mb-7">
+            <CardHeader>
+              <CardTitle className="text-base">What each role can do</CardTitle>
+              <CardDescription>
+                Built-in roles are shared and read-only. Make a copy to customise it, then grant the copy. Every change
+                is recorded in the activity log and applies on each holder's next action.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Resource {...roles}>
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="min-w-60 flex-1">
+                    <Choice label="Role" value={role?.id ?? ""} onChange={setRoleId} options={roleOptions} />
+                  </div>
+                  {everywhere && role && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setCopyName(`${role.name} (custom)`);
+                        setCopying(true);
+                      }}
+                    >
+                      Make a copy
+                    </Button>
+                  )}
+                </div>
+                {role?.built_in && <p className="text-xs text-muted-foreground">Built-in role: read-only.</p>}
+                {error && (
+                  <p role="alert" className="text-sm text-destructive">
+                    {error}
+                  </p>
+                )}
+                {roles.data?.permissions.map((p) => (
+                  <div key={p.key} className="flex items-center justify-between gap-4">
+                    <Label htmlFor={"perm-" + p.key} className="text-sm font-normal">
+                      {p.label}
+                      <span className="ml-2 text-xs text-muted-foreground">{p.module}</span>
+                    </Label>
+                    <Switch
+                      id={"perm-" + p.key}
+                      checked={!!role?.permissions.includes(p.key)}
+                      disabled={!role || role.built_in || !everywhere}
+                      onCheckedChange={(v) => void toggle(p.key, v)}
+                    />
+                  </div>
+                ))}
+              </Resource>
+            </CardContent>
+          </Card>
+        </>
+      )}
+      <Dialog open={adding} onOpenChange={setAdding}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add staff member</DialogTitle>
+            <DialogDescription>
+              They sign in with this work email through your hospital's sign-in provider. Check it carefully: whoever
+              signs in with it gets this access.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Field
+              label="Full name"
+              id="staff-name"
+              error={form.name.trim().length < 2 ? "Enter a full name with at least 2 characters." : undefined}
+            >
+              <Input id="staff-name" value={form.name} maxLength={100} onChange={(e) => set("name")(e.target.value)} />
+            </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field
+                label="Employee number"
+                id="staff-employee"
+                error={!/^[A-Za-z0-9._/-]{1,30}$/.test(form.employee) ? "Letters, numbers, . _ / -" : undefined}
+              >
+                <Input
+                  id="staff-employee"
+                  value={form.employee}
+                  maxLength={30}
+                  onChange={(e) => set("employee")(e.target.value)}
+                />
+              </Field>
+              <Choice
+                label="Staff type"
+                value={form.type}
+                onChange={set("type")}
+                options={STAFF_TYPES.map((t) => [t, titleCase(t)])}
+              />
+            </div>
+            <Field
+              label="Work email"
+              id="staff-email"
+              error={!emailOk ? "Enter the email they will sign in with." : undefined}
+            >
+              <Input
+                id="staff-email"
+                type="email"
+                autoComplete="off"
+                value={form.email}
+                maxLength={254}
+                onChange={(e) => set("email")(e.target.value)}
+              />
+            </Field>
+            <Field label="Mobile (optional)" id="staff-phone" hint="+country code, e.g. +919876543210">
+              <Input
+                id="staff-phone"
+                type="tel"
+                value={form.phone}
+                pattern="\+[1-9][0-9]{7,14}"
+                onChange={(e) => set("phone")(e.target.value.trim())}
+              />
+            </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Choice
+                label="Role"
+                value={form.role}
+                onChange={set("role")}
+                options={roleOptions}
+                error={!form.role ? "Choose a role." : undefined}
+              />
+              <Choice label="Where" value={form.scope} onChange={set("scope")} options={scopeOptions} />
+            </div>
+            <Action
+              disabled={
+                form.name.trim().length < 2 || !/^[A-Za-z0-9._/-]{1,30}$/.test(form.employee) || !emailOk || !form.role
+              }
+              run={async () => {
+                await call("/api/v1/staff/users", {
+                  method: "POST",
+                  body: {
+                    name: form.name.trim(),
+                    employee_no: form.employee,
+                    staff_type: form.type,
+                    email: form.email.trim(),
+                    phone: form.phone,
+                    role_id: form.role,
+                    every_clinic: form.scope === "every",
+                    idempotency_key: crypto.randomUUID(),
+                  },
+                });
+                setAdding(false);
+                users.refresh();
+              }}
+              success="Invited. They get access when they first sign in with that email."
+            >
+              Invite staff member
+            </Action>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!person} onOpenChange={(v) => !v && setPerson(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{person?.name}</DialogTitle>
+            <DialogDescription>
+              {person?.is_you
+                ? "Another administrator changes your own access."
+                : "Changes apply on their next action and are recorded with your reason."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {person?.grants.map((g) => (
+              <div key={g.id} className="flex items-center justify-between gap-3 border-b pb-2 text-sm">
+                <span>
+                  {g.role} · {g.clinic}
+                </span>
+                {/* Your own access is changed by another administrator, never by you. */}
+                {!person.is_you && (
+                  <Action
+                    variant="ghost"
+                    disabled={reason.trim().length < 3}
+                    run={async () => {
+                      await call(`/api/v1/staff/grants/${g.id}/revoke`, {
+                        method: "POST",
+                        body: { reason: reason.trim() },
+                      });
+                      refreshPerson(person.id);
+                    }}
+                    success="Access removed"
+                  >
+                    Remove
+                  </Action>
+                )}
+              </div>
+            ))}
+            {person && !person.is_you && (
+              <Field label="Reason (for removing access or changing status)" id="staff-reason">
+                <Input id="staff-reason" value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} />
+              </Field>
+            )}
+            {canStatus && person && !person.is_you && (
+              <Action
+                variant={person.status === "disabled" ? "outline" : "destructive"}
+                disabled={reason.trim().length < 3}
+                run={async () => {
+                  await call(`/api/v1/staff/users/${person.id}/status`, {
+                    method: "POST",
+                    body: {
+                      status: person.status === "disabled" ? "active" : "inactive",
+                      reason: reason.trim(),
+                    },
+                  });
+                  refreshPerson(person.id);
+                }}
+                success={person.status === "disabled" ? "Reactivated" : "Deactivated: their next request is refused"}
+              >
+                {person.status === "disabled" ? "Reactivate" : "Deactivate"}
+              </Action>
+            )}
+          </div>
+          {person && !person.is_you && (
+            <div className="space-y-3 border-t pt-4">
+              <p className="text-sm font-medium">Add access</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Choice label="Role" value={grantRoleId} onChange={setGrantRoleId} options={roleOptions} />
+                <Choice label="Where" value={grantScope} onChange={setGrantScope} options={scopeOptions} />
+              </div>
+              <Action
+                disabled={!grantRoleId}
+                run={async () => {
+                  await call(`/api/v1/staff/users/${person.id}/grants`, {
+                    method: "POST",
+                    body: {
+                      role_id: grantRoleId,
+                      every_clinic: grantScope === "every",
+                      idempotency_key: crypto.randomUUID(),
+                    },
+                  });
+                  refreshPerson(person.id);
+                }}
+                success="Access added"
+              >
+                Add access
+              </Action>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={copying} onOpenChange={setCopying}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Copy {role?.name}</DialogTitle>
+            <DialogDescription>
+              The copy starts with the same permissions and can then be edited and granted.
+            </DialogDescription>
+          </DialogHeader>
+          <Field label="Name" id="role-name" error={copyName.trim().length < 2 ? "Enter a name." : undefined}>
+            <Input id="role-name" value={copyName} maxLength={60} onChange={(e) => setCopyName(e.target.value)} />
+          </Field>
+          <Action
+            disabled={copyName.trim().length < 2}
+            run={async () => {
+              const made = await call<{ roleId: string }>("/api/v1/staff/roles", {
+                method: "POST",
+                body: {
+                  name: copyName.trim(),
+                  copy_of: role!.id,
+                  idempotency_key: crypto.randomUUID(),
+                },
+              });
+              setCopying(false);
+              setRoleId(made.roleId);
+              roles.refresh();
+            }}
+            success="Role copied"
+          >
+            Make a copy
+          </Action>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function BookingPolicy() {
+  const call = useApi(),
+    policy = useResource<{ overbooking: boolean }>("/api/v1/admin/booking-policy"),
+    [error, setError] = useState("");
+  return (
+    <Card className="mb-7">
+      <CardHeader>
+        <CardTitle className="text-base">Appointment booking policy</CardTitle>
+        <CardDescription>
+          Administrator setting for this clinic. Staff follow this policy automatically when booking or moving
+          appointments.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Resource {...policy}>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <Label htmlFor="policy-overbooking">Allow overlapping appointments</Label>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Allow up to three simultaneous visits at the same clinic. Reception coordinates arrivals. Blocked time,
+                active holds and other-clinic conflicts remain protected.
+              </p>
+            </div>
+            <Switch
+              id="policy-overbooking"
+              checked={policy.data?.overbooking ?? false}
+              onCheckedChange={async (v) => {
+                setError("");
+                try {
+                  await call("/api/v1/admin/booking-policy", {
+                    method: "PUT",
+                    body: { overbooking: v },
+                  });
+                } catch (e) {
+                  setError(e instanceof Error ? e.message : "Could not update the setting.");
+                } finally {
+                  policy.refresh();
+                }
+              }}
+            />
+          </div>
+        </Resource>
+        {error && (
+          <p role="alert" className="mt-3 text-sm text-destructive">
+            {error}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
