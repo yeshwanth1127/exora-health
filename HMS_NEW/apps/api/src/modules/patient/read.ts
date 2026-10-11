@@ -46,6 +46,24 @@ export async function searchPatients(db: Kysely<DB>, caller: Caller, s: PatientS
   });
 }
 
+// The Patients page's default view: patients registered at one clinic, newest first.
+// ponytail: offset paging sorts the clinic's rows each page; add a (tenant, facility, created_at) index if clinics grow large.
+export async function listClinicPatients(db: Kysely<DB>, caller: Caller, facilityId: string, limit: number, offset: number): Promise<PatientSummary[]> {
+  return runQuery(db, caller.tenantId, async (tx) => {
+    const { rows } = await sql<PatientSummary>`
+      SELECT p.id AS "patientId", p.mrn, p.given_name || coalesce(' ' || p.family_name, '') AS name, p.sex,
+             p.birth_date AS "birthDate",
+             (SELECT c.value FROM patient.patient_contact c
+              WHERE c.patient_id = p.id AND c.kind = 'phone' AND c.is_primary AND c.valid_to IS NULL LIMIT 1) AS phone,
+             p.status
+      FROM patient.patient p
+      WHERE p.registered_facility_id = ${facilityId} AND p.status <> 'merged'
+      ORDER BY p.created_at DESC, p.id DESC
+      LIMIT ${limit} OFFSET ${offset}`.execute(tx);
+    return rows;
+  });
+}
+
 export async function getPatient(db: Kysely<DB>, caller: Caller, patientId: string) {
   return runQuery(db, caller.tenantId, async (tx) => {
     const p = await tx.selectFrom('patient.patient').selectAll().where('id', '=', patientId).executeTakeFirst();

@@ -195,9 +195,10 @@ export function RegisterPatient({
   );
 }
 export function Patients() {
-  const { can } = useWorkspace();
+  const { can, facility } = useWorkspace();
   const [selected, setSelected] = useState<Patient | null>(null),
-    [register, setRegister] = useState(false);
+    [register, setRegister] = useState(false),
+    [registered, setRegistered] = useState(0);
   return (
     <>
       <PageTitle
@@ -217,6 +218,8 @@ export function Patients() {
           <PatientLookup onSelect={setSelected} />
         </CardContent>
       </Card>
+      {/* Remounting starts the list again at page 1 for a new clinic or a new registration. */}
+      <ClinicPatients key={`${facility.facilityId}:${registered}`} onSelect={setSelected} />
       <Sheet open={register} onOpenChange={setRegister}>
         <SheetContent className="overflow-y-auto sm:max-w-lg">
           <SheetHeader>
@@ -230,6 +233,7 @@ export function Patients() {
             <RegisterPatient
               onCreated={(p) => {
                 setRegister(false);
+                setRegistered((n) => n + 1);
                 setSelected(p);
               }}
             />
@@ -253,6 +257,81 @@ export function Patients() {
         </Sheet>
       )}
     </>
+  );
+}
+function ClinicPatients({
+  onSelect,
+}: {
+  onSelect: (patient: Patient) => void;
+}) {
+  const { facility } = useWorkspace();
+  const [offset, setOffset] = useState(0);
+  const page = useQuery<{ items: Patient[]; more: boolean }>(
+    `/v1/patients?${query({ facilityId: facility.facilityId, limit: 20, offset })}`,
+  );
+  return (
+    <Card className="mt-4">
+      <CardContent className="pt-6 space-y-3">
+        <h2 className="font-semibold">Registered at {facility.name}</h2>
+        <LoadingState {...page}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>MRN</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>Sex · date of birth</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {page.data?.items.map((p) => (
+                <TableRow
+                  key={p.patientId}
+                  className="cursor-pointer"
+                  tabIndex={0}
+                  onClick={() => onSelect(p)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") onSelect(p);
+                  }}
+                >
+                  <TableCell className="font-medium">{p.name}</TableCell>
+                  <TableCell>{p.mrn}</TableCell>
+                  <TableCell>{p.phone ?? "—"}</TableCell>
+                  <TableCell>
+                    {label(p.sex)} · {p.birthDate ?? "not recorded"}
+                  </TableCell>
+                  <TableCell>
+                    <Status value={p.status} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {page.data?.items.length === 0 && (
+            <Empty>No patients registered at this clinic yet.</Empty>
+          )}
+          {(offset > 0 || page.data?.more) && (
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                disabled={offset === 0}
+                onClick={() => setOffset(Math.max(0, offset - 20))}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                disabled={!page.data?.more}
+                onClick={() => setOffset(offset + 20)}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </LoadingState>
+      </CardContent>
+    </Card>
   );
 }
 function PatientRecord({ patientId }: { patientId: string }) {

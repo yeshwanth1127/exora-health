@@ -681,6 +681,12 @@ describe('the booking journey over HTTP', () => {
     const typed = await call('GET', '/v1/patients?q=nit', { token: tokens.frontDesk });
     expect(typed.body.items.map((p: { patientId: string }) => p.patientId)).toContain(reg.body.patientId);
     expect((await call('GET', '/v1/patients?q=%25%25', { token: tokens.frontDesk })).body.items).toEqual([]);
+    // Without search terms the page lists the clinic's registered patients, newest first; other clinics need their own grant
+    const listed = await call('GET', `/v1/patients?facilityId=${t.facilityId}&limit=1`, { token: tokens.frontDesk });
+    expect(listed).toMatchObject({ status: 200, body: { items: [{ patientId: reg.body.patientId, mrn: '000001' }], more: false } });
+    expect((await call('GET', `/v1/patients?facilityId=${t.facilityId}&offset=1`, { token: tokens.frontDesk })).body).toEqual({ items: [], more: false });
+    expect((await call('GET', `/v1/patients?facilityId=${facility2}`, { token: tokens.frontDesk })).status).toBe(403);
+    expect((await call('GET', `/v1/patients?facilityId=${facility2}`, { token: tokens.admin })).body).toEqual({ items: [], more: false });
     const checkedIn = await call('POST', `/v1/appointments/${appointmentId}/check-in`, { token: tokens.frontDesk, idem: true, now: morning, body: { patientId: reg.body.patientId } });
     expect(checkedIn).toMatchObject({ status: 200, body: { tokenNo: 1 } });
 
