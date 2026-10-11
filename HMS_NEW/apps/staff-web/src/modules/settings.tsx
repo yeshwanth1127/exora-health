@@ -4,12 +4,14 @@ import remarkGfm from "remark-gfm";
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { api, dateTime, type StaffUser } from "@/lib/api";
+import { toCsv } from "@/lib/csv";
 import {
   Action,
   Choice,
   Field,
   PageTitle,
   Resource,
+  useApi,
   SectionTitle,
   usePermissions,
   useResource,
@@ -512,23 +514,23 @@ type AuditItem = {
   action: string;
   targets: Record<string, string>;
   change: Record<string, unknown>;
-  status_code: number;
-  outcome: "success" | "rejected";
   request_id: string;
 };
-const describe = (value: unknown) =>
-  value && typeof value === "object" && "from" in value && "to" in value
+const describe = (value: unknown): string =>
+  Array.isArray(value) && value.length === 2 // [before, after]
+    ? `${describe(value[0])} → ${describe(value[1])}`
+    : value && typeof value === "object" && "from" in value && "to" in value
     ? `${String((value as { from: unknown }).from)} → ${String((value as { to: unknown }).to)}`
     : typeof value === "object"
       ? JSON.stringify(value)
       : String(value);
 
-function ActivityLog() {
+export function ActivityLog() {
+  const call = useApi();
   const [filters, setFilters] = useState({
       actor: "",
       target: "",
       action: "",
-      outcome: "",
       start: "",
       end: "",
     }),
@@ -547,14 +549,44 @@ function ActivityLog() {
     <>
       <PageTitle
         title="Activity log"
-        description="Every change made in the clinic system: who, what, which record, and whether it worked."
+        description="Every completed change in the clinic system: who, what, which record, and when."
         action={
-          <Button
+          <Action
             variant="outline"
-            render={<a href={`/api/v1/staff/audit.csv?${query}`} download />}
+            run={async () => {
+              const out = await call<{ items: AuditItem[]; truncated: boolean }>(
+                `/api/v1/staff/audit/export?${query}`,
+                { method: "POST" },
+              );
+              const url = URL.createObjectURL(
+                new Blob(
+                  [
+                    toCsv([
+                      ["Time", "Person", "Action", "Records", "Change", "Request"],
+                      ...out.items.map((e) => [
+                        e.created_at,
+                        e.actor,
+                        e.action,
+                        Object.entries(e.targets).map(([k, v]) => `${k}: ${v}`).join(", "),
+                        e.change,
+                        e.request_id,
+                      ]),
+                    ]),
+                  ],
+                  { type: "text/csv" },
+                ),
+              );
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `activity-${new Date().toISOString().slice(0, 10)}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+              if (out.truncated) throw new Error("Exported the newest 5,000 rows. Narrow the filters for the rest.");
+            }}
+            success="CSV downloaded"
           >
             Export CSV
-          </Button>
+          </Action>
         }
       />
       <Card className="mb-5">
@@ -580,16 +612,6 @@ function ActivityLog() {
               onChange={(e) => set("action")(e.target.value)}
             />
           </Field>
-          <Choice
-            label="Outcome"
-            value={filters.outcome}
-            onChange={set("outcome")}
-            options={[
-              ["", "All"],
-              ["success", "Succeeded"],
-              ["rejected", "Rejected or failed"],
-            ]}
-          />
           <Field label="From" id="audit-start">
             <Input
               id="audit-start"
@@ -618,7 +640,6 @@ function ActivityLog() {
                 <TableHead>Action</TableHead>
                 <TableHead>Records</TableHead>
                 <TableHead>Change</TableHead>
-                <TableHead>Result</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -640,18 +661,6 @@ function ActivityLog() {
                     {Object.entries(e.change)
                       .map(([k, v]) => `${k}: ${describe(v)}`)
                       .join("; ")}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={
-                        e.outcome === "success"
-                          ? ""
-                          : "text-destructive font-medium"
-                      }
-                    >
-                      {e.status_code}{" "}
-                      {e.outcome === "success" ? "OK" : "Rejected"}
-                    </span>
                   </TableCell>
                 </TableRow>
               ))}

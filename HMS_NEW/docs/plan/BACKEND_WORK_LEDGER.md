@@ -37,7 +37,7 @@ Status convention: **DEFERRED** means backend implementation has not started. A 
 | G15 | P0 | **PARTIAL (Phase 1)** Queue complete is refused while the consultation is open (`encounter_open`); finishing the encounter completes the token. Remaining: start sync between token and encounter, nurse/admin completion authority | No queue-complete shortcut; doctor finishes clinical encounter. |
 | G16 | P1 | Proposed staff accounts, roles/grants and care-assignment administration | Workspace permissions read-only; account/grant editors deferred. |
 | G17 | P1 | Proposed GET/PUT module/config settings | Original navigation restored with Pending status pages; unsupported module/config writes remain unavailable. |
-| G18 | P1 | Proposed GET `/v1/audit-events`, bounded export, break-glass review | Audit/export/review controls deferred. |
+| G18 | P1 | **PARTIAL (Settings phase A)** `GET /v1/audit-events` (actor, record id or MRN, action, dates; up to 500 per page) and `POST /v1/audit-events/export` (up to 5,000 rows, itself audited), both `audit.read` at every clinic. Break-glass review remains | Original Activity log mounted; CSV built client-side with formula cells defused. |
 | G19 | P1 manual/P2 provider | Patient-change notification/readback contract and communications worker | Manual-contact notice after booking/move/cancel; no queued/delivered claim or durable backend task yet. |
 | G20 | P2 | WhatsApp administration/inbox/assets/campaign module | Original WhatsApp/inbox/campaign source preserved but not mounted. |
 | G21 | P2 | Voice session/config/transcript/recording/access module | Original voice source preserved but not mounted. |

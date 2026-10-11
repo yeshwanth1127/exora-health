@@ -16,7 +16,7 @@ The original current source is `/Users/deepakonda/.codex/worktrees/hms-monochrom
 - The timeline projects existing scoped free-slot and appointment reads into the original presentation. It is explicitly partial: no inferred holds, blocked periods, full closure history or historical free time. Walk-ins do not get invented start/end times. Counts cover loaded records, capped at 500 appointments.
 - Weekly/range/staff-note forms remain local drafts. Saved weekly rules and administrative notes are not interpreted as empty records. All original `Action` saves/previews under this presentation are disabled; no legacy mutation is sent. Normal connected strict-slot booking remains in the Appointments screen.
 - Doctor directory regains specialty/clinic/fee/status/action layout and its booking-profile dialog. Unknown fee stays unknown. Profile changes are local drafts; Save is disabled.
-- WhatsApp, voice, Google Business, growth, activity and settings entries are visible with Pending labels/status pages. Their complete original form bodies remain in source; they are **not yet fully ported or wired**. Status-page tabs do not imply functioning provider modules.
+- WhatsApp, voice, Google Business, growth and settings entries are visible with Pending labels/status pages. Their complete original form bodies remain in source; they are **not yet fully ported or wired**. Status-page tabs do not imply functioning provider modules.
 - Design & UX guide now shows the source-derived integration map. Sidebar initials/role and page breadcrumb detail are restored.
 
 ## Feature-level inventory
@@ -69,8 +69,8 @@ The original current source is `/Users/deepakonda/.codex/worktrees/hms-monochrom
 | UI-settings-02 | Workspace settings | Password/account flow (must adapt to OIDC) | navigation restored full design retained pending wiring | G16; G17 |
 | UI-settings-03 | Workspace settings | Permission controls and optional module switches | navigation restored full design retained pending wiring | G16; G17 |
 | UI-settings-04 | Workspace settings | Demo controls separate from daily operations | navigation restored full design retained pending wiring | G16; G17 |
-| UI-activity-01 | Activity log | Filtered activity with paging | navigation restored full design retained pending wiring | G18 |
-| UI-activity-02 | Activity log | CSV export and permission/care-access review | navigation restored full design retained pending wiring | G18 |
+| UI-activity-01 | Activity log | Filtered activity with paging | connected: person, record, action, date filters, Show more; outcome filter dropped (only completed changes are audited) | G18 |
+| UI-activity-02 | Activity log | CSV export and permission/care-access review | CSV export connected (audited, 5,000 rows); care-access review pending | G18 |
 | UI-design-01 | Design and UX guide | Markdown design guide and product decisions | navigation restored full design retained pending wiring | G17 |
 | UI-teleconsultations-01 | Teleconsultations | Original upcoming/waiting/needs-link/all concept tabs | live workflow connected concept design not fully ported | G34 |
 | UI-teleconsultations-02 | Teleconsultations | Call-experience and patient-detail concept sheets; adapt to actual telehealth contracts | live workflow connected concept design not fully ported | G34 |

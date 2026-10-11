@@ -12,6 +12,7 @@ import { parse, sendError } from './http/support.ts';
 import { registerClinicalRoutes } from './http/routes/clinical.ts';
 import { registerBookingRoutes } from './http/routes/booking.ts';
 import { registerCalendarRoutes } from './http/routes/calendar.ts';
+import { registerAccessRoutes } from './http/routes/access.ts';
 import { registerDirectoryRoutes } from './http/routes/directory.ts';
 import { registerPatientRoutes } from './http/routes/patients.ts';
 import { registerQueueRoutes } from './http/routes/queue.ts';
@@ -119,6 +120,7 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
     };
   });
 
+  registerAccessRoutes(app, deps.db);
   registerDirectoryRoutes(app, deps.db);
   registerPatientRoutes(app, deps.db);
   registerCalendarRoutes(app, deps.db);

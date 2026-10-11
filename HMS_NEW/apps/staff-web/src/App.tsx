@@ -53,6 +53,7 @@ import { Appointments } from "@/hms/Appointments";
 import { Doctors } from "@/hms/Doctors";
 import { PendingModule, DesignGuide } from "@/hms/PendingModule";
 import { Waitlist } from "@/hms/Waitlist";
+import { ActivityLogPage } from "@/hms/ActivityLog";
 import { Schedules } from "@/hms/Schedules";
 import { Overview } from "@/hms/Overview";
 import { Catalogue } from "@/hms/Catalogue";
@@ -387,9 +388,11 @@ function StaffApp() {
       ? (me.permissions[n.permission] ?? []).includes("*")
       : can(me, n.permission, facilityId),
   );
+  // The activity log spans every clinic, so the grant must too (the API enforces the same).
+  const auditor = (me.permissions["audit.read"] ?? []).includes("*");
   const extraPages = [
     "settings",
-    "activity",
+    ...(auditor ? ["activity"] : []),
     "design",
     "google_business",
     "growth_analytics",
@@ -473,18 +476,17 @@ function StaffApp() {
                     Workspace settings
                   </NavigationButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <NavigationButton
-                    isActive={page === "activity"}
-                    onClick={() => go("activity")}
-                  >
-                    <ScrollText />
-                    Activity log
-                    <span className="ml-auto text-[10px] text-muted-foreground">
-                      Pending
-                    </span>
-                  </NavigationButton>
-                </SidebarMenuItem>
+                {auditor && (
+                  <SidebarMenuItem>
+                    <NavigationButton
+                      isActive={page === "activity"}
+                      onClick={() => go("activity")}
+                    >
+                      <ScrollText />
+                      Activity log
+                    </NavigationButton>
+                  </SidebarMenuItem>
+                )}
                 <SidebarMenuItem>
                   <NavigationButton
                     isActive={page === "design"}
@@ -537,7 +539,9 @@ function StaffApp() {
                 {navigation.find((n) => n.key === page)?.name ??
                   (page === "settings"
                     ? "Workspace settings"
-                    : page.replaceAll("_", " "))}
+                    : page === "activity"
+                      ? "Activity log"
+                      : page.replaceAll("_", " "))}
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -662,6 +666,8 @@ function Directory({
           <Appointments />
         ) : page === "patients" ? (
           <Patients />
+        ) : page === "activity" ? (
+          <ActivityLogPage />
         ) : page === "waitlist" ? (
           <Waitlist />
         ) : page === "queue" ? (
@@ -682,7 +688,6 @@ function Directory({
             "google_business",
             "growth_analytics",
             "loyalty",
-            "activity",
           ].includes(page) ? (
           <PendingModule key={page} page={page} />
         ) : (
