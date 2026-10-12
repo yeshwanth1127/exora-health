@@ -3,7 +3,7 @@
 // read resolves to it; a merge and an unmerge each need two different people (maker-checker).
 import { sql, type DB, type Kysely, type Transaction } from '@hms/db';
 import { conflict, DomainError, invalid, notFound, pgCode, preconditionFailed, runCommand, runQuery } from '@hms/platform';
-import { clock, hospitalDay, type Caller } from '../../caller.ts';
+import { clock, type Caller } from '../../caller.ts';
 
 const actor = (ctx: { actor: { staffId?: string | undefined } }) => ctx.actor.staffId ?? null;
 
@@ -158,7 +158,7 @@ export async function updateRelatedPerson(
     if (r.version !== input.version) throw conflict('this record was changed by someone else; reload and try again', { reason: 'stale_version', currentVersion: r.version });
     await livePatient(ctx.tx, r.patient_id);
     const set: Record<string, unknown> = relatedColumns(input);
-    if (input.ended) set.valid_to = hospitalDay(clock(caller));
+    if (input.ended) set.valid_to = clock(caller).toISOString().slice(0, 10);
     if (!Object.keys(set).length) return { relatedPersonId: r.id, version: r.version };
     const { version } = await ctx.tx.updateTable('patient.related_person').set({ ...set, updated_by: actor(ctx) }).where('id', '=', r.id).returning('version').executeTakeFirstOrThrow();
     ctx.audit({ action: 'update', subjectType: 'patient.related_person', subjectId: r.id, patientId: r.patient_id, diff: { fields: Object.keys(set) } });

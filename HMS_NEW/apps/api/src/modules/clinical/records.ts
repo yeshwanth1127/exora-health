@@ -4,7 +4,7 @@
 import type { DB, Kysely, Transaction } from '@hms/db';
 import { sql } from '@hms/db';
 import { conflict, DomainError, invalid, notFound, pgCode, preconditionFailed, runCommand, runQuery } from '@hms/platform';
-import { clock, hospitalDay, type Caller } from '../../caller.ts';
+import { clock, type Caller } from '../../caller.ts';
 import { assertChartAccess, ensureEncounterAccess, lockEncounter } from './access.ts';
 
 const OPEN = ['arrived', 'in_progress'];
@@ -240,7 +240,7 @@ export async function setCarePlanStatus(db: Kysely<DB>, caller: Caller, input: {
     if (!c) throw notFound('care plan', { carePlanId: input.carePlanId });
     await assertChartAccess(ctx.tx, ctx.actor.staffId, c.patient_id, now);
     if (c.status !== 'active' && c.status !== 'draft') throw preconditionFailed(`a ${c.status} care plan can't change`);
-    await ctx.tx.updateTable('clinical.care_plan').set({ status: input.status, period_end: c.period_end ?? hospitalDay(now), updated_by: actor(ctx) }).where('id', '=', c.id).execute();
+    await ctx.tx.updateTable('clinical.care_plan').set({ status: input.status, period_end: c.period_end ?? now.toISOString().slice(0, 10), updated_by: actor(ctx) }).where('id', '=', c.id).execute();
     await ctx.tx.updateTable('clinical.care_plan_activity').set({ status: input.status === 'completed' ? 'completed' : 'cancelled', updated_by: actor(ctx) }).where('care_plan_id', '=', c.id).where('status', 'in', ['planned', 'in_progress']).execute();
     ctx.audit({ action: 'status_change', subjectType: 'clinical.care_plan', subjectId: c.id, patientId: c.patient_id, reason: input.reason, diff: { status: [c.status, input.status] } });
     return { carePlanId: c.id, status: input.status };

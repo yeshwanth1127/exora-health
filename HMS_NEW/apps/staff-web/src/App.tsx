@@ -20,9 +20,6 @@ import {
   Users,
   ListOrdered,
   Video,
-  FlaskConical,
-  Package,
-  Pill,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,11 +63,6 @@ import { Catalogue } from "@/hms/Catalogue";
 import { Queue } from "@/hms/Queue";
 import { Consultations } from "@/hms/Consultations";
 import { Teleconsultations } from "@/hms/Teleconsultations";
-import { Laboratory } from "@/hms/Laboratory";
-import { Inventory } from "@/hms/Inventory";
-import { LAB_PAGE_PERMISSIONS } from "@/hms/diagnostics";
-import { PHARMACY_PAGE_PERMISSIONS } from "@/hms/medicines";
-import { Pharmacy } from "@/hms/Pharmacy";
 import { PatientVideo } from "@/hms/PatientVideo";
 import type { Facility, Me, Practitioner } from "@/hms/types";
 
@@ -116,27 +108,6 @@ const navigation = [
     name: "Teleconsultations",
     icon: Video,
     permission: "teleconsult.read",
-  },
-  {
-    key: "laboratory",
-    name: "Lab & imaging",
-    icon: FlaskConical,
-    permission: "lab.collect",
-    // Collectors, lab staff, radiology and clinicians acknowledging results each see their own tabs.
-    anyOf: LAB_PAGE_PERMISSIONS,
-  },
-  {
-    key: "pharmacy",
-    name: "Pharmacy",
-    icon: Pill,
-    permission: "pharmacy.dispense",
-    anyOf: PHARMACY_PAGE_PERMISSIONS,
-  },
-  {
-    key: "inventory",
-    name: "Inventory",
-    icon: Package,
-    permission: "inventory.read",
   },
   {
     key: "whatsapp",
@@ -420,9 +391,7 @@ function StaffApp() {
   const visible = navigation.filter((n) =>
     "everyClinic" in n
       ? (me.permissions[n.permission] ?? []).includes("*")
-      : "anyOf" in n
-        ? (n.anyOf ?? []).some((p) => can(me, p, facilityId))
-        : can(me, n.permission, facilityId),
+      : can(me, n.permission, facilityId),
   );
   // The activity log spans every clinic, so the grant must too (the API enforces the same).
   const auditor = (me.permissions["audit.read"] ?? []).includes("*");
@@ -742,12 +711,6 @@ function Directory({
           <Consultations />
         ) : page === "teleconsultations" ? (
           <Teleconsultations />
-        ) : page === "laboratory" ? (
-          <Laboratory />
-        ) : page === "pharmacy" ? (
-          <Pharmacy />
-        ) : page === "inventory" ? (
-          <Inventory />
         ) : page === "schedules" ? (
           <Schedules />
         ) : page === "doctors" ? (

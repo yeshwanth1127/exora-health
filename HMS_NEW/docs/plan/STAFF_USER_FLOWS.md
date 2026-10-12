@@ -17,8 +17,6 @@ Browser walkthroughs are done locally by the product owner. These tests cover th
 | Front desk | `front_desk` | one clinic |
 | Doctor | `doctor` | their clinics |
 | Nurse | `nurse` | one clinic |
-| Lab technician / pathologist | `lab_technician` / `pathologist` | one clinic |
-| Radiographer / radiologist | `radiographer` / `radiologist` | one clinic |
 | Auditor | `auditor` | every clinic |
 
 ## Setting up (administrators)
@@ -58,28 +56,7 @@ Browser walkthroughs are done locally by the product owner. These tests cover th
 | — | Triage, immunizations, care plans, referrals, MLC, births and deaths | Consultations → encounter | `/v1/encounters/:id/triage|immunizations|care-plans|referrals|mlc|births|death` and their follow-ups | records "M05 records" |
 | — | Nurse writes and signs a nursing note | Consultations (nurse) | `POST …/notes` (`nursing`) → `POST /v1/notes/:id/sign` | records "nursing notes (G27)" |
 | — | Exact-time booking | Schedules → drag any range | `POST /v1/holds/range` → `POST /v1/appointments`; `GET /v1/request-outcomes/:key` after a lost response | records "board, range holds" |
-| — | Order tests, panels and imaging; from an order set; save a set | Consultations → encounter → Orders & results → Place order | `GET /v1/orderables?q` · `GET /v1/order-sets` → `POST /v1/encounters/:id/orders` (items or `orderSetId`); `POST /v1/order-sets` | diagnostics "places an order", "order sets" |
-| — | Cancel an order item before results | Consultations → Orders & results → Cancel | `POST /v1/order-items/:id/cancel` (reason) | diagnostics "cancels an item" |
-| — | Collect, receive, reject and recollect specimens | Lab & imaging → Collect / Receive | `GET /v1/lab/worklist?stage=collect` → `POST /v1/specimens`; `stage=receive` → `POST …/receive` or `…/reject` → `POST /v1/specimens/:id/recollect` | diagnostics "specimens" |
-| — | Enter results, correct them, log critical calls, microbiology | Lab & imaging → Enter results | `GET /v1/order-items/:id/lab` → `POST …/results`; `POST /v1/result-items/:id/correct` · `…/critical-alerts`; `POST …/isolates` → `POST /v1/micro-isolates/:id/susceptibilities` | diagnostics "enters results", "correction supersedes", "microbiology" |
-| — | Verify and release a lab report (second person) | Lab & imaging → Verify & release | `GET /v1/lab/worklist?stage=verify` → `POST /v1/order-items/:id/report` → `POST /v1/diagnostic-reports/:id/release` (amend: `…/amend`) | diagnostics "release needs…", "amendment" |
-| — | Read results and acknowledge them | Consultations → Orders & results; Lab & imaging → My results | `GET /v1/encounters/:id/orders`, `GET /v1/results/unacknowledged` → `POST /v1/diagnostic-reports/:id/acknowledge`; `GET /v1/patients/:id/results` | diagnostics "acknowledgement", "reads" |
-| — | Run an imaging study, Form F, report it | Lab & imaging → Imaging | `GET /v1/imaging/worklist` → `POST /v1/imaging-studies/:id/status` → `PUT …/form-f` (obstetric USG) → `POST /v1/order-items/:id/report` → `…/release` | diagnostics "imaging and PC-PNDT" |
-| — | Monthly PC-PNDT Form F submission | Lab & imaging → Form F | `GET /v1/form-f?month` → `POST /v1/form-f/submit` | diagnostics "Form F is kept and submitted monthly" |
-| — | Set up stores, items, suppliers and reorder levels | Inventory → Items & suppliers | `POST /v1/inventory/stores` · `…/items` · `…/suppliers` · `PUT …/stores/:id/levels/:itemId` | inventory "creates a drug…", "refuses bad master data" |
-| — | Opening stock, consumption, damage, corrections | Inventory → Issue & adjust | `POST /v1/inventory/stores/:id/opening` · `…/adjustments` (correction needs an approver) | inventory "consumption picks the earliest expiry…", "two issues racing…", "a book correction needs an approver" |
-| — | Ward indent → approve → dispatch → receive | Inventory → Indents & transfers | `POST /v1/inventory/requisitions` → `…/approve` → `POST /v1/inventory/transfers` → `…/receive` | inventory "a ward indents…", "transfers stay inside the clinic…" |
-| — | Purchase order → GRN → supplier invoice → return | Inventory → Purchasing | `POST /v1/inventory/purchase-orders` → `…/approve` → `…/send` → `POST /v1/inventory/goods-receipts` → `POST /v1/inventory/supplier-invoices` → `…/approve`; `POST /v1/inventory/purchase-returns` | inventory "a purchase order is approved by someone other…", "receives by batch…", "three-way matches…", "returns a batch to its supplier" |
-| — | Physical stock count | Inventory → Stock counts | `POST /v1/inventory/stores/:id/counts` → `…/record` → `…/submit` → `…/approve` | inventory "differences post as adjustments…", "refuses a variance if stock moved…" |
-| — | Stock, low stock, expiring, ledger, quarantine and recall | Inventory → Stock | `GET …/stores/:id/stock` · `/low-stock` · `/expiring` · `…/ledger`; `POST /v1/inventory/batches/:id/status` | inventory "reports low stock…", "keeps the ledger append-only…" |
-| — | Write, sign, stop or hold a prescription | Consultations → Prescriptions | `POST /v1/encounters/:id/prescriptions` → `POST /v1/prescriptions/:id/sign` (overrides per warning); `POST /v1/prescription-items/:id/{stop,hold,resume}` | pharmacy "a doctor drafts a prescription…", "only the prescriber signs…", "a teleconsult prescription cannot carry prohibited drugs" |
-| — | Verify a prescription | Pharmacy → Verify | `POST /v1/prescriptions/:id/verify` | pharmacy "a pharmacist verifies (not their own)…" |
-| — | Dispense and hand over | Pharmacy → Dispense | `GET /v1/prescriptions/:id/dispensing?storeId` → `POST /v1/dispenses` → `…/hand-over` | pharmacy "dispenses FEFO at no more than MRP…", "two dispenses racing for the last units…" |
-| — | Return medicines | Pharmacy → Dispensed & returns | `POST /v1/dispense-lines/:id/returns` | pharmacy "takes back restockable units onto the shelf…" |
-| — | Ward indent for a patient | Consultations → Medication chart → Request from pharmacy; Pharmacy → Ward indents | `POST /v1/encounters/:id/patient-indents` → `POST /v1/dispenses` (`patientIndentId`) | pharmacy "a ward indents for a patient and the pharmacy fills it…" |
-| — | Chart a dose (MAR) with witness | Consultations → Medication chart | `POST /v1/prescription-items/:id/administrations`; `GET /v1/encounters/:id/mar` | pharmacy "a high-alert dose needs a witness…", "PRN doses keep their minimum interval", "a stopped line cannot be given…" |
-| — | Schedule H1 / X / NDPS register | Pharmacy → H1 / NDPS register | `GET /v1/pharmacy/register?facilityId&from&to` | pharmacy "the controlled-drug register lists…" |
 
 ## Not yet possible (out of scope, see the ledger)
 
-WhatsApp, voice, Google Business, growth and loyalty screens (G19–G23) show their original designs with a Pending label; nothing on them saves. Billing, uploads and inpatient care (G30–G33) have no screens. Labs and imaging (G29) are on Consultations → Orders & results and the Lab & imaging page. Stores and stock (M10) are on the Inventory page; prescribing and the medication chart are on Consultations, dispensing on the Pharmacy page (M09).
+WhatsApp, voice, Google Business, growth and loyalty screens (G19–G23) show their original designs with a Pending label; nothing on them saves. Prescriptions, labs, billing, uploads and inpatient care (G28–G33) have no screens.

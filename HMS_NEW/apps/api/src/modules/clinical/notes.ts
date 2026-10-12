@@ -2,7 +2,7 @@
 // freezes the note; later changes are amendments with a reason. Signing needs a valid council registration.
 import type { DB, Kysely, Transaction } from '@hms/db';
 import { conflict, forbidden, invalid, notFound, preconditionFailed, runCommand } from '@hms/platform';
-import { clock, hospitalDay, type Caller } from '../../caller.ts';
+import { clock, type Caller } from '../../caller.ts';
 import { assertChartAccess, ensureEncounterAccess, lockEncounter } from './access.ts';
 
 type NoteType = 'consultation' | 'history' | 'examination' | 'progress' | 'nursing' | 'procedure' | 'discharge_summary' | 'referral_letter';
@@ -138,7 +138,7 @@ export async function signNote(db: Kysely<DB>, caller: Caller, input: { noteId: 
     if (!note) throw notFound('note', { noteId: input.noteId });
     if (note.status !== 'draft') throw preconditionFailed(`a ${note.status} note cannot be signed`);
     if (note.author_staff_id !== ctx.actor.staffId) throw forbidden('only the author can sign this note');
-    const today = hospitalDay(now);
+    const today = now.toISOString().slice(0, 10);
     const registration = await ctx.tx
       .selectFrom('platform.staff_registration')
       .select('id')
