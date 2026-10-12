@@ -1,5 +1,15 @@
 # Original staff UI parity ledger
 
+> **Current status (12 October 2026, `0aaff77`).** The inventory below was written on 11 October during frontend restoration, and several "Current state" cells are now stale.
+>
+> - **Schedules is connected**: the board, weekly hours (read, preview, save), blocks with preview and unblock, in-person extra hours, booking, overbooking, moves and cancellations.
+> - Schedules gaps: virtual extra hours (G06), proving exact-time moves (G08), and verifying weekly Resolve (G05).
+> - Overview, Appointments, Doctors, Waitlist, Catalogue, Operations, Settings, Activity log and Teleconsultations are connected.
+> - **Still pending:** WhatsApp, Voice, Google Business and Growth analytics (G19–G22), plus Loyalty, which is a concept (G23).
+> - The frontend test count is now 25 (lint: 18 warnings).
+>
+> Remaining work: [BACKEND_COMPLETION_GUIDE.md](BACKEND_COMPLETION_GUIDE.md). The 16 screens here are the **entire** scope; nothing outside them is to be built.
+
 Schema/workflow review: [frontend/backend contract decisions](FRONTEND_BACKEND_CONTRACT_DECISIONS.md). Preserve the original design while resolving incompatible semantics before enabling writes.
 
 11 October 2026, Asia/Kolkata. User-directed scope: **frontend restoration and backend documentation only**. The dedicated backend agent owns API/schema/domain changes. No backend implementation is authorized for this frontend task.

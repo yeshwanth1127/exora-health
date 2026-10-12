@@ -2,11 +2,11 @@
 
 Schema/workflow review: [frontend/backend contract decisions](FRONTEND_BACKEND_CONTRACT_DECISIONS.md). Preserve the original design while resolving incompatible semantics before enabling writes.
 
-Last reviewed: 11 October 2026 (Asia/Kolkata).
+Last reviewed: 12 October 2026 (Asia/Kolkata), at commit `0aaff77`.
 
-**All 40 backend work areas remain open.** This frontend integration does not implement or close backend gaps. Existing APIs are used where possible; limitations below are intentional until the matching work is completed.
+**Scope: the original staff UI only.** See [HANDOFF.md](HANDOFF.md). The status column below is current: 24 items are DONE, G09 is DROPPED and G28–G33 are OUT OF SCOPE. G05 and G08 are PARTIAL. G06 and G37 are DONE but have small leftovers. G10, G19–G23 and G25 are open. How to finish them: [BACKEND_COMPLETION_GUIDE.md](BACKEND_COMPLETION_GUIDE.md). Regression and flow tests: [REGRESSION_AND_FLOW_TESTS.md](REGRESSION_AND_FLOW_TESTS.md).
 
-**Current task boundary:** frontend work only. Backend implementation belongs to the dedicated backend agent; this task documents gaps without changing backend code or schema. [Original UI parity ledger](ORIGINAL_UI_PARITY_LEDGER.md) tracks 53 feature groups and their restoration.
+*The sections "Connected frontend status", "Next backend tranche" and "Deferred frontend/provider acceptance" below are historical (11 October) and partly stale; the table is authoritative.* [Original UI parity ledger](ORIGINAL_UI_PARITY_LEDGER.md) tracks 53 feature groups and their restoration.
 
 Canonical machine-readable ledger: [backend-gap-backlog.csv](staff-integration-audit/backend-gap-backlog.csv). Architecture/source audit: [master plan](STAFF_FRONTEND_INTEGRATION_MASTER_PLAN.md).
 
@@ -27,7 +27,7 @@ Status convention: **DEFERRED** means backend implementation has not started. A 
 | G05 | P1 | **PARTIAL (Phase 2)** Block/closure preview (`POST /v1/practitioners/:id/exceptions/preview`) and weekly-plan preview return affected appointments without saving; saves recheck and return 409 `affected_appointments`. Holiday preview and in-sheet conflict resolution remain | Block and weekly sheets show affected visits from the server before saving. |
 | G06 | P1 | **DONE (Phase 2)** `GET /v1/practitioners/:id/exceptions`, `GET /v1/facilities/:id/holidays`, `POST /v1/schedule-exceptions/:id/revoke`, `POST /v1/facility-holidays/:id/revoke` (reason, audited; revoked rows ignored by slots). Virtual extra hours still need a visit mode on exceptions | Timeline shows blocks/closures/holidays; unblock asks for a reason. Virtual extra hours stay disabled. |
 | G07 | P1 | **DONE (Phase 2)** `GET weekly-sessions`, `POST weekly-plan/preview`, `PUT weekly-plan` (withdraws/trims replaced rules, keeps service/room/walk-in, cross-clinic collisions → 409), `GET day-plans/:date`; day-plan save takes `baseRevision` → 409 `stale_revision` | Weekly editor reads, previews and saves. |
-| G08 | P1 | **PARTIAL (Phase 7)** `POST /v1/holds/range` holds an exact-minute window (5–240 min, inside a published session, visit mode checked, blocked/taken → 409); booking from the hold uses the normal book command. Move-by-range remains on the strict-slot move | Exact-time form holds and books; moves stay slot-based. |
+| G08 | P1 | **PARTIAL (Phase 7; the frontend already sends exact-time moves; needs a reschedule-into-range-hold test, see the guide)** `POST /v1/holds/range` holds an exact-minute window (5–240 min, inside a published session, visit mode checked, blocked/taken → 409); booking from the hold uses the normal book command. Move-by-range remains on the strict-slot move | Exact-time form holds and books; moves stay slot-based. |
 | G09 | — | **DROPPED** (user decision 11 Oct): no ERD table; appointment reason and clinical notes cover the need | Staff-note field removed from the UI inventory. |
 | G10 | P1 conditional | Optional appointment archive/entered-in-error command and filter | Cancel with retained history; no Delete or fabricated archive. |
 | G11 | P1 | **DONE (Phase 6)** `GET/POST /v1/waitlist`, `POST /v1/waitlist/:id/offer` (15-minute hold owned by the offer), `POST /v1/waitlist-offers/:id/accept|decline`, `POST /v1/waitlist/:id/withdraw`; see `docs/prd/waitlist.md` | Original Waitlist mounted on it with add, offer, accept/decline and withdraw. Patient self-service join/accept waits on G33; automatic offers on G19. |
@@ -47,12 +47,12 @@ Status convention: **DEFERRED** means backend implementation has not started. A 
 | G25 | P1 | Machine-readable/shared request/response contracts | Frontend-local safe DTOs implemented; shared backend contract package still missing. |
 | G26 | P0/P1 | **DONE (Phase 7)** `GET /v1/request-outcomes/:key` reports `unknown`/`in_progress`/`completed` for an idempotency key; staff schedule writes use stable per-intent keys | Retries after a lost response reuse the key. |
 | G27 | P0 when nursing notes enabled | **DONE (Phase 7)** `clinical.sign_nursing` lets nurses sign nursing notes only (doctor notes still need `clinical.sign`) | Nurse notes are created and signed as `nursing`. |
-| G28 | P2 / separate scope | Prescriptions and medication reconciliation | No prescribing controls; clinical note is not a prescription |
-| G29 | P2 / separate scope | Lab/imaging orders and results | No ordering or result-review controls |
-| G30 | P2 / separate scope | Billing/invoices/payments | Booked fee shown only; no invoice or paid-state claims |
-| G31 | P2 / separate scope | Document uploads | No attachment/upload controls |
-| G32 | P2 / separate scope | Inpatient/admission/bed operations | No admission or bed-allocation controls |
-| G33 | P2 / separate scope | Separate public website booking API | Old public book/talk entry points excluded from staff build |
+| G28 | **OUT OF SCOPE** (not in the original UI) | Prescriptions and medication reconciliation | No prescribing controls; clinical note is not a prescription |
+| G29 | **OUT OF SCOPE** (not in the original UI; M06 removed in `0aaff77`) | Lab/imaging orders and results | No ordering or result-review controls |
+| G30 | **OUT OF SCOPE** (not in the original UI) | Billing/invoices/payments | Booked fee shown only; no invoice or paid-state claims |
+| G31 | **OUT OF SCOPE** (not in the original UI; WhatsApp upload needs are handled under G20) | Document uploads | No attachment/upload controls |
+| G32 | **OUT OF SCOPE** (not in the original UI) | Inpatient/admission/bed operations | No admission or bed-allocation controls |
+| G33 | **OUT OF SCOPE** (not a staff screen) | Separate public website booking API | Old public book/talk entry points excluded from staff build |
 | G34 | P1 before real video pilot | **DONE (Phase 7)** `GET/POST /v1/consent-documents`, `PATCH /:id` (draft only), `POST /:id/publish` (retires the previous published one for the language), `POST /:id/retire` — `consent_documents.manage` everywhere | Settings → consent documents. |
 | G35 | P0 nursing workflow | **DONE (Phase 1)** Self-join is idempotent; repeat is harmless, one participant row | Self-join control can return. |
 | G36 | P1 | **DONE (Phase 3)** Per-clinic overbooking: `config_setting` key `booking.overbooking` (facility, default off, `PUT /v1/facilities/:id/overbooking` needs `config.manage` there); `appointments.overbook` (tenant_admin, front_desk); `POST /v1/appointments/overbook` into a taken, unblocked slot of a published session; reservation status `overbooked` outside the EXCLUDE, reason required and audited; at most 3 per session under the resource lock (concurrency-tested) | Schedules: clinic switch for administrators; "Add another appointment at this time" on a booked visit asks for a reason. |
@@ -76,6 +76,8 @@ Start with G35 nursing self-join (reproduced), G01 facility scope, G03 server wo
 - Production deployment, real OIDC, consent approval and real video calls remain unverified.
 
 ## Change log
+
+- 2026-10-12: scope narrowed to the original staff UI. M06 diagnostics, M09 pharmacy and M10 inventory were reverted (`0aaff77`). G28–G33 marked out of scope. Added [BACKEND_COMPLETION_GUIDE.md](BACKEND_COMPLETION_GUIDE.md) and [REGRESSION_AND_FLOW_TESTS.md](REGRESSION_AND_FLOW_TESTS.md); rewrote [HANDOFF.md](HANDOFF.md).
 
 - 2026-10-11 (editable workspace, `docs/prd/editable-workspace.md`): G13 and G14 done, G24 partial, G16 role retirement. Booking regressions fixed: new doctors can be affiliated and given a calendar (R1); weekly hours without earlier hours now get the clinic's service so bookings are priced (R2); the booking sheet picks a doctor once the list loads (R3) and books unregistered callers (R4). User flows and their tests: `STAFF_USER_FLOWS.md`, `flows.test.ts`, route coverage `coverage.test.ts`.
 

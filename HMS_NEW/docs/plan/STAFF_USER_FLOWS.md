@@ -59,4 +59,4 @@ Browser walkthroughs are done locally by the product owner. These tests cover th
 
 ## Not yet possible (out of scope, see the ledger)
 
-WhatsApp, voice, Google Business, growth and loyalty screens (G19–G23) show their original designs with a Pending label; nothing on them saves. Prescriptions, labs, billing, uploads and inpatient care (G28–G33) have no screens.
+WhatsApp, voice, Google Business, growth and loyalty screens (G19–G23) show their original designs with a Pending label; nothing on them saves. They are the remaining work: [BACKEND_COMPLETION_GUIDE.md](BACKEND_COMPLETION_GUIDE.md). Prescriptions, labs, billing, uploads and inpatient care (G28–G33) are **not part of the original UI and will not be built**. Browser walkthroughs per person: [REGRESSION_AND_FLOW_TESTS.md](REGRESSION_AND_FLOW_TESTS.md).

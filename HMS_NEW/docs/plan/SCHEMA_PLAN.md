@@ -178,7 +178,7 @@ The worker claims outbox rows with `FOR UPDATE SKIP LOCKED`, delivers to in-proc
 | 2 | Migrations 0005–0008 (M02 patient, M03 catalogue/pricing) | RLS, FK, conventions tests pass; codegen types compile |
 | 3 | Migrations 0009–0010 (M04 booking) | Concurrency tests pass |
 | 4 | API skeleton: command runner, auth stub, patient registration + booking + check-in endpoints, outbox worker | End-to-end: register → book → check in, with audit + outbox rows |
-| 5+ | Module by module: M05 clinical + M06 diagnostics → M09 pharmacy + M10 inventory → M07 inpatient + M08 theatre → M11 billing → M12 insurance → M13 comms, M14 documents, M15 operations, M16 integration → M17 ABDM | Each module: migrations + tests + commands for its flows |
+| 5+ | **Superseded (12 Oct 2026): scope is the original staff UI only.** M05 clinical is done. Of the rest, only the parts of M13 comms used by the WhatsApp, Voice, Google Business and Growth screens are built. M06–M12 and M14–M17 are out of scope: see [HANDOFF.md](HANDOFF.md) and [BACKEND_COMPLETION_GUIDE.md](BACKEND_COMPLETION_GUIDE.md) | Each item: migrations + tests + commands for its flows |
 
 ## 11. Risks and open items
 | Item | Plan |
