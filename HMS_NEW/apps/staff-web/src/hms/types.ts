@@ -156,6 +156,7 @@ export type PatientDetail = {
 };
 export type Appointment = {
   appointmentId: string;
+  version?: number;
   confirmationCode: string;
   status: string;
   bookingKind: string;
@@ -165,6 +166,7 @@ export type Appointment = {
   patientId: string | null;
   patientName: string | null;
   mrn: string | null;
+  bookingPartyId?: string | null;
   bookingPartyName: string | null;
   bookingPartyPhone: string | null;
   sessionOn: string;

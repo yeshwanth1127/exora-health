@@ -10,9 +10,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import {
-  api,
   wa,
-  assetUrl,
   dateTime,
   istDateTime,
   money,
@@ -36,11 +34,17 @@ import {
   StateBadge,
   usePermissions,
   useResource,
+  useApi,
 } from "@/components/workspace";
+import { useContext } from "react";
+import { WorkspaceContext } from "@/hms/hooks";
+import { clinicDateInput, clinicDateInstant } from "@/hms/notification-time";
+import { PrivateAssetImage } from "@/components/private-asset";
 import { UploadFile } from "@/modules/whatsapp";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -63,11 +67,17 @@ import {
 export function Campaigns({
   user,
   config,
+  localMode = false,
+  active = true,
 }: {
+  active?: boolean;
   user: StaffUser;
   config: Config;
+  localMode?: boolean;
 }) {
-  const canManage = usePermissions().can("campaigns.manage"),
+  const api = useApi();
+  const permissions = usePermissions();
+  const canManage = permissions.can("campaigns.manage"),
     r = useResource<Campaign[]>(wa + "/campaigns"),
     templates = useResource<Template[]>(wa + "/templates"),
     catalogue = useResource<Catalogue>("/api/v1/admin/catalogue"),
@@ -87,12 +97,19 @@ export function Campaigns({
     ) ?? [];
   return (
     <Resource {...r}>
+      {localMode && permissions.can("comms.manage") && active && (
+        <LocalTemplateCreate onSaved={templates.refresh} />
+      )}
       <SectionTitle
         title="Campaigns"
-        description="Choose a message, pick your audience, and check a phone test before scheduling."
+        description={
+          localMode
+            ? "Choose local administrative content, review consented recipients and approve a simulation. No provider delivery occurs."
+            : "Choose a message, pick your audience, and check a phone test before scheduling."
+        }
         action={
           <Button
-            disabled={!canManage}
+            disabled={!canManage || !active}
             onClick={() => {
               setSelected(null);
               setCopy(null);
@@ -161,12 +178,14 @@ export function Campaigns({
                   </TableCell>
                   <TableCell>
                     <p className="text-xs">
-                      {(c.counts.delivered ?? 0) + (c.counts.read ?? 0)}{" "}
-                      delivered · {c.bookings} bookings
+                      {localMode
+                        ? "Provider delivery and acquisition attribution unavailable"
+                        : `${(c.counts.delivered ?? 0) + (c.counts.read ?? 0)} delivered · ${c.bookings} bookings`}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {c.engaged} button replies · {c.unsubscribes_from_buttons}{" "}
-                      button opt-outs
+                      {localMode
+                        ? "Saved local simulation"
+                        : `${c.engaged} button replies · ${c.unsubscribes_from_buttons} button opt-outs`}
                     </p>
                   </TableCell>
                   <TableCell>
@@ -195,7 +214,7 @@ export function Campaigns({
                           Use as starting point
                         </Button>
                       )}
-                      {c.status === "scheduled" && (
+                      {c.status === "scheduled" && canManage && active && (
                         <Button variant="ghost" onClick={() => setPause(c)}>
                           Pause
                         </Button>
@@ -217,7 +236,9 @@ export function Campaigns({
           description={
             r.data?.length
               ? "Try another status or campaign name."
-              : "Choose an approved message, review it and check a test on your phone. Saving a draft sends nothing."
+              : localMode
+                ? "Create local content, review it and check a local test record. Saving sends nothing."
+                : "Choose an approved message, review it and check a test on your phone. Saving a draft sends nothing."
           }
         />
       )}
@@ -235,7 +256,11 @@ export function Campaigns({
           <div className="mt-4">
             <SectionTitle
               title="Message templates"
-              description="Only supported templates approved by Meta and synced within two hours can be selected."
+              description={
+                localMode
+                  ? "These are saved local content templates. They have no provider approval and cannot deliver messages."
+                  : "Only supported templates approved by Meta and synced within two hours can be selected."
+              }
               action={
                 <Button variant="outline" onClick={templates.refresh}>
                   <RefreshCw />
@@ -261,7 +286,9 @@ export function Campaigns({
                           <TableCell className="font-medium">
                             {t.name}
                             <p className="text-xs text-muted-foreground mt-1 font-normal">
-                              Last synced {dateTime(t.synced_at)}
+                              {localMode
+                                ? "Local content · no provider synchronization"
+                                : `Last synced ${dateTime(t.synced_at)}`}
                             </p>
                           </TableCell>
                           <TableCell>{t.category.toLowerCase()}</TableCell>
@@ -269,8 +296,18 @@ export function Campaigns({
                           <TableCell>
                             <StateBadge
                               value={
-                                usable(t)
-                                  ? "ready"
+                                (
+                                  localMode
+                                    ? (
+                                        t as Template & {
+                                          simulationOnly?: boolean;
+                                        }
+                                      ).simulationOnly === true
+                                    : usable(t)
+                                )
+                                  ? localMode
+                                    ? "local_only"
+                                    : "ready"
                                   : t.status === "APPROVED"
                                     ? "needs sync"
                                     : t.status.toLowerCase()
@@ -284,8 +321,16 @@ export function Campaigns({
                 </Card>
               ) : (
                 <Empty
-                  title="No templates synced yet"
-                  description="Ask your administrator to connect the WhatsApp business account and sync Meta-approved templates."
+                  title={
+                    localMode
+                      ? "No local templates yet"
+                      : "No templates synced yet"
+                  }
+                  description={
+                    localMode
+                      ? "Create local content above. It is never marked as Meta approved."
+                      : "Ask your administrator to connect the WhatsApp business account and sync Meta-approved templates."
+                  }
                 />
               )}
             </Resource>
@@ -305,7 +350,9 @@ export function Campaigns({
                     : "Create a campaign"}
             </DialogTitle>
             <DialogDescription>
-              Messages go out only after a checked test and audience approval.
+              {localMode
+                ? "Review content, consented audience and local approval. No messages are delivered."
+                : "Messages go out only after a checked test and audience approval."}
             </DialogDescription>
           </DialogHeader>
           <Resource
@@ -328,6 +375,7 @@ export function Campaigns({
                 catalogue={catalogue.data}
                 assets={assets.data}
                 config={config}
+                localMode={localMode}
                 user={user}
                 onDone={() => {
                   setOpen(false);
@@ -380,6 +428,7 @@ function Composer({
   user,
   onDone,
   refreshAssets,
+  localMode = false,
 }: {
   initial: Campaign | null;
   seed: Campaign | null;
@@ -390,10 +439,23 @@ function Composer({
   user: StaffUser;
   onDone: () => void;
   refreshAssets: () => void;
+  localMode?: boolean;
 }) {
+  const api = useApi();
+  const workspace = useContext(WorkspaceContext);
+  const timezone = workspace?.facility.timezone ?? "Asia/Kolkata";
+  const canApprove = usePermissions().can("campaigns.approve");
+  const campaignTime = (value: string) =>
+    localMode
+      ? clinicDateInstant(value, timezone)
+      : new Date(`${value}:00+05:30`).toISOString();
   const source = initial ?? seed;
   const available = templates.filter(
-      (t) => usable(t) && t.category === "MARKETING",
+      (t) =>
+        (localMode
+          ? (t as Template & { simulationOnly?: boolean }).simulationOnly ===
+            true
+          : usable(t)) && t.category === "MARKETING",
     ),
     [step, setStep] = useState(initial ? 2 : 0),
     [draft, setDraft] = useState(initial),
@@ -405,12 +467,30 @@ function Composer({
     ),
     [params, setParams] = useState(source?.parameters ?? []),
     [asset, setAsset] = useState(source?.asset_id ?? ""),
-    [branch, setBranch] = useState(source?.audience.branch_id ?? ""),
-    [interest, setInterest] = useState(source?.audience.interest ?? ""),
-    [scheduled, setScheduled] = useState(
-      initial ? istDateTime(new Date(initial.scheduled_at)) : istDateTime(),
+    [branch, setBranch] = useState(
+      source?.audience.branch_id ??
+        (localMode ? (catalogue.branches[0]?.id ?? "") : ""),
     ),
-    [rate, setRate] = useState(String((source?.rate_paise ?? 100) / 100)),
+    [interest, setInterest] = useState(source?.audience.interest ?? ""),
+    [scheduled, setScheduled] = useState(() =>
+      localMode
+        ? clinicDateInput(
+            initial
+              ? new Date(initial.scheduled_at)
+              : new Date(Date.now() + 3600000),
+            timezone,
+          )
+        : initial
+          ? istDateTime(new Date(initial.scheduled_at))
+          : istDateTime(),
+    ),
+    [rate, setRate] = useState(
+      String(
+        (source?.rate_paise ??
+          (config as Config & { local_rate_minor?: number }).local_rate_minor ??
+          100) / 100,
+      ),
+    ),
     [budget, setBudget] = useState(
       String((source?.budget_paise ?? 10000) / 100),
     ),
@@ -420,7 +500,11 @@ function Composer({
     [testQueued, setTestQueued] = useState(false),
     [review, setReview] = useState(false),
     [loadError, setLoadError] = useState(""),
-    [minimumTime] = useState(() => istDateTime(new Date()));
+    [minimumTime] = useState(() =>
+      localMode
+        ? clinicDateInput(new Date(), timezone)
+        : istDateTime(new Date()),
+    );
   const template = templates.find((t) => t.id === templateId),
     readonly = !!draft,
     body = template?.components.find((c) => c.type === "BODY")?.text ?? "",
@@ -436,23 +520,42 @@ function Composer({
       setAsset("");
     };
   useEffect(() => {
+    let live = true;
     if (initial)
       api<Preview>(`${wa}/campaigns/${initial.id}/preview`)
-        .then(setPreview)
-        .catch((e) => setLoadError(e.message));
-  }, [initial]);
+        .then((value) => {
+          if (live) setPreview(value);
+        })
+        .catch((e) => {
+          if (live) setLoadError(e.message);
+        });
+    return () => {
+      live = false;
+    };
+  }, [api, initial]);
   const valid =
     title.trim().length >= 3 &&
     !!template &&
-    usable(template) &&
+    (localMode
+      ? (template as Template & { simulationOnly?: boolean }).simulationOnly ===
+        true
+      : usable(template)) &&
     params.length === (template.spec?.parameters ?? 0) &&
     params.every((p) => p.trim().length > 0 && p.length <= 200) &&
     (!["IMAGE", "DOCUMENT"].includes(header ?? "") || !!asset);
   if (!available.length && !initial)
     return (
       <Empty
-        title="An approved marketing template is needed first"
-        description="Templates must be approved, supported and freshly synced from Meta. You can still manage doctor content and reception."
+        title={
+          localMode
+            ? "Create local content first"
+            : "An approved marketing template is needed first"
+        }
+        description={
+          localMode
+            ? "Use Create local message template on the campaign page. Local templates do not claim Meta approval."
+            : "Templates must be approved, supported and freshly synced from Meta. You can still manage doctor content and reception."
+        }
       />
     );
   const templateOptions =
@@ -465,7 +568,12 @@ function Composer({
         className="flex gap-2 sm:gap-4 border-b pb-5 mb-5"
         aria-label="Campaign progress"
       >
-        {["Message", "Audience", "Phone test", "Schedule"].map((label, i) => (
+        {[
+          "Message",
+          "Audience",
+          localMode ? "Local test" : "Phone test",
+          localMode ? "Local approval" : "Schedule",
+        ].map((label, i) => (
           <div
             key={label}
             className={`flex items-center gap-2 text-xs ${i === step ? "text-primary font-semibold" : "text-muted-foreground"}`}
@@ -500,7 +608,11 @@ function Composer({
             <>
               <SectionTitle
                 title="Choose your message"
-                description="Use the exact wording Meta approved. Fill only the template’s editable fields."
+                description={
+                  localMode
+                    ? "Use reviewed local wording. Fill only the declared editable fields. No provider approval is implied."
+                    : "Use the exact wording Meta approved. Fill only the template’s editable fields."
+                }
               />
               <Field
                 label="Campaign name"
@@ -522,10 +634,20 @@ function Composer({
                 />
               </Field>
               <Choice
-                label="Approved marketing template"
+                label={
+                  localMode
+                    ? "Local marketing content"
+                    : "Approved marketing template"
+                }
                 error={
-                  !template || !usable(template)
-                    ? "Select a supported, approved marketing template."
+                  !template ||
+                  (localMode
+                    ? !(template as Template & { simulationOnly?: boolean })
+                        .simulationOnly
+                    : !usable(template))
+                    ? localMode
+                      ? "Select a local template for simulation."
+                      : "Select a supported, approved marketing template."
                     : undefined
                 }
                 value={templateId}
@@ -616,8 +738,17 @@ function Composer({
                 <p className="text-xs text-muted-foreground">
                   {title.trim().length < 3
                     ? "Add a campaign name to continue."
-                    : !template || !usable(template)
-                      ? "Choose a freshly synced, approved template."
+                    : !template ||
+                        (localMode
+                          ? !(
+                              template as Template & {
+                                simulationOnly?: boolean;
+                              }
+                            ).simulationOnly
+                          : !usable(template))
+                      ? localMode
+                        ? "Choose a local template for simulation."
+                        : "Choose a freshly synced, approved template."
                       : ["IMAGE", "DOCUMENT"].includes(header ?? "") && !asset
                         ? "Choose the message attachment."
                         : "Fill every message field to continue."}
@@ -633,14 +764,20 @@ function Composer({
             <>
               <SectionTitle
                 title="Audience & timing"
-                description="Only patients who opted in to offers and match the template language are included."
+                description={
+                  localMode
+                    ? "Only contacts with explicit marketing opt-in are included. Specialty interests must be voluntarily declared."
+                    : "Only patients who opted in to offers and match the template language are included."
+                }
               />
               <Choice
                 label="Clinic"
                 value={branch}
                 onChange={setBranch}
                 options={[
-                  ["", "All clinics"],
+                  ...(!localMode
+                    ? [["", "All clinics"] as [string, string]]
+                    : []),
                   ...catalogue.branches
                     .filter((b) => b.is_active)
                     .map((b) => [b.id, b.name] as [string, string]),
@@ -669,7 +806,11 @@ function Composer({
                       ? "Choose a future start time."
                       : undefined
                 }
-                hint="India Standard Time. Messages scheduled overnight wait until 9 am."
+                hint={
+                  localMode
+                    ? `${timezone} clinic time. This schedules a local simulation only; no overnight provider behavior is claimed.`
+                    : "India Standard Time. Messages scheduled overnight wait until 9 am."
+                }
               >
                 <Input
                   id="campaign-time"
@@ -705,7 +846,7 @@ function Composer({
                       step="0.01"
                       value={rate}
                       onChange={(e) => setRate(e.target.value)}
-                      disabled={readonly}
+                      disabled={readonly || localMode}
                     />
                   </Field>
                   <Field
@@ -767,9 +908,7 @@ function Composer({
                           branch_id: branch || undefined,
                           interest: interest || undefined,
                         },
-                        scheduled_at: new Date(
-                          `${scheduled}:00+05:30`,
-                        ).toISOString(),
+                        scheduled_at: campaignTime(scheduled),
                         rate_paise: Math.round(Number(rate) * 100),
                         budget_paise: Math.round(Number(budget) * 100),
                       },
@@ -794,33 +933,52 @@ function Composer({
               <SectionTitle
                 title={
                   draft?.status === "draft"
-                    ? "Check a test on your phone"
+                    ? localMode
+                      ? "Review a local test record"
+                      : "Check a test on your phone"
                     : "Campaign summary"
                 }
                 description={
                   draft?.status === "draft"
-                    ? "Saving created a draft only. Send one test to a configured phone before approving patients."
+                    ? localMode
+                      ? "Saving created a draft only. A configured test alias creates a local test record without delivery."
+                      : "Saving created a draft only. Send one test to a configured phone before approving patients."
                     : "This campaign has already been reviewed or paused."
                 }
               />
               {draft?.status === "draft" ? (
                 <>
                   <Choice
-                    label="Test phone"
+                    label={localMode ? "Configured test alias" : "Test phone"}
                     value={phone}
                     onChange={setPhone}
                     options={
                       config.test_recipients.length
-                        ? config.test_recipients.map((n) => [n, `+${n}`])
+                        ? config.test_recipients.map((n) => [
+                            n,
+                            localMode ? n : `+${n}`,
+                          ])
                         : [["", "No test phone configured"]]
                     }
                     disabled={!config.test_recipients.length}
-                    hint="This number must already be verified in Meta."
+                    hint={
+                      localMode
+                        ? "Aliases are configured on the server. No message is delivered."
+                        : "This number must already be verified in Meta."
+                    }
                   />
                   {!config.test_recipients.length && (
                     <Notice
-                      title="No test phone configured"
-                      text="Ask your administrator to add a verified test recipient before sending a test."
+                      title={
+                        localMode
+                          ? "No local test alias configured"
+                          : "No test phone configured"
+                      }
+                      text={
+                        localMode
+                          ? "Ask the deployment owner to configure a test alias. Drafts and previews remain available; approval is disabled until the local test can be reviewed."
+                          : "Ask your administrator to add a verified test recipient before sending a test."
+                      }
                     />
                   )}
                   <Action
@@ -832,15 +990,20 @@ function Composer({
                       });
                       setTestQueued(true);
                     }}
-                    success="Test queued. Wait for it to arrive in WhatsApp."
+                    success={
+                      localMode
+                        ? "Local test recorded. Nothing was delivered."
+                        : "Test queued. Wait for it to arrive in WhatsApp."
+                    }
                   >
                     <Send />
-                    Send one test
+                    {localMode ? "Record local test" : "Send one test"}
                   </Action>
                   {testQueued && (
                     <p className="text-xs text-muted-foreground">
-                      Queued does not mean received. Check the selected phone
-                      and Delivery history.
+                      {localMode
+                        ? "This test was recorded locally. Review the content preview below; it was not received on a phone."
+                        : "Queued does not mean received. Check the selected phone and Delivery history."}
                     </p>
                   )}
                   <div className="flex items-start gap-3 pt-3">
@@ -850,8 +1013,9 @@ function Composer({
                       onCheckedChange={(v) => setReceived(v === true)}
                     />
                     <Label htmlFor="test-received" className="leading-relaxed">
-                      I received the test and checked the message, attachment
-                      and buttons.
+                      {localMode
+                        ? "I reviewed the local test and checked the simulated message and attachment."
+                        : "I received the test and checked the message, attachment and buttons."}
                     </Label>
                   </div>
                   <div className="flex flex-wrap justify-between gap-3 pt-4">
@@ -859,7 +1023,9 @@ function Composer({
                       Save for later
                     </Button>
                     <Action
-                      disabled={!received || !!loadError}
+                      disabled={
+                        !received || !!loadError || (localMode && !testQueued)
+                      }
                       run={async () => {
                         const p = await api<Preview>(
                           `${wa}/campaigns/${draft!.id}/preview`,
@@ -877,8 +1043,9 @@ function Composer({
                 <>
                   <StateBadge value={draft?.status ?? "draft"} />
                   <p className="text-sm text-muted-foreground">
-                    {draft?.approved_count ?? 0} approved recipients · Send
-                    after {draft && dateTime(draft.scheduled_at)}
+                    {draft?.approved_count ?? 0} approved recipients ·{" "}
+                    {localMode ? "Local simulation after" : "Send after"}{" "}
+                    {draft && dateTime(draft.scheduled_at)}
                   </p>
                   <Button variant="outline" onClick={onDone}>
                     Close details
@@ -891,7 +1058,11 @@ function Composer({
             <>
               <SectionTitle
                 title="Review before approval"
-                description="This approval creates queued messages for the exact audience shown here."
+                description={
+                  localMode
+                    ? "This approval creates local queued records for the exact consented audience shown. It does not send messages."
+                    : "This approval creates queued messages for the exact audience shown here."
+                }
               />
               {preview && (
                 <Card className="bg-muted/30">
@@ -909,7 +1080,9 @@ function Composer({
                       <strong>{draft && dateTime(draft.scheduled_at)}</strong>
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      Approved by {user.name} (@{user.username})
+                      {localMode
+                        ? "The authenticated approver is recorded by the server."
+                        : `Approved by ${user.name} (@${user.username})`}
                     </div>
                   </CardContent>
                 </Card>
@@ -920,7 +1093,7 @@ function Composer({
                   text="This draft cannot be approved. Create a revised draft with an appropriate budget."
                 />
               )}
-              {!config.outreach_enabled && (
+              {!localMode && !config.outreach_enabled && (
                 <Notice
                   title="Patient delivery is paused"
                   text="Your administrator must enable patient outreach before you approve this audience."
@@ -956,7 +1129,7 @@ function Composer({
                     !review ||
                     !received ||
                     !preview?.within_budget ||
-                    !config.outreach_enabled ||
+                    (localMode ? !canApprove : !config.outreach_enabled) ||
                     !preview.recipients
                   }
                   run={async () => {
@@ -971,7 +1144,11 @@ function Composer({
                     });
                     onDone();
                   }}
-                  success="Campaign approved and scheduled."
+                  success={
+                    localMode
+                      ? "Campaign approved as a local simulation. No messages sent."
+                      : "Campaign approved and scheduled."
+                  }
                 >
                   <ShieldCheck />
                   Approve {preview?.recipients ?? 0} recipients
@@ -990,12 +1167,12 @@ function Composer({
               <span className="size-7 rounded-full bg-white flex items-center justify-center text-primary font-semibold">
                 A
               </span>
-              Avocado Health
+              Exora Health
             </div>
             <div className="message-bubble">
               {media && media.mime_type.startsWith("image/") ? (
-                <img
-                  src={assetUrl(media.id)}
+                <PrivateAssetImage
+                  id={media.id}
                   alt="Campaign header image"
                   className="w-full rounded-lg mb-3"
                 />
@@ -1040,5 +1217,97 @@ function Composer({
         </aside>
       </div>
     </>
+  );
+}
+
+function LocalTemplateCreate({ onSaved }: { onSaved: () => void }) {
+  const api = useApi();
+  const [open, setOpen] = useState(false),
+    [name, setName] = useState(""),
+    [body, setBody] = useState(""),
+    [count, setCount] = useState(0),
+    [header, setHeader] = useState("none");
+  return (
+    <div className="mb-5">
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        Create local message template
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create local message template</DialogTitle>
+            <DialogDescription>
+              This is clinic content for simulation. It is not Meta approved and
+              cannot be delivered to patients.
+            </DialogDescription>
+          </DialogHeader>
+          <Field label="Template name" id="local-template-name">
+            <Input
+              id="local-template-name"
+              value={name}
+              maxLength={80}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </Field>
+          <Field label="Administrative wording" id="local-template-body">
+            <Textarea
+              id="local-template-body"
+              value={body}
+              maxLength={3000}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Use {{1}}, {{2}} for declared fields. Do not include medical advice or sensitive patient data."
+            />
+          </Field>
+          <Field label="Number of parameters" id="local-template-count">
+            <Input
+              id="local-template-count"
+              type="number"
+              min={0}
+              max={10}
+              value={count}
+              onChange={(e) => setCount(Number(e.target.value))}
+            />
+          </Field>
+          <Choice
+            label="Header"
+            value={header}
+            onChange={setHeader}
+            options={[
+              ["none", "No header"],
+              ["image", "Image"],
+            ]}
+          />
+          <Action
+            disabled={
+              name.trim().length < 2 ||
+              body.trim().length < 3 ||
+              !Number.isInteger(count) ||
+              count < 0 ||
+              count > 10
+            }
+            run={async () => {
+              await api(`${wa}/templates`, {
+                method: "POST",
+                body: {
+                  name: name.trim(),
+                  body: body.trim(),
+                  language: "en",
+                  category: "marketing",
+                  parameterCount: count,
+                  header,
+                },
+              });
+              setOpen(false);
+              setName("");
+              setBody("");
+              onSaved();
+            }}
+            success="Local template saved. Provider approval is unavailable."
+          >
+            Save local template
+          </Action>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

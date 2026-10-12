@@ -1,3 +1,5 @@
+import { useTodayVisits } from "./patient-visits-hooks";
+import { patientDisplayName } from "./patient-presentation";
 import { useEffect, useState } from "react";
 import { CalendarPlus, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,13 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
 import { PageTitle } from "@/components/workspace";
 import { useCommand, useQuery, useWorkspace } from "./hooks";
 import { query } from "./client";
@@ -32,9 +27,11 @@ import {
   LoadingState,
   Status,
 } from "./ui";
-import { PatientLookup, RegisterPatient } from "./Patients";
-import { confirmLeave } from "./leave";
+import { PatientLookup, RegisterPatient, TestPatientBadge } from "./Patients";
+import { FullPage } from "./FullPage";
 import { Booking } from "./Booking";
+import { AppointmentMessages } from "./AppointmentMessages";
+import { MessagingContacts } from "./MessagingContacts";
 import type { Appointment, Patient, PatientDetail } from "./types";
 
 export function Appointments() {
@@ -47,8 +44,12 @@ export function Appointments() {
     [search, setSearch] = useState(""),
     // Cursors of the pages before the current one; the last entry is the current page's cursor.
     [pages, setPages] = useState<string[]>([]);
-  const [selected, setSelected] = useState<string | null>(null),
-    [book, setBook] = useState(false);
+  const [selected, setSelected] = useState<string | null>(() =>
+      new URLSearchParams(location.search).get("appointment"),
+    ),
+    [book, setBook] = useState(
+      () => new URLSearchParams(location.search).get("book") === "1",
+    );
   useEffect(() => {
     const timer = setTimeout(() => setSearch(text.trim()), 300);
     return () => clearTimeout(timer);
@@ -68,6 +69,42 @@ export function Appointments() {
     "",
     mode === "all" ? "" : mode,
   );
+  if (book)
+    return (
+      <FullPage
+        title="Book appointment"
+        description="Choose the patient, select a time, then review and confirm."
+        back="Back to appointments"
+        onBack={() => setBook(false)}
+      >
+        <Booking
+          onBooked={(id) => {
+            setBook(false);
+            setSelected(id);
+            result.refresh();
+          }}
+        />
+      </FullPage>
+    );
+  if (selected)
+    return (
+      <FullPage
+        title="Appointment"
+        description="Manage the booking and arrival. Clinical notes are recorded in the consultation."
+        back="Back to appointments"
+        onBack={() => setSelected(null)}
+      >
+        <AppointmentDetails
+          key={selected}
+          id={selected}
+          onChanged={result.refresh}
+          onMoved={(id) => {
+            setSelected(id);
+            result.refresh();
+          }}
+        />
+      </FullPage>
+    );
   return (
     <>
       <PageTitle
@@ -84,15 +121,19 @@ export function Appointments() {
       />
       <Card>
         <CardContent className="pt-5 space-y-4">
-          <div className="flex flex-wrap gap-3">
-            <Input
-              type="date"
-              aria-label="Appointment date"
-              className="w-40"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-            <div className="w-48">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-2">
+              <p className="text-xs font-medium">Date</p>
+              <Input
+                type="date"
+                aria-label="Appointment date"
+                className="w-40"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </div>
+            <div className="w-48 space-y-2">
+              <p className="text-xs font-medium">Doctor</p>
               <Choice
                 label="Doctor filter"
                 value={staffId}
@@ -106,7 +147,8 @@ export function Appointments() {
                 ]}
               />
             </div>
-            <div className="w-40">
+            <div className="w-40 space-y-2">
+              <p className="text-xs font-medium">Booking status</p>
               <Choice
                 label="Status filter"
                 value={status}
@@ -124,7 +166,8 @@ export function Appointments() {
                 }))}
               />
             </div>
-            <div className="w-36">
+            <div className="w-36 space-y-2">
+              <p className="text-xs font-medium">Visit type</p>
               <Choice
                 label="Visit mode"
                 value={mode}
@@ -176,7 +219,10 @@ export function Appointments() {
                 <TableRow key={a.appointmentId}>
                   <TableCell>
                     <div className="font-medium">
-                      {a.patientName ?? "Patient not linked"}
+                      {patientDisplayName(a.patientId, a.patientName)}{" "}
+                      {a.patientId && (
+                        <TestPatientBadge patientId={a.patientId} />
+                      )}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {a.mrn ?? `Booked by ${a.bookingPartyName ?? "caller"}`}
@@ -241,55 +287,6 @@ export function Appointments() {
           )}
         </LoadingState>
       </Card>
-      <Sheet
-        open={book}
-        onOpenChange={(open) => {
-          if (open || confirmLeave()) setBook(open);
-        }}
-      >
-        <SheetContent className="overflow-y-auto sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>Book appointment</SheetTitle>
-            <SheetDescription>
-              Select a patient and an available published slot.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="p-6">
-            <Booking
-              onBooked={(id) => {
-                setBook(false);
-                setSelected(id);
-                result.refresh();
-              }}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
-      {selected && (
-        <Sheet
-          open
-          onOpenChange={(open) => {
-            if (!open && confirmLeave()) setSelected(null);
-          }}
-        >
-          <SheetContent className="overflow-y-auto sm:max-w-xl">
-            <SheetHeader>
-              <SheetTitle>Appointment details</SheetTitle>
-              <SheetDescription>
-                Arrival, booking and visit history.
-              </SheetDescription>
-            </SheetHeader>
-            <AppointmentDetails
-              id={selected}
-              onChanged={result.refresh}
-              onMoved={(id) => {
-                setSelected(id);
-                result.refresh();
-              }}
-            />
-          </SheetContent>
-        </Sheet>
-      )}
     </>
   );
 }
@@ -312,6 +309,21 @@ function AppointmentDetails({
     [reason, setReason] = useState(""),
     [notice, setNotice] = useState("");
   const a = result.data;
+  const visit = useQuery<{ encounterId: string; status: string }>(
+    a &&
+      ["checked_in", "completed"].includes(a.status) &&
+      can("encounters.read")
+      ? `/v1/appointments/${id}/encounter`
+      : null,
+    5000,
+  );
+  const todayVisits = useTodayVisits(a?.patientId);
+  const completedUnbooked = todayVisits.items.some(
+    (v) =>
+      v.status === "finished" &&
+      !v.appointmentId &&
+      v.attendingStaffId === a?.practitionerStaffId,
+  );
   async function changed() {
     result.refresh();
     onChanged();
@@ -322,20 +334,90 @@ function AppointmentDetails({
     );
   }
   return (
-    <div className="p-6 space-y-5">
+    <div className="max-w-5xl space-y-6">
       <LoadingState {...result}>
         {a && (
           <>
-            <div>
-              <h2 className="text-xl font-semibold">
-                {a.patientName ?? "Patient not linked"}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {a.confirmationCode} ·{" "}
-                {a.mrn ?? "Identity required before arrival"}
-              </p>
+            <div className="flex justify-between gap-6 items-start">
+              <div className="space-y-2">
+                <h2 className="text-2xl font-semibold">
+                  {patientDisplayName(a.patientId, a.patientName)}{" "}
+                  {a.patientId && <TestPatientBadge patientId={a.patientId} />}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  MRN {a.mrn ?? "Not linked"} · Booking {a.confirmationCode}
+                </p>
+                {a.patientId && can("patients.read") && (
+                  <Button
+                    variant="link"
+                    className="px-0"
+                    onClick={() => go(`patients?patient=${a.patientId}`)}
+                  >
+                    Patient details & medical history →
+                  </Button>
+                )}
+              </div>
+              {visit.data && can("clinical.read") && (
+                <Button
+                  onClick={() =>
+                    go(`consultations?encounter=${visit.data!.encounterId}`)
+                  }
+                >
+                  {a.status === "completed" || visit.data.status === "finished"
+                    ? "View this visit’s summary"
+                    : "Continue consultation"}
+                </Button>
+              )}
             </div>
-            <Status value={a.status} />
+            <div className="rounded-lg border p-5 space-y-3">
+              <Status value={a.status} />
+              <p className="text-sm">
+                {a.status === "confirmed"
+                  ? a.sessionOn > today(facility.timezone)
+                    ? `Scheduled for ${a.sessionOn}. Check-in is available on that date. To see the patient earlier, move this appointment to today through the front desk.`
+                    : a.sessionOn < today(facility.timezone)
+                      ? "The appointment date has passed. Check-in is unavailable; ask the front desk to review this booking."
+                      : a.visitMode === "virtual"
+                        ? "This is a teleconsultation. Open Teleconsultations to manage patient identity, consent and joining the visit."
+                        : "Check in the patient when they arrive. Then open the linked consultation."
+                  : a.status === "checked_in"
+                    ? visit.data?.status === "finished"
+                      ? "The clinical visit is completed. The appointment status is waiting for processing."
+                      : "Patient checked in. The doctor records notes and completes this visit in Consultations."
+                    : a.status === "completed"
+                      ? "This appointment is complete. View this visit’s summary for its notes and outcome."
+                      : "This booking is closed. Its details are kept for reference."}
+              </p>
+              {a.status === "confirmed" && completedUnbooked && (
+                <Hint>
+                  A separate unbooked visit was completed today. This
+                  appointment is still scheduled; that visit did not complete
+                  this booking. Review whether this booking is still needed.
+                </Hint>
+              )}
+              {a.status === "confirmed" &&
+                a.visitMode === "virtual" &&
+                can("teleconsult.read") && (
+                  <Button
+                    variant="outline"
+                    onClick={() => go("teleconsultations")}
+                  >
+                    Open teleconsultations
+                  </Button>
+                )}
+              {a.status === "checked_in" &&
+                !visit.data &&
+                can("encounters.read") && (
+                  <p className="text-sm text-muted-foreground">
+                    {visit.failure?.status === 404
+                      ? "The clinical visit is being prepared. Refresh shortly."
+                      : visit.error || "Loading clinical visit…"}
+                  </p>
+                )}
+              {a.status === "completed" && visit.error && (
+                <ErrorMessage text="This visit summary could not be opened. Check your clinical access or retry." />
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Doctor</p>
@@ -369,6 +451,24 @@ function AppointmentDetails({
               <p className="text-sm">Cancellation reason: {a.cancelReason}</p>
             )}
             {notice && <Hint>{notice}</Hint>}
+            {can("comms.read") && (
+              <AppointmentMessages
+                key={a.appointmentId}
+                appointmentId={a.appointmentId}
+              />
+            )}
+            {can("comms.read") &&
+              (a.patientId ? (
+                <MessagingContacts
+                  key={`patient:${a.patientId}`}
+                  patientId={a.patientId}
+                />
+              ) : a.bookingPartyId ? (
+                <MessagingContacts
+                  key={`caller:${a.bookingPartyId}`}
+                  bookingPartyId={a.bookingPartyId}
+                />
+              ) : null)}
             {move ? (
               <Booking key={a.appointmentId} move={a} onBooked={onMoved} />
             ) : (

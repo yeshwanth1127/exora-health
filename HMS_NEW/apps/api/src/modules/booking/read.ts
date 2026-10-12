@@ -7,6 +7,7 @@ import { practitionerResourceId } from './calendar.ts';
 
 export interface AppointmentView {
   appointmentId: string;
+  version: number;
   confirmationCode: string;
   status: string;
   bookingKind: string;
@@ -16,6 +17,7 @@ export interface AppointmentView {
   patientId: string | null;
   patientName: string | null;
   mrn: string | null;
+  bookingPartyId: string | null;
   bookingPartyName: string | null;
   bookingPartyPhone: string | null;
   sessionOn: string;
@@ -45,6 +47,7 @@ function baseQuery(db: Kysely<DB> | Parameters<Parameters<typeof runQuery>[2]>[0
     .leftJoin('booking.reservation as r', 'r.id', 'a.reservation_id')
     .select([
       'a.id as appointmentId',
+      'a.version',
       'a.confirmation_code as confirmationCode',
       'a.status',
       'a.booking_kind as bookingKind',
@@ -54,6 +57,7 @@ function baseQuery(db: Kysely<DB> | Parameters<Parameters<typeof runQuery>[2]>[0
       'a.patient_id as patientId',
       sql<string | null>`p.given_name || coalesce(' ' || p.family_name, '')`.as('patientName'),
       'p.mrn',
+      'a.booking_party_id as bookingPartyId',
       'bp.name as bookingPartyName',
       'bp.phone as bookingPartyPhone',
       'a.session_on as sessionOn',
@@ -147,9 +151,10 @@ export interface OperationsSummary {
     scheduleRules: number;
     activeHolds: number;
     voiceBookings: number;
-    /** No notification or voice-call store exists yet (G19, G21): unknown, never zero. */
-    pendingNotifications: null;
-    voiceSessions: null;
+    /** Local, unexpired notification jobs. Null when unavailable or not authorized. */
+    pendingNotifications: number | null;
+    /** Persisted clinic call sessions; null when unavailable or not authorized. */
+    voiceSessions: number | null;
   };
   dailyBookings: { date: string; bookings: number }[];
   byStatus: { label: string; value: number }[];
@@ -163,7 +168,7 @@ export interface OperationsSummary {
  * ten latest bookings.
  */
 // ponytail: all-time counts scan the clinic's appointments; add a date window or rollup when that is slow.
-export async function operationsSummary(db: Kysely<DB>, caller: Caller, facilityId: string, on: string): Promise<OperationsSummary> {
+export async function operationsSummary(db: Kysely<DB>, caller: Caller, facilityId: string, on: string, readNotifications = false, readVoice = false): Promise<OperationsSummary> {
   const now = clock(caller);
   return runQuery(db, caller.tenantId, async (tx) => {
     const [{ rows: [totals] }, { rows: [hours] }, { rows: [holds] }, { rows: daily }, { rows: mix }, recent] = await Promise.all([
@@ -195,6 +200,23 @@ export async function operationsSummary(db: Kysely<DB>, caller: Caller, facility
         ORDER BY value DESC, label`.execute(tx),
       baseQuery(tx).where('a.facility_id', '=', facilityId).orderBy('a.created_at', 'desc').orderBy('a.id', 'desc').limit(10).execute(),
     ]);
+    let pendingNotifications: number | null = null;
+    if (readNotifications) {
+      const state = (await tx.selectFrom('platform.module_state').select('state').where('module_code', '=', 'comms').executeTakeFirst())?.state ?? 'active';
+      if (state === 'active' || state === 'suspended') {
+        const { rows: [count] } = await sql<{ n: number }>`SELECT count(*)::int AS n FROM comms.reminder_job
+          WHERE facility_id=${facilityId} AND status IN ('scheduled','queued') AND expires_at>${now}`.execute(tx);
+        pendingNotifications = count!.n;
+      }
+    }
+    let voiceSessions: number | null = null;
+    if (readVoice) {
+      const state = (await tx.selectFrom('platform.module_state').select('state').where('module_code', '=', 'comms').executeTakeFirst())?.state ?? 'active';
+      if (state === 'active' || state === 'suspended') {
+        const { rows: [count] } = await sql<{ n: number }>`SELECT count(*)::int AS n FROM comms.voice_call WHERE facility_id=${facilityId}`.execute(tx);
+        voiceSessions = count!.n;
+      }
+    }
     const pick = (kind: string) => mix.filter((m) => m.kind === kind).map(({ label, value }) => ({ label, value }));
     return {
       date: on,
@@ -206,8 +228,8 @@ export async function operationsSummary(db: Kysely<DB>, caller: Caller, facility
         scheduleRules: hours!.rules,
         activeHolds: holds!.n,
         voiceBookings: totals!.voice,
-        pendingNotifications: null,
-        voiceSessions: null,
+        pendingNotifications,
+        voiceSessions,
       },
       dailyBookings: daily,
       byStatus: pick('status'),

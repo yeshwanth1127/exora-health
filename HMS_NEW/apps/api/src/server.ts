@@ -12,6 +12,10 @@ import { parse, sendError } from './http/support.ts';
 import { registerClinicalRoutes } from './http/routes/clinical.ts';
 import { registerBookingRoutes } from './http/routes/booking.ts';
 import { registerCalendarRoutes } from './http/routes/calendar.ts';
+import { registerCommsRoutes } from './http/routes/comms.ts';
+import { registerCommsSummaryRoutes } from './http/routes/comms-summary.ts';
+import { registerVoiceGrowthRoutes } from './http/routes/voice-growth.ts';
+import { loadChannelSettings, type ChannelSettings } from './modules/comms/voice-growth.ts';
 import { registerAccessRoutes } from './http/routes/access.ts';
 import { registerAdminRoutes } from './http/routes/admin.ts';
 import { registerBoardRoutes } from './http/routes/board.ts';
@@ -38,6 +42,7 @@ export interface ServerDeps {
   devLogin?: (subject: string, email?: string) => Promise<string>;
   /** Virtual OPD settings (Jitsi signing, join window); defaults to the environment's. */
   telehealth?: TelehealthSettings;
+  channels?: ChannelSettings;
 }
 
 const REQUEST_ID = /^[A-Za-z0-9_.:-]{8,128}$/;
@@ -82,6 +87,8 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   });
 
   app.addHook('onRequest', async (request) => {
+    // This exact provider endpoint verifies its own challenge/HMAC in the encapsulated router.
+    if (request.url.split('?')[0] === '/v1/integrations/whatsapp/webhook' && ['GET','POST'].includes(request.method)) return;
     if (deps.allowClockOverride && request.url.startsWith('/tele/v1/')) {
       const now = request.headers['x-test-now'];
       if (typeof now === 'string') request.clockOverride = new Date(now);
@@ -137,6 +144,9 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
     };
   });
 
+  registerCommsRoutes(app, deps.db);
+  registerCommsSummaryRoutes(app, deps.db);
+  registerVoiceGrowthRoutes(app, deps.db, deps.channels ?? loadChannelSettings());
   registerAccessRoutes(app, deps.db);
   registerDirectoryRoutes(app, deps.db);
   registerPatientRoutes(app, deps.db);

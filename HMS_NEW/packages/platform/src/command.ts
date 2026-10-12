@@ -8,7 +8,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { sql, type DB, type Kysely, type Transaction } from '@hms/db';
 import { DomainError } from './errors.ts';
 
-export const MODULES = ['platform', 'patient', 'catalog', 'booking', 'clinical'] as const;
+export const MODULES = ['platform', 'patient', 'catalog', 'booking', 'clinical', 'comms'] as const;
 export type ModuleName = (typeof MODULES)[number];
 
 export interface Actor {

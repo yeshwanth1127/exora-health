@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { CalendarClock, Trash2 } from "lucide-react";
 import { dateTime, istDateTime } from "@/lib/api";
 import { Action, Field, useApi } from "@/components/workspace";
@@ -15,6 +15,9 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import type { DeskAppointment } from "./NurseDesk";
+import { WorkspaceContext } from "@/hms/hooks";
+import { can } from "@/hms/model";
+import { AppointmentMessages } from "@/hms/AppointmentMessages";
 
 /** One reviewed mutation per click; failed moves leave the original visit intact. */
 export function AppointmentActions({
@@ -27,6 +30,14 @@ export function AppointmentActions({
   onSaved: () => void;
 }) {
   const api = useApi();
+  const workspace = useContext(WorkspaceContext);
+  // The retained demo has no HMS workspace; only real, scoped appointment records load readback.
+  const messages = workspace &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id) &&
+    (!item.branch?.id || item.branch.id === workspace.facility.facilityId) &&
+    can(workspace.me, "comms.read", workspace.facility.facilityId)
+      ? <AppointmentMessages key={item.id} appointmentId={item.id} />
+      : null;
   const [editing, setEditing] = useState(false),
     [deleting, setDeleting] = useState(false);
   const [start, setStart] = useState(istDateTime(new Date(item.starts_at))),
@@ -65,7 +76,7 @@ export function AppointmentActions({
     allowed["appointments.delete"] &&
     item.status !== "completed" &&
     !item.deleted_at;
-  if (!canMove && !canDelete) return null;
+  if (!canMove && !canDelete) return messages;
   return (
     <div className="w-full space-y-4 pb-5">
       <div className="flex flex-wrap gap-2">
@@ -239,6 +250,7 @@ export function AppointmentActions({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {messages}
     </div>
   );
 }

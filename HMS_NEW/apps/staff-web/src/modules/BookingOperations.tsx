@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { bookingPhone } from "@/lib/phone";
 import { api, istDateTime, type Catalogue } from "@/lib/api";
 import {
   Action,
@@ -43,6 +44,7 @@ type Wait = {
   patient_name: string;
   phone: string;
   doctor_id: string;
+  doctor_name?: string | null;
   branch_id: string;
   consultation_type: string;
   start_date: string;
@@ -50,7 +52,14 @@ type Wait = {
   status: string;
   notes?: string | null;
   booked_by?: DeskAppointment["booked_by"];
-  offer?: { id: string; starts_at: string; ends_at: string; expires_at: string } | null;
+  booking_party_id?: string;
+  patient_id?: string | null;
+  offer?: {
+    id: string;
+    starts_at: string;
+    ends_at: string;
+    expires_at: string;
+  } | null;
 };
 const time = (s: string) =>
   new Intl.DateTimeFormat("en-IN", {
@@ -465,12 +474,41 @@ export function WaitlistDesk() {
     [date, setDate] = useState(""),
     [chosen, setChosen] = useState(""),
     [adding, setAdding] = useState(false),
-    [form, setForm] = useState({ name: "", phone: "", doctor: "", from: "", to: "", notes: "" }),
+    [preference, setPreference] = useState("dates"),
+    [form, setForm] = useState({
+      name: "",
+      phone: "",
+      doctor: "",
+      from: "",
+      to: "",
+      notes: "",
+    }),
     [withdraw, setWithdraw] = useState<Wait | null>(null),
     [reason, setReason] = useState(""),
     [today] = useState(() => istDateTime(new Date()).slice(0, 10));
+  const sixtyDaysFromToday = new Date(
+    Date.parse(today + "T00:00:00Z") + 60 * 86400000,
+  )
+    .toISOString()
+    .slice(0, 10);
+  const rangeTooLong =
+    !!form.from &&
+    !!form.to &&
+    Date.parse(form.to) - Date.parse(form.from) > 60 * 86400000;
+  const normalizedPhone = bookingPhone(form.phone);
+  const phoneError =
+    form.phone && !normalizedPhone
+      ? "Enter a 10-digit Indian mobile number, or include + and the country code."
+      : undefined;
+  const addIntent = useRef({ signature: "", key: "" });
+  const offerDateValid =
+    !!item &&
+    !!date &&
+    date >= today &&
+    date >= item.start_date &&
+    date <= item.end_date;
   const available = useResource<{ slots: Slot[] }>(
-    item && date
+    offerDateValid && item
       ? "/api/v1/availability?" +
           new URLSearchParams({
             doctor_id: item.doctor_id,
@@ -482,7 +520,8 @@ export function WaitlistDesk() {
       : null,
   );
   const slots = available.data?.slots ?? [],
-    set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
+    set = (k: keyof typeof form) => (v: string) =>
+      setForm((f) => ({ ...f, [k]: v }));
   const answer = (w: Wait, outcome: "accept" | "decline") =>
     call("/api/v1/admin/waitlist-offers/" + w.offer!.id + "/" + outcome, {
       method: "POST",
@@ -494,14 +533,23 @@ export function WaitlistDesk() {
         <div className="space-y-1.5">
           <CardTitle>Cancellation waitlist</CardTitle>
           <CardDescription>
-            Verified, explicitly requested preferences. Offer slots individually;
-            no automatic outbound message is sent.
+            Verified, explicitly requested preferences. Offer slots
+            individually; no automatic outbound message is sent.
           </CardDescription>
         </div>
         {canBook && (
           <Button
             onClick={() => {
-              setForm({ name: "", phone: "", doctor: "", from: today, to: today, notes: "" });
+              setForm({
+                name: "",
+                phone: "",
+                doctor: "",
+                from: today,
+                to: today,
+                notes: "",
+              });
+              setPreference("dates");
+              addIntent.current = { signature: "", key: "" };
               setAdding(true);
             }}
           >
@@ -525,7 +573,10 @@ export function WaitlistDesk() {
             label="Doctor"
             value={doctorFilter}
             onChange={setDoctorFilter}
-            options={[["all", "All doctors"], ...(d.data ?? []).map((a): [string, string] => [a.id, a.name])]}
+            options={[
+              ["all", "All doctors"],
+              ...(d.data ?? []).map((a): [string, string] => [a.id, a.name]),
+            ]}
           />
         </div>
         <Resource {...r}>
@@ -544,8 +595,9 @@ export function WaitlistDesk() {
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {w.phone} ·{" "}
-                    {d.data?.find((a) => a.id === w.doctor_id)?.name} ·{" "}
-                    {w.start_date} – {w.end_date}
+                    {w.doctor_name ??
+                      d.data?.find((a) => a.id === w.doctor_id)?.name}{" "}
+                    · {w.start_date} – {w.end_date}
                   </p>
                   {w.notes && (
                     <p className="text-sm text-muted-foreground">{w.notes}</p>
@@ -572,7 +624,10 @@ export function WaitlistDesk() {
                   )}
                   {w.status === "offered" && w.offer && canBook && (
                     <>
-                      <Action run={() => answer(w, "accept")} success="Appointment booked">
+                      <Action
+                        run={() => answer(w, "accept")}
+                        success="Appointment booked"
+                      >
                         Accepted
                       </Action>
                       <Action
@@ -584,17 +639,18 @@ export function WaitlistDesk() {
                       </Action>
                     </>
                   )}
-                  {(w.status === "waiting" || w.status === "offered") && canCancel && (
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setWithdraw(w);
-                        setReason("");
-                      }}
-                    >
-                      Withdraw
-                    </Button>
-                  )}
+                  {(w.status === "waiting" || w.status === "offered") &&
+                    canCancel && (
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setWithdraw(w);
+                          setReason("");
+                        }}
+                      >
+                        Withdraw
+                      </Button>
+                    )}
                 </div>
               </div>
             ))
@@ -621,12 +677,29 @@ export function WaitlistDesk() {
             </DialogDescription>
           </DialogHeader>
           <Field
+            label="Doctor"
+            id="offer-doctor"
+            hint="This request is for the doctor selected when it was added."
+          >
+            <Input
+              id="offer-doctor"
+              readOnly
+              value={
+                item?.doctor_name ??
+                d.data?.find((doctor) => doctor.id === item?.doctor_id)?.name ??
+                "Doctor unavailable"
+              }
+            />
+          </Field>
+          <Field
             label="Preferred date"
             id="offer-date"
             error={
               !date
                 ? "Choose a date within the patient’s requested range."
-                : undefined
+                : !offerDateValid
+                  ? "Choose a date within the requested range, from today onward."
+                  : undefined
             }
           >
             <Input
@@ -657,10 +730,24 @@ export function WaitlistDesk() {
             }
             value={chosen}
             onChange={setChosen}
-            options={slots.map((s) => [s.starts_at, time(s.starts_at)])}
+            options={slots.map((s) => [
+              s.starts_at,
+              `${time(s.starts_at)} – ${new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", timeStyle: "short" }).format(new Date(s.ends_at))}`,
+            ])}
           />
+          {chosen && slots.some((slot) => slot.starts_at === chosen) && (
+            <p className="text-sm">
+              Offer {time(chosen)} to{" "}
+              {item?.booked_by?.name ?? item?.patient_name}.
+            </p>
+          )}
           <Action
-            disabled={!chosen}
+            disabled={
+              !offerDateValid ||
+              !available.fresh ||
+              !chosen ||
+              !slots.some((slot) => slot.starts_at === chosen)
+            }
             run={async () => {
               await call("/api/v1/admin/waitlist/" + item!.id + "/offer", {
                 method: "POST",
@@ -687,11 +774,30 @@ export function WaitlistDesk() {
               cover up to 60 days.
             </DialogDescription>
           </DialogHeader>
-          <Field label="Caller name" id="wait-name">
-            <Input id="wait-name" required maxLength={100} value={form.name} onChange={(e) => set("name")(e.target.value)} />
+          <Field label="Name" id="wait-name">
+            <Input
+              id="wait-name"
+              required
+              maxLength={100}
+              value={form.name}
+              onChange={(e) => set("name")(e.target.value)}
+            />
           </Field>
-          <Field label="Mobile number" id="wait-phone" hint="10 digits or +country code">
-            <Input id="wait-phone" type="tel" required pattern="(\+[1-9][0-9]{7,14}|[6-9][0-9]{9})" value={form.phone} onChange={(e) => set("phone")(e.target.value.trim())} />
+          <Field
+            label="Mobile number"
+            id="wait-phone"
+            hint="10 digits or +country code"
+            error={phoneError}
+          >
+            <Input
+              id="wait-phone"
+              type="tel"
+              required
+              aria-invalid={!!phoneError}
+              aria-describedby={phoneError ? "wait-phone-error" : undefined}
+              value={form.phone}
+              onChange={(e) => set("phone")(e.target.value.trim())}
+            />
           </Field>
           <Choice
             label="Doctor"
@@ -700,30 +806,101 @@ export function WaitlistDesk() {
             error={!form.doctor ? "Choose a doctor." : undefined}
             options={(d.data ?? []).map((a) => [a.id, a.name])}
           />
+          <Choice
+            label="Preferred availability"
+            value={preference}
+            onChange={(value) => {
+              setPreference(value);
+              if (value === "anytime")
+                setForm((current) => ({
+                  ...current,
+                  from: today,
+                  to: sixtyDaysFromToday,
+                }));
+            }}
+            options={[
+              ["dates", "Choose dates"],
+              ["anytime", "Anytime · next 60 days"],
+            ]}
+          />
+          {preference === "anytime" && (
+            <p className="text-sm text-muted-foreground">
+              Any available time with this doctor, from {today} through{" "}
+              {sixtyDaysFromToday}. This request ends on that date.
+            </p>
+          )}
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="From" id="wait-from">
-              <Input id="wait-from" type="date" required min={today} value={form.from} onChange={(e) => set("from")(e.target.value)} />
+              <Input
+                id="wait-from"
+                disabled={preference === "anytime"}
+                type="date"
+                required
+                min={today}
+                value={form.from}
+                onChange={(e) => set("from")(e.target.value)}
+              />
             </Field>
-            <Field label="To" id="wait-to" error={form.to && form.to < form.from ? "Must be on or after the start." : undefined}>
-              <Input id="wait-to" type="date" required min={form.from || today} value={form.to} onChange={(e) => set("to")(e.target.value)} />
+            <Field
+              label="To"
+              id="wait-to"
+              error={
+                form.to && form.to < form.from
+                  ? "Must be on or after the start."
+                  : rangeTooLong
+                    ? "Choose a range of up to 60 days."
+                    : undefined
+              }
+            >
+              <Input
+                id="wait-to"
+                disabled={preference === "anytime"}
+                type="date"
+                required
+                min={form.from || today}
+                value={form.to}
+                onChange={(e) => set("to")(e.target.value)}
+              />
             </Field>
           </div>
           <Field label="Notes (optional)" id="wait-notes">
-            <Input id="wait-notes" maxLength={500} value={form.notes} onChange={(e) => set("notes")(e.target.value)} />
+            <Input
+              id="wait-notes"
+              maxLength={500}
+              value={form.notes}
+              onChange={(e) => set("notes")(e.target.value)}
+            />
           </Field>
           <Action
-            disabled={!form.name.trim() || !form.phone || !form.doctor || !form.from || !form.to || form.to < form.from}
+            disabled={
+              !form.name.trim() ||
+              !normalizedPhone ||
+              !form.doctor ||
+              !form.from ||
+              !form.to ||
+              form.to < form.from ||
+              form.from < today ||
+              rangeTooLong
+            }
             run={async () => {
+              if (!normalizedPhone)
+                throw new Error("Check the mobile number before saving.");
+              const body = {
+                patient_name: form.name.trim(),
+                phone: normalizedPhone,
+                doctor_id: form.doctor,
+                start_date: form.from,
+                end_date: form.to,
+                notes: form.notes.trim(),
+              };
+              const signature = JSON.stringify(body);
+              if (addIntent.current.signature !== signature)
+                addIntent.current = { signature, key: crypto.randomUUID() };
               await call("/api/v1/admin/waitlist", {
                 method: "POST",
                 body: {
-                  patient_name: form.name,
-                  phone: form.phone,
-                  doctor_id: form.doctor,
-                  start_date: form.from,
-                  end_date: form.to,
-                  notes: form.notes,
-                  idempotency_key: crypto.randomUUID(),
+                  ...body,
+                  idempotency_key: addIntent.current.key,
                 },
               });
               setAdding(false);
@@ -745,20 +922,37 @@ export function WaitlistDesk() {
           <DialogHeader>
             <DialogTitle>Withdraw this request</DialogTitle>
             <DialogDescription>
-              Any slot held for it is released. This is recorded with your reason.
+              Any slot held for it is released. This is recorded with your
+              reason.
             </DialogDescription>
           </DialogHeader>
-          <Field label="Reason" id="wait-reason" error={reason.trim().length < 3 ? "Give a short reason." : undefined}>
-            <Input id="wait-reason" required minLength={3} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
+          <Field
+            label="Reason"
+            id="wait-reason"
+            error={
+              reason.trim().length < 3 ? "Give a short reason." : undefined
+            }
+          >
+            <Input
+              id="wait-reason"
+              required
+              minLength={3}
+              maxLength={500}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
           </Field>
           <Action
             variant="destructive"
             disabled={reason.trim().length < 3}
             run={async () => {
-              await call("/api/v1/admin/waitlist/" + withdraw!.id + "/withdraw", {
-                method: "POST",
-                body: { reason: reason.trim() },
-              });
+              await call(
+                "/api/v1/admin/waitlist/" + withdraw!.id + "/withdraw",
+                {
+                  method: "POST",
+                  body: { reason: reason.trim() },
+                },
+              );
               setWithdraw(null);
               r.refresh();
             }}

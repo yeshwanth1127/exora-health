@@ -26,16 +26,17 @@ export function BreakGlass({
   if (!can("break_glass.use"))
     return (
       <Hint>
-        You are not on this patient's care team. Ask the attending doctor or
-        clinic administrator for an assignment.
+        Medical records are restricted to the treating doctor and assigned
+        clinical staff. Your account is not assigned to this patient. Ask the
+        clinic administrator to arrange access.
       </Hint>
     );
   return (
     <div className="space-y-3">
       <Hint>
-        You are not on this patient's care team. In an emergency you can open
-        the chart for a limited time. The access and your reason are recorded
-        for review.
+        Your account is not assigned to this patient’s medical records. Ask the
+        clinic administrator to arrange routine access. Emergency access is
+        temporary and records your reason for review.
       </Hint>
       {open ? (
         <form

@@ -53,6 +53,8 @@ export type GrowthUser = {
   active: boolean;
 };
 type Props = {
+  initialClinicId?: string;
+  canManage?: boolean;
   demo?: boolean;
   api: GrowthApi;
   user: GrowthUser;
@@ -124,6 +126,8 @@ export function GrowthModule({
   onNavigate,
   module = "google_business",
   demo = false,
+  canManage = true,
+  initialClinicId = "",
 }: Props) {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
@@ -132,7 +136,7 @@ export function GrowthModule({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
-  const [branch, setBranch] = useState("");
+  const [branch, setBranch] = useState(initialClinicId);
   const [url, setUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState("");
@@ -144,10 +148,12 @@ export function GrowthModule({
   const analytics = module === "growth_analytics";
   useEffect(() => {
     let live = true;
-    setLoading(true);
-    setError("");
-    setSaved("");
     const load = async () => {
+      await Promise.resolve();
+      if (!live) return;
+      setLoading(true);
+      setError("");
+      setSaved("");
       const cat = await api<{ branches: Branch[] }>(
         prefix + "/growth/catalogue",
       );
@@ -257,7 +263,7 @@ export function GrowthModule({
               <CardDescription>
                 {demo
                   ? "Synthetic demo records from this isolated clinic database. Production records are kept separate."
-                  : "Production records only. Existing records with unverified provenance are excluded."}
+                  : "Current clinic records. Rescheduled visits are counted once using their current appointment."}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -297,7 +303,7 @@ export function GrowthModule({
                     value={branch}
                     onChange={setBranch}
                     branches={branches}
-                    all
+                    all={branches.length > 1}
                   />
                 </div>
                 <div className="space-y-2">
@@ -327,12 +333,12 @@ export function GrowthModule({
                   [
                     "Appointments",
                     summary.summary.appointments_in_cohort,
-                    "Persisted bookings in this cohort",
+                    "Logical visits in this cohort",
                   ],
                   [
                     "Retained confirmations",
                     summary.summary.retained_confirmation_share,
-                    "Confirmed, checked-in or completed / all records",
+                    "Confirmed, checked-in or completed / all logical visits",
                   ],
                   [
                     "Attendance",
@@ -344,7 +350,11 @@ export function GrowthModule({
                     <CardHeader>
                       <CardDescription>{label}</CardDescription>
                       <CardTitle className="text-3xl">
-                        {value === null || value === undefined ? "—" : value}
+                        {value === null || value === undefined
+                          ? "—"
+                          : typeof value === "number" && i > 0
+                            ? Number(value.toFixed(1))
+                            : value}
                         {i > 0 && value !== null && value !== undefined
                           ? "%"
                           : ""}
@@ -358,9 +368,9 @@ export function GrowthModule({
               </div>
               <div className="grid gap-4 lg:grid-cols-2">
                 <CountTable
-                  title="Where bookings started"
-                  description="Entry attribution supplied with the booking; independent of message channel."
-                  rows={summary.by_acquisition_source}
+                  title="Booking channels"
+                  description="Recorded booking channel. Acquisition attribution is not tracked."
+                  rows={summary.by_channel}
                 />
                 <CountTable
                   title="Appointment outcomes"
@@ -517,9 +527,17 @@ export function GrowthModule({
                       Google source parameters.
                     </p>
                   </div>
-                  <Button type="submit" disabled={!selected || saving}>
+                  <Button
+                    type="submit"
+                    disabled={!selected || saving || !canManage}
+                  >
                     {saving ? "Saving…" : "Save booking link"}
                   </Button>
+                  {!canManage && (
+                    <p className="text-sm text-muted-foreground">
+                      A clinic administrator must save booking links.
+                    </p>
+                  )}
                   {saved && (
                     <Alert role="status">
                       <CheckCircle2 className="size-4" />
@@ -735,7 +753,7 @@ function CountTable({
           </Table>
         ) : (
           <p className="text-sm text-muted-foreground">
-            No production appointments in this period.
+            No appointments in this cohort.
           </p>
         )}
       </CardContent>

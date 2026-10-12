@@ -182,6 +182,7 @@ export interface ScheduleExceptionInput {
   end?: string;
   facilityId?: string; // required for extra_hours; for closed/block, one clinic only (omit = every clinic)
   slotMinutes?: number; // required for extra_hours
+  visitMode?: 'in_person' | 'virtual'; // extra_hours only; omission preserves in-person callers
   healthcareServiceId?: string;
   reason?: string;
 }
@@ -190,6 +191,8 @@ export interface ScheduleExceptionInput {
 export async function addScheduleException(db: Kysely<DB>, caller: Caller, input: ScheduleExceptionInput, idempotencyKey?: string) {
   if ((input.start === undefined) !== (input.end === undefined)) throw invalid('give both start and end, or neither');
   if (input.start && (!TIME.test(input.start) || !TIME.test(input.end!) || input.end! <= input.start)) throw invalid('start/end must be HH:MM with end after start');
+  if (input.kind === 'extra_hours' && (!input.facilityId || !input.start || !Number.isInteger(input.slotMinutes) || input.slotMinutes! < 5 || input.slotMinutes! > 240)) throw invalid('extra hours require a clinic, time window and slot length of 5–240 minutes');
+  if (input.visitMode !== undefined && (input.kind !== 'extra_hours' || !['in_person', 'virtual'].includes(input.visitMode))) throw invalid('visitMode applies only to extra hours and must be in_person or virtual');
   return runCommand(db, { ...caller, module: 'booking', name: 'booking.add_schedule_exception', request: input, idempotencyKey }, async (ctx) => {
     const resourceId = await practitionerResourceId(ctx.tx, input.staffId);
     if (input.facilityId) {
@@ -203,6 +206,9 @@ export async function addScheduleException(db: Kysely<DB>, caller: Caller, input
         .executeTakeFirst();
       if (!affiliated) throw preconditionFailed('practitioner is not affiliated with this facility on that date');
     }
+    const healthcareServiceId = input.kind === 'extra_hours'
+      ? await weeklyOffer(ctx.tx, { ...input, facilityId: input.facilityId!, effectiveFrom: input.onDate, visitMode: input.visitMode ?? 'in_person' }, null)
+      : input.healthcareServiceId ?? null;
     const { id } = await ctx.tx
       .insertInto('booking.schedule_exception')
       .values({
@@ -214,7 +220,8 @@ export async function addScheduleException(db: Kysely<DB>, caller: Caller, input
         end_local: input.end ?? null,
         facility_id: input.facilityId ?? null,
         slot_minutes: input.slotMinutes ?? null,
-        healthcare_service_id: input.healthcareServiceId ?? null,
+        visit_mode: input.kind === 'extra_hours' ? input.visitMode ?? 'in_person' : null,
+        healthcare_service_id: healthcareServiceId,
         reason: input.reason ?? null,
       })
       .returning('id')
@@ -336,7 +343,7 @@ export async function listScheduleExceptions(db: Kysely<DB>, caller: Caller, inp
       .selectFrom('booking.schedule_exception')
       .select([
         'id as scheduleExceptionId', 'on_date as onDate', 'kind', 'start_local as start', 'end_local as end', 'facility_id as facilityId',
-        'slot_minutes as slotMinutes', 'healthcare_service_id as healthcareServiceId', 'reason', 'created_at as createdAt',
+        'slot_minutes as slotMinutes', 'visit_mode as visitMode', 'healthcare_service_id as healthcareServiceId', 'reason', 'created_at as createdAt',
         'revoked_at as revokedAt', 'revoke_reason as revokeReason',
       ])
       .where('resource_id', '=', resourceId)

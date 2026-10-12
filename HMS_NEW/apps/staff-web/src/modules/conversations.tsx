@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -8,7 +8,7 @@ import {
   RefreshCw,
   Search,
 } from "lucide-react";
-import { api, dateTime, wa, type Asset, type StaffUser } from "@/lib/api";
+import { dateTime, wa, type Asset, type StaffUser } from "@/lib/api";
 import {
   Action,
   Choice,
@@ -18,6 +18,8 @@ import {
   SectionTitle,
   StateBadge,
   useResource,
+  useApi,
+  usePermissions,
 } from "@/components/workspace";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -53,6 +55,7 @@ type Content = {
 };
 type ThreadSummary = {
   sender_id: string;
+  display_address?: string;
   name?: string;
   preview: string;
   assigned_to: string | null;
@@ -68,6 +71,7 @@ type Inbox = {
 };
 type Thread = {
   sender_id: string;
+  display_address?: string;
   active_handoff: boolean;
   assigned_to: string | null;
   can_reply: boolean;
@@ -257,10 +261,14 @@ function MessageContent({ content }: { content: Content }) {
 export function Conversations({
   user,
   enabled,
+  localMode = false,
 }: {
   user: StaffUser;
   enabled: boolean;
+  localMode?: boolean;
 }) {
+  const api = useApi();
+  const canReply = usePermissions().can("comms.reply");
   const [kind, setKind] = useState("all"),
     [status, setStatus] = useState("all"),
     [query, setQuery] = useState(""),
@@ -299,9 +307,14 @@ export function Conversations({
     detail.data?.sender_id === current?.sender_id ? detail.data : null;
   return (
     <>
+      {localMode && canReply && <LocalConversationCreate onSaved={refresh} />}
       <SectionTitle
         title="Conversations"
-        description="Read patient messages, bot options and reception replies in one thread."
+        description={
+          localMode
+            ? "Read saved conversations, cases and local replies. The patient bot and automatic delivery are unavailable."
+            : "Read patient messages, bot options and reception replies in one thread."
+        }
         action={
           <Button variant="outline" onClick={refresh}>
             <RefreshCw />
@@ -379,7 +392,13 @@ export function Conversations({
                   >
                     <span className="min-w-0 w-full">
                       <span className="flex justify-between gap-2 text-xs font-medium">
-                        <span>{c.name || `+${c.sender_id}`}</span>
+                        <span>
+                          {c.name ||
+                            c.display_address ||
+                            (localMode
+                              ? "Messaging contact"
+                              : `+${c.sender_id}`)}
+                        </span>
                         {c.open && (
                           <span
                             className="size-1.5 mt-1.5 rounded-full bg-foreground shrink-0"
@@ -389,7 +408,10 @@ export function Conversations({
                       </span>
                       {c.name && (
                         <span className="block text-[11px] text-muted-foreground mt-1">
-                          +{c.sender_id}
+                          {c.display_address ??
+                            (localMode
+                              ? "Messaging contact"
+                              : `+${c.sender_id}`)}
                         </span>
                       )}
                       <span className="block text-xs text-muted-foreground mt-1.5 truncate">
@@ -435,11 +457,15 @@ export function Conversations({
                     <div className="p-5 border-b flex flex-wrap justify-between items-center gap-3">
                       <div>
                         <h3 className="text-sm font-semibold">
-                          {current.name || `+${current.sender_id}`}
+                          {current.name ||
+                            current.display_address ||
+                            (localMode
+                              ? "Messaging contact"
+                              : `+${current.sender_id}`)}
                         </h3>
                         <p className="text-xs text-muted-foreground mt-1">
                           {thread.active_handoff
-                            ? `Bot paused · ${thread.assigned_to || "Unassigned"}`
+                            ? `${localMode ? "Reception" : "Bot paused"} · ${thread.assigned_to || "Unassigned"}`
                             : "Conversation history"}
                         </p>
                       </div>
@@ -447,6 +473,7 @@ export function Conversations({
                         <div className="flex flex-wrap gap-2">
                           <Action
                             variant="outline"
+                            disabled={localMode && (!canReply || !enabled)}
                             run={async () => {
                               await api(
                                 `${wa}/reception/${current.sender_id}`,
@@ -466,9 +493,12 @@ export function Conversations({
                           </Action>
                           <Button
                             variant="outline"
+                            disabled={localMode && (!canReply || !enabled)}
                             onClick={() => setClose(true)}
                           >
-                            Close & resume bot
+                            {localMode
+                              ? "Close conversation"
+                              : "Close & resume bot"}
                           </Button>
                         </div>
                       )}
@@ -491,6 +521,7 @@ export function Conversations({
                           {c.status !== "resolved" && (
                             <Action
                               variant="ghost"
+                              disabled={localMode && (!canReply || !enabled)}
                               run={async () => {
                                 await api(
                                   `/api/v1/admin/whatsapp-cases/${c.id}`,
@@ -576,16 +607,25 @@ export function Conversations({
                             value={text}
                             maxLength={2000}
                             onChange={(e) => setText(e.target.value)}
-                            disabled={!thread.can_reply || !enabled}
+                            disabled={
+                              !thread.can_reply ||
+                              !enabled ||
+                              (localMode && !canReply)
+                            }
                           />
                         </Field>
                         <div className="flex flex-wrap justify-between items-center gap-3">
                           <p className="text-xs text-muted-foreground">
-                            Replies are sent as {user.name}.
+                            {localMode
+                              ? "Replies are recorded under your authenticated staff account."
+                              : `Replies are sent as ${user.name}.`}
                           </p>
                           <Action
                             disabled={
-                              !enabled || !thread.can_reply || !text.trim()
+                              !enabled ||
+                              !thread.can_reply ||
+                              !text.trim() ||
+                              (localMode && !canReply)
                             }
                             run={async () => {
                               await api(
@@ -603,7 +643,11 @@ export function Conversations({
                               setText("");
                               refresh();
                             }}
-                            success="Reply queued. Check Delivery history for the result."
+                            success={
+                              localMode
+                                ? "Reply saved locally. No message was delivered."
+                                : "Reply queued. Check Delivery history for the result."
+                            }
                           >
                             Queue reply
                             <ArrowRight />
@@ -629,8 +673,9 @@ export function Conversations({
           <DialogHeader>
             <DialogTitle>Close this conversation?</DialogTitle>
             <DialogDescription>
-              Reception will stop handling +{current?.sender_id}. The patient
-              can use the booking bot again.
+              {localMode
+                ? "Close this staff conversation; automatic booking is unavailable."
+                : `Reception will stop handling +${current?.sender_id}. The patient can use the booking bot again.`}
             </DialogDescription>
           </DialogHeader>
           <Action
@@ -642,12 +687,128 @@ export function Conversations({
               setClose(false);
               refresh();
             }}
-            success="Conversation closed. Bot resumed."
+            success={
+              localMode
+                ? "Conversation closed."
+                : "Conversation closed. Bot resumed."
+            }
           >
-            Close & resume bot
+            {localMode ? "Close conversation" : "Close & resume bot"}
           </Action>
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function LocalConversationCreate({ onSaved }: { onSaved: () => void }) {
+  const api = useApi(),
+    contacts = useResource<{
+      items: {
+        id: string;
+        address: string;
+        patientId: string | null;
+        bookingPartyId: string | null;
+      }[];
+    }>(`${wa}/contacts`);
+  const created = useRef<{ contact: string; id: string } | null>(null);
+  const [open, setOpen] = useState(false),
+    [contact, setContact] = useState(""),
+    [kind, setKind] = useState("issue"),
+    [description, setDescription] = useState(""),
+    [rating, setRating] = useState("");
+  return (
+    <div className="mb-5">
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        Open a local support case
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Open a local support case</DialogTitle>
+            <DialogDescription>
+              Choose an existing messaging contact. This does not simulate an
+              incoming patient message or open a provider reply window.
+            </DialogDescription>
+          </DialogHeader>
+          <Resource {...contacts}>
+            <Choice
+              label="Existing messaging contact"
+              value={contact}
+              onChange={setContact}
+              options={(contacts.data?.items ?? []).map((c) => [
+                c.id,
+                `${c.address} · ${c.patientId ? "patient contact" : "booking contact"}`,
+              ])}
+            />
+            <Choice
+              label="Case type"
+              value={kind}
+              onChange={setKind}
+              options={[
+                ["issue", "Issue"],
+                ["feedback", "Feedback"],
+              ]}
+            />
+            {kind === "feedback" && (
+              <Choice
+                label="Voluntary feedback rating (optional)"
+                value={rating}
+                onChange={setRating}
+                options={[
+                  ["", "No rating"],
+                  ...[1, 2, 3, 4, 5].map(
+                    (n) => [String(n), `${n}/5`] as [string, string],
+                  ),
+                ]}
+              />
+            )}
+            <Field
+              label="Administrative description"
+              id="local-case-description"
+            >
+              <Textarea
+                id="local-case-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                maxLength={2000}
+                placeholder="Do not include clinical narratives."
+              />
+            </Field>
+            <Action
+              disabled={!contact || description.trim().length < 3}
+              run={async () => {
+                const r =
+                  created.current?.contact === contact
+                    ? { id: created.current.id }
+                    : await api<{ id: string }>(`${wa}/conversations`, {
+                        method: "POST",
+                        body: { contactPointId: contact },
+                      });
+                created.current = { contact, id: r.id };
+                await api(`${wa}/support-cases`, {
+                  method: "POST",
+                  body: {
+                    conversationId: r.id,
+                    kind,
+                    description: description.trim(),
+                    ...(kind === "feedback" && rating
+                      ? { rating: Number(rating) }
+                      : {}),
+                  },
+                });
+                setOpen(false);
+                created.current = null;
+                setDescription("");
+                onSaved();
+              }}
+              success="Local support case opened"
+            >
+              Save local case
+            </Action>
+          </Resource>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

@@ -1,13 +1,11 @@
 import { useEffect, useState, type ComponentProps } from "react";
 import {
-  Activity,
   LayoutDashboard,
   Headphones,
   MessageCircle,
   Globe,
   ChartNoAxesCombined,
   ScrollText,
-  BookOpen,
   Ticket,
   ChevronRight,
   Building2,
@@ -18,7 +16,6 @@ import {
   Settings2,
   Stethoscope,
   Users,
-  ListOrdered,
   Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -50,17 +47,24 @@ import { confirmLeave } from "@/hms/leave";
 import { Choice, Empty, ErrorMessage, Hint } from "@/hms/ui";
 import { Input } from "@/components/ui/input";
 import { Patients } from "@/hms/Patients";
-import { Appointments } from "@/hms/Appointments";
+import {
+  AppointmentWorkspace,
+  ActivityWorkspace,
+} from "@/hms/WorkflowWorkspace";
 import { Doctors } from "@/hms/Doctors";
-import { PendingModule, DesignGuide } from "@/hms/PendingModule";
-import { Waitlist } from "@/hms/Waitlist";
-import { ActivityLogPage } from "@/hms/ActivityLog";
+import { PendingModule } from "@/hms/PendingModule";
+import { WhatsApp } from "@/hms/WhatsApp";
+import { Voice } from "@/hms/Voice";
+import { Growth } from "@/hms/Growth";
 import { SettingsPage } from "@/hms/Settings";
-import { ConsentDocuments, ModuleSwitches, Registrations } from "@/hms/AdminPanels";
+import {
+  ConsentDocuments,
+  ModuleSwitches,
+  Registrations,
+} from "@/hms/AdminPanels";
 import { Schedules } from "@/hms/Schedules";
 import { Overview } from "@/hms/Overview";
 import { Catalogue } from "@/hms/Catalogue";
-import { Queue } from "@/hms/Queue";
 import { Consultations } from "@/hms/Consultations";
 import { Teleconsultations } from "@/hms/Teleconsultations";
 import { PatientVideo } from "@/hms/PatientVideo";
@@ -86,18 +90,6 @@ const navigation = [
     permission: "patients.read",
   },
   {
-    key: "waitlist",
-    name: "Waitlist",
-    icon: ListOrdered,
-    permission: "appointments.read",
-  },
-  {
-    key: "queue",
-    name: "Queue",
-    icon: ListOrdered,
-    permission: "appointments.read",
-  },
-  {
     key: "consultations",
     name: "Consultations",
     icon: Stethoscope,
@@ -113,29 +105,19 @@ const navigation = [
     key: "whatsapp",
     name: "WhatsApp",
     icon: MessageCircle,
-    permission: "catalog.read",
-    pending: true,
+    permission: "comms.read",
   },
   {
     key: "voice",
     name: "Voice",
     icon: Headphones,
-    permission: "catalog.read",
-    pending: true,
+    permission: "voice.read",
   },
   {
     key: "catalogue",
     name: "Hospital catalogue",
     icon: Building2,
     permission: "catalog.read",
-  },
-  {
-    key: "operations",
-    name: "Operations",
-    icon: Activity,
-    permission: "audit.read",
-    // The event log spans every clinic, so the grant must too (the API enforces the same).
-    everyClinic: true,
   },
   {
     key: "doctors",
@@ -194,17 +176,21 @@ function StaffApp() {
   const [me, setMe] = useState<Me | null>(null),
     [facilities, setFacilities] = useState<Facility[]>([]),
     [facilityId, setFacilityId] = useState("");
-  const [tenantOptions, setTenantOptions] = useState<{ tenantId: string; name: string }[]>([]),
+  const [tenantOptions, setTenantOptions] = useState<
+      { tenantId: string; name: string }[]
+    >([]),
     [token, setToken] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const [page, setPage] = useState(
     () => location.pathname.split("/")[2] || "appointments",
   );
+  const [navVersion, setNavVersion] = useState(0);
   function go(next: string) {
     if (!confirmLeave()) return;
     history.pushState(null, "", `/staff/${next}`);
-    setPage(next);
+    if (next.split("?")[0] === page) setNavVersion((n) => n + 1);
+    setPage(next.split("?")[0]);
   }
   function signout() {
     setIdentity("");
@@ -236,8 +222,18 @@ function StaffApp() {
     } catch (e) {
       if (e instanceof HmsError && Array.isArray(e.details.tenants)) {
         // Hospital names come with the choice (G02); fall back to the id for any without one.
-        const names = new Map(((e.details.tenantNames as { tenantId: string; name: string }[] | undefined) ?? []).map((t) => [t.tenantId, t.name]));
-        setTenantOptions((e.details.tenants as string[]).map((id) => ({ tenantId: id, name: names.get(id) ?? id })));
+        const names = new Map(
+          (
+            (e.details.tenantNames as
+              { tenantId: string; name: string }[] | undefined) ?? []
+          ).map((t) => [t.tenantId, t.name]),
+        );
+        setTenantOptions(
+          (e.details.tenants as string[]).map((id) => ({
+            tenantId: id,
+            name: names.get(id) ?? id,
+          })),
+        );
       } else setError(e instanceof Error ? e.message : "Sign-in failed.");
     } finally {
       setBusy(false);
@@ -245,8 +241,10 @@ function StaffApp() {
   }
   useEffect(() => {
     let alive = true;
-    const pop = () =>
+    const pop = () => {
       setPage(location.pathname.split("/")[2] || "appointments");
+      setNavVersion((n) => n + 1);
+    };
     const end = () => signout();
     window.addEventListener("popstate", pop);
     window.addEventListener("hms-signout", end);
@@ -346,7 +344,10 @@ function StaffApp() {
                         try {
                           const result = await request<{ token: string }>(
                             "/dev/login",
-                            { method: "POST", body: { subject, ...(email ? { email } : {}) } },
+                            {
+                              method: "POST",
+                              body: { subject, ...(email ? { email } : {}) },
+                            },
                           );
                           await accept(result.token);
                         } catch (e) {
@@ -388,19 +389,19 @@ function StaffApp() {
         </Button>
       </div>
     );
-  const visible = navigation.filter((n) =>
-    "everyClinic" in n
-      ? (me.permissions[n.permission] ?? []).includes("*")
-      : can(me, n.permission, facilityId),
-  );
+  const visible = navigation.filter((n) => can(me, n.permission, facilityId));
   // The activity log spans every clinic, so the grant must too (the API enforces the same).
   const auditor = (me.permissions["audit.read"] ?? []).includes("*");
   const extraPages = [
     "settings",
     ...(auditor ? ["activity"] : []),
-    "design",
-    "google_business",
-    "growth_analytics",
+    ...(can(me, "appointments.read", facilityId) ? ["waitlist", "queue"] : []),
+    ...(auditor && can(me, "appointments.read", facilityId)
+      ? ["operations"]
+      : []),
+    ...(can(me, "growth.read", facilityId)
+      ? ["google_business", "growth_analytics"]
+      : []),
     "loyalty",
   ];
   const allowed =
@@ -417,22 +418,23 @@ function StaffApp() {
               <SidebarGroupLabel>CLINIC OPERATIONS</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {visible.map((n) => (
-                    <SidebarMenuItem key={n.key}>
-                      <NavigationButton
-                        isActive={page === n.key}
-                        onClick={() => go(n.key)}
-                      >
-                        <n.icon />
-                        <span>{n.name}</span>
-                        {n.pending && (
-                          <span className="ml-auto text-[10px] text-muted-foreground">
-                            Pending
-                          </span>
-                        )}
-                      </NavigationButton>
-                    </SidebarMenuItem>
-                  ))}
+                  {visible
+                    .filter((n) => !["catalogue", "doctors"].includes(n.key))
+                    .map((n) => (
+                      <SidebarMenuItem key={n.key}>
+                        <NavigationButton
+                          isActive={
+                            page === n.key ||
+                            (n.key === "appointments" &&
+                              ["waitlist", "queue"].includes(page))
+                          }
+                          onClick={() => go(n.key)}
+                        >
+                          <n.icon />
+                          <span>{n.name}</span>
+                        </NavigationButton>
+                      </SidebarMenuItem>
+                    ))}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -452,7 +454,35 @@ function StaffApp() {
                       icon: ChartNoAxesCombined,
                     },
                     { key: "loyalty", name: "Loyalty program", icon: Ticket },
-                  ].map((n) => (
+                  ]
+                    .filter(
+                      (n) =>
+                        n.key === "loyalty" ||
+                        can(me, "growth.read", facilityId),
+                    )
+                    .map((n) => (
+                      <SidebarMenuItem key={n.key}>
+                        <NavigationButton
+                          isActive={page === n.key}
+                          onClick={() => go(n.key)}
+                        >
+                          <n.icon />
+                          <span>{n.name}</span>
+                          <span className="ml-auto text-[10px] text-muted-foreground">
+                            {n.key === "loyalty" ? "Concept" : ""}
+                          </span>
+                        </NavigationButton>
+                      </SidebarMenuItem>
+                    ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+            <SidebarGroup className="mt-auto">
+              <SidebarGroupLabel>WORKSPACE</SidebarGroupLabel>
+              <SidebarMenu>
+                {visible
+                  .filter((n) => ["catalogue", "doctors"].includes(n.key))
+                  .map((n) => (
                     <SidebarMenuItem key={n.key}>
                       <NavigationButton
                         isActive={page === n.key}
@@ -460,18 +490,9 @@ function StaffApp() {
                       >
                         <n.icon />
                         <span>{n.name}</span>
-                        <span className="ml-auto text-[10px] text-muted-foreground">
-                          {n.key === "loyalty" ? "Concept" : "Pending"}
-                        </span>
                       </NavigationButton>
                     </SidebarMenuItem>
                   ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-            <SidebarGroup className="mt-auto">
-              <SidebarGroupLabel>WORKSPACE</SidebarGroupLabel>
-              <SidebarMenu>
                 <SidebarMenuItem>
                   <NavigationButton
                     isActive={page === "settings"}
@@ -484,23 +505,14 @@ function StaffApp() {
                 {auditor && (
                   <SidebarMenuItem>
                     <NavigationButton
-                      isActive={page === "activity"}
+                      isActive={page === "activity" || page === "operations"}
                       onClick={() => go("activity")}
                     >
                       <ScrollText />
-                      Activity log
+                      Activity
                     </NavigationButton>
                   </SidebarMenuItem>
                 )}
-                <SidebarMenuItem>
-                  <NavigationButton
-                    isActive={page === "design"}
-                    onClick={() => go("design")}
-                  >
-                    <BookOpen />
-                    Design & UX guide
-                  </NavigationButton>
-                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroup>
           </SidebarContent>
@@ -517,7 +529,9 @@ function StaffApp() {
                 <p className="text-xs font-medium">{me.displayName}</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
                   {me.staffType === "admin"
-                    ? "Clinic administrator"
+                    ? can(me, "tenant.manage")
+                      ? "Clinic administrator"
+                      : "Clinic staff"
                     : me.staffType.replaceAll("_", " ")}
                 </p>
               </div>
@@ -541,7 +555,11 @@ function StaffApp() {
               </span>
               <ChevronRight className="size-3 text-muted-foreground hidden md:block" />
               <span className="text-xs font-medium hidden md:block">
-                {navigation.find((n) => n.key === page)?.name ??
+                {(["appointments", "waitlist", "queue"].includes(page)
+                  ? "Appointments"
+                  : ["activity", "operations"].includes(page)
+                    ? "Activity"
+                    : navigation.find((n) => n.key === page)?.name) ??
                   (page === "settings"
                     ? "Workspace settings"
                     : page === "activity"
@@ -572,7 +590,7 @@ function StaffApp() {
             </div>
           </header>
           <Directory
-            key={`${me.tenantId}:${facilityId}`}
+            key={`${me.tenantId}:${facilityId}:${navVersion}`}
             me={me}
             facility={facility}
             page={page}
@@ -693,20 +711,14 @@ function Directory({
           <Empty>This page is not available for your clinic permissions.</Empty>
         ) : page === "catalogue" ? (
           <Catalogue />
-        ) : page === "operations" ? (
-          <Overview page="operations" />
+        ) : page === "operations" || page === "activity" ? (
+          <ActivityWorkspace page={page} />
         ) : page === "overview" ? (
           <Overview />
-        ) : page === "appointments" ? (
-          <Appointments />
+        ) : ["appointments", "waitlist", "queue"].includes(page) ? (
+          <AppointmentWorkspace page={page} />
         ) : page === "patients" ? (
           <Patients />
-        ) : page === "activity" ? (
-          <ActivityLogPage />
-        ) : page === "waitlist" ? (
-          <Waitlist />
-        ) : page === "queue" ? (
-          <Queue />
         ) : page === "consultations" ? (
           <Consultations />
         ) : page === "teleconsultations" ? (
@@ -715,15 +727,13 @@ function Directory({
           <Schedules />
         ) : page === "doctors" ? (
           <Doctors />
-        ) : page === "design" ? (
-          <DesignGuide />
-        ) : [
-            "whatsapp",
-            "voice",
-            "google_business",
-            "growth_analytics",
-            "loyalty",
-          ].includes(page) ? (
+        ) : page === "whatsapp" ? (
+          <WhatsApp />
+        ) : page === "voice" ? (
+          <Voice />
+        ) : page === "google_business" || page === "growth_analytics" ? (
+          <Growth key={page} module={page} />
+        ) : page === "loyalty" ? (
           <PendingModule key={page} page={page} />
         ) : (
           <Settings me={me} />

@@ -1,6 +1,4 @@
 import { DemoControls } from "./DemoControls";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { api, dateTime, type StaffUser } from "@/lib/api";
@@ -86,7 +84,6 @@ export function SettingsModule({
         )}
       </>
     );
-  if (page === "design") return <DesignBook />;
   if (page === "activity") return <ActivityLog />;
 
   return (
@@ -370,41 +367,6 @@ export function SettingsModule({
   );
 }
 
-function DesignBook() {
-  const book = useResource<{ title: string; markdown: string }>(
-    "/api/v1/staff/design-guide",
-  );
-  return (
-    <Resource {...book}>
-      <Card className="max-w-4xl mx-auto">
-        <CardContent className="p-6 sm:p-10">
-          <article className="decision-book">
-            <Markdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                h2: ({ children, ...props }) => (
-                  <h2
-                    {...props}
-                    id={String(children)
-                      .toLowerCase()
-                      .replace(/[^\w\s-]/g, "")
-                      .trim()
-                      .replace(/\s+/g, "-")}
-                  >
-                    {children}
-                  </h2>
-                ),
-              }}
-            >
-              {book.data?.markdown ?? ""}
-            </Markdown>
-          </article>
-        </CardContent>
-      </Card>
-    </Resource>
-  );
-}
-
 function StaffPermissions() {
   const permissions = usePermissions();
   const [error, setError] = useState("");
@@ -520,10 +482,10 @@ const describe = (value: unknown): string =>
   Array.isArray(value) && value.length === 2 // [before, after]
     ? `${describe(value[0])} → ${describe(value[1])}`
     : value && typeof value === "object" && "from" in value && "to" in value
-    ? `${String((value as { from: unknown }).from)} → ${String((value as { to: unknown }).to)}`
-    : typeof value === "object"
-      ? JSON.stringify(value)
-      : String(value);
+      ? `${String((value as { from: unknown }).from)} → ${String((value as { to: unknown }).to)}`
+      : typeof value === "object"
+        ? JSON.stringify(value)
+        : String(value);
 
 export function ActivityLog() {
   const call = useApi();
@@ -554,20 +516,29 @@ export function ActivityLog() {
           <Action
             variant="outline"
             run={async () => {
-              const out = await call<{ items: AuditItem[]; truncated: boolean }>(
-                `/api/v1/staff/audit/export?${query}`,
-                { method: "POST" },
-              );
+              const out = await call<{
+                items: AuditItem[];
+                truncated: boolean;
+              }>(`/api/v1/staff/audit/export?${query}`, { method: "POST" });
               const url = URL.createObjectURL(
                 new Blob(
                   [
                     toCsv([
-                      ["Time", "Person", "Action", "Records", "Change", "Request"],
+                      [
+                        "Time",
+                        "Person",
+                        "Action",
+                        "Records",
+                        "Change",
+                        "Request",
+                      ],
                       ...out.items.map((e) => [
                         e.created_at,
                         e.actor,
                         e.action,
-                        Object.entries(e.targets).map(([k, v]) => `${k}: ${v}`).join(", "),
+                        Object.entries(e.targets)
+                          .map(([k, v]) => `${k}: ${v}`)
+                          .join(", "),
                         e.change,
                         e.request_id,
                       ]),
@@ -581,7 +552,10 @@ export function ActivityLog() {
               a.download = `activity-${new Date().toISOString().slice(0, 10)}.csv`;
               a.click();
               URL.revokeObjectURL(url);
-              if (out.truncated) throw new Error("Exported the newest 5,000 rows. Narrow the filters for the rest.");
+              if (out.truncated)
+                throw new Error(
+                  "Exported the newest 5,000 rows. Narrow the filters for the rest.",
+                );
             }}
             success="CSV downloaded"
           >
@@ -708,7 +682,15 @@ type RoleRow = {
   permissions: string[];
 };
 type PermissionRow = { key: string; label: string; module: string };
-const STAFF_TYPES = ["admin", "doctor", "nurse", "technician", "pharmacist", "support", "other"];
+const STAFF_TYPES = [
+  "admin",
+  "doctor",
+  "nurse",
+  "technician",
+  "pharmacist",
+  "support",
+  "other",
+];
 const titleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /**
@@ -716,7 +698,11 @@ const titleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
  * copies with the original permission switches, and the clinic's booking policy. Sign-in itself is
  * the hospital's identity provider, so there are no passwords here.
  */
-export function WorkspaceSettings({ account }: { account: { name: string; detail: string } }) {
+export function WorkspaceSettings({
+  account,
+}: {
+  account: { name: string; detail: string };
+}) {
   const permissions = usePermissions(),
     call = useApi(),
     canView = permissions.can("staff.view"),
@@ -725,7 +711,9 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
     canEdit = permissions.can("staff.edit"),
     everywhere = permissions.can("access.everywhere");
   const users = useResource<StaffRow[]>(canView ? "/api/v1/staff/users" : null),
-    roles = useResource<{ roles: RoleRow[]; permissions: PermissionRow[] }>(canView ? "/api/v1/staff/roles" : null);
+    roles = useResource<{ roles: RoleRow[]; permissions: PermissionRow[] }>(
+      canView ? "/api/v1/staff/roles" : null,
+    );
   const blank = {
     name: "",
     employee: "",
@@ -748,13 +736,19 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
     [retireReason, setRetireReason] = useState(""),
     [details, setDetails] = useState({ name: "", phone: "" }),
     [error, setError] = useState("");
-  const set = (k: keyof typeof blank) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
-  const roleOptions = (roles.data?.roles ?? []).map((r): [string, string] => [r.id, r.name]);
+  const set = (k: keyof typeof blank) => (v: string) =>
+    setForm((f) => ({ ...f, [k]: v }));
+  const roleOptions = (roles.data?.roles ?? []).map((r): [string, string] => [
+    r.id,
+    r.name,
+  ]);
   const scopeOptions: [string, string][] = [
     ["here", "This clinic"],
     ...(everywhere ? [["every", "Every clinic"] as [string, string]] : []),
   ];
-  const role = roles.data?.roles.find((r) => r.id === (roleId || roles.data?.roles[0]?.id));
+  const role = roles.data?.roles.find(
+    (r) => r.id === (roleId || roles.data?.roles[0]?.id),
+  );
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
   const refreshPerson = (id: string) => {
     users.refresh();
@@ -789,15 +783,16 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
             </CardDescription>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Sign-in and passwords are managed by your hospital's sign-in provider. This workspace never stores
-            passwords.
+            Sign-in and passwords are managed by your hospital's sign-in
+            provider. This workspace never stores passwords.
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Optional modules</CardTitle>
             <CardDescription>
-              Switch hospital modules (billing, pharmacy, WhatsApp, insurance…) on or off in Modules below.
+              Switch hospital modules (billing, pharmacy, WhatsApp, insurance…)
+              on or off in Modules below.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -814,7 +809,9 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
                   onClick={() => {
                     setForm({
                       ...blank,
-                      role: roles.data?.roles.find((r) => r.name === "Front desk")?.id ?? "",
+                      role:
+                        roles.data?.roles.find((r) => r.name === "Front desk")
+                          ?.id ?? "",
                     });
                     setAdding(true);
                   }}
@@ -849,7 +846,9 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
                       </TableCell>
                       <TableCell>{u.email ?? "—"}</TableCell>
                       <TableCell className="whitespace-normal text-xs">
-                        {u.grants.map((g) => `${g.role} · ${g.clinic}`).join(", ") || "No access"}
+                        {u.grants
+                          .map((g) => `${g.role} · ${g.clinic}`)
+                          .join(", ") || "No access"}
                       </TableCell>
                       <TableCell>
                         {
@@ -886,15 +885,21 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
             <CardHeader>
               <CardTitle className="text-base">What each role can do</CardTitle>
               <CardDescription>
-                Built-in roles are shared and read-only. Make a copy to customise it, then grant the copy. Every change
-                is recorded in the activity log and applies on each holder's next action.
+                Built-in roles are shared and read-only. Make a copy to
+                customise it, then grant the copy. Every change is recorded in
+                the activity log and applies on each holder's next action.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Resource {...roles}>
                 <div className="flex flex-wrap items-end gap-3">
                   <div className="min-w-60 flex-1">
-                    <Choice label="Role" value={role?.id ?? ""} onChange={setRoleId} options={roleOptions} />
+                    <Choice
+                      label="Role"
+                      value={role?.id ?? ""}
+                      onChange={setRoleId}
+                      options={roleOptions}
+                    />
                   </div>
                   {everywhere && role && (
                     <Button
@@ -919,17 +924,29 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
                     </Button>
                   )}
                 </div>
-                {role?.built_in && <p className="text-xs text-muted-foreground">Built-in role: read-only.</p>}
+                {role?.built_in && (
+                  <p className="text-xs text-muted-foreground">
+                    Built-in role: read-only.
+                  </p>
+                )}
                 {error && (
                   <p role="alert" className="text-sm text-destructive">
                     {error}
                   </p>
                 )}
                 {roles.data?.permissions.map((p) => (
-                  <div key={p.key} className="flex items-center justify-between gap-4">
-                    <Label htmlFor={"perm-" + p.key} className="text-sm font-normal">
+                  <div
+                    key={p.key}
+                    className="flex items-center justify-between gap-4"
+                  >
+                    <Label
+                      htmlFor={"perm-" + p.key}
+                      className="text-sm font-normal"
+                    >
                       {p.label}
-                      <span className="ml-2 text-xs text-muted-foreground">{p.module}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {p.module}
+                      </span>
                     </Label>
                     <Switch
                       id={"perm-" + p.key}
@@ -949,23 +966,37 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
           <DialogHeader>
             <DialogTitle>Add staff member</DialogTitle>
             <DialogDescription>
-              They sign in with this work email through your hospital's sign-in provider. Check it carefully: whoever
-              signs in with it gets this access.
+              They sign in with this work email through your hospital's sign-in
+              provider. Check it carefully: whoever signs in with it gets this
+              access.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Field
               label="Full name"
               id="staff-name"
-              error={form.name.trim().length < 2 ? "Enter a full name with at least 2 characters." : undefined}
+              error={
+                form.name.trim().length < 2
+                  ? "Enter a full name with at least 2 characters."
+                  : undefined
+              }
             >
-              <Input id="staff-name" value={form.name} maxLength={100} onChange={(e) => set("name")(e.target.value)} />
+              <Input
+                id="staff-name"
+                value={form.name}
+                maxLength={100}
+                onChange={(e) => set("name")(e.target.value)}
+              />
             </Field>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field
                 label="Employee number"
                 id="staff-employee"
-                error={!/^[A-Za-z0-9._/-]{1,30}$/.test(form.employee) ? "Letters, numbers, . _ / -" : undefined}
+                error={
+                  !/^[A-Za-z0-9._/-]{1,30}$/.test(form.employee)
+                    ? "Letters, numbers, . _ / -"
+                    : undefined
+                }
               >
                 <Input
                   id="staff-employee"
@@ -984,7 +1015,9 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
             <Field
               label="Work email"
               id="staff-email"
-              error={!emailOk ? "Enter the email they will sign in with." : undefined}
+              error={
+                !emailOk ? "Enter the email they will sign in with." : undefined
+              }
             >
               <Input
                 id="staff-email"
@@ -995,7 +1028,11 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
                 onChange={(e) => set("email")(e.target.value)}
               />
             </Field>
-            <Field label="Mobile (optional)" id="staff-phone" hint="+country code, e.g. +919876543210">
+            <Field
+              label="Mobile (optional)"
+              id="staff-phone"
+              hint="+country code, e.g. +919876543210"
+            >
               <Input
                 id="staff-phone"
                 type="tel"
@@ -1012,11 +1049,19 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
                 options={roleOptions}
                 error={!form.role ? "Choose a role." : undefined}
               />
-              <Choice label="Where" value={form.scope} onChange={set("scope")} options={scopeOptions} />
+              <Choice
+                label="Where"
+                value={form.scope}
+                onChange={set("scope")}
+                options={scopeOptions}
+              />
             </div>
             <Action
               disabled={
-                form.name.trim().length < 2 || !/^[A-Za-z0-9._/-]{1,30}$/.test(form.employee) || !emailOk || !form.role
+                form.name.trim().length < 2 ||
+                !/^[A-Za-z0-9._/-]{1,30}$/.test(form.employee) ||
+                !emailOk ||
+                !form.role
               }
               run={async () => {
                 await call("/api/v1/staff/users", {
@@ -1058,26 +1103,41 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
                 <Field
                   label="Full name"
                   id="staff-edit-name"
-                  error={details.name.trim().length < 2 ? "Enter a full name with at least 2 characters." : undefined}
+                  error={
+                    details.name.trim().length < 2
+                      ? "Enter a full name with at least 2 characters."
+                      : undefined
+                  }
                 >
                   <Input
                     id="staff-edit-name"
                     value={details.name}
                     maxLength={100}
-                    onChange={(e) => setDetails((d) => ({ ...d, name: e.target.value }))}
+                    onChange={(e) =>
+                      setDetails((d) => ({ ...d, name: e.target.value }))
+                    }
                   />
                 </Field>
                 <Field
                   label="Work phone"
                   id="staff-edit-phone"
-                  error={details.phone && !/^\+[1-9][0-9]{7,14}$/.test(details.phone) ? "Use the international format, e.g. +919876543210." : undefined}
+                  error={
+                    details.phone && !/^\+[1-9][0-9]{7,14}$/.test(details.phone)
+                      ? "Use the international format, e.g. +919876543210."
+                      : undefined
+                  }
                 >
                   <Input
                     id="staff-edit-phone"
                     type="tel"
                     value={details.phone}
                     placeholder="+919876543210"
-                    onChange={(e) => setDetails((d) => ({ ...d, phone: e.target.value.trim() }))}
+                    onChange={(e) =>
+                      setDetails((d) => ({
+                        ...d,
+                        phone: e.target.value.trim(),
+                      }))
+                    }
                   />
                 </Field>
               </div>
@@ -1085,13 +1145,19 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
                 variant="outline"
                 disabled={
                   details.name.trim().length < 2 ||
-                  (!!details.phone && !/^\+[1-9][0-9]{7,14}$/.test(details.phone)) ||
-                  (details.name.trim() === person.name && details.phone === (person.phone ?? ""))
+                  (!!details.phone &&
+                    !/^\+[1-9][0-9]{7,14}$/.test(details.phone)) ||
+                  (details.name.trim() === person.name &&
+                    details.phone === (person.phone ?? ""))
                 }
                 run={async () => {
                   await call(`/api/v1/staff/users/${person.id}`, {
                     method: "PATCH",
-                    body: { version: person.version, name: details.name.trim(), phone: details.phone },
+                    body: {
+                      version: person.version,
+                      name: details.name.trim(),
+                      phone: details.phone,
+                    },
                   });
                   refreshPerson(person.id);
                 }}
@@ -1103,7 +1169,10 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
           )}
           <div className="space-y-3">
             {person?.grants.map((g) => (
-              <div key={g.id} className="flex items-center justify-between gap-3 border-b pb-2 text-sm">
+              <div
+                key={g.id}
+                className="flex items-center justify-between gap-3 border-b pb-2 text-sm"
+              >
                 <span>
                   {g.role} · {g.clinic}
                 </span>
@@ -1127,25 +1196,40 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
               </div>
             ))}
             {person && !person.is_you && (
-              <Field label="Reason (for removing access or changing status)" id="staff-reason">
-                <Input id="staff-reason" value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} />
+              <Field
+                label="Reason (for removing access or changing status)"
+                id="staff-reason"
+              >
+                <Input
+                  id="staff-reason"
+                  value={reason}
+                  maxLength={500}
+                  onChange={(e) => setReason(e.target.value)}
+                />
               </Field>
             )}
             {canStatus && person && !person.is_you && (
               <Action
-                variant={person.status === "disabled" ? "outline" : "destructive"}
+                variant={
+                  person.status === "disabled" ? "outline" : "destructive"
+                }
                 disabled={reason.trim().length < 3}
                 run={async () => {
                   await call(`/api/v1/staff/users/${person.id}/status`, {
                     method: "POST",
                     body: {
-                      status: person.status === "disabled" ? "active" : "inactive",
+                      status:
+                        person.status === "disabled" ? "active" : "inactive",
                       reason: reason.trim(),
                     },
                   });
                   refreshPerson(person.id);
                 }}
-                success={person.status === "disabled" ? "Reactivated" : "Deactivated: their next request is refused"}
+                success={
+                  person.status === "disabled"
+                    ? "Reactivated"
+                    : "Deactivated: their next request is refused"
+                }
               >
                 {person.status === "disabled" ? "Reactivate" : "Deactivate"}
               </Action>
@@ -1155,8 +1239,18 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
             <div className="space-y-3 border-t pt-4">
               <p className="text-sm font-medium">Add access</p>
               <div className="grid gap-3 sm:grid-cols-2">
-                <Choice label="Role" value={grantRoleId} onChange={setGrantRoleId} options={roleOptions} />
-                <Choice label="Where" value={grantScope} onChange={setGrantScope} options={scopeOptions} />
+                <Choice
+                  label="Role"
+                  value={grantRoleId}
+                  onChange={setGrantRoleId}
+                  options={roleOptions}
+                />
+                <Choice
+                  label="Where"
+                  value={grantScope}
+                  onChange={setGrantScope}
+                  options={scopeOptions}
+                />
               </div>
               <Action
                 disabled={!grantRoleId}
@@ -1184,23 +1278,36 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
           <DialogHeader>
             <DialogTitle>Copy {role?.name}</DialogTitle>
             <DialogDescription>
-              The copy starts with the same permissions and can then be edited and granted.
+              The copy starts with the same permissions and can then be edited
+              and granted.
             </DialogDescription>
           </DialogHeader>
-          <Field label="Name" id="role-name" error={copyName.trim().length < 2 ? "Enter a name." : undefined}>
-            <Input id="role-name" value={copyName} maxLength={60} onChange={(e) => setCopyName(e.target.value)} />
+          <Field
+            label="Name"
+            id="role-name"
+            error={copyName.trim().length < 2 ? "Enter a name." : undefined}
+          >
+            <Input
+              id="role-name"
+              value={copyName}
+              maxLength={60}
+              onChange={(e) => setCopyName(e.target.value)}
+            />
           </Field>
           <Action
             disabled={copyName.trim().length < 2}
             run={async () => {
-              const made = await call<{ roleId: string }>("/api/v1/staff/roles", {
-                method: "POST",
-                body: {
-                  name: copyName.trim(),
-                  copy_of: role!.id,
-                  idempotency_key: crypto.randomUUID(),
+              const made = await call<{ roleId: string }>(
+                "/api/v1/staff/roles",
+                {
+                  method: "POST",
+                  body: {
+                    name: copyName.trim(),
+                    copy_of: role!.id,
+                    idempotency_key: crypto.randomUUID(),
+                  },
                 },
-              });
+              );
               setCopying(false);
               setRoleId(made.roleId);
               roles.refresh();
@@ -1216,18 +1323,32 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
           <DialogHeader>
             <DialogTitle>Retire {role?.name}</DialogTitle>
             <DialogDescription>
-              Nobody can be given this role afterwards. Remove it from everyone who holds it first; the change is
-              recorded in the activity log.
+              Nobody can be given this role afterwards. Remove it from everyone
+              who holds it first; the change is recorded in the activity log.
             </DialogDescription>
           </DialogHeader>
-          <Field label="Reason" id="retire-reason" error={retireReason.trim().length < 3 ? "Give a reason." : undefined}>
-            <Input id="retire-reason" value={retireReason} maxLength={500} onChange={(e) => setRetireReason(e.target.value)} />
+          <Field
+            label="Reason"
+            id="retire-reason"
+            error={
+              retireReason.trim().length < 3 ? "Give a reason." : undefined
+            }
+          >
+            <Input
+              id="retire-reason"
+              value={retireReason}
+              maxLength={500}
+              onChange={(e) => setRetireReason(e.target.value)}
+            />
           </Field>
           <Action
             variant="destructive"
             disabled={retireReason.trim().length < 3}
             run={async () => {
-              await call(`/api/v1/staff/roles/${role!.id}/retire`, { method: "POST", body: { reason: retireReason.trim() } });
+              await call(`/api/v1/staff/roles/${role!.id}/retire`, {
+                method: "POST",
+                body: { reason: retireReason.trim() },
+              });
               setRetiring(false);
               setRoleId("");
               roles.refresh();
@@ -1244,25 +1365,30 @@ export function WorkspaceSettings({ account }: { account: { name: string; detail
 
 function BookingPolicy() {
   const call = useApi(),
-    policy = useResource<{ overbooking: boolean }>("/api/v1/admin/booking-policy"),
+    policy = useResource<{ overbooking: boolean }>(
+      "/api/v1/admin/booking-policy",
+    ),
     [error, setError] = useState("");
   return (
     <Card className="mb-7">
       <CardHeader>
         <CardTitle className="text-base">Appointment booking policy</CardTitle>
         <CardDescription>
-          Administrator setting for this clinic. Staff follow this policy automatically when booking or moving
-          appointments.
+          Administrator setting for this clinic. Staff follow this policy
+          automatically when booking or moving appointments.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Resource {...policy}>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <Label htmlFor="policy-overbooking">Allow overlapping appointments</Label>
+              <Label htmlFor="policy-overbooking">
+                Allow overlapping appointments
+              </Label>
               <p className="mt-2 text-xs text-muted-foreground">
-                Allow up to three simultaneous visits at the same clinic. Reception coordinates arrivals. Blocked time,
-                active holds and other-clinic conflicts remain protected.
+                Allow up to three simultaneous visits at the same clinic.
+                Reception coordinates arrivals. Blocked time, active holds and
+                other-clinic conflicts remain protected.
               </p>
             </div>
             <Switch
@@ -1276,7 +1402,11 @@ function BookingPolicy() {
                     body: { overbooking: v },
                   });
                 } catch (e) {
-                  setError(e instanceof Error ? e.message : "Could not update the setting.");
+                  setError(
+                    e instanceof Error
+                      ? e.message
+                      : "Could not update the setting.",
+                  );
                 } finally {
                   policy.refresh();
                 }

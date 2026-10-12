@@ -5,15 +5,16 @@ import {
   OriginalResourceContext,
   type OriginalResourceSource,
 } from "@/components/resource-source";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { useCommand, useQuery, useWorkspace } from "./hooks";
-import { can, today } from "./model";
-import { ErrorMessage, Hint } from "./ui";
+import { useQuery, useWorkspace } from "./hooks";
+import { today } from "./model";
 import { scheduleSource } from "./schedule-source";
 
 export function Schedules() {
-  const { me, facility, practitioners } = useWorkspace();
+  const { me, facility, practitioners, go } = useWorkspace();
+  const params = new URLSearchParams(location.search);
+  const requestedDoctor = params.get("doctor") ?? undefined;
+  const requestedMode =
+    params.get("mode") === "virtual" ? "virtual" : "in_person";
   const [day, setDay] = useState(() => today(facility.timezone));
   const setting = useQuery<{ enabled: boolean; maxPerSession: number }>(
     `/v1/facilities/${facility.facilityId}/overbooking`,
@@ -27,65 +28,22 @@ export function Schedules() {
     <>
       <PageTitle
         title="Schedules"
-        description="Your original doctor timeline, detail sheets and weekly-hours editor."
+        description="Doctor schedules and weekly hours."
       />
-      <Hint>
-        Blocks and extra hours apply to this clinic. Weekly hours replace this
-        clinic's hours from the chosen date, and are checked against bookings
-        and the doctor's hours at other clinics before saving. Click a free
-        slot to book it; open an appointment to move or cancel it.
-        {overbooking &&
-          ` Overbooking is on: open a booked appointment to add up to ${setting.data?.maxPerSession} extra per doctor session, with a reason.`}
-      </Hint>
-      {can(me, "config.manage", facility.facilityId) && setting.data && (
-        <OverbookingSwitch
-          facilityId={facility.facilityId}
-          enabled={overbooking}
-          onSaved={() => void setting.refresh()}
-        />
-      )}
       <div className="mt-5">
         <OriginalResourceContext.Provider value={source}>
-          <ScheduleTimeline day={day} setDay={setDay} />
+          <ScheduleTimeline
+            day={day}
+            setDay={setDay}
+            ownDoctorId={me.staffType === "doctor" ? me.staffId : undefined}
+            initialDoctorId={requestedDoctor}
+            initialVisitMode={requestedMode}
+            onDoctorProfile={(id) =>
+              go(`doctors?doctor=${encodeURIComponent(id)}`)
+            }
+          />
         </OriginalResourceContext.Provider>
       </div>
     </>
-  );
-}
-
-/** Clinic administrators turn overbooking on or off for this clinic only. */
-function OverbookingSwitch({
-  facilityId,
-  enabled,
-  onSaved,
-}: {
-  facilityId: string;
-  enabled: boolean;
-  onSaved: () => void;
-}) {
-  const cmd = useCommand();
-  return (
-    <div className="mt-4 flex items-center justify-between gap-4 rounded-md border p-3">
-      <Label htmlFor="clinic-overbooking" className="font-normal">
-        Allow overbooking at this clinic (at most 3 per doctor session)
-      </Label>
-      <Switch
-        id="clinic-overbooking"
-        checked={enabled}
-        disabled={cmd.busy}
-        onCheckedChange={async (next) => {
-          if (
-            await cmd.run(
-              `/v1/facilities/${facilityId}/overbooking`,
-              { enabled: next },
-              false,
-              "PUT",
-            )
-          )
-            onSaved();
-        }}
-      />
-      <ErrorMessage text={cmd.error} />
-    </div>
   );
 }

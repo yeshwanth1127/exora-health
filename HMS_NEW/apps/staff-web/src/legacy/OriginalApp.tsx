@@ -19,7 +19,6 @@ import {
   ScrollText,
   Settings2,
   Stethoscope,
-  BookOpen,
   LoaderCircle,
   Headphones,
   LayoutDashboard,
@@ -459,12 +458,7 @@ export default function App() {
                       </NavigationButton>
                     </SidebarMenuItem>
                   )}
-                  <SidebarMenuItem>
-                    <NavigationButton onClick={() => go("settings", "design")}>
-                      <BookOpen />
-                      Design & UX guide
-                    </NavigationButton>
-                  </SidebarMenuItem>
+
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

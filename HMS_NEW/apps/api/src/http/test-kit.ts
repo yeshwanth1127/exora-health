@@ -10,6 +10,7 @@ import { createVerifier } from '../auth/verify.ts';
 import { DEV_ISSUER, DEV_SECRET_DEFAULT } from '../config.ts';
 import { dispatchOnce } from '../../../worker/src/dispatcher.ts';
 import { consumers } from '../consumers.ts';
+import type { ChannelSettings } from '../modules/comms/voice-growth.ts';
 import { buildServer } from '../server.ts';
 
 export type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -34,10 +35,10 @@ export interface Kit {
   close(): Promise<void>;
 }
 
-export async function startKit(label: string): Promise<Kit> {
+export async function startKit(label: string, channels?: ChannelSettings): Promise<Kit> {
   const admin = adminPool();
   const db = createDb({ connectionString: config.testAppDatabaseUrl, maxConnections: 5 });
-  const app = buildServer({ db, verifier: createVerifier({ mode: 'dev', secret: DEV_SECRET_DEFAULT, issuer: DEV_ISSUER }), allowClockOverride: true });
+  const app = buildServer({ db, verifier: createVerifier({ mode: 'dev', secret: DEV_SECRET_DEFAULT, issuer: DEV_ISSUER }), allowClockOverride: true, channels });
   const tenant = await createTenant(admin, label);
   const run = randomUUID().slice(0, 8);
   let n = 0;

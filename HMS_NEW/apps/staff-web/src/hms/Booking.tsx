@@ -1,3 +1,13 @@
+import {
+  activeAppointments,
+  appointmentModeLabel,
+  type AppointmentMode,
+} from "./booking-workflow";
+import { dailyAvailability, monthRange } from "./availability-calendar";
+import { AvailabilityCalendar } from "./AvailabilityCalendar";
+import { ExistingAppointments } from "./PatientVisits";
+import { usePatientAppointments } from "./patient-visits-hooks";
+import { patientDisplayName } from "./patient-presentation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +19,14 @@ import { today, time, money } from "./model";
 import { useUnsaved } from "./leave";
 import { PatientLookup, RegisterPatient } from "./Patients";
 import { Choice, Empty, ErrorMessage, Field, Hint, LoadingState } from "./ui";
-import type { Appointment, BookingResult, Hold, Patient, Slot } from "./types";
+import type {
+  Appointment,
+  BookingResult,
+  Hold,
+  Patient,
+  PatientDetail,
+  Slot,
+} from "./types";
 
 export function Booking({
   onBooked,
@@ -18,8 +35,16 @@ export function Booking({
   onBooked: (id: string) => void;
   move?: Appointment;
 }) {
-  const { facility, practitioners, can } = useWorkspace(),
+  const { facility, practitioners, can, go } = useWorkspace(),
     cmd = useCommand();
+  const [step, setStep] = useState(move ? 2 : 1);
+  const [visitMode, setVisitMode] = useState<AppointmentMode>(() =>
+    (move?.visitMode ?? new URLSearchParams(location.search).get("mode")) ===
+    "virtual"
+      ? "virtual"
+      : "in_person",
+  );
+  const [acknowledged, setAcknowledged] = useState("");
   const bookable = practitioners.filter((p) => p.calendarId);
   const [chosen, setStaffId] = useState(move?.practitionerStaffId ?? ""),
     [date, setDate] = useState(move?.sessionOn ?? today(facility.timezone));
@@ -33,15 +58,55 @@ export function Booking({
     [callerPhone, setCallerPhone] = useState(""),
     [hold, setHold] = useState<Hold | null>(null),
     [reason, setReason] = useState("");
-  const callerReady = caller && callerName.trim().length > 0 && /^\+[1-9][0-9]{7,14}$/.test(callerPhone);
+  const initialPatientId = new URLSearchParams(location.search).get("patient");
+  const initialPatient = useQuery<PatientDetail>(
+    initialPatientId && !move && can("patients.read")
+      ? `/v1/patients/${initialPatientId}`
+      : null,
+  );
+  useEffect(() => {
+    const p = initialPatient.data;
+    if (p?.status === "active")
+      setPatient({
+        patientId: p.patientId,
+        mrn: p.mrn,
+        name: `${p.givenName} ${p.familyName ?? ""}`.trim(),
+        phone: p.contacts.find((c) => c.kind === "phone")?.value ?? null,
+        birthDate: p.birthDate,
+        sex: p.sex,
+        status: p.status,
+      });
+  }, [initialPatient.data]);
+  const existing = usePatientAppointments(
+    move?.patientId ?? patient?.patientId,
+  );
+  const duplicates = activeAppointments(
+    existing.data ?? [],
+    move?.appointmentId,
+  );
+  const duplicateKey = JSON.stringify([
+    patient?.patientId,
+    duplicates.map((a) => a.appointmentId),
+  ]);
+  const duplicateReady =
+    !!move || !duplicates.length || acknowledged === duplicateKey;
+  const checkReady =
+    !existing.enabled ||
+    (!existing.loading && !existing.error && existing.data !== null);
+  const callerReady =
+    caller &&
+    callerName.trim().length > 0 &&
+    /^\+[1-9][0-9]{7,14}$/.test(callerPhone);
   const who = !!move || !!patient || callerReady;
   const [clock, setClock] = useState(() => Date.now()),
     [result, setResult] = useState<BookingResult | null>(null);
   useUnsaved(cmd.unknown);
   const activeHold = useRef<Hold | null>(null);
+  const clinicToday = today(facility.timezone);
+  const range = monthRange(date.slice(0, 7), clinicToday);
   const slots = useQuery<{ items: Slot[] }>(
-    staffId
-      ? `/v1/practitioners/${staffId}/slots?${query({ facilityId: facility.facilityId, from: date, to: date })}`
+    staffId && step === 2 && range.from <= range.to
+      ? `/v1/practitioners/${staffId}/slots?${query({ facilityId: facility.facilityId, ...range, includeUnavailable: true })}`
       : null,
   );
   useEffect(() => {
@@ -55,6 +120,14 @@ export function Booking({
         }).catch(() => {});
     };
   }, []);
+  const availability = dailyAvailability(
+    slots.data?.items ?? [],
+    visitMode,
+    facility.facilityId,
+    facility.timezone,
+    clock,
+  );
+  const availableSlots = availability.get(date)?.available ?? [];
   const seconds = hold
     ? Math.max(0, Math.floor((Date.parse(hold.holdExpiresAt) - clock) / 1000))
     : 0;
@@ -87,193 +160,474 @@ export function Booking({
     );
   return (
     <div className="space-y-5">
-      {move ? (
-        <Hint>
-          Moving creates a new appointment and keeps the cancelled original in
-          history.
-        </Hint>
-      ) : patient ? (
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-medium">{patient.name}</p>
-            <p className="text-xs text-muted-foreground">{patient.mrn}</p>
-          </div>
-          <Button
-            variant="ghost"
-            disabled={cmd.busy || !!hold}
-            onClick={() => setPatient(null)}
+      <ol
+        className="grid grid-cols-3 gap-3 border-b pb-5 text-sm"
+        aria-label="Booking steps"
+      >
+        {["Patient", "Doctor & time", "Review & confirm"].map((title, i) => (
+          <li
+            key={title}
+            aria-current={step === i + 1 ? "step" : undefined}
+            className={
+              step === i + 1 ? "font-semibold" : "text-muted-foreground"
+            }
           >
-            Change patient
-          </Button>
-        </div>
-      ) : caller ? (
-        <div className="space-y-3 border rounded-lg p-4">
-          <p className="text-sm font-medium">Caller (not registered yet)</p>
-          <Field title="Caller's name" id="caller-name">
-            <Input id="caller-name" value={callerName} maxLength={100} disabled={!!hold || cmd.busy} onChange={(e) => setCallerName(e.target.value)} />
-          </Field>
-          <Field title="Caller's phone (with country code)" id="caller-phone">
-            <Input id="caller-phone" type="tel" placeholder="+919876543210" value={callerPhone} disabled={!!hold || cmd.busy} onChange={(e) => setCallerPhone(e.target.value.trim())} />
-          </Field>
-          <p className="text-xs text-muted-foreground">
-            The patient is registered and linked when they arrive, before check-in.
-          </p>
-          <Button variant="ghost" disabled={!!hold || cmd.busy} onClick={() => setCaller(false)}>
-            Find a registered patient instead
-          </Button>
-        </div>
-      ) : (
-        <>
-          <PatientLookup onSelect={setPatient} />
-          <div className="flex flex-wrap gap-2">
-            {can("patients.register") && (
-              <Button variant="ghost" onClick={() => setRegister((v) => !v)}>
-                {register ? "Back to search" : "Register a new patient"}
+            {i + 1}. {title}
+          </li>
+        ))}
+      </ol>
+      <div className={`${step === 2 ? "max-w-6xl" : "max-w-3xl"} space-y-5`}>
+        <section className="space-y-3">
+          <h2 className="font-semibold">Appointment type</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {(["in_person", "virtual"] as const).map((mode) => (
+              <Button
+                key={mode}
+                variant={visitMode === mode ? "default" : "outline"}
+                aria-pressed={visitMode === mode}
+                disabled={!!hold || cmd.busy || cmd.unknown}
+                onClick={() => setVisitMode(mode)}
+              >
+                {appointmentModeLabel(mode)}
               </Button>
-            )}
-            <Button variant="ghost" onClick={() => setCaller(true)}>
-              Book for a caller who isn't registered
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {visitMode === "virtual"
+              ? "Choose a published teleconsultation slot. The saved appointment creates the video consultation."
+              : "The patient visits the clinic in person."}
+            {hold &&
+              " Release the selected slot before changing appointment type."}
+          </p>
+        </section>
+        {existing.loading && (
+          <p className="text-sm text-muted-foreground">
+            Checking this patient’s existing appointments…
+          </p>
+        )}
+        {existing.error && (
+          <div className="space-y-2">
+            <ErrorMessage text="Could not check existing appointments. Retry before confirming." />
+            <Button variant="outline" onClick={() => void existing.refresh()}>
+              Retry appointment check
             </Button>
           </div>
-          {register && (
-            <RegisterPatient
-              onCreated={(p) => {
-                setPatient(p);
-                setRegister(false);
-              }}
-            />
-          )}
-        </>
-      )}
-      <Field title="Doctor" id="booking-doctor">
-        <Choice
-          label="Doctor"
-          value={staffId}
-          onChange={setStaffId}
-          disabled={!!hold || cmd.busy}
-          options={bookable.map((p) => ({ value: p.staffId, label: p.name }))}
-        />
-      </Field>
-      {!bookable.length && (
-        <Hint>
-          No doctor here has a calendar yet. Set one up on the Doctors page, then give them weekly hours in
-          Schedules.
-        </Hint>
-      )}
-      <Field title="Date" id="booking-date">
-        <Input
-          id="booking-date"
-          type="date"
-          min={today(facility.timezone)}
-          value={date}
-          disabled={!!hold || cmd.busy}
-          onChange={(e) => setDate(e.target.value)}
-        />
-      </Field>
-      {hold ? (
-        <div className="space-y-3 border rounded-lg p-4">
-          <p className="font-medium">
-            {time(hold.slotStart, facility.timezone)} –{" "}
-            {time(hold.slotEnd, facility.timezone)}
-          </p>
-          <p role="status" className="text-sm">
-            {seconds
-              ? `Held for ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} more`
-              : "Hold expired. Choose a slot again."}
-          </p>
-          <Button
-            variant="outline"
-            disabled={cmd.busy}
-            onClick={() => void release()}
-          >
-            Choose another slot
-          </Button>
-        </div>
-      ) : (
-        <LoadingState {...slots}>
-          <div className="grid grid-cols-3 gap-2">
-            {slots.data?.items
-              .filter((s) => s.status === "free")
-              .map((s) => (
+        )}
+        <ExistingAppointments items={duplicates} warning />
+        <ErrorMessage text={initialPatient.error} />
+        {step === 1 && (
+          <section className="space-y-5">
+            <h2 className="text-lg font-semibold">
+              Who is the appointment for?
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Search for a returning patient, register a new patient, or record
+              a booking contact to link at arrival.
+            </p>
+            {move ? (
+              <Hint>
+                Moving creates a new appointment and keeps the cancelled
+                original in history.
+              </Hint>
+            ) : patient ? (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">
+                    {patientDisplayName(patient.patientId, patient.name)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{patient.mrn}</p>
+                </div>
                 <Button
-                  key={s.slotStart}
+                  variant="ghost"
+                  disabled={cmd.busy || !!hold}
+                  onClick={() => setPatient(null)}
+                >
+                  Change patient
+                </Button>
+              </div>
+            ) : caller ? (
+              <div className="space-y-3 border rounded-lg p-4">
+                <p className="text-sm font-medium">
+                  Booking contact (patient not registered yet)
+                </p>
+                <Field title="Name" id="caller-name">
+                  <Input
+                    id="caller-name"
+                    value={callerName}
+                    maxLength={100}
+                    disabled={!!hold || cmd.busy}
+                    onChange={(e) => setCallerName(e.target.value)}
+                  />
+                </Field>
+                <Field
+                  title="Caller's phone (with country code)"
+                  id="caller-phone"
+                >
+                  <Input
+                    id="caller-phone"
+                    type="tel"
+                    placeholder="+919876543210"
+                    value={callerPhone}
+                    disabled={!!hold || cmd.busy}
+                    onChange={(e) => setCallerPhone(e.target.value.trim())}
+                  />
+                </Field>
+                <p className="text-xs text-muted-foreground">
+                  The patient is registered and linked when they arrive, before
+                  check-in.
+                </p>
+                <Button
+                  variant="ghost"
+                  disabled={!!hold || cmd.busy}
+                  onClick={() => setCaller(false)}
+                >
+                  Find a registered patient instead
+                </Button>
+              </div>
+            ) : (
+              <>
+                <PatientLookup onSelect={setPatient} />
+                <div className="flex flex-wrap gap-2">
+                  {can("patients.register") && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => setRegister((v) => !v)}
+                    >
+                      {register ? "Back to search" : "Register a new patient"}
+                    </Button>
+                  )}
+                  <Button variant="ghost" onClick={() => setCaller(true)}>
+                    Book for a caller who isn't registered
+                  </Button>
+                </div>
+                {register && (
+                  <RegisterPatient
+                    onCreated={(p) => {
+                      setPatient(p);
+                      setRegister(false);
+                    }}
+                  />
+                )}
+              </>
+            )}
+            <Button disabled={!who || cmd.busy} onClick={() => setStep(2)}>
+              Continue to doctor & time
+            </Button>
+          </section>
+        )}
+        {step === 2 && (
+          <section className="space-y-5">
+            <h2 className="text-lg font-semibold">
+              Choose a doctor and available time
+            </h2>
+            <Field title="Doctor" id="booking-doctor">
+              <Choice
+                label="Doctor"
+                value={staffId}
+                onChange={setStaffId}
+                disabled={!!hold || cmd.busy}
+                options={bookable.map((p) => ({
+                  value: p.staffId,
+                  label: p.name,
+                }))}
+              />
+            </Field>
+            {!bookable.length && (
+              <Hint>
+                No doctor here has a calendar yet. Set one up on the Doctors
+                page, then give them weekly hours in Schedules.
+              </Hint>
+            )}
+            <div className="grid grid-cols-[minmax(0,1.25fr)_minmax(260px,1fr)] items-start gap-6">
+              <AvailabilityCalendar
+                date={date}
+                today={clinicToday}
+                mode={visitMode}
+                days={availability}
+                loading={slots.loading}
+                failed={!!slots.error}
+                disabled={!staffId || !!hold || cmd.busy || cmd.unknown}
+                onSelect={setDate}
+              />
+              <div className="space-y-4 rounded-lg border p-4">
+                <div>
+                  <h3 className="font-semibold">
+                    {appointmentModeLabel(visitMode)} times
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {new Intl.DateTimeFormat("en-IN", {
+                      dateStyle: "full",
+                      timeZone: "UTC",
+                    }).format(new Date(`${date}T12:00:00Z`))}{" "}
+                    · {facility.timezone}
+                  </p>
+                </div>
+                <ErrorMessage text={cmd.error} />
+                {hold ? (
+                  <div className="space-y-3 border rounded-lg p-4">
+                    <p className="font-medium">
+                      {time(hold.slotStart, facility.timezone)} –{" "}
+                      {time(hold.slotEnd, facility.timezone)}
+                    </p>
+                    <p role="status" className="text-sm">
+                      {seconds
+                        ? `Held for ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} more`
+                        : "Hold expired. Choose a slot again."}
+                    </p>
+                    <Button
+                      variant="outline"
+                      disabled={cmd.busy || cmd.unknown}
+                      onClick={() => void release()}
+                    >
+                      Choose another slot
+                    </Button>
+                  </div>
+                ) : (
+                  <LoadingState {...slots}>
+                    <div className="grid grid-cols-2 gap-2">
+                      {availableSlots.map((s) => (
+                        <Button
+                          key={s.slotStart}
+                          variant="outline"
+                          disabled={cmd.busy || !who}
+                          className="h-auto py-3 flex-col"
+                          onClick={async () => {
+                            const value = await cmd.run<Hold>(
+                              "/v1/holds",
+                              { staffId, slotStart: s.slotStart },
+                              true,
+                            );
+                            if (value) {
+                              setHold(value);
+                              activeHold.current = value;
+                            }
+                          }}
+                        >
+                          <span>{time(s.slotStart, facility.timezone)}</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {appointmentModeLabel(s.visitMode)}
+                          </span>
+                        </Button>
+                      ))}
+                    </div>
+                    {availableSlots.length === 0 && (
+                      <Empty>
+                        No {appointmentModeLabel(visitMode).toLowerCase()} slots
+                        on this day. Choose a day marked with open times, or
+                        another doctor.
+                      </Empty>
+                    )}
+                  </LoadingState>
+                )}
+                {slots.error && (
+                  <Button
+                    variant="outline"
+                    onClick={() => void slots.refresh()}
+                  >
+                    Retry availability
+                  </Button>
+                )}
+                {visitMode === "virtual" && !hold && (
+                  <div className="space-y-3 border-t pt-4">
+                    <p className="text-xs text-muted-foreground">
+                      {bookable.find((p) => p.staffId === staffId)
+                        ?.acceptsVirtual
+                        ? "Teleconsultation availability comes from this doctor’s published weekly hours."
+                        : "Teleconsultations are not enabled on this doctor’s booking profile. Enable them and publish weekly hours before booking."}
+                    </p>
+                    {can("schedules.manage") ? (
+                      <Button
+                        variant="outline"
+                        disabled={!staffId || cmd.busy || cmd.unknown}
+                        onClick={() =>
+                          go(`schedules?doctor=${staffId}&mode=virtual`)
+                        }
+                      >
+                        Set teleconsultation hours
+                      </Button>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Ask the clinic administrator to publish teleconsultation
+                        hours.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-3">
+              {!move && (
+                <Button
                   variant="outline"
-                  disabled={cmd.busy || !who}
-                  className="h-auto py-3 flex-col"
+                  disabled={cmd.busy || cmd.unknown}
                   onClick={async () => {
-                    const value = await cmd.run<Hold>(
-                      "/v1/holds",
-                      { staffId, slotStart: s.slotStart },
-                      true,
-                    );
-                    if (value) {
-                      setHold(value);
-                      activeHold.current = value;
-                    }
+                    await release();
+                    setStep(1);
                   }}
                 >
-                  <span>{time(s.slotStart, facility.timezone)}</span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {s.visitMode === "virtual" ? "Video" : "In person"}
-                  </span>
+                  Back to patient
                 </Button>
-              ))}
-          </div>
-          {slots.data?.items.filter((s) => s.status === "free").length ===
-            0 && (
-            <Empty>
-              No bookable slots on this day. Try another date, or check the doctor's weekly hours in Schedules.
-            </Empty>
-          )}
-        </LoadingState>
-      )}
-      <Field
-        title={move ? "Reason for move (optional)" : "Visit reason (optional)"}
-        id="booking-reason"
-      >
-        <Textarea
-          id="booking-reason"
-          maxLength={500}
-          value={reason}
-          disabled={cmd.busy}
-          onChange={(e) => setReason(e.target.value)}
-        />
-      </Field>
-      <p className="text-xs text-muted-foreground">
-        The booked fee is confirmed when the appointment is saved. A fee quote
-        is not available yet.
-      </p>
-      <ErrorMessage text={cmd.error} />
-      <Button
-        disabled={cmd.busy || !hold || seconds === 0 || !who}
-        onClick={async () => {
-          if (!hold) return;
-          const path = move
-            ? `/v1/appointments/${move.appointmentId}/reschedule`
-            : "/v1/appointments";
-          const body = move
-            ? {
-                newReservationId: hold.reservationId,
-                ...(reason ? { reason } : {}),
+              )}
+              <Button
+                disabled={!hold || seconds === 0 || cmd.busy}
+                onClick={() => setStep(3)}
+              >
+                Review appointment
+              </Button>
+            </div>
+          </section>
+        )}
+        {step === 3 && (
+          <section className="space-y-5">
+            <h2 className="text-lg font-semibold">Review before confirming</h2>
+            <div className="rounded-lg border p-5 grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Patient / booking contact
+                </p>
+                <p className="font-medium">
+                  {patientDisplayName(
+                    move?.patientId ?? patient?.patientId,
+                    move?.patientName ?? patient?.name ?? callerName,
+                  )}
+                </p>
+                <p className="text-sm">{patient?.mrn ?? callerPhone}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Doctor</p>
+                <p className="font-medium">
+                  {bookable.find((p) => p.staffId === staffId)?.name}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Date & time</p>
+                <p>
+                  {date} · {hold && time(hold.slotStart, facility.timezone)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Appointment type
+                </p>
+                <p>{appointmentModeLabel(visitMode)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Slot hold</p>
+                <p role="status">
+                  {seconds
+                    ? `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} remaining`
+                    : "Expired. Return to choose a time."}
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              disabled={cmd.busy || cmd.unknown}
+              onClick={() => setStep(2)}
+            >
+              Change doctor or time
+            </Button>
+            <Field
+              title={
+                move ? "Reason for move (optional)" : "Visit reason (optional)"
               }
-            : {
-                reservationId: hold.reservationId,
-                ...(patient
-                  ? { patientId: patient.patientId }
-                  : { bookingParty: { name: callerName.trim(), phone: callerPhone } }),
-                originChannel: "front_desk",
-                ...(reason ? { reason } : {}),
-              };
-          const value = await cmd.run<BookingResult>(path, body, true);
-          if (value) {
-            activeHold.current = null;
-            setHold(null);
-            setResult(value);
-          }
-        }}
-      >
-        {cmd.busy ? "Saving…" : move ? "Confirm move" : "Confirm appointment"}
-      </Button>
+              id="booking-reason"
+            >
+              <Textarea
+                id="booking-reason"
+                maxLength={500}
+                value={reason}
+                disabled={cmd.busy || cmd.unknown}
+                onChange={(e) => setReason(e.target.value)}
+              />
+            </Field>
+            <p className="text-xs text-muted-foreground">
+              The booked fee is confirmed when the appointment is saved. A fee
+              quote is not available yet.
+            </p>
+            {!move && duplicates.length > 0 && (
+              <label className="flex items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={acknowledged === duplicateKey}
+                  disabled={cmd.busy || cmd.unknown}
+                  onChange={(e) =>
+                    setAcknowledged(e.target.checked ? duplicateKey : "")
+                  }
+                />
+                Create an additional appointment. I reviewed the existing
+                booking; this is not a replacement.
+              </label>
+            )}
+            <ErrorMessage text={cmd.error} />
+            <Button
+              disabled={
+                cmd.busy ||
+                !hold ||
+                seconds === 0 ||
+                !who ||
+                (!cmd.unknown && (!checkReady || !duplicateReady))
+              }
+              onClick={async () => {
+                if (!hold) return;
+                if (!cmd.unknown && existing.enabled) {
+                  const checked = await existing.refresh();
+                  if (!checked) return;
+                  const currentDuplicates = activeAppointments(
+                    checked,
+                    move?.appointmentId,
+                  );
+                  const currentKey = JSON.stringify([
+                    patient?.patientId,
+                    currentDuplicates.map((a) => a.appointmentId),
+                  ]);
+                  if (
+                    !move &&
+                    currentDuplicates.length &&
+                    acknowledged !== currentKey
+                  )
+                    return;
+                }
+                const path = move
+                  ? `/v1/appointments/${move.appointmentId}/reschedule`
+                  : "/v1/appointments";
+                const body = move
+                  ? {
+                      newReservationId: hold.reservationId,
+                      ...(reason ? { reason } : {}),
+                    }
+                  : {
+                      reservationId: hold.reservationId,
+                      ...(patient
+                        ? { patientId: patient.patientId }
+                        : {
+                            bookingParty: {
+                              name: callerName.trim(),
+                              phone: callerPhone,
+                            },
+                          }),
+                      originChannel: "front_desk",
+                      ...(reason ? { reason } : {}),
+                    };
+                const value = await cmd.run<BookingResult>(path, body, true);
+                if (value) {
+                  activeHold.current = null;
+                  setHold(null);
+                  setResult(value);
+                }
+              }}
+            >
+              {cmd.busy
+                ? "Saving…"
+                : cmd.unknown
+                  ? "Recover appointment request"
+                  : move
+                    ? "Confirm move"
+                    : "Confirm appointment"}
+            </Button>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

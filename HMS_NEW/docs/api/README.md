@@ -1,9 +1,9 @@
 # HMS_NEW API (v1)
 
-Backend only; no UI yet. JSON over HTTP. Start locally with `pnpm api:dev` (port 3000) and `pnpm worker:dev`.
+JSON over HTTP, connected to the staff workspace in `apps/staff-web`. Start locally with `pnpm api:dev` (port 3000) and `pnpm worker:dev`.
 
 ## Authentication
-Every `/v1` request needs `Authorization: Bearer <token>`.
+Staff `/v1` requests need `Authorization: Bearer <token>`. The exact GET/POST `/v1/integrations/whatsapp/webhook` routes use configured verification/HMAC authentication instead; `/integrations/voice/events` uses its dedicated runtime secret and server account binding.
 
 | Mode | When | Tokens |
 |---|---|---|
@@ -32,7 +32,7 @@ Demo IDs: tenant `01920000-0000-7000-8000-000000000001`; Bengaluru facility `…
 6. Send a fresh `Idempotency-Key` (e.g. `crypto.randomUUID()`) per user action on 🔑 endpoints, and reuse it when retrying the same action.
 
 ## Authorization
-Each endpoint needs one permission, checked **for the facility involved** (a role granted for one branch doesn't work at another). `GET /v1/me` shows the caller's permissions and their facility scope (`*` = all facilities).
+Each endpoint checks its required permissions, checked **for the facility involved** (a role granted for one branch doesn't work at another). `GET /v1/me` shows the caller's permissions and their facility scope (`*` = all facilities).
 
 **Chart access** additionally needs a care relationship: being a participant of one of the patient's encounters (open, or ended within 30 days), an active care assignment, or break-glass access (`POST /v1/patients/:id/break-glass`, audited, up to 24 h). Staff with clinical permissions at the facility join an *active* encounter automatically when they work on it (e.g. the nurse taking vitals). Every chart or encounter view is recorded in the audit log. Patient-portal accounts are rejected for now.
 
@@ -62,6 +62,82 @@ Each endpoint needs one permission, checked **for the facility involved** (a rol
 | `GET /health` | none | Process is up |
 | `GET /ready` | none | Database reachable |
 | `GET /v1/me` | any | Caller, tenant, permissions |
+
+### Communications: local staff workflows
+
+Transport is `log`; `liveSending` is false and provider attempts are zero. Notification records are not evidence of patient contact. Shared schemas are exported by `@hms/contracts`.
+
+| Method & path | Permission | Purpose |
+|---|---|---|
+| `GET /v1/comms/summary?facilityId` | `comms.read` @ facility | Persisted local notification counts, timestamp and truthful transport availability |
+| `GET /v1/comms/followup-rules?facilityId` | `comms.read` @ facility | All seven default/saved day_before, same_day, follow_up, feedback, no_show, reschedule and cancellation rule versions |
+| `PUT /v1/comms/followup-rules/:kind` 🔑 | `comms.manage` @ facility | Versioned enabled/delayHours rule; cancels stale unsent jobs |
+| `POST /v1/appointments/:id/followup` 🔑 | `appointments.read` and `comms.reply` @ facility | Completed visit, version and dueAt; one requested local follow-up |
+| `GET /v1/waitlist-offers/:id/messages` | `appointments.read` and `comms.read` @ facility | Consent-aware local offer history |
+| `GET /v1/comms/capabilities?facilityId` | `comms.read` @ facility | Module state and local-only capability |
+| `GET /v1/contact-points?facilityId&patientId` or `bookingPartyId` | `comms.read` + owner-domain access | Explicit WhatsApp contacts and current purpose consents; mask address without `comms.reply` |
+| `POST /v1/contact-points` 🔑 | `comms.reply` + owner-domain access | Add an E.164 contact for exactly one patient/caller; grants no consent |
+| `POST /v1/contact-points/:id/consents` 🔑 | `comms.reply`, or `comms.manage` for marketing opt-in | Purpose care/reminders/marketing; opt_in/opt_out/stop; fresh opt-in affirmation and evidence; authenticated actor; withdrawal allowed during suspension |
+| `GET /v1/appointments/:id/messages` | Both `appointments.read` and `comms.read` @ actual facility | Notification jobs and optional local outbound status |
+| `GET /v1/outbound-messages?facilityId` | `comms.read` @ facility | Facility history with kind/status/from/to/limit/cursor filters and nextCursor; recorded-time bounds |
+
+Patient-owner access requires `patients.read`; caller-owner access requires `appointments.read` and an appointment, waitlist request or existing reception conversation at that facility. STOP suppresses every purpose across matching tenant/channel/address contacts until a fresh explicit purpose opt-in. Confirmation, reschedule, cancellation and day-before jobs are implemented. Local same-day/requested follow-up, feedback/no-show and waitlist lifecycle are implemented. Reschedule/cancellation rules enforce immediate zero-delay timing. The local WhatsApp inbox, content, templates/campaign preparation and signed inbound/receipt storage are implemented below. Real template synchronization, external sending/receipt-to-send reconciliation and production object storage remain pending. See [current progress](../plan/STAFF_MODULE_PROGRESS.md).
+
+### WhatsApp workspace
+
+All staff mutations below require `Idempotency-Key`. Records use tenant RLS and clinic permission checks. Local templates have `providerApproval=not_synced`, `simulationOnly=true`; local campaign approval never represents Meta approval or delivery.
+
+| Method & path | Permission at clinic | Result / input |
+|---|---|---|
+| `GET/PUT /v1/comms/settings` | `comms.read` / `comms.manage` | Read readiness, test aliases, estimated rate and persisted operational counts; PUT `{facilityId,phoneNumberId,version}` binds a number without accepting secrets |
+| `GET /v1/conversations/contacts?facilityId` | `comms.read` plus patient/appointment reads | Known contacts for local cases; addresses masked without reply authority |
+| `GET /v1/conversations?facilityId&kind&status&search&offset&limit` | `comms.read` | Scoped reception/issue/feedback filters, open/closed, items/total/offset/limit |
+| `POST /v1/conversations` | `comms.reply` plus owner access | `{facilityId,contactPointId}` → `{id,version}`; does not invent an inbound message or reply window |
+| `GET /v1/conversations/:id` | `comms.read` | Audited thread, latest 100 messages, `hasOlderMessages`, cases and current version |
+| `POST /v1/conversations/:id/assign`, `/close` | `comms.reply` | `{version}`; assignment uses the authenticated caller |
+| `POST /v1/conversations/:id/reply` | `comms.reply` | `{version,text}` (≤3000 chars); actual inbound within 24 h and explicit care consent required; log queue only |
+| `POST /v1/support-cases`, `/v1/support-cases/:id/status` | `comms.reply` | Create issue/feedback with optional rating; update `{version,status}` |
+| `GET /v1/comms/assets?facilityId` | `comms.read` | Active private asset metadata; opaque storage keys are excluded |
+| `PUT /v1/practitioners/:id/whatsapp-photo`, `/v1/departments/:id/whatsapp-guide`; `POST /v1/campaign-assets` | `comms.manage` | JSON `{facilityId,filename,mimeType,dataBase64}`. Frontend reads the selected File; JPEG/PNG ≤5 MiB, guide PDF ≤10 MiB; authenticated requests ≤15 MB |
+| `GET /v1/comms/assets/:id/content` | `comms.read` | Authenticated bytes, no-store/nosniff; integrity hash checked; no public download URL |
+| `GET/POST /v1/message-templates` | `comms.read` / `comms.manage` | Local content drafts with numbered placeholders; no fabricated provider approval |
+| `POST /v1/message-templates/sync` | `comms.manage` | Explicit 422 unavailable until a real Meta synchronization adapter is implemented/configured |
+| `GET/POST /v1/campaigns` | `comms.read` / `campaigns.manage` | Local drafts; server-configured estimated rate, budget, template/asset/clinic validation |
+| `GET /v1/campaigns/:id/preview` | `campaigns.manage` | Rendered local content, consented destination count, estimate/cap and bound audience hash |
+| `POST /v1/campaigns/:id/test` | `campaigns.manage` | `{version,recipientId}` configured alias only; `queued/log/delivered=false`; refresh preview after test changes version |
+| `POST /v1/campaigns/:id/approve` | `campaigns.approve` | `{version,audienceHash,expectedCount,testReceived}`; acknowledgement concerns local review, not delivery. One atomic estimated reservation per destination |
+| `POST /v1/campaigns/:id/pause` | `campaigns.manage` | `{version}`; cancel local queued recipient rows |
+| `POST /v1/contact-points/:id/interests` | `comms.manage` plus owner access | `{version,interest,evidence}` requires explicit marketing consent; voluntary interest only, never chart-derived |
+| `GET /v1/whatsapp/outbound?facilityId&kind&status&from&to&limit&cursor` | `comms.read` | Merged notification jobs, local replies and campaign recipients; includes skipped notifications, no bodies, stable keyset cursor and `nextCursor` |
+| `GET/POST /v1/integrations/whatsapp/webhook` | Provider verification / raw-body HMAC | Exact signed bytes, configured phone/account binding, durable deduplicated event storage; STOP is applied before acknowledgement; normal inbox processing uses existing worker |
+
+Provider event receipts are append-only, account-scoped and deduplicated. They do not change log messages into sent/delivered records. Unknown send outcomes and provider receipt reconciliation remain part of the future real-send adapter. New inbound senders become unverified booking contacts through a narrow booking-owned function; shared phones never auto-link patients. Suspended modules still record signed STOP and receipts.
+
+Local assets use `COMMS_STORAGE_PATH` (default private `.comms-storage`) with immutable opaque keys, hashes and local structural file checks. Production uploads are refused until a private S3-compatible adapter and scanner are configured/implemented; local validation is not an antivirus acceptance claim. Provider credentials remain server environment variables; no messages or account provisioning are performed by this implementation.
+
+### Staff Voice and Google/growth
+
+`GET /v1/operations/summary` also returns `voiceSessions`: the persisted all-time clinic call count when `voice.read` is granted, otherwise null. It does not imply any live provider connection.
+
+Shared runtime schemas live in `packages/contracts/src/voice-growth.ts`; original screen adapters map legacy paths to these routes. All staff writes below require Idempotency-Key. Provider/runtime configuration remains server-only.
+
+| Method & path | Permission / authentication | Purpose |
+|---|---|---|
+| `POST /integrations/voice/events` | Dedicated `X-Voice-Secret`, configured tenant/facility/account, pinned app version | Normalized external-runtime event ingestion, event/body replay validation, status/sequence progression, real voice-booking reference validation and privacy consent |
+| `GET /v1/voice-calls?facilityId&offset` | `voice.read` @ facility | Last 30 days, 25-row pages, bounded offset, totals/summary/config availability; no sensitive spoken text or private URL |
+| `GET /v1/voice-calls/:id/transcript` | `voice.read` @ actual facility | Consented/unexpired original and English turns, audited review, no-store |
+| `GET /v1/voice-calls/:id/recording` | `voice.recordings.read` @ actual facility | Consent/expiry and audited decision, authenticated private byte proxy, exact HTTPS host, no redirects, bounded audio/MIME/timeout |
+| `GET /v1/voice-recording-access?facilityId` | `voice.recordings.read` @ facility | Latest 100 append-only review decisions; allowed and refused |
+| `GET /v1/booking-links?facilityId` | `growth.read` @ facility | Manual clinic booking destination/version |
+| `PUT /v1/facilities/:id/booking-link` | `growth.manage` @ facility | `{bookingUrl,version}`, exact approved public HTTPS destination hosts, no credentials/hash, UTM/lang query allowlist, server actor/audit/history |
+| `GET /v1/booking-links/changes?facilityId` | `growth.read` @ facility | Latest 100 before/after changes with authenticated staff name |
+| `GET /v1/growth/capabilities?facilityId` | `growth.read` @ facility | Actual availability; Google publishing manual, acquisition untracked |
+| `GET /v1/growth/summary?facilityId&from&to&cohort=created\|visit` | `growth.read` @ facility | Logical visit chains once, clinic-time cohort/current status, resolved attendance and retained share; empty ratios null |
+| `GET /v1/growth/website-activity?facilityId&from&to&traffic=production\|demo` | `growth.read` @ configured project facility | Optional fixed PostHog public/consented aggregates; disabled/not_configured/unavailable are explicit, no invented zeros |
+
+Voice requires strong `VOICE_CALLBACK_SECRET`, explicit `VOICE_CALLBACK_TENANT_ID`, `VOICE_CALLBACK_FACILITY_ID`, `VOICE_CALLBACK_ACCOUNT_ID`, pinned positive `SARVAM_APP_VERSION`; playback additionally needs exact `VOICE_RECORDING_HOSTS`. Consent is independent per recording/transcript; withdrawals persist before business-order/suspension checks, delayed old opt-ins cannot revive content. The normalized callback adapter is implemented; actual Sarvam response/event normalization, retention/purge policy and live private recording acceptance remain unverified. No public call launcher or telephony.
+
+Manual booking writes require `BOOKING_LINK_HOSTS`; absent hosts disable saving. PostHog requires server-only `POSTHOG_READ_KEY`, numeric `POSTHOG_PROJECT_ID`, explicit `POSTHOG_TENANT_ID`/`POSTHOG_FACILITY_ID` and `POSTHOG_API_HOST` fixed to US/EU PostHog. Only public consented event aggregates are queried, with production/demo filters and bounded request/response; actual public telemetry instrumentation and account binding must be validated. Nothing synchronizes a Google profile or claims acquisition conversion.
 
 ### Directory
 Edits name the row `version` they were made from; a newer row returns 409 `stale_version`. Switching something off is refused (409) while it is still in use (`in_use`, `future_appointments`, `published_hours`, `last_facility`).
@@ -111,7 +187,7 @@ Fee changes publish a new version of the default cash price list (active lists a
 | `POST /v1/practitioners/:staffId/calendar` | `schedules.manage` | Create the doctor's calendar (idempotent) |
 | `POST /v1/practitioners/:staffId/weekly-sessions` | `schedules.manage` @ facility | Weekly session (slots and/or walk-in tokens) |
 | `POST /v1/weekly-sessions/:id/end` | `schedules.manage` | End a weekly session from a date |
-| `POST /v1/practitioners/:staffId/exceptions` | `schedules.manage` | Leave (`closed`), `block`, `extra_hours`; returns clashing appointments |
+| `POST /v1/practitioners/:staffId/exceptions` | `schedules.manage` | Leave (`closed`), `block`, `extra_hours`; extra hours accept `visitMode` in_person/virtual (old callers default in_person); returns clashing appointments |
 | `POST /v1/facilities/:facilityId/holidays` | `schedules.manage` @ facility | Facility holiday; returns clashing appointments |
 | `PUT /v1/practitioners/:staffId/weekly-plan` (`POST …/preview`) | `schedules.manage` @ facility | Replace weekly hours; optional `healthcareServiceId`/`consultLocationId` (default: as replaced, else the clinic's one matching service) |
 | `PUT /v1/practitioners/:staffId/day-plans/:date` | `schedules.manage` @ each block's facility | One-day plan (new revision) |

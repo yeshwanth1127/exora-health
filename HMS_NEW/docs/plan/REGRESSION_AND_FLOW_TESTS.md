@@ -1,6 +1,10 @@
 # Regression and user-flow tests
 
-How to prove nothing broke, and how each person uses the staff workspace. Written 12 October 2026 against `0aaff77`. It goes with [BACKEND_COMPLETION_GUIDE.md](BACKEND_COMPLETION_GUIDE.md); the flow-to-API map is in [STAFF_USER_FLOWS.md](STAFF_USER_FLOWS.md).
+**Phase closed by the product owner on 12 October 2026.** Local staff implementation is accepted. Active focus is UX/UI and operations review; webpage/Voice-bot integration is on hold. Provider work below is carried forward in [UX_AND_CHANNEL_TODO.md](UX_AND_CHANNEL_TODO.md), not silently marked implemented. [Current operations review](STAFF_OPS_REVIEW.md).
+
+How to prove nothing broke, and how each person uses the staff workspace. Updated 12 October 2026 after the third local implementation phase from `6713e01`. It goes with [BACKEND_COMPLETION_GUIDE.md](BACKEND_COMPLETION_GUIDE.md); the flow-to-API map is in [STAFF_USER_FLOWS.md](STAFF_USER_FLOWS.md).
+
+Release decisions and additional acceptance cases: [STAFF_MODULE_DEVELOPMENT_DECISIONS.md](STAFF_MODULE_DEVELOPMENT_DECISIONS.md). No patient bot, telephone infrastructure or operational Loyalty backend in this release. G25 shared schemas start with the first comms slice.
 
 ## 1. Automated suites: run all of them before every commit
 
@@ -15,13 +19,13 @@ pnpm test                          # builds a fresh hms_test database itself
 cd apps/staff-web && npx tsc -b && npm test && npm run lint && npx vite build
 ```
 
-**Baseline at `0aaff77`. A change must not lower any of these:**
+**Verified third-phase baseline (12 October). A change must not lower these assertions or counts. Historical baseline was 199 backend / 25 frontend tests.**
 
 | Suite | Baseline |
 |---|---|
-| `pnpm test` (vitest, files run one at a time against `hms_test`) | 15 files, 199 tests, all pass |
-| staff-web `npm test` (`node --test tests/*.test.ts`) | 25 tests, all pass |
-| staff-web `npm run lint` (oxlint) | 0 errors, **18 warnings**. Don't add warnings. |
+| `pnpm test` (vitest, files run one at a time against `hms_test`) | 20 files, 252 tests, all pass |
+| staff-web `npm test` (`node --test tests/*.test.ts`) | 54 tests, all pass |
+| staff-web `npm run lint` (oxlint) | 0 errors, **16 warnings**. Don't add warnings. |
 | `npx tsc -b`, `npx vite build` | pass. The bundle-size warning already exists. |
 
 Using another Postgres port? Set `PG_PORT`, for example `PG_PORT=54339 pnpm test`. Every URL is derived from it (`db/scripts/config.mjs`).
@@ -40,6 +44,11 @@ Using another Postgres port? Set `PG_PORT`, for example `PG_PORT=54339 pnpm test
 | `apps/api/src/http/catalog.test.ts` | Clinics, departments, services, fees, doctor profile. |
 | `apps/api/src/http/clinical.test.ts`, `records.test.ts` | Encounters, notes, vitals, allergies, M02 registry, M05 records, the board and exact-time holds. |
 | `apps/api/src/http/telehealth.test.ts` | Video visit tokens, consent, join window. |
+| `apps/api/src/http/schedule-acceptance.test.ts` | Extra-hours mode/service validation, virtual booking → exactly one tele session, exact-range move/readback/replay/overlap refusal. |
+| `apps/api/src/http/comms.test.ts` | Contacts/owner scope, consent/STOP and aliases, suspension, event dedupe/reordering, log-only worker and permission refusals (21 tests, including feedback/no-show and immediate rules, completed follow-up, waitlist lifecycle and timestamp-precise pagination). |
+| `apps/api/src/http/whatsapp.test.ts` | Signed ingestion/STOP, scope/permissions, reply window/cases, private assets, campaign audience/budget/test/pause (9 tests). |
+| `apps/api/src/http/voice-growth.test.ts` | Runtime binding/replay, separate consent/expiry/withdrawal, private review/audit, link hosts/versions, clinic-time chain metrics and optional PostHog and Overview scoped count (17 tests). |
+| `packages/contracts/src/contracts.test.ts` | Shared schema ownership, affirmative evidence and response validation (2 tests). |
 | `apps/worker/src/worker.test.ts` | Outbox dispatch, inbox dedupe, consumers. |
 
 **Rules when adding features:**
@@ -65,14 +74,14 @@ Using another Postgres port? Set `PG_PORT`, for example `PG_PORT=54339 pnpm test
 | F8 | Administrator | A doctor leaves a clinic only after their visits and hours are dealt with |
 | F9 | Administrator | A clinic is switched off only when nothing is booked there, and never the last clinic |
 
-**Add when building G19–G22:**
+**F10–F14 acceptance:** local cases are now exercised across `comms.test.ts`, `whatsapp.test.ts` and `voice-growth.test.ts`, plus typed frontend adapter tests and the browser walkthrough below. The original `flows.test.ts` still contains F1–F9; do not claim these new cases live in that file. External delivery/runtime/provider evidence remains unverified. See [current progress](STAFF_MODULE_PROGRESS.md).
 
 | # | Who | Flow |
 |---|---|---|
-| F10 | Front desk | Book with reminders consent: a `day_before` job exists. Move the visit: the job moves. Cancel it: the job is cancelled. Book without consent: no job (`skipped_no_consent`). |
-| F11 | Front desk | Inbound WhatsApp message (signed webhook) → conversation appears → assign to self → reply inside 24 h → close. Replying after 24 h gives 409. |
-| F12 | Administrator | Draft campaign → preview → test send to a test recipient → approve with the preview's hash. A STOP contact is never a recipient. |
-| F13 | Administrator | Voice: provider callbacks create a call that books an appointment (`origin_channel = voice`). Admin plays the recording (logged). Front desk can't. |
+| F10 | Front desk | Book with reminders consent: a `day_before` job exists. Move the visit: old unsent jobs cancel and replacement jobs are deduplicated. Cancel it: the job is cancelled. Book without consent: a skipped job/state, no sendable message (`skipped_no_consent`). |
+| F11 | Front desk | Inbound WhatsApp message (signed webhook) → conversation appears → assign to self → reply inside 24 h → close. Replying after 24 h is refused; local reply never proves provider delivery. |
+| F12 | Administrator | Draft campaign → preview → local test using a configured allowlisted alias → approve with the preview's hash. A STOP contact is never a recipient. |
+| F13 | Administrator | Voice: authenticated external-runtime fixture runs the normal booking command (`origin_channel = voice`), then links its verified result to the call. Admin plays a consented, unexpired recording (logged); front desk cannot. No public call launcher or live telephone call is required. |
 | F14 | Administrator | Set a clinic's booking link (https only), see it in change history. Growth summary counts the booking, and a move isn't counted as a cancellation. |
 
 ## 3. Running the app for browser checks
@@ -118,11 +127,11 @@ Each step gives what to do, then **expected** results. Anything else is a regres
 
 1. **Sign in.**
    - The sidebar shows Overview, Appointments, Patients, Waitlist, Queue, Consultations, Teleconsultations, Hospital catalogue, Doctors, Schedules, and WhatsApp/Voice with a Pending label.
-   - Workspace settings and the Design guide are always listed.
+   - Workspace settings is listed; Design & UX guide was removed by the owner. Appointments contains Appointments/Waitlist/Queue tabs; Catalogue and Doctors are under Workspace.
    - **No Operations and no Activity log**: both need `audit.read` at every clinic.
 2. **Overview.**
    - Today's totals, status and channel mix, and 14 days of bookings for Bengaluru.
-   - Message and voice counts show "—", never 0, until G19/G21.
+   - Local notification jobs show known counts only with comms.read; they are labelled not sent. Voice session totals count persisted clinic calls only with voice.read; otherwise unavailable.
 3. **Appointments → Book appointment → Register a new patient.**
    - Pick Dr Asha and a free slot, then save.
    - A confirmation code appears and the visit is in the list.
@@ -197,7 +206,7 @@ Each step gives what to do, then **expected** results. Anything else is a regres
 5. **Schedules (as admin).**
    - **Weekly hours:** edit, preview, save. Affected visits are listed and Save stays disabled until each is resolved with **Resolve** (move or cancel).
    - **Block time:** the preview lists affected visits; save. **Unblock** asks for a reason.
-   - **Extra hours:** in-person works. Virtual says "not available yet" until G06 is done.
+   - **Extra hours:** choose in-person or virtual, review and save. Virtual slots must use the virtual service; a booked virtual slot creates exactly one tele session.
    - **Booking policy:** switch overbooking on. A booked visit offers "Add another appointment at this time", asks for a reason, and allows at most 3 per session.
 6. **Operations.** Live holds, readiness, and the latest outbox events. Refresh works.
 7. **Activity log.**
@@ -206,23 +215,27 @@ Each step gives what to do, then **expected** results. Anything else is a regres
    - Break-glass review: Priya can review others' emergency access, not her own, and only once.
 8. **Settings → Optional modules.**
    - Core modules can't be switched.
-   - Suspending an optional module asks for a reason. Its writes are then refused while reads still work.
+   - Suspending an optional module asks for a reason. Its business writes are then refused while reads still work. Future comms acceptance must also prove that authenticated STOP/withdrawals and already-sent receipts still persist while suspended.
    - The list includes modules that are out of scope (diagnostics, pharmacy…). That is expected: switches only, no screens.
 9. **Patients → Duplicate queue.** Propose a merge as one person. A second person decides. A third can unmerge. The same person can't do two steps.
 10. **Doctor leaves (F8).** "Stop working here" is refused while future visits or published hours remain. Cancel or move them and end the hours, then it succeeds.
 11. **Switch a clinic off (F9).** Refused while visits or hours remain, and always for the last active clinic.
 
-### Pending pages (all roles, until G19–G23 land)
+### Pending pages and retained concept (all roles)
 
-- WhatsApp, Voice, Google Business and Growth analytics show the original design with a Pending label. **Nothing on them saves or sends.**
+- WhatsApp: all seven tabs render. Configure/save/reopen all seven visit-rule kinds; feedback/no-show default off, immediate reschedule/cancel delay zero. Create a synthetic support case, assign/close, inspect authenticated local content and campaign draft; approval stays blocked without a reviewed configured local test. Delivery history must say local/not delivered.
+- Voice: open history; review a consented persisted synthetic transcript and see the audit. Recording without consent is unavailable. Front desk can review authorized transcripts but cannot access recordings/access history. Test actual playback via an injected private mock in the backend suite; browser/live playback acceptance remains separate.
+- Google Business: configure an approved HTTPS destination in the server allowlist, save it and reopen change history; actor must be the authenticated staff. Without growth.manage the UI is read-only and server writes refuse.
+- Growth: current clinic/date/cohort filters use persisted logical visits. Empty ratios are unavailable, moved predecessors do not inflate cancellations, booking channel is not acquisition. Missing PostHog configuration shows unavailable data, never invented zeros.
 - Loyalty shows a "Concept" label and sample data.
-- Each tab listed in `PendingModule.tsx` opens without console errors.
+- No scoped operational page remains a PendingModule placeholder; Design is removed; labelled Loyalty/Patient journey concepts retain their boundaries.
 
 ## 5. Regression checklist after any backend change
 
 Tick each before committing:
 
-- [ ] All four automated suites in section 1 pass, with the baseline numbers or higher (lint warnings ≤ 18).
+- [ ] Verify database URLs refer to a disposable local environment before reset. The first wave used a separate server on 54349, leaving the existing preview database unchanged.
+- [ ] All four automated suites in section 1 pass, with the baseline numbers or higher (lint warnings ≤ 18), retaining invariant assertions and adding the decision document's consent, scope, unknown-send, upload and reschedule-chain cases.
 - [ ] `flows.test.ts` F1–F9 pass with **unchanged** assertions.
 - [ ] `coverage.test.ts` passes, with no route removed that the frontend still calls.
 - [ ] A new migration has a working `-- migrate:down`. Check it with `pnpm db:rollback` then `pnpm db:migrate` on the dev database.

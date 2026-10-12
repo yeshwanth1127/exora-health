@@ -52,9 +52,10 @@ const ExceptionBody = z.object({
   end: hhmm.optional(),
   facilityId: uuid.optional(),
   slotMinutes: z.number().int().min(5).max(240).optional(),
+  visitMode: z.enum(['in_person', 'virtual']).optional(),
   healthcareServiceId: uuid.optional(),
   reason: z.string().max(500).optional(),
-});
+}).refine((b) => b.visitMode === undefined || b.kind === 'extra_hours', 'visitMode applies only to extra hours');
 
 const DayPlanBody = z.object({
   baseRevision: z.number().int().min(0).optional(),

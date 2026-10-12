@@ -152,3 +152,61 @@ export class IntentKeys {
     this.keys.delete(JSON.stringify([path, body]));
   }
 }
+
+/** Read private media with the current bearer identity; URLs are never exposed by the API. */
+export async function requestBlob(
+  path: string,
+  signal?: AbortSignal,
+): Promise<Blob> {
+  if (!/^\/v1\//.test(path))
+    throw new HmsError(
+      "Unsupported media contract.",
+      400,
+      "unsupported_contract",
+    );
+  const revision = sessionRevision;
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      method: "GET",
+      signal,
+      credentials: "omit",
+      cache: "no-store",
+      redirect: "error",
+      headers: {
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...(tenantId ? { "X-Tenant-Id": tenantId } : {}),
+      },
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") throw error;
+    throw new HmsError(
+      "The private file could not be reached.",
+      0,
+      "outcome_unknown",
+    );
+  }
+  if (revision !== sessionRevision)
+    throw new HmsError(
+      "Workspace context changed. Reload this file.",
+      409,
+      "context_changed",
+    );
+  if (!response.ok) {
+    if (response.status === 401) window.dispatchEvent(new Event("hms-signout"));
+    throw new HmsError(
+      "This private file is unavailable or access was refused.",
+      response.status,
+      "file_unavailable",
+    );
+  }
+  const blob = await response.blob();
+  if (revision !== sessionRevision)
+    throw new HmsError(
+      "Workspace context changed. Reload this file.",
+      409,
+      "context_changed",
+    );
+  return blob;
+}
+export const requestBytes = requestBlob;

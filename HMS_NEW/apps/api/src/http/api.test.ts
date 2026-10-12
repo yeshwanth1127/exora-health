@@ -487,7 +487,8 @@ describe('operations summary (phase 5, G12)', () => {
       [t.facilityId],
     );
     const s = before.body;
-    expect(s.summary).toMatchObject({ appointmentsTotal: stored.total, pendingNotifications: null, voiceSessions: null });
+    // Front desk has scoped comms.read; an empty persisted local queue is known zero.
+    expect(s.summary).toMatchObject({ appointmentsTotal: stored.total, pendingNotifications: 0, voiceSessions: 0 });
     expect(s.byStatus.reduce((n: number, x: { value: number }) => n + x.value, 0)).toBe(stored.total);
     expect(s.byChannel.find((x: { label: string }) => x.label === 'front_desk')?.value ?? 0).toBe(stored.desk);
     expect(s.dailyBookings).toHaveLength(14);

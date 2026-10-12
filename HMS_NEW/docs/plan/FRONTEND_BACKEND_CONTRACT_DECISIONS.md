@@ -1,6 +1,10 @@
 # Original UI and HMS_NEW contract decisions
 
-11 October 2026. Scope: frontend work and documentation only. Backend implementation is owned by the user's dedicated agent.
+**Phase closed by the product owner on 12 October 2026.** Local staff implementation is accepted. Active focus is UX/UI and operations review; webpage/Voice-bot integration is on hold. Provider work below is carried forward in [UX_AND_CHANNEL_TODO.md](UX_AND_CHANNEL_TODO.md), not silently marked implemented. [Current operations review](STAFF_OPS_REVIEW.md).
+
+**Historical 11 October audit.** Several gaps below were implemented in later commits. Current implementation status is the backend ledger table; current remaining-module decisions are in [STAFF_MODULE_DEVELOPMENT_DECISIONS.md](STAFF_MODULE_DEVELOPMENT_DECISIONS.md). Do not treat this older overlap/block discussion as the current implementation.
+
+Originally recorded 11 October 2026. The owner authorized development on 12 October; see [first implementation checkpoint](STAFF_MODULE_IMPLEMENTATION_CHECKPOINT.md). Earlier mismatch analysis below is historical; current status lives in the ledger.
 
 ## Assessment
 
@@ -90,3 +94,7 @@ Frontend adapters may translate presentation, names, dates and units; they must 
 - [Master plan](STAFF_FRONTEND_INTEGRATION_MASTER_PLAN.md): independently audited detailed contract/lifecycle findings.
 - [Backend ledger](BACKEND_WORK_LEDGER.md): implementation ownership and all 40 open backend areas.
 - [UI parity ledger](ORIGINAL_UI_PARITY_LEDGER.md): 53 feature groups and the current restoration boundary.
+
+## Implemented module contracts — 12 October 2026
+
+All original operational module bodies are now mounted; preserve them. New comms schemas/adapters map legacy display shapes onto UUID identities, facility permissions, optimistic versions, authenticated actors and stable idempotency keys. Voice retains its original bounded history layout; privacy consent is separate from clinical patient consent. Google links use approved hosts and manual publication, Growth uses logical reschedule chains and unknown acquisition/null ratios. Local template/campaign/message state never claims live delivery. G21/G22/G25 are DONE locally; G19/G20 remain PARTIAL for substantive provider transport and production storage/scanner work. [Progress and remaining ledger](STAFF_MODULE_PROGRESS.md).

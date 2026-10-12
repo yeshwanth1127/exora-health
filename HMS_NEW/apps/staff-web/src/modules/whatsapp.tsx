@@ -1,4 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import type { WhatsAppSettingsSchema } from "@hms/contracts";
+import { useContext, useEffect, useRef, useState } from "react";
+import { WorkspaceContext } from "@/hms/hooks";
+import { clinicDateInput, clinicDateInstant } from "@/hms/notification-time";
 import {
   ArrowRight,
   CheckCircle2,
@@ -16,9 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  api,
   wa,
-  assetUrl,
   dateTime,
   usable,
   type Asset,
@@ -45,6 +46,7 @@ import {
   StateBadge,
   TaskLink,
   usePermissions,
+  useApi,
   useResource,
 } from "@/components/workspace";
 import { Button } from "@/components/ui/button";
@@ -78,6 +80,11 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Campaigns } from "@/modules/campaigns";
 import { Conversations } from "@/modules/conversations";
+import {
+  PrivateAssetImage,
+  PrivateAssetLink,
+} from "@/components/private-asset";
+import { NotificationDelivery } from "./whatsapp-notifications";
 
 const pages = [
   ["overview", "Overview"],
@@ -93,13 +100,18 @@ export function WhatsAppModule({
   page,
   onNavigate,
   onAppointments,
+  localNotifications = false,
 }: {
+  localNotifications?: boolean;
   user: StaffUser;
   page: string;
   onNavigate: (p: string) => void;
   onAppointments: () => void;
 }) {
-  const config = useResource<Config>(wa + "/operations-config");
+  const config = useResource<Config & { module_active?: boolean }>(
+    wa + "/operations-config",
+  );
+  const supported = pages.map(([key]) => key);
   return (
     <>
       <PageTitle
@@ -121,7 +133,16 @@ export function WhatsAppModule({
           {pages
             .filter(([key]) => key !== "clinics" || user.role === "admin")
             .map(([key, label]) => (
-              <TabsTrigger key={key} value={key}>
+              <TabsTrigger
+                key={key}
+                value={key}
+                disabled={localNotifications && !supported.includes(key)}
+                title={
+                  localNotifications && !supported.includes(key)
+                    ? "This section is pending integration"
+                    : undefined
+                }
+              >
                 {label}
               </TabsTrigger>
             ))}
@@ -130,34 +151,69 @@ export function WhatsAppModule({
       <Resource {...config}>
         {config.data && (
           <>
-            {!config.data.outreach_enabled && page !== "overview" && (
+            {localNotifications ? (
               <Notice
-                title="Patient outreach is paused"
-                text="You can prepare content and drafts. Patient campaigns, follow-ups and staff replies will send only after delivery is enabled by your administrator."
+                title="Local notification records · no messages are delivered"
+                text="Inbox, content, campaigns and visit rules use saved local records. Automatic provider delivery is unavailable."
               />
+            ) : (
+              !config.data.outreach_enabled &&
+              page !== "overview" && (
+                <Notice
+                  title="Patient outreach is paused"
+                  text="You can prepare content and drafts. Patient campaigns, follow-ups and staff replies will send only after delivery is enabled by your administrator."
+                />
+              )
             )}
-            {page === "overview" ? (
+            {localNotifications && !supported.includes(page) ? (
+              <Notice
+                title="This section is pending integration"
+                text="Its original design is retained. Use Overview, Follow-ups or Delivery history for the current local notification workflow."
+              />
+            ) : page === "overview" ? (
               <Overview
                 config={config.data}
                 go={onNavigate}
                 onAppointments={onAppointments}
+                localMode={localNotifications}
               />
             ) : page === "content" ? (
-              <DoctorContent />
+              <DoctorContent
+                localMode={localNotifications}
+                active={config.data.module_active !== false}
+              />
             ) : page === "conversations" ? (
               <Conversations
                 user={user}
-                enabled={config.data.outreach_enabled}
+                enabled={
+                  localNotifications
+                    ? config.data.module_active !== false
+                    : config.data.outreach_enabled
+                }
+                localMode={localNotifications}
               />
             ) : page === "campaigns" ? (
-              <Campaigns user={user} config={config.data} />
+              <Campaigns
+                user={user}
+                config={config.data}
+                localMode={localNotifications}
+                active={config.data.module_active !== false}
+              />
             ) : page === "followups" ? (
-              <Followups user={user} />
+              <Followups
+                user={user}
+                localNotifications={localNotifications}
+                active={config.data.module_active !== false}
+              />
             ) : page === "delivery" ? (
-              <Delivery />
+              localNotifications ? (
+                <NotificationDelivery />
+              ) : (
+                <Delivery />
+              )
             ) : page === "clinics" ? (
               user.role === "admin" ? (
-                <ClinicDetails />
+                <ClinicDetails localMode={localNotifications} />
               ) : (
                 <Notice
                   title="Administrator setting"
@@ -180,12 +236,25 @@ function Overview({
   config,
   go,
   onAppointments,
+  localMode = false,
 }: {
+  localMode?: boolean;
   config: Config;
   go: (p: string) => void;
   onAppointments: () => void;
 }) {
-  const reception = useResource<Conversation[]>(wa + "/reception"),
+  const localMetrics = (
+    config as Config & {
+      local_metrics?: {
+        openConversations: number;
+        campaignDrafts: number;
+        marketingContacts: number;
+      } | null;
+    }
+  ).local_metrics;
+  const reception = useResource<Conversation[]>(
+      localMode ? null : wa + "/reception",
+    ),
     campaigns = useResource<Campaign[]>(wa + "/campaigns"),
     inventory = useResource<Inventory>("/api/v1/admin/whatsapp-assets"),
     templates = useResource<Template[]>(wa + "/templates");
@@ -198,7 +267,13 @@ function Overview({
   const guides = inventory.data?.departments.filter((d) => d.guide).length ?? 0,
     photos = inventory.data?.doctors.filter((d) => d.photo).length ?? 0,
     drafts = campaigns.data?.filter((c) => c.status === "draft") ?? [],
-    approved = templates.data?.filter(usable) ?? [];
+    approved =
+      templates.data?.filter((t) =>
+        localMode
+          ? (t as Template & { simulationOnly?: boolean }).simulationOnly ===
+            true
+          : usable(t),
+      ) ?? [];
   return (
     <Resource
       loading={loading}
@@ -232,36 +307,50 @@ function Overview({
           />
           {config.outreach_enabled
             ? "Patient outreach enabled"
-            : "Patient outreach paused"}
+            : localMode
+              ? "Provider delivery unavailable"
+              : "Patient outreach paused"}
         </Badge>
       </div>
       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-7">
         {[
           {
             title: "Open conversations",
-            value: reception.data?.length ?? 0,
-            note: "Patients with reception",
+            value: localMode
+              ? (localMetrics?.openConversations ?? "Unavailable")
+              : (reception.data?.length ?? 0),
+            note: localMode
+              ? "Open staff contact threads"
+              : "Patients with reception",
             icon: MessageCircle,
             page: "conversations",
           },
           {
             title: "Campaign drafts",
-            value: drafts.length,
+            value: localMode
+              ? (localMetrics?.campaignDrafts ?? "Unavailable")
+              : drafts.length,
             note: "Not sent to patients",
             icon: FileText,
             page: "campaigns",
           },
           {
-            title: "Offer subscribers",
-            value: config.marketing_contacts,
-            note: "Patients who opted in",
+            title: localMode ? "Marketing contacts" : "Offer subscribers",
+            value: localMode
+              ? (localMetrics?.marketingContacts ?? "Unavailable")
+              : config.marketing_contacts,
+            note: localMode
+              ? "Distinct consented destinations"
+              : "Patients who opted in",
             icon: Users,
             page: "campaigns",
           },
           {
             title: "Specialty guides",
             value: `${guides}/${inventory.data?.departments.length ?? 0}`,
-            note: "PDFs ready for the bot",
+            note: localMode
+              ? "Private clinic content saved"
+              : "PDFs ready for the bot",
             icon: Upload,
             page: "content",
           },
@@ -302,20 +391,30 @@ function Overview({
             <CardContent className="p-0">
               <TaskLink
                 title={
-                  reception.data?.length
-                    ? `${reception.data.length} conversation${reception.data.length === 1 ? "" : "s"} need reception`
+                  (
+                    localMode
+                      ? localMetrics?.openConversations
+                      : reception.data?.length
+                  )
+                    ? `${localMode ? localMetrics?.openConversations : reception.data?.length} conversations need reception`
                     : "Reception is up to date"
                 }
                 description={
-                  reception.data?.length
+                  (
+                    localMode
+                      ? localMetrics?.openConversations
+                      : reception.data?.length
+                  )
                     ? "Read the latest message, take ownership and reply."
-                    : "New handoffs will appear here when a patient asks for your team."
+                    : localMode
+                      ? "Open a local support case for an existing contact, or review authenticated inbound events."
+                      : "New handoffs will appear here when a patient asks for your team."
                 }
                 onClick={() => go("conversations")}
               />
               <TaskLink
                 title="Complete doctor introductions"
-                description={`${guides} specialty PDFs and ${photos} doctor portraits uploaded. Add or replace files in Doctor content.`}
+                description={`${guides} specialty PDFs and ${photos} doctor portraits saved. Add or replace files in Doctor content.`}
                 onClick={() => go("content")}
               />
               <TaskLink
@@ -326,8 +425,10 @@ function Overview({
                 }
                 description={
                   approved.length
-                    ? `${approved.length} current, supported templates available. Create a draft and test it before approval.`
-                    : "Approved templates must sync from Meta before you can create a campaign."
+                    ? `${approved.length} ${localMode ? "local content" : "current, supported"} templates available. Create a draft and test it before approval.`
+                    : localMode
+                      ? "Create local content before drafting a simulation. Provider approval is unavailable."
+                      : "Approved templates must sync from Meta before you can create a campaign."
                 }
                 onClick={() => go("campaigns")}
               />
@@ -393,11 +494,15 @@ function Overview({
                 ],
                 [
                   "Review, test, approve",
-                  "Campaigns need a checked test and a fixed audience.",
+                  localMode
+                    ? "Local campaigns need a reviewed simulation and a fixed consented audience."
+                    : "Campaigns need a checked test and a fixed audience.",
                 ],
                 [
-                  "Respect their time",
-                  "Messages wait overnight. Offers have frequency limits.",
+                  localMode ? "Local transport only" : "Respect their time",
+                  localMode
+                    ? "No messages are delivered. Quiet-hour and provider policies await live sending integration."
+                    : "Messages wait overnight. Offers have frequency limits.",
                 ],
               ].map(([title, desc]) => (
                 <div key={title} className="flex gap-3">
@@ -446,17 +551,19 @@ export function UploadFile({
   accept,
   onUpload,
   compact = false,
+  disabled = false,
 }: {
   label: string;
   accept: string;
   onUpload: (file: File) => Promise<void>;
   compact?: boolean;
+  disabled?: boolean;
 }) {
   const ref = useRef<HTMLInputElement>(null),
     [busy, setBusy] = useState(false),
     [drag, setDrag] = useState(false);
   const upload = async (file?: File) => {
-    if (!file) return;
+    if (!file || busy || disabled) return;
     const image = accept.includes("image");
     if (file.size > (image ? 5 : 10) * 1024 * 1024) {
       toast.error(`Choose a file smaller than ${image ? 5 : 10} MB.`);
@@ -465,7 +572,9 @@ export function UploadFile({
     setBusy(true);
     try {
       await onUpload(file);
-      toast.success("File uploaded. The bot will use this version.");
+      toast.success(
+        "File uploaded. Saved content is available for future approved use.",
+      );
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -484,7 +593,7 @@ export function UploadFile({
       onDrop={(e) => {
         e.preventDefault();
         setDrag(false);
-        if (!busy) void upload(e.dataTransfer.files[0]);
+        if (!busy && !disabled) void upload(e.dataTransfer.files[0]);
       }}
     >
       <CardContent className={compact ? "p-0" : "p-5 text-center"}>
@@ -507,7 +616,7 @@ export function UploadFile({
         />
         <Button
           variant="outline"
-          disabled={busy}
+          disabled={busy || disabled}
           onClick={() => ref.current?.click()}
         >
           <Upload />
@@ -517,12 +626,24 @@ export function UploadFile({
     </Card>
   );
 }
-async function uploadTo(path: string, file: File) {
+async function uploadTo(
+  api: ReturnType<typeof useApi>,
+  path: string,
+  file: File,
+) {
   const body = new FormData();
   body.append("file", file);
   return api<Asset>(path, { method: "POST", body });
 }
-function DoctorContent() {
+function DoctorContent({
+  localMode = false,
+  active = true,
+}: {
+  localMode?: boolean;
+  active?: boolean;
+}) {
+  const api = useApi();
+  const permissions = usePermissions();
   const resource = useResource<Inventory>("/api/v1/admin/whatsapp-assets"),
     [tab, setTab] = useState("guides"),
     [search, setSearch] = useState("");
@@ -530,7 +651,11 @@ function DoctorContent() {
     <Resource {...resource}>
       <SectionTitle
         title="Doctor content"
-        description="The bot sends a specialty PDF before the doctor list, then shows the selected doctor’s portrait."
+        description={
+          localMode
+            ? "Maintain private specialty PDFs and doctor portraits for approved clinic content. The booking bot is not enabled."
+            : "The bot sends a specialty PDF before the doctor list, then shows the selected doctor’s portrait."
+        }
       />
       <div className="flex flex-wrap gap-4 justify-between mb-5">
         <Tabs value={tab} onValueChange={(v) => setTab(String(v))}>
@@ -580,13 +705,7 @@ function DoctorContent() {
                         {d.guide ? (
                           <Button
                             variant="link"
-                            render={
-                              <a
-                                href={assetUrl(d.guide.id)}
-                                target="_blank"
-                                rel="noreferrer"
-                              />
-                            }
+                            render={<PrivateAssetLink id={d.guide.id} />}
                           >
                             <FileText />
                             {d.guide.filename}
@@ -598,12 +717,23 @@ function DoctorContent() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <StateBadge value={d.guide ? "ready" : "missing"} />
+                        <StateBadge
+                          value={
+                            d.guide
+                              ? localMode
+                                ? "local_validated"
+                                : "ready"
+                              : "missing"
+                          }
+                        />
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-end">
                           <UploadFile
                             compact
+                            disabled={
+                              !permissions.can("comms.manage") || !active
+                            }
                             label={
                               d.guide
                                 ? `Replace ${d.name} PDF`
@@ -612,6 +742,7 @@ function DoctorContent() {
                             accept="application/pdf"
                             onUpload={async (f) => {
                               await uploadTo(
+                                api,
                                 `/api/v1/admin/departments/${d.id}/guide`,
                                 f,
                               );
@@ -633,10 +764,10 @@ function DoctorContent() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           {d.photo ? (
-                            <img
+                            <PrivateAssetImage
                               alt={`${d.name} portrait`}
                               className="size-10 rounded-lg object-cover"
-                              src={assetUrl(d.photo.id)}
+                              id={d.photo.id}
                             />
                           ) : (
                             <div className="size-10 bg-muted rounded-lg flex items-center justify-center">
@@ -655,12 +786,23 @@ function DoctorContent() {
                         {d.photo?.filename ?? "No portrait uploaded"}
                       </TableCell>
                       <TableCell>
-                        <StateBadge value={d.photo ? "ready" : "missing"} />
+                        <StateBadge
+                          value={
+                            d.photo
+                              ? localMode
+                                ? "local_validated"
+                                : "ready"
+                              : "missing"
+                          }
+                        />
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-end">
                           <UploadFile
                             compact
+                            disabled={
+                              !permissions.can("comms.manage") || !active
+                            }
                             label={
                               d.photo
                                 ? `Replace ${d.name} portrait`
@@ -669,6 +811,7 @@ function DoctorContent() {
                             accept="image/png,image/jpeg"
                             onUpload={async (f) => {
                               await uploadTo(
+                                api,
                                 `/api/v1/admin/doctors/${d.id}/photo`,
                                 f,
                               );
@@ -693,8 +836,9 @@ function DoctorContent() {
         />
       )}
       <p className="text-xs text-muted-foreground mt-4">
-        Only use clinic-approved content. Uploading a replacement affects future
-        bot messages.
+        {localMode
+          ? "Only use clinic-approved content. Files stay private; local validation does not prove production scanning or provider distribution."
+          : "Only use clinic-approved content. Uploading a replacement affects future bot messages."}
       </p>
     </Resource>
   );
@@ -704,6 +848,7 @@ type Rule = {
   enabled: boolean;
   template_id: string;
   delay_hours: number;
+  version?: number;
 };
 const ruleNames: Record<string, [string, string]> = {
   feedback: ["Post-visit feedback", "After staff mark a visit completed"],
@@ -724,8 +869,55 @@ const ruleNames: Record<string, [string, string]> = {
     "Sent straight away when staff cancel a visit",
   ],
 };
-const immediate = ["rescheduled", "cancelled"];
-function Followups({ user }: { user: StaffUser }) {
+const immediate = ["rescheduled", "cancelled", "reschedule", "cancellation"];
+function Followups({
+  user,
+  localNotifications = false,
+  active = true,
+}: {
+  user: StaffUser;
+  localNotifications?: boolean;
+  active?: boolean;
+}) {
+  const api = useApi();
+  const workspace = useContext(WorkspaceContext);
+  const timezone = workspace?.facility.timezone ?? "Asia/Kolkata";
+  const instant = (value: string) =>
+    localNotifications
+      ? clinicDateInstant(value, timezone)
+      : new Date(value).toISOString();
+  const dueTime = (value: string) => {
+    try {
+      return Date.parse(instant(value));
+    } catch {
+      return NaN;
+    }
+  };
+  const names: Record<string, [string, string]> = localNotifications
+    ? {
+        day_before: ["Day-before reminder", "Before a confirmed visit"],
+        same_day: [
+          "Same-day reminder",
+          "Before a confirmed visit on the same clinic day",
+        ],
+        follow_up: [
+          "Doctor-requested follow-up",
+          "Staff choose a contact date for a completed visit",
+        ],
+        reschedule: ["Visit moved by the clinic", "After staff reschedule a visit"],
+        cancellation: ["Visit cancelled by the clinic", "After staff cancel a visit"],
+        feedback: ["Post-visit feedback", "After a persisted completed visit"],
+        no_show: [
+          "Missed-visit rebooking",
+          "After staff mark a visit as no-show",
+        ],
+      }
+    : ruleNames;
+  const followupKind = localNotifications ? "follow_up" : "followup";
+  const canSchedule = usePermissions().can(
+    localNotifications ? "comms.reply" : "followups.manage",
+  );
+  const [notice, setNotice] = useState("");
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30000);
@@ -733,13 +925,19 @@ function Followups({ user }: { user: StaffUser }) {
   }, []);
   const canManage = usePermissions().can("followups.manage"),
     rules = useResource<Rule[]>(wa + "/followup-rules"),
-    templates = useResource<Template[]>(wa + "/templates"),
+    templates = useResource<Template[]>(
+      localNotifications ? null : wa + "/templates",
+    ),
     visits = useResource<Appointment[]>(
       "/api/v1/admin/appointments?status=completed",
     ),
     [edit, setEdit] = useState<Rule | null>(null),
     [visit, setVisit] = useState(""),
-    [due, setDue] = useState(localDate()),
+    [due, setDue] = useState(() =>
+      localNotifications
+        ? clinicDateInput(new Date(Date.now() + 3600000), timezone)
+        : localDate(),
+    ),
     [confirm, setConfirm] = useState(false);
   const options =
     templates.data
@@ -756,8 +954,20 @@ function Followups({ user }: { user: StaffUser }) {
     <Resource {...rules}>
       <SectionTitle
         title="Visit follow-ups"
-        description="Care messages follow recorded visit events. Patient consent is checked again before delivery."
+        description={
+          localNotifications
+            ? "Local reminder and requested follow-up records. No messages are delivered."
+            : "Care messages follow recorded visit events. Patient consent is checked again before delivery."
+        }
       />
+      {notice && <Notice title="Follow-up recorded" text={notice} />}
+      {localNotifications && (
+        <p className="mb-4 text-xs text-muted-foreground">
+          These controls save consented local reminder rules. Feedback and
+          missed-visit records follow authoritative visit events; no provider
+          templates are approved or sent.
+        </p>
+      )}
       <Card className="p-0 mb-6">
         <Table>
           <TableHeader>
@@ -769,7 +979,7 @@ function Followups({ user }: { user: StaffUser }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Object.entries(ruleNames).map(([kind, [name, trigger]]) => {
+            {Object.entries(names).map(([kind, [name, trigger]]) => {
               const rule = rules.data?.find((r) => r.kind === kind);
               return (
                 <TableRow key={kind}>
@@ -783,7 +993,7 @@ function Followups({ user }: { user: StaffUser }) {
                   <TableCell>
                     <Button
                       variant="outline"
-                      disabled={!canManage}
+                      disabled={!canManage || (localNotifications && !active)}
                       onClick={() =>
                         setEdit(
                           rule ?? {
@@ -811,7 +1021,9 @@ function Followups({ user }: { user: StaffUser }) {
               Schedule a doctor-requested follow-up
             </CardTitle>
             <CardDescription>
-              Choose a completed WhatsApp visit and the requested contact date.
+              {localNotifications
+                ? "Choose a completed visit from the last 180 clinic days and the requested contact date. Up to 500 visits are listed; older visits are not shown."
+                : "Choose a completed visit and the requested contact date."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -823,7 +1035,10 @@ function Followups({ user }: { user: StaffUser }) {
                 options={[
                   ["", "Select a completed visit"],
                   ...(visits.data
-                    ?.filter((a) => a.origin_channel === "whatsapp")
+                    ?.filter(
+                      (a) =>
+                        localNotifications || a.origin_channel === "whatsapp",
+                    )
                     .map(
                       (a) =>
                         [
@@ -838,38 +1053,49 @@ function Followups({ user }: { user: StaffUser }) {
               label="Contact date and time"
               id="followup-date"
               error={
-                !due
+                !due || !Number.isFinite(dueTime(due))
                   ? "Choose a contact date and time."
-                  : new Date(due).getTime() <= now
+                  : dueTime(due) <= now
                     ? "Choose a contact time in the future."
-                    : new Date(due).getTime() > now + 180 * 86400000
+                    : dueTime(due) > now + 180 * 86400000
                       ? "Choose a contact date within the next 180 days."
                       : undefined
               }
-              hint="Your computer’s local time. Choose within the next 180 days."
+              hint={
+                localNotifications
+                  ? `${timezone} clinic time. Choose within the next 180 days.`
+                  : "Your computer’s local time. Choose within the next 180 days."
+              }
             >
               <Input
                 type="datetime-local"
                 id="followup-date"
                 value={due}
                 onChange={(e) => setDue(e.target.value)}
-                min={localDate(new Date(now))}
+                min={
+                  localNotifications
+                    ? clinicDateInput(new Date(now), timezone)
+                    : localDate(new Date(now))
+                }
               />
             </Field>
             <Button
               disabled={
+                !canSchedule ||
+                (localNotifications && !active) ||
                 !visit ||
                 !due ||
-                new Date(due).getTime() <= now ||
-                new Date(due).getTime() > now + 180 * 86400000 ||
-                !rules.data?.find((r) => r.kind === "followup")?.enabled
+                !Number.isFinite(dueTime(due)) ||
+                dueTime(due) <= now ||
+                dueTime(due) > now + 180 * 86400000 ||
+                !rules.data?.find((r) => r.kind === followupKind)?.enabled
               }
               onClick={() => setConfirm(true)}
             >
               <Clock3 />
               Review follow-up
             </Button>
-            {!rules.data?.find((r) => r.kind === "followup")?.enabled && (
+            {!rules.data?.find((r) => r.kind === followupKind)?.enabled && (
               <p className="text-xs text-muted-foreground">
                 Configure and enable the doctor-requested rule first.
               </p>
@@ -884,17 +1110,19 @@ function Followups({ user }: { user: StaffUser }) {
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-muted-foreground leading-relaxed">
             <p>
-              Use clinic-approved administrative wording. The bot does not
-              prescribe treatment or decide when a patient needs clinical
-              follow-up.
+              {localNotifications
+                ? "Use clinic-approved administrative wording. An administrative reminder does not prescribe treatment or decide when a patient needs clinical follow-up."
+                : "Use clinic-approved administrative wording. The bot does not prescribe treatment or decide when a patient needs clinical follow-up."}
             </p>
             <p>
-              Patients must opt in to visit messages. Templates classified as
-              marketing also need offer consent.
+              {localNotifications
+                ? "Reminder and follow-up scheduling requires explicit messaging consent. Campaign preparation and approval are available as local simulations."
+                : "Patients must opt in to visit messages. Templates classified as marketing also need offer consent."}
             </p>
             <p>
-              Quiet hours and current appointment status are checked at
-              delivery.
+              {localNotifications
+                ? "Current consent, visit status and expiry are checked by the local worker. Provider delivery and quiet-hour controls remain pending."
+                : "Quiet hours and current appointment status are checked at delivery."}
             </p>
           </CardContent>
         </Card>
@@ -907,46 +1135,60 @@ function Followups({ user }: { user: StaffUser }) {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{edit && ruleNames[edit.kind][0]}</DialogTitle>
+            <DialogTitle>{edit && names[edit.kind][0]}</DialogTitle>
             <DialogDescription>
-              Template fields must be booking reference, doctor name and visit
-              time, in that order.
+              {localNotifications
+                ? "This rule creates local notification records. No provider template is approved or sent."
+                : "Template fields must be booking reference, doctor name and visit time, in that order."}
             </DialogDescription>
           </DialogHeader>
           {edit && (
             <div className="space-y-5">
-              <Resource {...templates}>
-                <Choice
-                  label="Approved template"
-                  value={edit.template_id}
-                  onChange={(v) => setEdit({ ...edit, template_id: v })}
-                  options={
-                    options.length
-                      ? options
-                      : [["", "No compatible template available"]]
-                  }
-                />
-              </Resource>
-              {!immediate.includes(edit.kind) && (
-                <Field
-                  label="Delay after the visit event (hours)"
-                  id="rule-delay"
-                >
-                  <Input
-                    id="rule-delay"
-                    type="number"
-                    min={0}
-                    max={720}
-                    value={edit.delay_hours}
-                    onChange={(e) =>
-                      setEdit({ ...edit, delay_hours: Number(e.target.value) })
+              {!localNotifications && (
+                <Resource {...templates}>
+                  <Choice
+                    label="Approved template"
+                    value={edit.template_id}
+                    onChange={(v) => setEdit({ ...edit, template_id: v })}
+                    options={
+                      options.length
+                        ? options
+                        : [["", "No compatible template available"]]
                     }
                   />
-                </Field>
+                </Resource>
               )}
+              {!immediate.includes(edit.kind) &&
+                !(localNotifications && edit.kind === "follow_up") && (
+                  <Field
+                    label={
+                      localNotifications &&
+                      ["day_before", "same_day"].includes(edit.kind)
+                        ? "Hours before the visit"
+                        : "Delay after the visit event (hours)"
+                    }
+                    id="rule-delay"
+                  >
+                    <Input
+                      id="rule-delay"
+                      type="number"
+                      min={0}
+                      max={720}
+                      value={edit.delay_hours}
+                      onChange={(e) =>
+                        setEdit({
+                          ...edit,
+                          delay_hours: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </Field>
+                )}
               <div className="flex items-center justify-between gap-3">
                 <Label htmlFor="rule-enabled" className="text-sm">
-                  Enable consented messages
+                  {localNotifications
+                    ? "Enable consented local scheduling"
+                    : "Enable consented messages"}
                 </Label>
                 <Switch
                   id="rule-enabled"
@@ -955,11 +1197,22 @@ function Followups({ user }: { user: StaffUser }) {
                 />
               </div>
               <Action
-                disabled={!edit.template_id}
+                disabled={
+                  !canManage ||
+                  (localNotifications
+                    ? !active ||
+                      !Number.isInteger(edit.delay_hours) ||
+                      edit.delay_hours < 0 ||
+                      edit.delay_hours > 720
+                    : !edit.template_id)
+                }
                 run={async () => {
                   await api(`${wa}/followup-rules/${edit.kind}`, {
                     method: "PUT",
                     body: {
+                      ...(localNotifications
+                        ? { version: edit.version ?? 0 }
+                        : {}),
                       enabled: edit.enabled,
                       template_id: edit.template_id,
                       delay_hours: edit.delay_hours,
@@ -984,23 +1237,49 @@ function Followups({ user }: { user: StaffUser }) {
               {visits.data?.find((v) => v.id === visit)?.patient_name} ·{" "}
               {visits.data?.find((v) => v.id === visit)?.confirmation_code}
               <br />
-              {due ? dateTime(new Date(due).toISOString()) : ""}
+              {due && Number.isFinite(dueTime(due))
+                ? localNotifications
+                  ? new Intl.DateTimeFormat("en-IN", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                      timeZone: timezone,
+                    }).format(new Date(instant(due)))
+                  : dateTime(instant(due))
+                : ""}
             </DialogDescription>
           </DialogHeader>
           <p className="text-xs text-muted-foreground">
-            This queues the approved template. It sends only if patient
-            permission and delivery settings allow it.
+            {localNotifications
+              ? "This records a follow-up after checking visit status and consent. It does not deliver a message."
+              : "This queues the approved template. It sends only if patient permission and delivery settings allow it."}
           </p>
           <Action
+            disabled={
+              !canSchedule ||
+              (localNotifications && !active) ||
+              !Number.isFinite(dueTime(due))
+            }
             run={async () => {
-              await api(`${wa}/appointments/${visit}/followup`, {
-                method: "POST",
-                body: { actor: user.name, due_at: new Date(due).toISOString() },
-              });
+              const result = await api<{ status?: string; reason?: string }>(
+                `${wa}/appointments/${visit}/followup`,
+                {
+                  method: "POST",
+                  body: {
+                    ...(!localNotifications ? { actor: user.name } : {}),
+                    due_at: instant(due),
+                  },
+                },
+              );
+              if (localNotifications)
+                setNotice(
+                  result.status === "skipped_no_consent"
+                    ? "Not scheduled for sending: the selected contact has no applicable consent. No message was delivered."
+                    : "Saved as a local notification record. No message was delivered.",
+                );
               setConfirm(false);
               setVisit("");
             }}
-            success="Follow-up scheduled"
+            success={localNotifications ? undefined : "Follow-up scheduled"}
           >
             Schedule follow-up
           </Action>
@@ -1149,11 +1428,14 @@ function Delivery() {
     </Resource>
   );
 }
-function ClinicDetails() {
+function ClinicDetails({ localMode = false }: { localMode?: boolean }) {
+  const api = useApi();
+  const canManage = usePermissions().can("clinics.manage");
   const catalogue = useResource<Catalogue>("/api/v1/admin/catalogue"),
     [edit, setEdit] = useState<Branch | null>(null);
   return (
     <Resource {...catalogue}>
+      {localMode && <LocalWhatsAppSettings />}
       <SectionTitle
         title="Clinic details"
         description="Administrator setting · booking confirmations use these addresses, directions and arrival instructions."
@@ -1178,7 +1460,11 @@ function ClinicDetails() {
                 </p>
               )}
               <div className="flex justify-between gap-3">
-                <Button variant="outline" onClick={() => setEdit(b)}>
+                <Button
+                  variant="outline"
+                  disabled={!canManage}
+                  onClick={() => setEdit(b)}
+                >
                   Edit details
                 </Button>
                 {b.directions_url && (
@@ -1270,6 +1556,77 @@ function ClinicDetails() {
           )}
         </DialogContent>
       </Dialog>
+    </Resource>
+  );
+}
+
+function LocalWhatsAppSettings() {
+  const api = useApi(),
+    canManage = usePermissions().can("comms.manage"),
+    settings = useResource<(typeof WhatsAppSettingsSchema)["_output"]>(
+      `${wa}/settings`,
+    );
+  const [phone, setPhone] = useState("");
+  return (
+    <Resource {...settings}>
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">WhatsApp callback account</CardTitle>
+          <CardDescription>
+            Server-scoped routing for verified inbound events. This does not
+            activate provider delivery or a booking bot.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {settings.data && (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Signed callback account:{" "}
+                {settings.data.webhookReady ? "Configured" : "Unavailable"} ·
+                Provider sending: unavailable · Production content scan/storage:{" "}
+                {settings.data.storageReady
+                  ? "Local development storage"
+                  : "Unconfigured"}
+              </p>
+              {canManage && (
+                <>
+                  <Field
+                    label="Provider phone-number ID"
+                    id="wa-phone-id"
+                    hint="Account identifier only. Credentials remain on the server."
+                  >
+                    <Input
+                      id="wa-phone-id"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      inputMode="numeric"
+                      placeholder={settings.data.phoneNumberId ?? ""}
+                      maxLength={40}
+                    />
+                  </Field>
+                  <Action
+                    disabled={!/^\d{5,40}$/.test(phone)}
+                    run={async () => {
+                      await api(`${wa}/settings`, {
+                        method: "PUT",
+                        body: {
+                          phoneNumberId: phone,
+                          version: settings.data!.version,
+                        },
+                      });
+                      setPhone("");
+                      settings.refresh();
+                    }}
+                    success="Callback routing saved. No provider sending activated."
+                  >
+                    Save callback account
+                  </Action>
+                </>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
     </Resource>
   );
 }

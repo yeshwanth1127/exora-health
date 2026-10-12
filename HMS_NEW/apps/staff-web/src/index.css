@@ -411,95 +411,14 @@ body {
   }
 }
 
-.decision-book {
-  font-size: 14px;
-  line-height: 1.8;
-  color: var(--foreground);
-}
-.decision-book h1 {
-  font-size: 36px;
-  line-height: 1.2;
-  letter-spacing: -1px;
-  font-weight: 600;
-  margin-bottom: 12px;
-}
-.decision-book h2 {
-  font-size: 22px;
-  font-weight: 600;
-  margin: 40px 0 16px;
-  letter-spacing: -0.5px;
-  line-height: 1.4;
-}
-.decision-book h3 {
-  font-size: 17px;
-  font-weight: 600;
-  margin: 28px 0 12px;
-}
-.decision-book p {
-  margin-block: 14px;
-}
-.decision-book ul,
-.decision-book ol {
-  padding-left: 24px;
-  margin-block: 16px;
-}
-.decision-book ul {
-  list-style: disc;
-}
-.decision-book ol {
-  list-style: decimal;
-}
-.decision-book li {
-  margin-block: 8px;
-}
-.decision-book table {
-  display: block;
-  overflow-x: auto;
-  font-size: 12px;
-  margin-block: 20px;
-}
-.decision-book td,
-.decision-book th {
-  padding: 12px;
-  border: 1px solid var(--border);
-  min-width: 130px;
-  text-align: left;
-  vertical-align: top;
-}
-.decision-book th {
-  background: var(--muted);
-  font-weight: 600;
-}
-.decision-book a {
-  color: var(--primary);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.decision-book code {
-  background: var(--muted);
-  padding: 2px 4px;
-  border-radius: 3px;
-  font-size: 12px;
-  overflow-wrap: anywhere;
-}
-.decision-book hr {
-  margin-block: 32px;
-  border-color: var(--border);
-}
 @media (max-width: 767px) {
   [data-slot="button"],
   [data-slot="select-trigger"],
   [data-slot="input"] {
     min-height: 44px;
   }
-  .decision-book h1 {
-    font-size: 28px;
-  }
 }
 
-.decision-book h2 {
-  scroll-margin-top: 32px;
-}
 @media print {
   [data-slot="sidebar-wrapper"] > [data-slot="sidebar"],
   .workspace-header,
@@ -509,13 +428,6 @@ body {
   .workspace-content {
     padding: 0;
     max-width: none;
-  }
-  .decision-book h2 {
-    break-after: avoid;
-  }
-  .decision-book table {
-    display: table;
-    width: 100%;
   }
 }
 
@@ -559,6 +471,13 @@ body {
 }
 
 /* Shared field errors are visible on inputs, selects and textareas. */
-[data-field-error="true"] :is(input, textarea, [data-slot="select-trigger"]) { border-color: var(--destructive); box-shadow: 0 0 0 1px var(--destructive); }
+[data-field-error="true"] :is(input, textarea, [data-slot="select-trigger"]) {
+  border-color: var(--destructive);
+  box-shadow: 0 0 0 1px var(--destructive);
+}
 
-[role="group"][aria-invalid="true"] { outline: 1px solid var(--destructive); outline-offset: 4px; border-radius: 4px; }
+[role="group"][aria-invalid="true"] {
+  outline: 1px solid var(--destructive);
+  outline-offset: 4px;
+  border-radius: 4px;
+}

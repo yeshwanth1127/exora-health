@@ -7,8 +7,13 @@ export type OriginalResourceSource = {
   permissions: Permissions;
   read: <T>(path: string, signal: AbortSignal) => Promise<T>;
   /** Present when this source can save; without it the original editors are drafts. */
-  write?: <T>(path: string, options?: { method?: string; body?: unknown }) => Promise<T>;
+  write?: <T>(
+    path: string,
+    options?: { method?: string; body?: unknown },
+  ) => Promise<T>;
   unavailableWrite: string;
+  /** Authenticated private media, resolved to a revocable browser blob by useAssetUrl. */
+  asset?: (id: string, signal: AbortSignal) => Promise<Blob>;
 };
 /** True when original editors run without a saving source (local drafts only). */
 export const isDraft = (source: OriginalResourceSource | null) =>

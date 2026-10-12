@@ -27,7 +27,11 @@ type Summary = {
   recent: Appointment[];
 };
 
-export function Overview({ page = "overview" }: { page?: "overview" | "operations" }) {
+export function Overview({
+  page = "overview",
+}: {
+  page?: "overview" | "operations";
+}) {
   const { me, facility } = useWorkspace();
   const source = useMemo<OriginalResourceSource>(
     () => ({
@@ -72,7 +76,7 @@ export function Overview({ page = "overview" }: { page?: "overview" | "operation
             schedule_rules: s.scheduleRules,
             active_holds: s.activeHolds,
             voice_bookings: s.voiceBookings,
-            // Unknown until messaging and voice exist (G19, G21); shown as "—", never 0.
+            // Local jobs only; absent permission/module availability stays null.
             pending_notifications: s.pendingNotifications,
             voice_sessions_total: s.voiceSessions,
           },

@@ -27,7 +27,7 @@ export function useWorkspace() {
       can(value.me, permission, value.facility.facilityId),
   };
 }
-export function useQuery<T>(path: string | null, pollMs = 0) {
+export function useQuery<T>(path: string | null, pollMs = 0, decode?: (value: unknown) => T) {
   const { me, facility } = useWorkspace();
   const key = `${me.tenantId}:${facility.facilityId}:${path}`;
   const reload = useRef<(() => Promise<boolean>) | null>(null);
@@ -60,7 +60,8 @@ export function useQuery<T>(path: string | null, pollMs = 0) {
         loading: old.key !== key || old.data === null,
       }));
       try {
-        const data = await request<T>(path!, { signal: controller.signal });
+        const response = await request<T>(path!, { signal: controller.signal });
+        const data = decode ? decode(response) : response;
         if (alive && current === sequence) {
           setState({ key, data, error: "", failure: null, loading: false });
           return true;
@@ -74,7 +75,7 @@ export function useQuery<T>(path: string | null, pollMs = 0) {
           const failure = e instanceof HmsError ? e : null;
           setState((old) => ({
             key,
-            data: [401, 403, 404].includes(failure?.status ?? 0)
+            data: [401, 403, 404].includes(failure?.status ?? 0) || failure?.code === "invalid_response"
               ? null
               : old.key === key
                 ? old.data
@@ -109,7 +110,7 @@ export function useQuery<T>(path: string | null, pollMs = 0) {
       clearTimeout(timer);
       document.removeEventListener("visibilitychange", visible);
     };
-  }, [path, key, pollMs]);
+  }, [path, key, pollMs, decode]);
   return {
     data: state.key === key ? state.data : null,
     error: state.key === key ? state.error : "",

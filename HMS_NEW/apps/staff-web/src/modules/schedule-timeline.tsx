@@ -6,9 +6,11 @@ import {
   ChevronLeft,
   ChevronRight,
   RefreshCw,
-  Plus,
   CalendarDays,
   Clock3,
+  CalendarPlus,
+  LockKeyhole,
+  Video,
 } from "lucide-react";
 import {
   Action,
@@ -142,9 +144,17 @@ function spans(row: Row, day: string): Span[] {
 export function ScheduleTimeline({
   day,
   setDay,
+  ownDoctorId,
+  initialDoctorId,
+  initialVisitMode = "in_person",
+  onDoctorProfile,
 }: {
   day: string;
   setDay: (day: string) => void;
+  ownDoctorId?: string;
+  initialDoctorId?: string;
+  initialVisitMode?: "in_person" | "virtual";
+  onDoctorProfile?: (id: string) => void;
 }) {
   const draft = isDraft(useContext(OriginalResourceContext));
   const api = useApi();
@@ -165,9 +175,26 @@ export function ScheduleTimeline({
     [now, setNow] = useState(() => Date.now()),
     [scale, setScale] = useState("320"),
     [range, setRange] = useState<ScheduleRange | null>(null),
+    [rangeIntent, setRangeIntent] = useState<"book" | "block" | null>(null),
     [weekly, setWeekly] = useState<Doctor | null>(null),
+    [weeklyMode, setWeeklyMode] = useState<"in_person" | "virtual">(
+      "in_person",
+    ),
     [weeklyPicker, setWeeklyPicker] = useState(false),
     [weeklyDoctor, setWeeklyDoctor] = useState("");
+  const [consumedLink, setConsumedLink] = useState("");
+  const canEditWeekly = permissions.can("schedules.manage");
+  const requestedLink = `${initialDoctorId}:${initialVisitMode}`;
+  const requestedDoctor =
+    initialDoctorId &&
+    consumedLink !== requestedLink &&
+    canEditWeekly &&
+    catalogue.data
+      ? (doctors.data?.find((d) => d.id === initialDoctorId && d.is_active) ??
+        null)
+      : null;
+  const weeklySelection = weekly ?? requestedDoctor;
+  const selectedWeeklyMode = weekly ? weeklyMode : initialVisitMode;
   const timelineViewport = useRef<HTMLDivElement>(null);
   const pendingNow = useRef(true);
   const [highlight, setHighlight] = useState<{
@@ -318,7 +345,9 @@ export function ScheduleTimeline({
     span?: Period,
     slotMinutes = 30,
     overbook = false,
+    intent: "book" | "block" | null = null,
   ) => {
+    setRangeIntent(intent);
     setSelected(null);
     setRange({
       doctor,
@@ -382,7 +411,7 @@ export function ScheduleTimeline({
             Today
           </Button>
         </div>
-        <div className="flex items-end gap-3">
+        <div className="flex flex-wrap items-end gap-3">
           <div className="w-40">
             <Choice
               label="Time scale"
@@ -400,6 +429,7 @@ export function ScheduleTimeline({
               variant="outline"
               className="border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100"
               onClick={() => {
+                setWeeklyMode("in_person");
                 const active = rows.filter((r) => r.doctor.is_active);
                 if (active.length === 1) setWeekly(active[0].doctor);
                 else setWeeklyPicker(true);
@@ -409,12 +439,32 @@ export function ScheduleTimeline({
               Configure weekly hours
             </Button>
           )}
+          {canEditWeekly && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setWeeklyMode("virtual");
+                const active = rows.filter((r) => r.doctor.is_active);
+                if (active.length === 1) setWeekly(active[0].doctor);
+                else setWeeklyPicker(true);
+              }}
+            >
+              <Video />
+              Teleconsultation hours
+            </Button>
+          )}
           <Button variant="outline" onClick={refresh}>
             <RefreshCw />
             Refresh
           </Button>
         </div>
       </div>
+      {initialDoctorId && !canEditWeekly && (
+        <p className="mb-4 text-xs text-muted-foreground">
+          Publishing doctor hours requires scheduling permission at this clinic.
+          Your current role can view the timeline.
+        </p>
+      )}
       <div className="grid sm:grid-cols-3 gap-3 mb-6">
         <Choice
           label="Clinic"
@@ -478,7 +528,9 @@ export function ScheduleTimeline({
               <p className="text-xs text-muted-foreground mt-2">
                 {canManage
                   ? "Drag across a doctor's row to plan time. Click an appointment or block to inspect it."
-                  : "Click an appointment or block to inspect it."}
+                  : ownDoctorId
+                    ? "Your schedule is marked below. Your account needs permission to book appointments or block time."
+                    : "Click an appointment or block to inspect it."}
               </p>
             </div>
             <div
@@ -549,6 +601,38 @@ export function ScheduleTimeline({
                 </div>
               </div>
               {rows.map((row) => {
+                const ownRow = row.doctor_id === ownDoctorId;
+                const canPlan = canManage;
+                const first = row.spans.find(
+                  (s) =>
+                    s.kind === "available" &&
+                    (day !== clinicToday() || s.end > current + 5),
+                );
+                const rangeStart = first
+                  ? Math.max(
+                      first.start,
+                      day === clinicToday()
+                        ? Math.ceil((current + 1) / 5) * 5
+                        : first.start,
+                    )
+                  : day === clinicToday()
+                    ? Math.min(1425, Math.ceil((current + 15) / 5) * 5)
+                    : 9 * 60;
+                const planRange = (intent: "book" | "block" | null = null) =>
+                  selectRange(
+                    row.doctor,
+                    rangeStart,
+                    first
+                      ? Math.min(
+                          first.end,
+                          rangeStart + (row.blocks[0]?.slot_minutes ?? 30),
+                        )
+                      : Math.min(1439, rangeStart + 30),
+                    first,
+                    row.blocks[0]?.slot_minutes,
+                    false,
+                    intent,
+                  );
                 const height = Math.max(
                   140,
                   56 + (Math.max(...row.spans.map((s) => s.lane), 0) + 1) * 64,
@@ -562,6 +646,11 @@ export function ScheduleTimeline({
                   >
                     <div className="sticky left-0 z-20 bg-background border-r p-4 flex flex-col justify-center gap-2">
                       <h3 className="font-medium text-sm">{row.doctor.name}</h3>
+                      {ownRow && (
+                        <Badge variant="outline" className="w-fit text-[11px]">
+                          Your schedule
+                        </Badge>
+                      )}
                       <p className="text-xs text-muted-foreground truncate">
                         {row.doctor.departments
                           .map((d) => d.name)
@@ -593,57 +682,78 @@ export function ScheduleTimeline({
                           size="sm"
                           className="justify-start h-8 text-xs border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100"
                           disabled={!row.doctor.is_active}
-                          onClick={() => setWeekly(row.doctor)}
+                          onClick={() => {
+                            setWeeklyMode("in_person");
+                            setWeekly(row.doctor);
+                          }}
                         >
                           <CalendarDays className="size-3.5" />
                           Weekly hours
                         </Button>
                       )}
-                      {canManage && (
+                      {(ownRow || canEditWeekly) && (
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          className="justify-start h-7 p-0 text-xs text-muted-foreground"
-                          disabled={
-                            !row.doctor.is_active || day < clinicToday()
-                          }
+                          className="justify-start h-8 text-xs"
+                          disabled={!canEditWeekly || !row.doctor.is_active}
                           onClick={() => {
-                            const first = row.spans.find(
-                              (s) => s.kind === "available",
-                            );
-                            selectRange(
-                              row.doctor,
-                              first?.start ??
-                                (day === clinicToday()
-                                  ? Math.min(
-                                      1425,
-                                      Math.ceil((current + 15) / 5) * 5,
-                                    )
-                                  : 9 * 60),
-                              first
-                                ? Math.min(
-                                    first.end,
-                                    first.start +
-                                      (row.blocks[0]?.slot_minutes ?? 30),
-                                  )
-                                : day === clinicToday()
-                                  ? Math.min(
-                                      1439,
-                                      Math.ceil((current + 15) / 5) * 5 + 30,
-                                    )
-                                  : 10 * 60,
-                              first,
-                              row.blocks[0]?.slot_minutes,
-                            );
+                            setWeeklyMode("virtual");
+                            setWeekly(row.doctor);
                           }}
                         >
-                          <Plus className="size-3" />
-                          Plan time
+                          <Video className="size-3.5" />
+                          Teleconsultation hours
                         </Button>
                       )}
+                      {(ownRow || permissions.can("appointments.create")) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="justify-start h-8 text-xs"
+                          disabled={
+                            !permissions.can("appointments.create") ||
+                            !row.doctor.is_active ||
+                            day < clinicToday() ||
+                            !first
+                          }
+                          onClick={() => planRange("book")}
+                        >
+                          <CalendarPlus className="size-3.5" />
+                          Book appointment
+                        </Button>
+                      )}
+                      {(ownRow || permissions.can("schedule.block")) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="justify-start h-8 text-xs"
+                          disabled={
+                            !permissions.can("schedule.block") ||
+                            !row.doctor.is_active ||
+                            day < clinicToday()
+                          }
+                          onClick={() => planRange("block")}
+                        >
+                          <LockKeyhole className="size-3.5" />
+                          Block time
+                        </Button>
+                      )}
+                      {ownRow &&
+                        (!permissions.can("appointments.create") ||
+                          !permissions.can("schedule.block")) && (
+                          <p className="text-[11px] leading-relaxed text-muted-foreground">
+                            {!permissions.can("appointments.create") &&
+                              "Your account cannot book appointments yet. "}
+                            {!permissions.can("schedule.block") &&
+                              "Your account cannot block time yet. "}
+                            {!canManage &&
+                              "Ask the clinic administrator to arrange access."}
+                          </p>
+                        )}
                     </div>
                     <div
-                      className={`relative mx-5 bg-muted/30 my-3 rounded-sm select-none ${canManage && row.doctor.is_active && day >= clinicToday() ? "cursor-crosshair" : ""}`}
+                      className={`relative mx-5 bg-muted/30 my-3 rounded-sm select-none ${canPlan && row.doctor.is_active && day >= clinicToday() ? "cursor-crosshair" : ""}`}
                       data-timeline-row={row.doctor_id}
                       onClickCapture={(e) => {
                         if (suppressClick.current && e.detail > 0) {
@@ -653,7 +763,7 @@ export function ScheduleTimeline({
                       }}
                       onPointerDown={(e) => {
                         if (
-                          !canManage ||
+                          !canPlan ||
                           !row.doctor.is_active ||
                           day < clinicToday() ||
                           !e.isPrimary ||
@@ -788,7 +898,7 @@ export function ScheduleTimeline({
                         <Button
                           key={i}
                           variant="outline"
-                          className={`absolute h-14 rounded-md justify-start overflow-hidden px-3 text-xs shadow-none ${classes[span.kind]} ${span.kind === "available" && canManage ? "cursor-crosshair" : ""}`}
+                          className={`absolute h-14 rounded-md justify-start overflow-hidden px-3 text-xs shadow-none ${classes[span.kind]} ${span.kind === "available" && canPlan ? "cursor-crosshair" : ""}`}
                           data-span={i}
                           data-no-range={
                             span.kind === "available" ? undefined : "true"
@@ -801,7 +911,7 @@ export function ScheduleTimeline({
                           aria-label={`${row.doctor.name}: ${states[span.kind]}, ${clock(span.start)} to ${clock(span.end)}${span.appointment ? `, ${span.appointment.patient_name}` : ""}${span.appointment?.booked_by ? `, booked by ${span.appointment.booked_by.name}` : ""}`}
                           title={`${states[span.kind]} · ${clock(span.start)}–${clock(span.end)} · ${clinic(span.branch_id)}`}
                           onClick={() => {
-                            if (span.kind === "available" && canManage)
+                            if (span.kind === "available" && canPlan)
                               selectRange(
                                 row.doctor,
                                 span.start,
@@ -1071,7 +1181,10 @@ export function ScheduleTimeline({
                         run={async () => {
                           await api(
                             `/api/v1/admin/schedule-exceptions/${selected.span.exception_id}`,
-                            { method: "DELETE", body: { reason: unblockReason.trim() } },
+                            {
+                              method: "DELETE",
+                              body: { reason: unblockReason.trim() },
+                            },
                           );
                           setUnblockReason("");
                           setSelected(null);
@@ -1091,7 +1204,11 @@ export function ScheduleTimeline({
       <Sheet open={weeklyPicker} onOpenChange={setWeeklyPicker}>
         <SheetContent style={{ width: "min(100vw, 460px)", maxWidth: "100vw" }}>
           <SheetHeader>
-            <SheetTitle>Configure weekly hours</SheetTitle>
+            <SheetTitle>
+              {weeklyMode === "virtual"
+                ? "Configure teleconsultation hours"
+                : "Configure weekly hours"}
+            </SheetTitle>
             <SheetDescription>
               Choose a doctor, then select repeat days and split shifts.
             </SheetDescription>
@@ -1115,30 +1232,53 @@ export function ScheduleTimeline({
                 }
               }}
             >
-              Set weekly hours
+              {weeklyMode === "virtual"
+                ? "Set teleconsultation hours"
+                : "Set weekly hours"}
             </Button>
           </div>
         </SheetContent>
       </Sheet>
-      {weekly && catalogue.data && (
+      {weeklySelection && catalogue.data && (
         <WeeklyHours
-          doctor={weekly}
+          key={`${weeklySelection.id}:${selectedWeeklyMode}`}
+          doctor={weeklySelection}
+          initialMode={selectedWeeklyMode}
+          onDoctorProfile={onDoctorProfile}
           catalogue={catalogue.data}
           branch={chosenBranch === "all" ? "" : chosenBranch}
           day={day}
           allowed={permissions.data?.allowed ?? {}}
           onClose={() => {
-            if (confirmLeave()) setWeekly(null);
+            if (confirmLeave()) {
+              setConsumedLink(requestedLink);
+              setWeekly(null);
+            }
           }}
-          onSaved={refresh}
+          // Catalogue refresh unmounts WeeklyHours and discards its unsaved draft.
+          // Resolving appointments or saving hours needs only a fresh board.
+          onSaved={refreshBoard}
         />
       )}
       {range && catalogue.data && (
         <ScheduleRangeActions
-          key={`${range.doctor.id}:${range.day}:${range.start}:${range.end}:${range.branch}`}
+          key={`${range.doctor.id}:${range.day}:${range.start}:${range.end}:${range.branch}:${rangeIntent}`}
           range={range}
           catalogue={catalogue.data}
-          allowed={permissions.data?.allowed ?? {}}
+          allowed={
+            rangeIntent
+              ? {
+                  ...(permissions.data?.allowed ?? {}),
+                  "appointments.create":
+                    rangeIntent === "book" &&
+                    permissions.can("appointments.create"),
+                  "schedule.block":
+                    rangeIntent === "block" &&
+                    permissions.can("schedule.block"),
+                  "schedules.manage": false,
+                }
+              : (permissions.data?.allowed ?? {})
+          }
           onClose={() => {
             if (confirmLeave()) setRange(null);
           }}

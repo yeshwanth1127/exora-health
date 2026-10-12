@@ -56,7 +56,7 @@ export async function calendarBoard(db: Kysely<DB>, caller: Caller, input: { fac
             AND period && tstzrange((${input.date}::date - 1)::timestamptz, (${input.date}::date + 2)::timestamptz)`.execute(tx),
         tx
           .selectFrom('booking.schedule_exception')
-          .select(['id as scheduleExceptionId', 'kind', 'start_local as start', 'end_local as end', 'facility_id as facilityId', 'reason'])
+          .select(['id as scheduleExceptionId', 'kind', 'start_local as start', 'end_local as end', 'facility_id as facilityId', 'visit_mode as visitMode', 'reason'])
           .where('resource_id', '=', d.resource_id)
           .where('on_date', '=', input.date)
           .where('revoked_at', 'is', null)

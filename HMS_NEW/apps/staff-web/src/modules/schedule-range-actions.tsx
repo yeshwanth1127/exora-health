@@ -2,7 +2,13 @@ import { OriginalResourceContext, isDraft } from "@/components/resource-source";
 import { useContext, useEffect, useRef, useState } from "react";
 import { Plus, LockKeyhole, CalendarPlus } from "lucide-react";
 import { dateTime, type Catalogue } from "@/lib/api";
-import { Action, Choice, Field, useApi, useResource } from "@/components/workspace";
+import {
+  Action,
+  Choice,
+  Field,
+  useApi,
+  useResource,
+} from "@/components/workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,6 +47,7 @@ type Context = {
   valid: boolean;
   refresh: () => void;
   onTimeError: (error: string) => void;
+  onSelectSlot: (startsAt: string, endsAt: string) => void;
 };
 const timestamp = (day: string, time: string) =>
   new Date(`${day}T${time}:00+05:30`).toISOString();
@@ -126,6 +133,17 @@ export function ScheduleRangeActions({
     allowed,
     valid,
     onTimeError: setTimeError,
+    onSelectSlot: (begins: string, finishes: string) => {
+      const localTime = (value: string) =>
+        new Intl.DateTimeFormat("en-GB", {
+          timeZone: "Asia/Kolkata",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }).format(new Date(value));
+      setStart(localTime(begins));
+      setEnd(localTime(finishes));
+    },
     refresh: () => onSaved(),
     saved: () => {
       onSaved(day);
@@ -492,6 +510,8 @@ function BookRange({
   saved,
   valid,
   onTimeError,
+  onSelectSlot,
+  allowed,
 }: Context) {
   const api = useApi();
   const [name, setName] = useState(""),
@@ -515,7 +535,12 @@ function BookRange({
   const operation = useRef({ signature: "", key: "" });
   const startsAt = valid ? timestamp(range.day, start) : "",
     endsAt = valid ? timestamp(range.day, end) : "";
-  const check = useResource<{ overlapping_bookings: number }>(
+  const check = useResource<{
+    overlapping_bookings: number;
+    overbook_required?: boolean;
+    range_unsupported?: boolean;
+    overbooking_slots?: { starts_at: string; ends_at: string }[];
+  }>(
     valid
       ? "/api/v1/admin/schedule-timeline/check?" +
           new URLSearchParams({
@@ -530,6 +555,10 @@ function BookRange({
   useEffect(() => {
     onTimeError(valid && !check.loading && check.error ? check.error : "");
   }, [valid, check.loading, check.error, onTimeError]);
+  const overbook =
+    !!check.fresh &&
+    !!check.data?.overbook_required &&
+    !!allowed["appointments.overbook"];
   const compactPhone = phone.replace(/[\s()-]/g, ""),
     normalizedPhone = /^\d{10}$/.test(compactPhone)
       ? "+91" + compactPhone
@@ -549,11 +578,38 @@ function BookRange({
         <p className="text-sm text-muted-foreground">
           {range.overbook && !check.data.overlapping_bookings
             ? "This time is free now. Use Book appointment instead."
-            : check.data.overlapping_bookings
-              ? `${check.data.overlapping_bookings} appointments overlap this range. Reception will coordinate the visits.`
-              : "This time is available. We check it again when you save."}
+            : check.data.range_unsupported
+              ? "Overbooking supports one whole published booked slot. Choose a slot below to replace the selected range explicitly."
+              : overbook
+                ? "This published slot is booked. This will add an extra appointment for the full slot and requires a reason."
+                : check.data.overlapping_bookings
+                  ? "This range is occupied. Choose an available range."
+                  : "This time is available. We check it again when you save."}
         </p>
       ) : null}
+      {check.fresh && check.data?.range_unsupported && (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Your chosen {start}–{end} range is unchanged. Available published
+            overbooking slots:
+          </p>
+          {check.data.overbooking_slots?.map((slot) => (
+            <Button
+              key={slot.starts_at}
+              variant="outline"
+              size="sm"
+              onClick={() => onSelectSlot(slot.starts_at, slot.ends_at)}
+            >
+              Select {dateTime(slot.starts_at)} to{" "}
+              {new Intl.DateTimeFormat("en-IN", {
+                timeZone: "Asia/Kolkata",
+                hour: "numeric",
+                minute: "2-digit",
+              }).format(new Date(slot.ends_at))}
+            </Button>
+          ))}
+        </div>
+      )}
       <Field
         label="Patient name"
         id="timeline-patient"
@@ -604,7 +660,7 @@ function BookRange({
           onChange={(e) => setReason(e.target.value)}
         />
       </Field>
-      {range.overbook && (
+      {overbook && (
         <Field
           label="Reason for the extra appointment"
           id="timeline-overbook-reason"
@@ -645,9 +701,9 @@ function BookRange({
           !check.fresh ||
           name.trim().length < 2 ||
           !validPhone ||
-          (!!range.overbook &&
-            (!check.data.overlapping_bookings ||
-              overbookReason.trim().length < 3))
+          !!check.data.range_unsupported ||
+          (!!check.data.overlapping_bookings && !overbook) ||
+          (overbook && overbookReason.trim().length < 3)
         }
         run={async () => {
           const body = {
@@ -659,7 +715,7 @@ function BookRange({
             patient_name: name.trim(),
             patient_phone: normalizedPhone,
             reason: reason.trim() || null,
-            ...(range.overbook
+            ...(overbook
               ? { overbook: true, overbook_reason: overbookReason.trim() }
               : {}),
           };
@@ -686,7 +742,7 @@ function BookRange({
         }}
         success="Appointment booked"
       >
-        {range.overbook ? "Add extra appointment" : "Book appointment"}
+        {overbook ? "Add extra appointment" : "Book appointment"}
       </Action>
     </div>
   );

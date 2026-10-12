@@ -1,6 +1,8 @@
 # HMS_NEW — Schema & Backend Build Plan
 
-Implements the ERD in [`../design/erd-v2/`](../design/erd-v2/README.md). Status: **Phase 5 (clinical core) done** — encounters opened by check-in, vitals, versioned and signed notes, diagnoses/problem list, allergies, care-relationship chart access with break-glass, CORS and dev login for front-ends. **Virtual OPD** added (teleconsultation sessions, patient join links, consent documents, Jitsi grants — [VIRTUAL_OPD_PLAN.md](VIRTUAL_OPD_PLAN.md)); 117 tests green. Next: M06 diagnostics (lab/imaging orders and results), then M09/M10 pharmacy and inventory, M11 billing.
+**Phase closed by the product owner on 12 October 2026.** Local staff implementation is accepted. Active focus is UX/UI and operations review; webpage/Voice-bot integration is on hold. Provider work below is carried forward in [UX_AND_CHANNEL_TODO.md](UX_AND_CHANNEL_TODO.md), not silently marked implemented. [Current operations review](STAFF_OPS_REVIEW.md).
+
+The broad [ERD](../design/erd-v2/README.md) is a structural reference. **Current release scope is the original staff UI**, its existing integrated patient/queue/clinical/teleconsultation workflows, and the narrow M13 communications/growth slice. M06–M12 and M14–M17 are not the next build steps. Follow [HANDOFF.md](HANDOFF.md), [BACKEND_COMPLETION_GUIDE.md](BACKEND_COMPLETION_GUIDE.md) and the resolved [module development decisions](STAFF_MODULE_DEVELOPMENT_DECISIONS.md). The original foundation architecture below remains useful; its broad future-schema list is historical, not authorization to scaffold excluded modules. Test baselines are recorded in REGRESSION_AND_FLOW_TESTS.md; the first implementation checkpoint records 217 backend / 31 frontend tests and migration rollback/reapply verification.
 
 ## 1. Decisions (locked)
 | # | Decision | Choice |
@@ -189,3 +191,7 @@ The worker claims outbox rows with `FOR UPDATE SKIP LOCKED`, delivers to in-proc
 | `hms_app` membership in `mod_*` roles requires PG16+ `GRANT … WITH INHERIT FALSE` | Fine on 18 |
 | Hosting region (DPDP Rules 2025) | Decide before production; schema unaffected |
 | Medplum in the old migration plan | ADR 0001 records the change; team plan doc needs updating |
+
+## Scoped M13 implementation checkpoint — 12 October 2026
+
+The staff-only local implementation now adds contact/purpose consent, notification/rule/waitlist history, WhatsApp accounts/conversations/cases/private local assets/templates/campaign reservations/provider evidence, Voice calls/transcript revisions/consent/access audit and manual clinic booking links/change history. Types regenerate from 110 tables; no M06–M12/M14–M17 expansion. Six phase-3 migrations round-trip on empty verification data; history-bearing rollbacks deliberately refuse destructive loss. Original owner/facility/clinical booking semantics remain intact. Real Meta outbound, production object storage/scanner and provider acceptance are still separate work. See [progress](STAFF_MODULE_PROGRESS.md).

@@ -1,3 +1,4 @@
+import { patientDisplayName } from "./patient-presentation";
 import type { Catalogue } from "@/lib/api";
 import type { Doctor, TimeBlock } from "@/modules/clinic-types";
 import type { DeskAppointment } from "@/modules/NurseDesk";
@@ -27,7 +28,10 @@ export function localParts(iso: string, timeZone: string) {
       .formatToParts(new Date(iso))
       .map((x) => [x.type, x.value]),
   );
-  return { date: `${p.year}-${p.month}-${p.day}`, time: `${p.hour}:${p.minute}` };
+  return {
+    date: `${p.year}-${p.month}-${p.day}`,
+    time: `${p.hour}:${p.minute}`,
+  };
 }
 
 export type CalendarDay = {
@@ -36,7 +40,12 @@ export type CalendarDay = {
   exceptions: ScheduleException[];
   holidays: FacilityHoliday[];
   /** Live holds (time only, no patient) from the calendar board. */
-  holds?: { startsAt: string; endsAt: string; holdExpiresAt: string; kind: string }[];
+  holds?: {
+    startsAt: string;
+    endsAt: string;
+    holdExpiresAt: string;
+    kind: string;
+  }[];
 };
 
 export function scheduleCatalogue(
@@ -94,9 +103,11 @@ export function scheduleAppointment(
   return {
     id: a.appointmentId,
     confirmation_code: a.confirmationCode,
-    patient_name:
+    patient_name: patientDisplayName(
+      a.patientId,
       a.patientName ??
-      (a.patientId ? "Patient name unavailable" : "Patient not linked"),
+        (a.patientId ? "Patient name unavailable" : "Patient not linked"),
+    ),
     patient_phone: "", // Booking-party phone is not patient contact data.
     booked_by: a.bookingPartyName
       ? {
@@ -184,7 +195,11 @@ export function scheduleRow(
         continue;
       const t = local(s.slotStart);
       const e = calendar.exceptions.find(
-        (x) => applies(x) && x.start && x.start.slice(0, 5) <= t && t < x.end!.slice(0, 5),
+        (x) =>
+          applies(x) &&
+          x.start &&
+          x.start.slice(0, 5) <= t &&
+          t < x.end!.slice(0, 5),
       );
       periods.push({
         kind: "blocked",

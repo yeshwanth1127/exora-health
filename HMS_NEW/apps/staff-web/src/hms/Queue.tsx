@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { patientDisplayName } from "./patient-presentation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ListOrdered, RefreshCw, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { PageTitle } from "@/components/workspace";
 import { useCommand, useQuery, useWorkspace } from "./hooks";
-import { query } from "./client";
+import { query, request } from "./client";
 import { today, label } from "./model";
 import { Choice, Empty, ErrorMessage, Hint, LoadingState, Status } from "./ui";
 import {
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/sheet";
 import { WalkIn } from "./WalkIn";
 import { confirmLeave } from "./leave";
-import type { QueueToken, PatientDetail } from "./types";
+import type { QueueToken, PatientDetail, Practitioner } from "./types";
 
 export function Queue() {
   const { facility, practitioners, can, go } = useWorkspace(),
@@ -34,12 +35,19 @@ export function Queue() {
     [date, setDate] = useState(today(facility.timezone)),
     [notice, setNotice] = useState(""),
     [walkIn, setWalkIn] = useState(false);
-  const selected = staffId || practitioners[0]?.staffId || "";
-  const key = { staffId: selected, facilityId: facility.facilityId, date };
-  const result = useQuery<{ items: QueueToken[] }>(
-    selected ? `/v1/queue?${query(key)}` : null,
-    5000,
+  const doctors = useMemo(
+    () => [
+      ...new Map(
+        practitioners
+          .filter((p) => p.facilityId === facility.facilityId)
+          .map((p) => [p.staffId, p]),
+      ).values(),
+    ],
+    [practitioners, facility.facilityId],
   );
+  const selected = doctors.some((p) => p.staffId === staffId) ? staffId : "";
+  const key = { staffId: selected, facilityId: facility.facilityId, date };
+  const result = useClinicQueue(doctors, selected, date);
   return (
     <>
       <PageTitle
@@ -82,10 +90,13 @@ export function Queue() {
             label="Queue doctor"
             value={selected}
             onChange={setStaffId}
-            options={practitioners.map((p) => ({
-              value: p.staffId,
-              label: p.name,
-            }))}
+            options={[
+              { value: "", label: "All doctors" },
+              ...doctors.map((p) => ({
+                value: p.staffId,
+                label: p.name,
+              })),
+            ]}
           />
         </div>
         <Input
@@ -105,7 +116,13 @@ export function Queue() {
           Refresh
         </Button>
       </div>
-      {walkIn && (
+      {!selected && (can("queue.manage") || can("appointments.check_in")) && (
+        <p className="mb-5 text-xs text-muted-foreground">
+          Choose a doctor to call their next patient or record a walk-in
+          arrival.
+        </p>
+      )}
+      {walkIn && selected && (
         <Sheet
           open
           onOpenChange={(open) => {
@@ -140,6 +157,7 @@ export function Queue() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Doctor</TableHead>
                   <TableHead>Token</TableHead>
                   <TableHead>Priority</TableHead>
                   <TableHead>Status</TableHead>
@@ -150,6 +168,7 @@ export function Queue() {
               <TableBody>
                 {result.data?.items.map((t) => (
                   <TableRow key={t.tokenId}>
+                    <TableCell>{t.doctorName}</TableCell>
                     <TableCell className="font-semibold">{t.tokenNo}</TableCell>
                     <TableCell>{label(t.priority)}</TableCell>
                     <TableCell>
@@ -163,7 +182,11 @@ export function Queue() {
                         {can("encounters.read") && (
                           <Button
                             variant="ghost"
-                            onClick={() => go("consultations")}
+                            onClick={() =>
+                              go(
+                                `consultations?patient=${t.patientId}&date=${date}`,
+                              )
+                            }
                           >
                             Consultations
                           </Button>
@@ -214,13 +237,15 @@ export function Queue() {
               </TableBody>
             </Table>
             {result.data?.items.length === 0 && (
-              <Empty>No queue tokens for this doctor and day.</Empty>
+              <Empty>
+                No queue tokens for {selected ? "this doctor" : "this clinic"}{" "}
+                and day.
+              </Empty>
             )}
           </Card>
         </LoadingState>
         <p className="text-xs text-muted-foreground">
-          Consultations are completed in the clinical workspace. The direct
-          queue-complete shortcut is not enabled.
+          Open the patient’s consultation to record care and complete the visit.
         </p>
       </div>
     </>
@@ -235,13 +260,132 @@ function QueuePatient({ patientId }: { patientId: string }) {
   return result.data ? (
     <div>
       <p className="font-sans text-sm">
-        {[result.data.givenName, result.data.familyName]
-          .filter(Boolean)
-          .join(" ")}
+        {patientDisplayName(
+          patientId,
+          [result.data.givenName, result.data.familyName]
+            .filter(Boolean)
+            .join(" "),
+        )}
       </p>
       <p className="text-xs text-muted-foreground">{result.data.mrn}</p>
     </div>
   ) : (
     <span>{patientId.slice(0, 8)}</span>
   );
+}
+
+type ClinicQueueToken = QueueToken & { doctorName: string };
+/** The read route is per doctor; combine all scoped doctor queues without changing command routing. */
+function useClinicQueue(
+  doctors: Practitioner[],
+  staffId: string,
+  date: string,
+) {
+  const { me, facility } = useWorkspace();
+  const ids = doctors
+    .filter((p) => !staffId || p.staffId === staffId)
+    .map((p) => p.staffId)
+    .sort();
+  const key = JSON.stringify([me.tenantId, facility.facilityId, date, ids]);
+  const reload = useRef<(() => Promise<boolean>) | null>(null);
+  const [state, setState] = useState<{
+    key: string;
+    data: { items: ClinicQueueToken[] } | null;
+    loading: boolean;
+    error: string;
+  }>({ key: "", data: null, loading: true, error: "" });
+  const names = useMemo(
+    () => new Map(doctors.map((p) => [p.staffId, p.name])),
+    [doctors],
+  );
+  useEffect(() => {
+    let alive = true,
+      sequence = 0,
+      controller: AbortController | undefined,
+      timer: ReturnType<typeof setTimeout> | undefined;
+    const [, at, day, selectedIds] = JSON.parse(key) as [
+      string,
+      string,
+      string,
+      string[],
+    ];
+    async function load() {
+      const current = ++sequence;
+      controller?.abort();
+      clearTimeout(timer);
+      controller = new AbortController();
+      setState((old) => ({
+        key,
+        data: old.key === key ? old.data : null,
+        loading: old.key !== key || !old.data,
+        error: "",
+      }));
+      try {
+        const queues = await Promise.all(
+          selectedIds.map(async (id) => {
+            const r = await request<{ items: QueueToken[] }>(
+              `/v1/queue?${query({ staffId: id, facilityId: at, date: day })}`,
+              { signal: controller!.signal },
+            );
+            return r.items.map((t) => ({
+              ...t,
+              doctorName: names.get(id) ?? "Doctor",
+            }));
+          }),
+        );
+        if (alive && current === sequence) {
+          setState({
+            key,
+            data: { items: queues.flat() },
+            loading: false,
+            error: "",
+          });
+          return true;
+        }
+      } catch (e) {
+        if (
+          alive &&
+          current === sequence &&
+          !(e instanceof Error && e.name === "AbortError")
+        )
+          setState({
+            key,
+            data: null,
+            loading: false,
+            error:
+              e instanceof Error
+                ? e.message
+                : "Could not load the clinic queue.",
+          });
+      } finally {
+        if (
+          alive &&
+          current === sequence &&
+          document.visibilityState === "visible"
+        )
+          timer = setTimeout(() => void load(), 5000);
+      }
+      return false;
+    }
+    const visible = () => {
+      clearTimeout(timer);
+      if (document.visibilityState === "visible") void load();
+    };
+    reload.current = load;
+    document.addEventListener("visibilitychange", visible);
+    void load();
+    return () => {
+      alive = false;
+      reload.current = null;
+      controller?.abort();
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", visible);
+    };
+  }, [key, names]);
+  return {
+    data: state.key === key ? state.data : null,
+    loading: state.key !== key || state.loading,
+    error: state.key === key ? state.error : "",
+    refresh: useCallback(async () => (await reload.current?.()) ?? false, []),
+  };
 }

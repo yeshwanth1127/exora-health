@@ -1,12 +1,16 @@
 # Staff user flows
 
+**Phase closed by the product owner on 12 October 2026.** Local staff implementation is accepted. Active focus is UX/UI and operations review; webpage/Voice-bot integration is on hold. Provider work below is carried forward in [UX_AND_CHANNEL_TODO.md](UX_AND_CHANNEL_TODO.md), not silently marked implemented. [Current operations review](STAFF_OPS_REVIEW.md).
+
 How each person uses the staff workspace, the screen and API calls behind every step, and the test that proves the flow end to end over HTTP. PRD: [editable workspace](../prd/editable-workspace.md).
 
 Two guards run in CI on every change:
 - **Flows**: `apps/api/src/http/flows.test.ts` runs F1–F9 in order against an empty hospital (only a tenant, one clinic and the people exist), so setup gaps such as "a new doctor can't be booked" fail a test.
 - **Route coverage**: `apps/api/src/http/coverage.test.ts` reads every `/v1/…` path in `apps/staff-web/src` and fails if any has no backend route.
 
-Browser walkthroughs are done locally by the product owner. These tests cover the API each screen calls, not the rendering.
+Browser walkthroughs are performed locally; the first implementation wave also verified Resolve and explicit contact/consent entry on an isolated preview. These tests cover the API each screen calls, not the rendering.
+
+Remaining communications/growth flows F10–F14 are specified in [REGRESSION_AND_FLOW_TESTS.md](REGRESSION_AND_FLOW_TESTS.md), under the resolved [module development decisions](STAFF_MODULE_DEVELOPMENT_DECISIONS.md). They are implementation targets, not passing flows yet. The patient bot, public call launcher, telephone infrastructure and operational Loyalty backend are outside this release.
 
 ## People
 
@@ -51,12 +55,30 @@ Browser walkthroughs are done locally by the product owner. These tests cover th
 | — | Daily overview, operations events | Overview, Operations | `GET /v1/operations/summary`, `GET /v1/operations/events` | api "operations summary" |
 | — | Activity log and export | Activity log | `GET /v1/audit-events`, `POST /v1/audit-events/export` | access "activity log (G18)" |
 | — | Review emergency (break-glass) access | Activity log → Break-glass review | `GET /v1/break-glass` → `POST /v1/break-glass/:id/review` | records "M01 administration" |
-| — | Patient registry: identifiers, family, consents, alerts, care team | Patients → patient | `GET …/registry`, identifier/related/consent/flag routes, `POST /v1/care-assignments` | records "M02 registry" |
+| — | Patient overview: details, related people, duplicates; history: flags/NKA and read-only external identifiers | Patients → patient → Overview / Medical history | Patient and registry reads; related/duplicate/flag routes. Consent/identity-entry/care-assignment controls removed in desktop UX review; backend APIs retained | records "M02 registry" |
 | — | Find and merge duplicates | Patients → Duplicate queue | `POST /v1/patient-links` → second person `…/decide` → third person `…/unmerge` | records "duplicates" |
 | — | Triage, immunizations, care plans, referrals, MLC, births and deaths | Consultations → encounter | `/v1/encounters/:id/triage|immunizations|care-plans|referrals|mlc|births|death` and their follow-ups | records "M05 records" |
 | — | Nurse writes and signs a nursing note | Consultations (nurse) | `POST …/notes` (`nursing`) → `POST /v1/notes/:id/sign` | records "nursing notes (G27)" |
+| — | Explicit messaging contact and consent; withdraw or STOP | Patients → patient; Appointments → Open | GET/POST /v1/contact-points → POST /v1/contact-points/:id/consents; GET /v1/comms/capabilities | comms.test.ts; frontend comms contract tests; synthetic browser contact/opt-in readback |
+| — | Configure local reminder rules | WhatsApp → Follow-ups → Configure | GET /v1/comms/followup-rules → PUT …/:kind (version, facility, Idempotency-Key) | comms rules tests; browser save/reopen |
+| — | Requested follow-up for completed visit | WhatsApp → Follow-ups → completed visit and clinic contact date | GET /v1/appointments (explicit clinic dates) → POST …/:id/followup (version, dueAt, Idempotency-Key) → GET /v1/outbound-messages | comms follow-up tests; browser persisted readback |
+| — | Local notification history and counts | WhatsApp → Overview / Delivery history | GET /v1/comms/summary; GET /v1/outbound-messages (filters/cursor) | comms paging/summary tests; browser history |
+| — | Appointment notification history | Appointments → Open; Schedules → Resolve | GET /v1/appointments/:id/messages | comms.test.ts; browser showed missing-consent and scheduled local states |
+| — | Virtual extra hours and exact-time moves | Original Schedules sheets | POST …/exceptions with visitMode → GET …/slots → holds/booking; range hold → reschedule | schedule-acceptance.test.ts; frontend schedule-source.test.ts |
 | — | Exact-time booking | Schedules → drag any range | `POST /v1/holds/range` → `POST /v1/appointments`; `GET /v1/request-outcomes/:key` after a lost response | records "board, range holds" |
 
-## Not yet possible (out of scope, see the ledger)
+## Remaining module UI and excluded domains
 
-WhatsApp, voice, Google Business, growth and loyalty screens (G19–G23) show their original designs with a Pending label; nothing on them saves. They are the remaining work: [BACKEND_COMPLETION_GUIDE.md](BACKEND_COMPLETION_GUIDE.md). Prescriptions, labs, billing, uploads and inpatient care (G28–G33) are **not part of the original UI and will not be built**. Browser walkthroughs per person: [REGRESSION_AND_FLOW_TESTS.md](REGRESSION_AND_FLOW_TESTS.md).
+WhatsApp now mounts all seven original tabs through typed scoped routes: conversations/cases/local replies, doctor content/private uploads, campaign preparation, rules/history and clinic details. Voice, Google Business and Growth original bodies are mounted; no operational PendingModule remains. Loyalty and Patient journey remain labelled concepts. The new flow cases are exercised in `comms.test.ts`, `whatsapp.test.ts` and `voice-growth.test.ts`; original `flows.test.ts` retains F1–F9. Provider delivery, production storage and real runtime/analytics acceptance remain documented in [current progress](STAFF_MODULE_PROGRESS.md) and [completion guide](BACKEND_COMPLETION_GUIDE.md). G28–G33 remain out of scope. Browser walkthroughs: [REGRESSION_AND_FLOW_TESTS.md](REGRESSION_AND_FLOW_TESTS.md).
+
+## Additional staff module flows
+
+| Person / flow | Typed routes | Evidence boundary |
+|---|---|---|
+| Front desk reception, assign/close/local reply or issue/feedback case | `/v1/conversations`, `/v1/support-cases` | Signed inbound opens the reply window; case creation never invents inbound. Local queue only |
+| Administrator private content and campaign review | `/v1/comms/assets`, `/v1/message-templates`, `/v1/campaigns` | Private local bytes, declared marketing interests/consent, reviewed configured local test, atomic budget. No Meta approval/send |
+| Staff Voice history/transcript; administrator private recording/access | `/v1/voice-calls`, `/:id/transcript`, `/:id/recording`, `/v1/voice-recording-access` | Scope, separate consent/expiry and audit; normalized external runtime, no telephony |
+| Administrator manual booking destination | `/v1/booking-links`, `/v1/facilities/:id/booking-link`, `/v1/booking-links/changes` | Approved host, version/actor audit; Google publishing manual |
+| Staff Growth review | `/v1/growth/summary`, `/v1/growth/website-activity` | Logical visits/clinic time, empty ratios null, acquisition unavailable, PostHog optional scoped aggregates |
+
+Desktop UX update (12 October): registered patients can use **Start visit now** with existing encounters.manage + clinical.read + patients.read to open an outpatient clinical visit. For a doctor, the UI selects their own identity. It creates no future reservation or queue token. Existing idempotent POST /v1/encounters and start/notes/sign/finish routes are retained. Own-doctor schedule booking/blocking remains a server-authorization TODO, UX-B01 in BACKEND_WORK_LEDGER.md.

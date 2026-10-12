@@ -26,6 +26,7 @@ export interface WaitlistEntryView {
   preferredFrom: string;
   preferredTo: string;
   notes: string | null;
+  bookingPartyId: string;
   bookingPartyName: string;
   bookingPartyPhone: string | null;
   patientId: string | null;
@@ -48,7 +49,7 @@ export async function listWaitlist(
                CASE WHEN e.status = 'offered' AND o.id IS NULL THEN 'waiting' ELSE e.status END AS status,
                e.facility_id AS "facilityId", e.practitioner_staff_id AS "staffId", s.display_name AS "practitionerName",
                e.preferred_from::text AS "preferredFrom", e.preferred_to::text AS "preferredTo", e.notes,
-               bp.name AS "bookingPartyName", bp.phone AS "bookingPartyPhone", bp.patient_id AS "patientId",
+               bp.id AS "bookingPartyId", bp.name AS "bookingPartyName", bp.phone AS "bookingPartyPhone", bp.patient_id AS "patientId",
                p.given_name || coalesce(' ' || p.family_name, '') AS "patientName", e.created_at AS "createdAt",
                o.id AS "offerId", lower(r.period) AS "slotStart", upper(r.period) AS "slotEnd", o.expires_at AS "expiresAt"
         FROM booking.waitlist_entry e
@@ -155,6 +156,7 @@ async function lockEntry(ctx: CommandContext, entryId: string, now: Date) {
     .where('expires_at', '<=', now)
     .returning('id')
     .execute();
+  for (const offer of lapsed) ctx.emit({eventType:'waitlist.offer_closed',aggregateType:'booking.waitlist_offer',aggregateId:offer.id,payload:{offerId:offer.id,outcome:'expired'}});
   if (lapsed.length && entry.status === 'offered') {
     await ctx.tx.updateTable('booking.waitlist_entry').set({ status: 'waiting' }).where('id', '=', entryId).execute();
     entry.status = 'waiting';
@@ -204,6 +206,7 @@ export async function offerWaitlistSlot(db: Kysely<DB>, caller: Caller, input: {
       .execute();
     await ctx.tx.updateTable('booking.waitlist_entry').set({ status: 'offered' }).where('id', '=', entry.id).execute();
     ctx.audit({ action: 'status_change', subjectType: 'booking.waitlist_entry', subjectId: entry.id, diff: { status: 'offered', offerId } });
+    ctx.emit({eventType:'waitlist.offered',aggregateType:'booking.waitlist_offer',aggregateId:offerId,payload:{offerId}});
     return { offerId, waitlistEntryId: entry.id, slotStart: hold.slotStart, slotEnd: hold.slotEnd, expiresAt: hold.holdExpiresAt };
   });
   return { ...result, slotStart: new Date(result.slotStart), slotEnd: new Date(result.slotEnd), expiresAt: new Date(result.expiresAt) };
@@ -230,11 +233,13 @@ export async function acceptWaitlistOffer(db: Kysely<DB>, caller: Caller, input:
     await ctx.tx.updateTable('booking.waitlist_offer').set({ outcome: 'accepted' }).where('id', '=', offer.id).execute();
     await ctx.tx.updateTable('booking.waitlist_entry').set({ status: 'accepted' }).where('id', '=', entry.id).execute();
     ctx.audit({ action: 'status_change', subjectType: 'booking.waitlist_entry', subjectId: entry.id, patientId: party.patient_id, diff: { status: 'accepted', appointmentId: appointment.appointmentId } });
+    ctx.emit({eventType:'waitlist.offer_closed',aggregateType:'booking.waitlist_offer',aggregateId:offer.id,payload:{offerId:offer.id,outcome:'accepted'}});
     return appointment;
   });
 }
 
 async function closeOffer(ctx: CommandContext, offer: { id: string; reservation_id: string }) {
+  ctx.emit({eventType:'waitlist.offer_closed',aggregateType:'booking.waitlist_offer',aggregateId:offer.id,payload:{offerId:offer.id,outcome:'declined'}});
   await ctx.tx.updateTable('booking.waitlist_offer').set({ outcome: 'declined' }).where('id', '=', offer.id).execute();
   await ctx.tx.updateTable('booking.reservation').set({ status: 'released' }).where('id', '=', offer.reservation_id).where('status', '=', 'held').execute();
 }

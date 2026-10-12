@@ -6,7 +6,7 @@ import {
   LoaderCircle,
   UserRound,
 } from "lucide-react";
-import { api, recordingBlob, dateTime } from "@/lib/api";
+import { recordingBlob, dateTime } from "@/lib/api";
 import {
   Field,
   Choice,
@@ -14,6 +14,7 @@ import {
   Resource,
   Notice,
   useResource,
+  useApi,
 } from "@/components/workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +66,7 @@ type History = {
     period_days: number;
   };
   can_review_recordings: boolean;
+  can_review_transcripts?: boolean;
   configuration: {
     calls_ready: boolean;
     recordings_ready: boolean;
@@ -88,7 +90,7 @@ const recordingLabels: Record<string, string> = {
   not_configured: "Playback needs setup",
 };
 type Transcript = {
-  source: "demo" | "sarvam";
+  source: "demo" | "sarvam" | "runtime";
   turns: {
     role: "user" | "agent";
     english_text: string | null;
@@ -96,6 +98,7 @@ type Transcript = {
   }[];
 };
 function TranscriptReview({ call }: { call: Call }) {
+  const api = useApi();
   const [data, setData] = useState<Transcript | null>(null);
   const [loading, setLoading] = useState(true),
     [error, setError] = useState("");
@@ -124,7 +127,7 @@ function TranscriptReview({ call }: { call: Call }) {
     return () => {
       alive = false;
     };
-  }, [call.id, call.transcript_state, version]);
+  }, [call.id, call.transcript_state, version, api]);
   const text = (turn: Transcript["turns"][number]) =>
     language === "english"
       ? turn.english_text || turn.original_text || ""
@@ -263,24 +266,35 @@ const transcriptLabels: Record<string, string> = {
   not_configured:
     "Transcript review has not been connected yet. Contact your clinic administrator.",
 };
-function RecordingReview({ call }: { call: Call }) {
+function RecordingReview({
+  call,
+  recordingLoader,
+}: {
+  call: Call;
+  recordingLoader?: (id: string) => Promise<Blob>;
+}) {
   const [url, setUrl] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const objectUrl = useRef("");
-  useEffect(
-    () => () => {
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
       if (objectUrl.current) URL.revokeObjectURL(objectUrl.current);
-    },
-    [],
-  );
+    };
+  }, []);
   async function load() {
     setBusy(true);
     setError("");
     try {
-      const blob = await recordingBlob(
-        `/api/v1/staff/voice/sessions/${encodeURIComponent(call.id)}/recording`,
-      );
+      const blob = recordingLoader
+        ? await recordingLoader(call.id)
+        : await recordingBlob(
+            `/api/v1/staff/voice/sessions/${encodeURIComponent(call.id)}/recording`,
+          );
+      if (!mounted.current) return;
       if (objectUrl.current) URL.revokeObjectURL(objectUrl.current);
       objectUrl.current = URL.createObjectURL(blob);
       setUrl(objectUrl.current);
@@ -424,7 +438,13 @@ function RecordingAudit() {
     </Resource>
   );
 }
-export function VoiceModule({ demo = false }: { demo?: boolean }) {
+export function VoiceModule({
+  demo = false,
+  recordingLoader,
+}: {
+  demo?: boolean;
+  recordingLoader?: (id: string) => Promise<Blob>;
+}) {
   const [offset, setOffset] = useState(0),
     [selected, setSelected] = useState<Call | null>(null),
     [tab, setTab] = useState("calls");
@@ -446,8 +466,8 @@ export function VoiceModule({ demo = false }: { demo?: boolean }) {
           <>
             {!demo && !r.data.configuration.calls_ready && (
               <Notice
-                title="Calling needs setup"
-                text="Configure the clinic’s Sarvam agent and approved version before patients can start calls."
+                title="Call history integration needs setup"
+                text="Connect the clinic’s authenticated runtime and pinned agent version to receive call history."
               />
             )}
             {r.data.can_review_recordings &&
@@ -508,7 +528,11 @@ export function VoiceModule({ demo = false }: { demo?: boolean }) {
                                 {dateTime(call.started_at)}
                               </p>
                               <p className="text-xs text-muted-foreground mt-1">
-                                {call.channel === "phone" ? "Phone" : "Website"}{" "}
+                                {call.channel === "phone"
+                                  ? "Phone"
+                                  : call.channel === "runtime"
+                                    ? "External runtime"
+                                    : "Website"}{" "}
                                 · {call.turn_count} turns ·{" "}
                                 {call.tool_call_count} tools
                               </p>
@@ -548,7 +572,8 @@ export function VoiceModule({ demo = false }: { demo?: boolean }) {
                                 : "Legacy"}
                             </TableCell>
                             <TableCell>
-                              {r.data!.can_review_recordings ? (
+                              {r.data!.can_review_recordings ||
+                              r.data!.can_review_transcripts ? (
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -647,7 +672,11 @@ export function VoiceModule({ demo = false }: { demo?: boolean }) {
                   </DialogDescription>
                 </DialogHeader>
                 {selected && (
-                  <RecordingReview key={selected.id} call={selected} />
+                  <RecordingReview
+                    key={selected.id}
+                    call={selected}
+                    recordingLoader={recordingLoader}
+                  />
                 )}
               </DialogContent>
             </Dialog>

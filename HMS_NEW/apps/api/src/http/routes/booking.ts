@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { DB, Kysely } from '@hms/db';
 import { DomainError } from '@hms/platform';
-import { authorize, authorizeEvery } from '../../auth/principal.ts';
+import { authorize, authorizeEvery, grantedFacilities } from '../../auth/principal.ts';
 import {
   bookAppointment,
   bookWalkIn,
@@ -117,7 +117,9 @@ export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
   app.get('/v1/operations/summary', async (request) => {
     const q = parse(z.object({ facilityId: uuid, date: isoDate }), request.query);
     authorize(principalOf(request), 'appointments.read', q.facilityId);
-    return operationsSummary(db, callerOf(request), q.facilityId, q.date);
+    const scopes = grantedFacilities(principalOf(request), 'comms.read');
+    const voiceScopes = grantedFacilities(principalOf(request), 'voice.read');
+    return operationsSummary(db, callerOf(request), q.facilityId, q.date, scopes === null || scopes.has(q.facilityId), voiceScopes === null || voiceScopes.has(q.facilityId));
   });
 
   // The outbox spans every clinic and module (clinical included), so it needs audit.read for every clinic.

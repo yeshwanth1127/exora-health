@@ -86,9 +86,9 @@ function ActivityPage({ overview }: { overview: boolean }) {
           `${s.schedule_rules ?? 0} schedule rules`,
         ],
         [
-          "Pending messages",
+          "Local notification jobs",
           s.pending_notifications,
-          `${s.active_holds ?? 0} active slot holds`,
+          `Not sent · ${s.active_holds ?? 0} active slot holds`,
         ],
         [
           "Voice bookings",
@@ -99,7 +99,11 @@ function ActivityPage({ overview }: { overview: boolean }) {
         ],
       ]
     : [
-        ["Pending messages", s.pending_notifications, "WhatsApp messages waiting to send"],
+        [
+          "Local notification jobs",
+          s.pending_notifications,
+          "Scheduled or queued locally · not sent",
+        ],
         ["Active holds", s.active_holds, "Temporary reservations"],
         [
           "API readiness",
@@ -114,11 +118,11 @@ function ActivityPage({ overview }: { overview: boolean }) {
   return (
     <>
       <PageTitle
-        title={overview ? "Overview" : "Operations"}
+        title={overview ? "Overview" : "System status"}
         description={
           overview
             ? "Appointment activity across the clinic’s booking channels."
-            : "Notification outbox, temporary reservations and database readiness."
+            : "Background event processing, temporary reservations and database readiness."
         }
         action={
           <Button variant="outline" onClick={refresh}>

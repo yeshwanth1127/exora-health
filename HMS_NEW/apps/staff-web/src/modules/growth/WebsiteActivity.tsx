@@ -33,7 +33,13 @@ type Activity = {
   filters: { start_date: string; end_date: string; timezone: string };
   retrieved_at: string | null;
 };
-export function WebsiteActivity({ api, demo = false }: { api: GrowthApi; demo?: boolean }) {
+export function WebsiteActivity({
+  api,
+  demo = false,
+}: {
+  api: GrowthApi;
+  demo?: boolean;
+}) {
   const [traffic, setTraffic] = useState(demo ? "demo" : "production"),
     [revision, setRevision] = useState(0),
     [data, setData] = useState<Activity | null>(null),
@@ -41,10 +47,16 @@ export function WebsiteActivity({ api, demo = false }: { api: GrowthApi; demo?: 
     [error, setError] = useState("");
   useEffect(() => {
     let live = true;
-    setLoading(true);
-    setData(null);
-    setError("");
-    api<Activity>("/api/v1/admin/growth/website-activity?traffic=" + traffic)
+    Promise.resolve()
+      .then(() => {
+        if (!live) return null;
+        setLoading(true);
+        setData(null);
+        setError("");
+        return api<Activity>(
+          "/api/v1/admin/growth/website-activity?traffic=" + traffic,
+        );
+      })
       .then((d) => {
         if (live) setData(d);
       })
@@ -69,7 +81,9 @@ export function WebsiteActivity({ api, demo = false }: { api: GrowthApi; demo?: 
           <CardTitle>Website activity · PostHog</CardTitle>
           <Badge variant="outline">
             {configured
-              ? data?.synthetic ? "Synthetic sample activity" : "Aggregate data available"
+              ? data?.synthetic
+                ? "Synthetic sample activity"
+                : "Aggregate data available"
               : loading
                 ? "Checking connection"
                 : "Not connected"}
@@ -116,7 +130,7 @@ export function WebsiteActivity({ api, demo = false }: { api: GrowthApi; demo?: 
             <AlertDescription>
               {data?.status === "unavailable"
                 ? "Appointment reports remain available. Check the read-key permissions and retry."
-                : "Frontend tracking is implemented. An operator still needs to configure the PostHog project, app host and restricted server read key, then enable aggregate reads. No sample counts are substituted."}
+                : "Configure the public-site PostHog project and restricted server read key. Public-surface, consented events are required. No sample counts are substituted."}
             </AlertDescription>
           </Alert>
         ) : (
@@ -162,9 +176,8 @@ export function WebsiteActivity({ api, demo = false }: { api: GrowthApi; demo?: 
             funnel or a visitor-to-appointment conversion rate.
           </p>
           <p>
-            “Sample booking walkthrough completed” counts the website’s example
-            flow, not saved appointments. Real bookings are counted from the
-            clinic’s own records on the Appointments page.
+            Website events require validated public-site instrumentation. Saved
+            appointments are counted separately from clinic records.
           </p>
         </div>
       </CardContent>

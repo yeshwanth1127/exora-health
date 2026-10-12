@@ -7,6 +7,7 @@ import {
   type OriginalResourceSource,
 } from "@/components/resource-source";
 import { request } from "./client";
+import { bookingPhone } from "@/lib/phone";
 import { useWorkspace } from "./hooks";
 import { can } from "./model";
 import type { Slot } from "./types";
@@ -16,24 +17,32 @@ type Entry = {
   status: string;
   facilityId: string | null;
   staffId: string | null;
+  practitionerName: string | null;
   preferredFrom: string;
   preferredTo: string;
   notes: string | null;
   bookingPartyName: string;
+  bookingPartyId: string;
   bookingPartyPhone: string | null;
   patientId: string | null;
   patientName: string | null;
-  offer: { offerId: string; slotStart: string; slotEnd: string; expiresAt: string } | null;
+  offer: {
+    offerId: string;
+    slotStart: string;
+    slotEnd: string;
+    expiresAt: string;
+  } | null;
 };
 
 const uuid = "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})";
 const offerPath = new RegExp(`^/api/v1/admin/waitlist/${uuid}/offer$`, "i"),
-  answerPath = new RegExp(`^/api/v1/admin/waitlist-offers/${uuid}/(accept|decline)$`, "i"),
+  answerPath = new RegExp(
+    `^/api/v1/admin/waitlist-offers/${uuid}/(accept|decline)$`,
+    "i",
+  ),
   withdrawPath = new RegExp(`^/api/v1/admin/waitlist/${uuid}/withdraw$`, "i");
 const query = (q: Record<string, string>) =>
   new URLSearchParams(Object.entries(q).filter(([, v]) => v)).toString();
-// Indian mobiles may be typed as 10 digits; anything else must already carry its country code.
-const e164 = (phone: string) => (/^[6-9]\d{9}$/.test(phone) ? `+91${phone}` : phone);
 
 export function Waitlist() {
   const { me, facility, practitioners } = useWorkspace();
@@ -60,16 +69,23 @@ export function Waitlist() {
           );
           return items.map((e) => ({
             id: e.waitlistEntryId,
+            booking_party_id: e.bookingPartyId,
+            patient_id: e.patientId,
             patient_name: e.patientName ?? "Patient not linked",
             phone: e.bookingPartyPhone ?? "",
             doctor_id: e.staffId ?? "",
+            doctor_name: e.practitionerName,
             branch_id: e.facilityId ?? at,
             consultation_type: "",
             start_date: e.preferredFrom,
             end_date: e.preferredTo,
             status: e.status,
             notes: e.notes,
-            booked_by: { name: e.bookingPartyName, phone: e.bookingPartyPhone, patient_linked: !!e.patientId },
+            booked_by: {
+              name: e.bookingPartyName,
+              phone: e.bookingPartyPhone,
+              patient_linked: !!e.patientId,
+            },
             offer: e.offer && {
               id: e.offer.offerId,
               starts_at: e.offer.slotStart,
@@ -79,11 +95,15 @@ export function Waitlist() {
           })) as T;
         }
         if (url.pathname === "/api/v1/admin/doctors")
-          return practitioners.map((p) => ({ id: p.staffId, name: p.name })) as T;
+          return practitioners.map((p) => ({
+            id: p.staffId,
+            name: p.name,
+          })) as T;
         if (url.pathname === "/api/v1/availability") {
           const doctor = url.searchParams.get("doctor_id") ?? "",
             on = url.searchParams.get("start_date") ?? "";
-          if (!new RegExp(`^${uuid}$`, "i").test(doctor)) throw new Error("Choose a doctor.");
+          if (!new RegExp(`^${uuid}$`, "i").test(doctor))
+            throw new Error("Choose a doctor.");
           const { items } = await request<{ items: Slot[] }>(
             `/v1/practitioners/${doctor}/slots?${query({ facilityId: at, from: on, to: on })}`,
             { signal },
@@ -91,16 +111,30 @@ export function Waitlist() {
           const now = Date.now();
           return {
             slots: items
-              .filter((s) => s.status === "free" && s.facilityId === at && Date.parse(s.slotStart) > now)
+              .filter(
+                (s) =>
+                  s.status === "free" &&
+                  s.facilityId === at &&
+                  Date.parse(s.slotStart) > now,
+              )
               .map((s) => ({ starts_at: s.slotStart, ends_at: s.slotEnd })),
           } as T;
         }
         throw new Error("Not available on this page.");
       },
-      async write<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
+      async write<T>(
+        path: string,
+        options: { method?: string; body?: unknown } = {},
+      ): Promise<T> {
         const b = (options.body ?? {}) as Record<string, string>;
-        if (options.method !== "POST") throw new Error("Not available on this page.");
-        if (path === "/api/v1/admin/waitlist")
+        if (options.method !== "POST")
+          throw new Error("Not available on this page.");
+        if (path === "/api/v1/admin/waitlist") {
+          const phone = bookingPhone(b.phone);
+          if (!phone)
+            throw new Error(
+              "Enter a 10-digit Indian mobile number, or include + and the country code.",
+            );
           return request<T>("/v1/waitlist", {
             method: "POST",
             idempotencyKey: b.idempotency_key,
@@ -109,10 +143,14 @@ export function Waitlist() {
               staffId: b.doctor_id,
               preferredFrom: b.start_date,
               preferredTo: b.end_date,
-              bookingParty: { name: b.patient_name.trim(), phone: e164(b.phone) },
+              bookingParty: {
+                name: b.patient_name.trim(),
+                phone,
+              },
               ...(b.notes?.trim() ? { notes: b.notes.trim() } : {}),
             },
           });
+        }
         let m = offerPath.exec(path);
         if (m)
           return request<T>(`/v1/waitlist/${m[1]}/offer`, {

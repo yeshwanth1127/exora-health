@@ -47,6 +47,8 @@ export function WeeklyHours({
   doctor,
   catalogue,
   branch: initialBranch,
+  initialMode = "in_person",
+  onDoctorProfile,
   day,
   allowed,
   onClose,
@@ -55,6 +57,8 @@ export function WeeklyHours({
   doctor: Doctor;
   catalogue: Catalogue;
   branch: string;
+  initialMode?: "in_person" | "virtual";
+  onDoctorProfile?: (id: string) => void;
   day: string;
   allowed: Record<string, boolean>;
   onClose: () => void;
@@ -64,7 +68,8 @@ export function WeeklyHours({
   const [branch, setBranch] = useState(
     initialBranch || doctor.branches[0]?.id || "",
   );
-  const [mode, setMode] = useState("in_person");
+  const [mode, setMode] = useState<string>(initialMode);
+  const virtualUnavailable = mode === "virtual" && !doctor.accepts_virtual;
   const [starts] = useState(() => (day > tomorrow() ? day : tomorrow()));
   const branches = catalogue.branches.filter(
     (b) =>
@@ -76,7 +81,7 @@ export function WeeklyHours({
           : !b.is_virtual && doctor.branches.some((c) => c.id === b.id)),
   );
   const template = useResource<Template>(
-    branch && !isDraft(source)
+    branch && !isDraft(source) && !virtualUnavailable
       ? "/api/v1/admin/schedule-timeline/weekly?" +
           new URLSearchParams({
             doctor_id: doctor.id,
@@ -98,7 +103,11 @@ export function WeeklyHours({
         className="overflow-y-auto"
       >
         <SheetHeader className="pr-10">
-          <SheetTitle>Weekly hours</SheetTitle>
+          <SheetTitle>
+            {mode === "virtual"
+              ? "Teleconsultation hours"
+              : "In-person weekly hours"}
+          </SheetTitle>
           <SheetDescription>
             {doctor.name} · repeat selected hours every week · IST
           </SheetDescription>
@@ -110,15 +119,35 @@ export function WeeklyHours({
             onChange={(v) => {
               if (!confirmLeave()) return;
               setMode(v);
-              setBranch("");
+              if (!source) setBranch("");
             }}
             options={[
               ["in_person", "In person"],
-              ...(doctor.accepts_virtual
-                ? [["virtual", "Virtual"] as [string, string]]
-                : []),
+              ["virtual", "Teleconsultation"],
             ]}
           />
+          <p className="text-xs text-muted-foreground">
+            In-person and teleconsultation hours are saved separately for this
+            clinic. Choose the visit type before reviewing or saving.
+          </p>
+          {virtualUnavailable && (
+            <Alert>
+              <AlertDescription>
+                Teleconsultations are disabled on this doctor's profile. Enable
+                “Accepts video consultations” in Doctors before publishing
+                teleconsultation hours. Scheduling permissions remain required.
+                {onDoctorProfile && (
+                  <Button
+                    variant="link"
+                    className="h-auto p-0 mt-2 block"
+                    onClick={() => onDoctorProfile(doctor.id)}
+                  >
+                    Open doctor profile
+                  </Button>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
           <Choice
             label="Clinic"
             value={branch}
@@ -141,7 +170,7 @@ export function WeeklyHours({
               </AlertDescription>
             </Alert>
           )}
-          {branch && isDraft(source) ? (
+          {virtualUnavailable ? null : branch && isDraft(source) ? (
             <WeeklyEditor
               key={`${branch}:${mode}`}
               initial={{ groups: [], slot_minutes: 30 }}
@@ -562,7 +591,7 @@ function WeeklyEditor({
             <>
               <Alert variant="destructive">
                 <AlertDescription>
-                  Move or delete these {current.affected_appointments.length}{" "}
+                  Move or cancel these {current.affected_appointments.length}{" "}
                   appointments before saving. They fall outside the proposed
                   hours.
                 </AlertDescription>
