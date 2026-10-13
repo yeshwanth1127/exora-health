@@ -1,0 +1,61 @@
+import { useMemo, useState } from "react";
+import { ScheduleTimeline } from "@/modules/schedule-timeline";
+import { PageTitle } from "@/components/workspace";
+import {
+  OriginalResourceContext,
+  type OriginalResourceSource,
+} from "@/components/resource-source";
+import { useQuery, useWorkspace } from "./hooks";
+import { Hint } from "./ui";
+import { today } from "./model";
+import { scheduleSource } from "./schedule-source";
+
+export function Schedules() {
+  const { me, facility, practitioners, go } = useWorkspace();
+  const params = new URLSearchParams(location.search);
+  const requestedDoctor = params.get("doctor") ?? undefined;
+  const requestedMode =
+    params.get("mode") === "virtual" ? "virtual" : "in_person";
+  const [day, setDay] = useState(() => today(facility.timezone));
+  const setting = useQuery<{ enabled: boolean; maxPerSession: number }>(
+    `/v1/facilities/${facility.facilityId}/overbooking`,
+  );
+  const overbooking = setting.data?.enabled === true;
+  const source = useMemo<OriginalResourceSource>(
+    () => scheduleSource(me, facility, practitioners, day, overbooking),
+    [me, facility, practitioners, day, overbooking],
+  );
+  if (facility.timezone !== "Asia/Kolkata")
+    return (
+      <>
+        <PageTitle
+          title="Schedules"
+          description="Doctor schedules and weekly hours."
+        />
+        <Hint>
+          This scheduling editor currently supports clinics using Asia/Kolkata.
+          Ask the administrator to review this clinic’s timezone; do not publish
+          hours using a different timezone.
+        </Hint>
+      </>
+    );
+  return (
+    <OriginalResourceContext.Provider value={source}>
+      <ScheduleTimeline
+        pageHeader={
+          <PageTitle
+            title="Schedules"
+            description="Doctor schedules and weekly hours."
+          />
+        }
+        facilityId={facility.facilityId}
+        day={day}
+        setDay={setDay}
+        ownDoctorId={me.staffType === "doctor" ? me.staffId : undefined}
+        initialDoctorId={requestedDoctor}
+        initialVisitMode={requestedMode}
+        onDoctorProfile={(id) => go(`doctors?doctor=${encodeURIComponent(id)}`)}
+      />
+    </OriginalResourceContext.Provider>
+  );
+}

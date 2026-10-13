@@ -5,3 +5,4 @@ export * from './notes.ts';
 export * from './diagnoses.ts';
 export * from './allergies.ts';
 export * from './read.ts';
+export * from './records.ts';

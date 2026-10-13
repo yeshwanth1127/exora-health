@@ -21,7 +21,10 @@
     "db:codegen": "node db/scripts/codegen.mjs",
     "api:dev": "tsx --env-file-if-exists=.env apps/api/src/main.ts",
     "worker:dev": "tsx --env-file-if-exists=.env apps/worker/src/main.ts",
-    "dev:token": "tsx apps/api/src/auth/dev-token.ts"
+    "dev:token": "tsx apps/api/src/auth/dev-token.ts",
+    "staff:dev": "pnpm --filter @hms/staff-web dev",
+    "staff:build": "pnpm --filter @hms/staff-web build",
+    "staff:test": "pnpm --filter @hms/staff-web test"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

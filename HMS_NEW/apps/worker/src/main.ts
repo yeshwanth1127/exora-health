@@ -1,5 +1,6 @@
 // Background worker: delivers outbox events and runs housekeeping jobs.
 //   pnpm worker:dev
+import { evaluateDueNotifications } from '../../api/src/modules/comms/notifications.ts';
 import { createDb } from '@hms/db';
 import { config } from '../../../db/scripts/config.mjs';
 import { dispatchOnce } from './dispatcher.ts';
@@ -37,3 +38,5 @@ void every('outbox', 1_000, () => dispatchOnce(db, handlers, { log }));
 void every('expire-holds', 30_000, () => expireHolds(db));
 void every('partitions', 24 * 3600_000, () => maintainPartitions(db));
 void every('purge-idempotency', 3600_000, () => purgeIdempotencyRecords(db));
+
+void every('notification-readback', 5_000, () => evaluateDueNotifications(db));

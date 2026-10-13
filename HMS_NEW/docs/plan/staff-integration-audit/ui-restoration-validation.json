@@ -1,0 +1,64 @@
+{
+  "checked_at": "2026-10-10T19:45:42.404057+00:00",
+  "scope": "frontend restoration and backend documentation only",
+  "backend_implementation_owner": "dedicated backend agent",
+  "source_preservation": {
+    "status": "PASS",
+    "manifest_files": 73,
+    "changed_external_source_files": []
+  },
+  "backend_preservation": {
+    "status": "PASS",
+    "tracked_backend_domain_diff": [],
+    "sampled_backend_manifest_files": 8,
+    "changed_sampled_files": [],
+    "no_migration_or_reset": true
+  },
+  "frontend_tests": {
+    "status": "PASS",
+    "passed": 18,
+    "failed": 0,
+    "command": "node --import tsx --test tests/*.test.ts",
+    "patient_identity": "Timeline adapter never substitutes booking party name or phone for patient demographics"
+  },
+  "frontend_typecheck_and_build": {
+    "status": "PASS",
+    "command": "tsc -b && vite build",
+    "main_js_kb": 647.2,
+    "main_js_gzip_kb": 202.02,
+    "warning": "main chunk exceeds 500 kB"
+  },
+  "lint": {
+    "status": "PASS_WITH_WARNINGS",
+    "warnings": 19,
+    "errors": 0
+  },
+  "parity_inventory": {
+    "feature_groups": 53,
+    "full_parity_complete": false,
+    "backend_areas_open": 35
+  },
+  "browser": {
+    "environment": "local isolated development preview at 127.0.0.1:5188, seeded administrator and fictional fixtures",
+    "timeline": "PASS: two scoped doctors, fourteen free slots and two timed bookings; walk-in not assigned fabricated times",
+    "original_weekly_hours": "PASS: doctor picker, dates, split-shift example, day groups and ranges rendered; Review weekly hours disabled",
+    "appointment_detail": "PASS: confirmed visit details and unavailable saved notes; Save notes disabled",
+    "range_editor": "PASS: exact-time fields and action modes visible; Book appointment disabled; unavailable overlap read explicitly reported",
+    "doctor_profile": "PASS: fee unknown, booking and virtual flags shown, Save disabled",
+    "deferred_module": "PASS: WhatsApp pending status explicitly states full original interface is still pending integration",
+    "unsaved_guard": "Source inspected; browser close encountered a UI-control timeout, so native confirmation behavior is UNVERIFIED",
+    "screenshots": [
+      "restored-schedules.png",
+      "restored-weekly-hours.png"
+    ]
+  },
+  "not_verified": [
+    "complete original UI parity",
+    "backend gap acceptance",
+    "production OIDC/deployment",
+    "provider messaging/video",
+    "clinical or policy acceptance",
+    "all role/conflict/timezone/navigation scenarios"
+  ],
+  "contract_review": "FRONTEND_BACKEND_CONTRACT_DECISIONS.md"
+}

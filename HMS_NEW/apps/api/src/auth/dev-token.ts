@@ -5,8 +5,8 @@
 import { SignJWT } from 'jose';
 import { DEV_ISSUER, DEV_SECRET_DEFAULT } from '../config.ts';
 
-export async function signDevToken(subject: string, { secret = process.env.DEV_JWT_SECRET ?? DEV_SECRET_DEFAULT, ttl = '12h' } = {}) {
-  return new SignJWT({})
+export async function signDevToken(subject: string, { secret = process.env.DEV_JWT_SECRET ?? DEV_SECRET_DEFAULT, ttl = '12h', email = '' } = {}) {
+  return new SignJWT(email ? { email, email_verified: true } : {})
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuer(DEV_ISSUER)
     .setSubject(subject)

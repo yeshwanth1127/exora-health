@@ -3,7 +3,7 @@
 // this code: the reservation exclusion constraint rejects any overlapping hold or booking.
 import { randomInt } from 'node:crypto';
 import { sql, type DB, type Kysely, type Transaction } from '@hms/db';
-import { conflict, invalid, notFound, pgCode, preconditionFailed, runCommand, writeAudit, writeOutbox, type AuditInput, type CommandContext, type EventInput } from '@hms/platform';
+import { conflict, invalid, notFound, pgCode, preconditionFailed, runCommand, runQuery, writeAudit, writeOutbox, type AuditInput, type CommandContext, type EventInput } from '@hms/platform';
 import { clock, type Caller } from '../../caller.ts';
 import { practitionerResourceId } from './calendar.ts';
 
@@ -22,6 +22,8 @@ export interface HoldSlotInput {
   staffId: string;
   slotStart: Date | string;
   holdMinutes?: number;
+  /** The clinic the caller was authorized for; the slot must still belong to it. */
+  facilityId?: string;
 }
 
 export interface HoldResult {
@@ -40,47 +42,7 @@ export async function holdSlot(db: Kysely<DB>, caller: Caller, input: HoldSlotIn
   const result = await runCommand(
     db,
     { ...caller, module: 'booking', name: 'booking.hold_slot', idempotencyKey, request: input },
-    async (ctx) => {
-      const resourceId = await practitionerResourceId(ctx.tx, input.staffId);
-      const start = new Date(input.slotStart);
-      const { rows: [slot] } = await sql<{ slot_start: Date; slot_end: Date; facility_id: string; status: string }>`
-        SELECT slot_start, slot_end, facility_id, status
-        FROM booking.available_slots(${resourceId}, (${start}::timestamptz)::date - 1, (${start}::timestamptz)::date + 1, ${now})
-        WHERE slot_start = ${start}`.execute(ctx.tx);
-      if (!slot) throw notFound('bookable slot', { staffId: input.staffId, slotStart: start.toISOString() });
-      if (slot.status === 'blocked') throw conflict('slot is blocked', { reason: 'slot_blocked' });
-      if (slot.status === 'taken') throw conflict('slot is no longer available', { reason: 'slot_unavailable' });
-
-      // Lapsed holds still occupy the exclusion constraint until expired; clear any on this slot.
-      await ctx.tx
-        .updateTable('booking.reservation')
-        .set({ status: 'expired' })
-        .where('resource_id', '=', resourceId)
-        .where('status', '=', 'held')
-        .where('hold_expires_at', '<=', now)
-        .where(sql<boolean>`period && tstzrange(${slot.slot_start}, ${slot.slot_end})`)
-        .execute();
-
-      const holdExpiresAt = new Date(now.getTime() + holdMinutes * 60_000);
-      try {
-        const { id } = await ctx.tx
-          .insertInto('booking.reservation')
-          .values({
-            tenant_id: ctx.tenantId,
-            resource_id: resourceId,
-            facility_id: slot.facility_id,
-            period: sql`tstzrange(${slot.slot_start}, ${slot.slot_end})`,
-            status: 'held',
-            hold_expires_at: holdExpiresAt,
-          })
-          .returning('id')
-          .executeTakeFirstOrThrow();
-        return { reservationId: id, slotStart: slot.slot_start, slotEnd: slot.slot_end, facilityId: slot.facility_id, holdExpiresAt };
-      } catch (err) {
-        if (pgCode(err) === '23P01') throw conflict('slot is no longer available', { reason: 'slot_unavailable' });
-        throw err;
-      }
-    },
+    (ctx) => placeHold(ctx, now, input, holdMinutes),
   );
   // Results replayed from an idempotency record come back as JSON; restore the dates.
   return {
@@ -91,6 +53,60 @@ export async function holdSlot(db: Kysely<DB>, caller: Caller, input: HoldSlotIn
   };
 }
 
+/**
+ * Holds one free slot inside the caller's transaction. Shared by the hold command and waitlist offers,
+ * so an offer and its hold are created together or not at all.
+ */
+export async function placeHold(
+  ctx: CommandContext,
+  now: Date,
+  input: HoldSlotInput,
+  holdMinutes: number,
+  owner?: { type: 'waitlist_offer'; id: string },
+): Promise<HoldResult> {
+  const resourceId = await practitionerResourceId(ctx.tx, input.staffId);
+  const start = new Date(input.slotStart);
+  const { rows: [slot] } = await sql<{ slot_start: Date; slot_end: Date; facility_id: string; status: string }>`
+    SELECT slot_start, slot_end, facility_id, status
+    FROM booking.available_slots(${resourceId}, (${start}::timestamptz)::date - 1, (${start}::timestamptz)::date + 1, ${now})
+    WHERE slot_start = ${start}`.execute(ctx.tx);
+  if (!slot) throw notFound('bookable slot', { staffId: input.staffId, slotStart: start.toISOString() });
+  if (input.facilityId && slot.facility_id !== input.facilityId) throw conflict('the slot moved to another clinic; pick it again', { reason: 'slot_unavailable' });
+  if (slot.status === 'blocked') throw conflict('slot is blocked', { reason: 'slot_blocked' });
+  if (slot.status === 'taken') throw conflict('slot is no longer available', { reason: 'slot_unavailable' });
+
+  // Lapsed holds still occupy the exclusion constraint until expired; clear any on this slot.
+  await ctx.tx
+    .updateTable('booking.reservation')
+    .set({ status: 'expired' })
+    .where('resource_id', '=', resourceId)
+    .where('status', '=', 'held')
+    .where('hold_expires_at', '<=', now)
+    .where(sql<boolean>`period && tstzrange(${slot.slot_start}, ${slot.slot_end})`)
+    .execute();
+
+  const holdExpiresAt = new Date(now.getTime() + holdMinutes * 60_000);
+  try {
+    const { id } = await ctx.tx
+      .insertInto('booking.reservation')
+      .values({
+        tenant_id: ctx.tenantId,
+        resource_id: resourceId,
+        facility_id: slot.facility_id,
+        period: sql`tstzrange(${slot.slot_start}, ${slot.slot_end})`,
+        status: 'held',
+        hold_expires_at: holdExpiresAt,
+        ...(owner ? { owner_type: owner.type, owner_id: owner.id } : {}),
+      })
+      .returning('id')
+      .executeTakeFirstOrThrow();
+    return { reservationId: id, slotStart: slot.slot_start, slotEnd: slot.slot_end, facilityId: slot.facility_id, holdExpiresAt };
+  } catch (err) {
+    if (pgCode(err) === '23P01') throw conflict('slot is no longer available', { reason: 'slot_unavailable' });
+    throw err;
+  }
+}
+
 export async function releaseHold(db: Kysely<DB>, caller: Caller, input: { reservationId: string }) {
   return runCommand(db, { ...caller, module: 'booking', name: 'booking.release_hold', request: input }, async (ctx) => {
     const row = await ctx.tx
@@ -98,6 +114,8 @@ export async function releaseHold(db: Kysely<DB>, caller: Caller, input: { reser
       .set({ status: 'released' })
       .where('id', '=', input.reservationId)
       .where('status', '=', 'held')
+      // A waitlist offer's hold is released by declining the offer, so the offer can't be left dangling.
+      .where('owner_type', 'is', null)
       .returning('id')
       .executeTakeFirst();
     if (!row) throw notFound('active hold', input);
@@ -145,7 +163,7 @@ interface ResolvedFee {
 }
 
 /** Consultation fee from the active default price list: doctor-specific price first, then the generic one. */
-async function consultationFee(tx: Transaction<DB>, healthcareServiceId: string | null, staffId: string, on: string, visitMode: string): Promise<ResolvedFee | null> {
+export async function consultationFee(tx: Transaction<DB>, healthcareServiceId: string | null, staffId: string, on: string, visitMode: string): Promise<ResolvedFee | null> {
   if (!healthcareServiceId) return null;
   const { rows: [fee] } = await sql<{ id: string; unit_price_minor: number }>`
     SELECT pli.id, pli.unit_price_minor
@@ -164,14 +182,14 @@ async function consultationFee(tx: Transaction<DB>, healthcareServiceId: string 
   return fee ? { priceListItemId: fee.id, unitPriceMinor: fee.unit_price_minor } : null;
 }
 
-async function activePatient(tx: Transaction<DB>, patientId: string): Promise<void> {
+export async function activePatient(tx: Transaction<DB>, patientId: string): Promise<void> {
   const p = await tx.selectFrom('patient.patient').select(['status', 'merged_into_patient_id']).where('id', '=', patientId).executeTakeFirst();
   if (!p) throw notFound('patient', { patientId });
   if (p.status === 'merged') throw preconditionFailed('patient record was merged; use the surviving record', { survivorPatientId: p.merged_into_patient_id });
   if (p.status !== 'active') throw preconditionFailed('patient record is inactive');
 }
 
-async function createBookingParty(ctx: CommandContext, party: BookingPartyInput, patientId: string | null, now: Date): Promise<string> {
+export async function createBookingParty(ctx: CommandContext, party: BookingPartyInput, patientId: string | null, now: Date): Promise<string> {
   const { id } = await ctx.tx
     .insertInto('booking.booking_party')
     .values({
@@ -188,24 +206,30 @@ async function createBookingParty(ctx: CommandContext, party: BookingPartyInput,
   return id;
 }
 
+interface AppointmentDetails {
+  patientId: string | null;
+  bookingPartyId: string | null;
+  visitType: VisitType;
+  originChannel: Channel;
+  priority: Priority;
+  reason: string | null;
+  rescheduledFromId: string | null;
+}
+
+interface ReservedTime {
+  id: string;
+  resource_id: string;
+  facility_id: string;
+  staff_id: string;
+  starts_at: Date;
+  ends_at: Date;
+}
+
 /**
  * Turns a held reservation into a confirmed appointment (shared by book and reschedule).
  * The hold must still be live; the session it falls in gives the date, service and visit mode.
  */
-async function confirmHeldReservation(
-  ctx: CommandContext,
-  now: Date,
-  reservationId: string,
-  details: {
-    patientId: string | null;
-    bookingPartyId: string | null;
-    visitType: VisitType;
-    originChannel: Channel;
-    priority: Priority;
-    reason: string | null;
-    rescheduledFromId: string | null;
-  },
-): Promise<AppointmentResult> {
+export async function confirmHeldReservation(ctx: CommandContext, now: Date, reservationId: string, details: AppointmentDetails): Promise<AppointmentResult> {
   const reservation = await ctx.tx
     .selectFrom('booking.reservation as r')
     .innerJoin('booking.schedulable_resource as sr', 'sr.id', 'r.resource_id')
@@ -220,7 +244,22 @@ async function confirmHeldReservation(
     throw preconditionFailed('the hold on this slot has expired or was released; pick a slot again', { reason: 'hold_expired' });
   }
   if (!reservation.staff_id) throw invalid('reservation is not on a practitioner calendar');
+  const result = await createAppointment(ctx, { ...reservation, staff_id: reservation.staff_id }, details);
+  await ctx.tx
+    .updateTable('booking.reservation')
+    .set({ status: 'booked', owner_type: 'appointment', owner_id: result.appointmentId })
+    .where('id', '=', reservation.id)
+    .execute();
+  return result;
+}
 
+/** Creates the appointment for reserved time inside a published session at that clinic. */
+async function createAppointment(
+  ctx: CommandContext,
+  reservation: ReservedTime,
+  details: AppointmentDetails,
+  overbook?: { appointmentId: string; reason: string },
+): Promise<AppointmentResult> {
   const { rows: [session] } = await sql<{ session_on: string; healthcare_service_id: string | null; visit_mode: string }>`
     SELECT session_on::text, healthcare_service_id, visit_mode
     FROM booking.sessions(${reservation.resource_id}, ${reservation.starts_at}::date - 1, ${reservation.starts_at}::date + 1)
@@ -234,6 +273,7 @@ async function confirmHeldReservation(
   const appt = await ctx.tx
     .insertInto('booking.appointment')
     .values({
+      ...(overbook ? { id: overbook.appointmentId } : {}),
       tenant_id: ctx.tenantId,
       confirmation_code: code,
       reservation_id: reservation.id,
@@ -258,11 +298,6 @@ async function confirmHeldReservation(
     })
     .returning(['id', 'version'])
     .executeTakeFirstOrThrow();
-  await ctx.tx
-    .updateTable('booking.reservation')
-    .set({ status: 'booked', owner_type: 'appointment', owner_id: appt.id })
-    .where('id', '=', reservation.id)
-    .execute();
 
   const result: AppointmentResult = {
     appointmentId: appt.id,
@@ -274,13 +309,13 @@ async function confirmHeldReservation(
     endsAt: reservation.ends_at.toISOString(),
     feeMinor: fee?.unitPriceMinor ?? null,
   };
-  ctx.audit({ action: 'create', subjectType: 'booking.appointment', subjectId: appt.id, patientId: details.patientId });
+  ctx.audit({ action: 'create', subjectType: 'booking.appointment', subjectId: appt.id, patientId: details.patientId, ...(overbook ? { reason: `Overbooked: ${overbook.reason}` } : {}) });
   ctx.emit({
     eventType: 'appointment.confirmed',
     aggregateType: 'booking.appointment',
     aggregateId: appt.id,
     aggregateVersion: appt.version,
-    payload: { ...result, practitionerStaffId: reservation.staff_id, patientId: details.patientId, bookingPartyId: details.bookingPartyId, visitMode: session.visit_mode },
+    payload: { ...result, practitionerStaffId: reservation.staff_id, patientId: details.patientId, bookingPartyId: details.bookingPartyId, visitMode: session.visit_mode, overbooked: !!overbook },
   });
   return result;
 }
@@ -300,6 +335,135 @@ export async function bookAppointment(db: Kysely<DB>, caller: Caller, input: Boo
       reason: input.reason ?? null,
       rescheduledFromId: null,
     });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Overbook: an extra appointment into a taken slot, where the clinic allows it
+// ---------------------------------------------------------------------------
+
+export const OVERBOOKING_KEY = 'booking.overbooking';
+export const MAX_OVERBOOKS_PER_SESSION = 3;
+
+/** The clinic's overbooking switch: the latest effective `booking.overbooking` setting for that facility; off when unset. */
+async function overbookingOn(tx: Transaction<DB>, facilityId: string, at: Date): Promise<boolean> {
+  const row = await tx
+    .selectFrom('platform.config_setting')
+    .select('value')
+    .where('key', '=', OVERBOOKING_KEY)
+    .where('facility_id', '=', facilityId)
+    .where('effective_from', '<=', at)
+    .orderBy('effective_from', 'desc')
+    .limit(1)
+    .executeTakeFirst();
+  return (row?.value as { enabled?: unknown } | undefined)?.enabled === true;
+}
+
+export async function getOverbooking(db: Kysely<DB>, caller: Caller, facilityId: string) {
+  const enabled = await runQuery(db, caller.tenantId, (tx) => overbookingOn(tx, facilityId, clock(caller)));
+  return { facilityId, enabled, maxPerSession: MAX_OVERBOOKS_PER_SESSION };
+}
+
+/** Turns overbooking on or off for one clinic. Settings are versioned: each change is a new row. */
+export async function setOverbooking(db: Kysely<DB>, caller: Caller, input: { facilityId: string; enabled: boolean }) {
+  const now = clock(caller);
+  return runCommand(db, { ...caller, module: 'platform', name: 'platform.set_overbooking', request: input }, async (ctx) => {
+    const before = await overbookingOn(ctx.tx, input.facilityId, now);
+    const { id } = await ctx.tx
+      .insertInto('platform.config_setting')
+      .values({
+        tenant_id: ctx.tenantId,
+        facility_id: input.facilityId,
+        key: OVERBOOKING_KEY,
+        value: JSON.stringify({ enabled: input.enabled }),
+        effective_from: now,
+        created_by: ctx.actor.staffId ?? null,
+        updated_by: ctx.actor.staffId ?? null,
+      })
+      .returning('id')
+      .executeTakeFirstOrThrow()
+      .catch((err: unknown) => {
+        if (pgCode(err) === '23505') throw conflict('the setting changed at the same moment; try again', { reason: 'concurrent_change' });
+        throw err;
+      });
+    ctx.audit({ action: 'update', subjectType: 'platform.config_setting', subjectId: id, diff: { key: OVERBOOKING_KEY, facilityId: input.facilityId, enabled: [before, input.enabled] } });
+    return { facilityId: input.facilityId, enabled: input.enabled, maxPerSession: MAX_OVERBOOKS_PER_SESSION };
+  });
+}
+
+export interface OverbookInput extends Omit<BookAppointmentInput, 'reservationId'> {
+  staffId: string;
+  slotStart: Date | string;
+  overbookReason: string;
+  /** The clinic the caller was authorized for; the slot must still belong to it. */
+  facilityId: string;
+}
+
+/**
+ * Books a second patient into a taken slot of a published session. Needs the clinic switch on; at most
+ * MAX_OVERBOOKS_PER_SESSION per doctor session, counted under the resource row lock so concurrent
+ * requests can't exceed it. The held/booked exclusion constraint is untouched.
+ */
+export async function overbookAppointment(db: Kysely<DB>, caller: Caller, input: OverbookInput, idempotencyKey?: string): Promise<AppointmentResult> {
+  if (!input.patientId && !input.bookingParty) throw invalid('give a patientId, a bookingParty, or both');
+  const overbookReason = input.overbookReason.trim();
+  if (overbookReason.length < 3) throw invalid('an overbooking reason is required');
+  const now = clock(caller);
+  return runCommand(db, { ...caller, module: 'booking', name: 'booking.overbook_appointment', idempotencyKey, request: input }, async (ctx) => {
+    const resourceId = await practitionerResourceId(ctx.tx, input.staffId);
+    await ctx.tx.selectFrom('booking.schedulable_resource').select('id').where('id', '=', resourceId).forUpdate().execute();
+    const start = new Date(input.slotStart);
+    const { rows: [slot] } = await sql<{ slot_start: Date; slot_end: Date; facility_id: string; status: string }>`
+      SELECT slot_start, slot_end, facility_id, status
+      FROM booking.available_slots(${resourceId}, (${start}::timestamptz)::date - 1, (${start}::timestamptz)::date + 1, ${now})
+      WHERE slot_start = ${start}`.execute(ctx.tx);
+    if (!slot) throw notFound('bookable slot', { staffId: input.staffId, slotStart: start.toISOString() });
+    if (slot.status === 'blocked') throw conflict('slot is blocked', { reason: 'slot_blocked' });
+    if (slot.facility_id !== input.facilityId) throw conflict('the slot moved to another clinic; pick it again', { reason: 'slot_unavailable' });
+    if (slot.status !== 'taken') throw conflict('slot is free; book it normally', { reason: 'slot_free' });
+    if (!(await overbookingOn(ctx.tx, slot.facility_id, now))) throw preconditionFailed('overbooking is turned off at this clinic', { reason: 'overbooking_disabled' });
+
+    const { rows: [overbooked] } = await sql<{ count: number }>`
+      SELECT count(*)::int AS count
+      FROM booking.sessions(${resourceId}, ${slot.slot_start}::date - 1, ${slot.slot_start}::date + 1) s
+      JOIN booking.reservation r ON r.resource_id = ${resourceId} AND r.status = 'overbooked'
+        AND r.period && tstzrange(s.starts_at, s.ends_at)
+      WHERE s.facility_id = ${slot.facility_id} AND tstzrange(s.starts_at, s.ends_at) @> tstzrange(${slot.slot_start}, ${slot.slot_end})`.execute(ctx.tx);
+    if (overbooked!.count >= MAX_OVERBOOKS_PER_SESSION) {
+      throw conflict(`this session already has ${MAX_OVERBOOKS_PER_SESSION} overbooked appointments`, { reason: 'overbook_limit' });
+    }
+
+    if (input.patientId) await activePatient(ctx.tx, input.patientId);
+    const bookingPartyId = input.bookingParty ? await createBookingParty(ctx, input.bookingParty, input.patientId ?? null, now) : null;
+    const appointmentId = (await sql<{ id: string }>`SELECT uuidv7() AS id`.execute(ctx.tx)).rows[0]!.id;
+    const { id } = await ctx.tx
+      .insertInto('booking.reservation')
+      .values({
+        tenant_id: ctx.tenantId,
+        resource_id: resourceId,
+        facility_id: slot.facility_id,
+        period: sql`tstzrange(${slot.slot_start}, ${slot.slot_end})`,
+        status: 'overbooked',
+        owner_type: 'appointment',
+        owner_id: appointmentId,
+        overbook_reason: overbookReason,
+      })
+      .returning('id')
+      .executeTakeFirstOrThrow();
+    return createAppointment(
+      ctx,
+      { id, resource_id: resourceId, facility_id: slot.facility_id, staff_id: input.staffId, starts_at: slot.slot_start, ends_at: slot.slot_end },
+      {
+        patientId: input.patientId ?? null,
+        bookingPartyId,
+        visitType: input.visitType ?? 'new',
+        originChannel: input.originChannel,
+        priority: input.priority ?? 'normal',
+        reason: input.reason ?? null,
+        rescheduledFromId: null,
+      },
+      { appointmentId, reason: overbookReason },
+    );
   });
 }
 
@@ -406,7 +570,7 @@ export async function markNoShow(db: Kysely<DB>, caller: Caller, input: { appoin
 // ---------------------------------------------------------------------------
 
 /** Today's date at a facility (its local calendar day). */
-async function facilityToday(tx: Transaction<DB>, facilityId: string, now: Date): Promise<string> {
+export async function facilityToday(tx: Transaction<DB>, facilityId: string, now: Date): Promise<string> {
   const { rows: [r] } = await sql<{ today: string }>`
     SELECT ((${now}::timestamptz) AT TIME ZONE f.timezone)::date::text AS today FROM platform.facility f WHERE f.id = ${facilityId}`.execute(tx);
   if (!r) throw notFound('facility', { facilityId });

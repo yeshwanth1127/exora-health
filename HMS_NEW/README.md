@@ -4,6 +4,8 @@ New hospital management system: TypeScript (Node 22) modular backend on PostgreS
 
 **Frontend developers start here: [docs/FRONTEND_GUIDE.md](docs/FRONTEND_GUIDE.md)** — data model, API, auth, and the screens to build for the admin dashboard and the Exora webpage.
 
+**Selected staff frontend integration:** [master plan](docs/plan/STAFF_FRONTEND_INTEGRATION_MASTER_PLAN.md) and [prioritized gap backlog](docs/plan/staff-integration-audit/backend-gap-backlog.csv). This audits the existing `hms-monochrome/staff-web` against the current backend, including scheduling differences, lifecycle corrections, and missing UI. Core integration is now implemented in `apps/staff-web`; see the [executed checkpoint](docs/plan/STAFF_FRONTEND_INTEGRATION_CHECKPOINT.md) and [35-area missing backend ledger](docs/plan/BACKEND_WORK_LEDGER.md). Local preview: `http://127.0.0.1:5188/staff/appointments`.
+
 **Status:** Phase 5 (clinical core) and Virtual OPD done — booking → check-in → doctor's consultation (in person or by video) → completion over a secured HTTP API ([docs/api/README.md](docs/api/README.md)); 117 tests. Next: lab/imaging orders, pharmacy, billing. Plan: [docs/plan/SCHEMA_PLAN.md](docs/plan/SCHEMA_PLAN.md).
 
 ## Quick start

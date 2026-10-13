@@ -15,7 +15,7 @@ WITH bundle (role_code, permission_code) AS (
   UNION ALL SELECT 'front_desk', unnest(ARRAY[
     'staff.read', 'patients.read', 'patients.register', 'patients.update', 'consents.record', 'catalog.read',
     'appointments.read', 'appointments.book', 'appointments.reschedule', 'appointments.cancel',
-    'appointments.check_in', 'queue.manage'])
+    'appointments.overbook', 'appointments.check_in', 'queue.manage'])
   UNION ALL SELECT 'doctor', unnest(ARRAY[
     'staff.read', 'patients.read', 'patients.update', 'patient_flags.manage', 'consents.record', 'catalog.read',
     'appointments.read', 'queue.manage', 'care_assignment.manage', 'break_glass.use'])

@@ -53,6 +53,7 @@ export async function listSlots(db: Kysely<DB>, caller: Caller, query: SlotQuery
 export interface Session {
   sessionOn: string;
   facilityId: string;
+  visitMode: 'in_person' | 'virtual';
   startsAt: Date;
   endsAt: Date;
   slotMinutes: number | null;
@@ -67,6 +68,7 @@ export async function listSessions(db: Kysely<DB>, caller: Caller, query: { staf
     const { rows } = await sql<{
       session_on: string;
       facility_id: string;
+      visit_mode: Session['visitMode'];
       starts_at: Date;
       ends_at: Date;
       slot_minutes: number | null;
@@ -76,6 +78,7 @@ export async function listSessions(db: Kysely<DB>, caller: Caller, query: { staf
     return rows.map((r) => ({
       sessionOn: r.session_on,
       facilityId: r.facility_id,
+      visitMode: r.visit_mode,
       startsAt: r.starts_at,
       endsAt: r.ends_at,
       slotMinutes: r.slot_minutes,

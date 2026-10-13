@@ -1,0 +1,352 @@
+{
+  "capturedAt": "2026-10-10T18:28:25.137Z",
+  "staff": {
+    "path": "/Users/deepakonda/.codex/worktrees/hms-monochrome/staff-web",
+    "head": "2b804d431f7a7bd7ad6f84b247aa8dd5e9b30633",
+    "branch": "codex/appointment-workspace-monochrome",
+    "status": "M .env.example\n M app/admin.py\n M app/booking_operations.py\n M app/config.py\n M app/demo/fixtures.py\n M app/limits.py\n M app/main.py\n M app/models.py\n M app/permissions.py\n M app/services.py\n M app/voice/provider.py\n M app/voice/staff.py\n M app/whatsapp.py\n M app/whatsapp_admin.py\n M app/whatsapp_outreach.py\n M staff-web/package-lock.json\n M staff-web/package.json\n M staff-web/src/App.tsx\n M staff-web/src/components/workspace.tsx\n M staff-web/src/index.css\n M staff-web/src/lib/api.ts\n M staff-web/src/modules/BookingOperations.tsx\n M staff-web/src/modules/NurseDesk.tsx\n M staff-web/src/modules/campaigns.tsx\n M staff-web/src/modules/clinic.tsx\n M staff-web/src/modules/settings.tsx\n M staff-web/src/modules/voice.tsx\n M staff-web/src/modules/whatsapp.tsx\n M tests/test_booking_journey.py\n M tests/test_demo.py\n M tests/test_limits.py\n M tests/test_migration_upgrade.py\n M tests/test_voice_module.py\n M tests/test_whatsapp_outreach.py\n M whatsapp-bot/backend-client.mjs\n M whatsapp-bot/meta.mjs\n M whatsapp-bot/server.mjs\n M whatsapp-bot/test/integration.http.mjs\n M whatsapp-bot/test/outreach.test.mjs\n?? app/demo/inbox.py\n?? app/schedule_timeline.py\n?? app/weekly_schedules.py\n?? app/whatsapp_inbox.py\n?? docs/appointment-workspace/\n?? migrations/versions/0013_whatsapp_transcript.py\n?? migrations/versions/0014_staff_scheduling.py\n?? migrations/versions/0015_appointment_deletion.py\n?? staff-web/src/components/arc/\n?? staff-web/src/modules/appointment-actions.tsx\n?? staff-web/src/modules/appointment-notes.tsx\n?? staff-web/src/modules/clinic-types.ts\n?? staff-web/src/modules/conversations.tsx\n?? staff-web/src/modules/feature-concepts.tsx\n?? staff-web/src/modules/schedule-range-actions.tsx\n?? staff-web/src/modules/schedule-timeline.tsx\n?? staff-web/src/modules/weekly-hours.tsx\n?? tests/test_schedule_timeline.py"
+  },
+  "backend": {
+    "path": "/Users/deepakonda/Documents/antigravity/HMS_NEW/HMS_NEW",
+    "head": "78912fdcee807e1cd2f0070c9a29105c22d785e3",
+    "branch": "main"
+  },
+  "counts": {
+    "uiCallSites": 133,
+    "backendRoutes": 67,
+    "hashedSourceFiles": 65
+  },
+  "limitations": [
+    "Static inventory; wrapper arguments and computed expressions remain explicit.",
+    "Backend loop expansion handles the current queue action loop only.",
+    "No API requests, database resets, provider calls, or application changes are performed.",
+    "Presence of a route is not runtime, authorization, or deployment acceptance."
+  ],
+  "hashes": [
+    {
+      "tree": "staff",
+      "file": "src/App.tsx",
+      "sha256": "95fe28c25c3aab615cc4344c11d303b393871c87a4a30857f84e6d33a609468e"
+    },
+    {
+      "tree": "staff",
+      "file": "src/book.tsx",
+      "sha256": "96a221eebdad05c7e8ffcb5fa3601a49818aacec645c4cfb65a3fd0bc657b45d"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/WorkspaceBoundary.tsx",
+      "sha256": "2143ef0aa910bd408711110651f98a767299ccf93ca4e9fe8462ff390845d140"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/arc/filter-toolbar/filter-toolbar.tsx",
+      "sha256": "90fbd7b5dfca993bb6992cda514d7c17df406fcf63ecf2c04712a20c538ed1db"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/arc/lib/motion-tokens.ts",
+      "sha256": "bec65d2e1b180dd3c574edc60cf84e0fa336e7ff8640eba0c70bcf0ae765fb8a"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/arc/motion-tokens.ts",
+      "sha256": "13af43b57ed38e5b72cfc06ff0ccc39b0593721f04840e73532893593cc61491"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/arc/tabs/tabs.tsx",
+      "sha256": "3b0aaf6f0c41ce486e697ee3c9c86ce874fb2a22b1dab433226027de7858af0a"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/alert-dialog.tsx",
+      "sha256": "f679acf47722af0435957a886e2f70bfbdd1e9e8438f08e4285e8c53f2237997"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/alert.tsx",
+      "sha256": "f253568242c1c69b343f12474002fdbe229f603158171c59e21c491ab79f2e6e"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/avatar.tsx",
+      "sha256": "bff76087ea9af25c6aa5a5306088dc66e62204a126752c38561736acff00717f"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/badge.tsx",
+      "sha256": "d9fb280e266119c4b62a4c518e63152de27b094c68d3e5f8929d05bfb0c1bc6c"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/breadcrumb.tsx",
+      "sha256": "cbd2b85e7a0097438855ff1bba8ac0cc3d1229e4c94bda3d52176fd22ea2ac62"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/button.tsx",
+      "sha256": "313353436d0fcc8e44ab470adb614b9fd013d28626f624328ea0d66d41a6c81b"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/card.tsx",
+      "sha256": "8ad3a18d36bda0598dc0e9aa96ea22854944d5443ee4946f1d173815e115375f"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/chart.tsx",
+      "sha256": "3903f6406cd3267d6ffb3502a43369c15f3c193a811f1a7ec77ce7c74ba9410f"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/checkbox.tsx",
+      "sha256": "51b82e5ca459ea7792d8f24ac924f13aeaa2b2cd338560d2b4291e38b648c12e"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/dialog.tsx",
+      "sha256": "7e96b921d921ee9fb7c53e9372b17e775d087be9788ce1d51cbcdbab2b0d4ba5"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/dropdown-menu.tsx",
+      "sha256": "ffd69006ed9c79e16ffefffbf8a9ebbf1c34ca38f40cb9939c946a71943127d7"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/input.tsx",
+      "sha256": "dab990dfefa0ba78854ab6602ad074270dba9d7d1262184d9bfbb62bd990903b"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/label.tsx",
+      "sha256": "86232709f634da7f357a8aaec0e815f3f562604bb67202c88997fae97659b450"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/select.tsx",
+      "sha256": "4ba225fb838887a2493a8908774f1294ffbc2030af1e372425c6de76f598f0eb"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/separator.tsx",
+      "sha256": "8a1d9397433ccf70631104f377b0e778754582a74c93a57cf13a2f2dcba778bf"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/sheet.tsx",
+      "sha256": "67ed95ab6bb4f61cdcee2cf2811a80b40a7e11adfec5d35eb71707b51f753598"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/sidebar.tsx",
+      "sha256": "146860c1f88e07170830573bdb62e202de87d12942c3fabb751ebe606ce56344"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/skeleton.tsx",
+      "sha256": "4c2af7fa9c645358a0fb188779deab6f0b981733b62befc25e18aaebea1350dc"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/sonner.tsx",
+      "sha256": "0c729f9f1ada0b0bedd9296710cc257dc43559fa6b8cc40f010d129e8ff85fdd"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/switch.tsx",
+      "sha256": "d232e2ffcfa122c59099872bcb8395eaad36d42fa9d2e0e40382ad19994065e2"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/table.tsx",
+      "sha256": "300dc171ff0e09543dce0787f43a3ceb0d168fa800eaecb98b6c5630f3c6d7e9"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/tabs.tsx",
+      "sha256": "958b817b256cffae986d046168b70dd0153d542b4c521ee8bbdda349010011ef"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/textarea.tsx",
+      "sha256": "82601c91ffc6c727d924162c78d7cb853114bcced4e2eb922a68ca12d4239c0f"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/ui/tooltip.tsx",
+      "sha256": "100101631756e1bebc1f1831e1642b26cd11a6a6c4affb6c638c42001dc14e83"
+    },
+    {
+      "tree": "staff",
+      "file": "src/components/workspace.tsx",
+      "sha256": "4c16ede0cf6377bbe9632f948c76620584ebc3087d8c5235aefeb7712e653e76"
+    },
+    {
+      "tree": "staff",
+      "file": "src/hooks/use-mobile.ts",
+      "sha256": "ad0936f84f1df79d3697bfbff9c18f8ad58431c1cbaf2359c6a853b0fcc9f28b"
+    },
+    {
+      "tree": "staff",
+      "file": "src/lib/api.ts",
+      "sha256": "923e9fbc1fd4f8420f1b4696364b2c503a794b451b8c62f65dea40e6de87fb66"
+    },
+    {
+      "tree": "staff",
+      "file": "src/lib/utils.ts",
+      "sha256": "14300d758170c270c75b057f38fedb3793a5920ea872f0477e29fb131185e8a7"
+    },
+    {
+      "tree": "staff",
+      "file": "src/main.tsx",
+      "sha256": "39c8c66a2184a70cae36a3e55a1754b97b81c15aab1ec845b660698fc6c4188a"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/BookingOperations.tsx",
+      "sha256": "ee448cfa546176e42ebb0f0f1ccbfe811884f266f04113206399f474bd741c1d"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/DemoControls.tsx",
+      "sha256": "54262bc56bba50e02cf0e40085ab69b5d2dfc346de52bd13bdd1eb925da04218"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/NurseDesk.tsx",
+      "sha256": "a8410c3d5608bace9ff3ba727ace0ccf4004975597cbe97018949d78c1e8bc79"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/appointment-actions.tsx",
+      "sha256": "5d163ac74963c2e459c11e78e3568d0cbdf4254f525fc92e2f774c16c9cc82bb"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/appointment-notes.tsx",
+      "sha256": "38de4fb24966ec0cb8b465c0f5f53618e5597febcc432da863742138d89d894b"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/campaigns.tsx",
+      "sha256": "24960a9ac32fb77341ea2ba9420a58681218f35bee9657000801c7f0b4caee38"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/clinic-types.ts",
+      "sha256": "c20e3024ac13cdd63ebc78e138aa77fef7ce7ef347f4efd47a09ac54bf09c5b8"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/clinic.tsx",
+      "sha256": "3bceb86bf9287c0f569c6774d9fe61b691b67dbe05466c0a7bdcd6264d984e98"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/conversations.tsx",
+      "sha256": "d7bcce3ea77599a3818c97a07c8b32632a5d6b96f431d38003e5a7e7afd2148f"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/feature-concepts.tsx",
+      "sha256": "5d11938398c075bf45553dc8338d804a1a568e4ad85a25bfdba7751e07861099"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/growth/GrowthModule.tsx",
+      "sha256": "b5780cfd4a5c60d7d1d23cb41df070d18311d0d06351911ddd85360b914181f3"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/growth/ModuleSettings.tsx",
+      "sha256": "92c2807f7d81347d3df9cdd1747df60cdfd306c82060fd66f9747e3d128ff531"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/growth/WebsiteActivity.tsx",
+      "sha256": "956ee21bdfc6ea6cf299cf3e18d396d749492cec06bd8abfcd6e1b493b498b9b"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/operations.tsx",
+      "sha256": "222865582e1a33a4df97496f8af61747905c15f62172fd4d05d9f598459a82b6"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/schedule-range-actions.tsx",
+      "sha256": "03f7c1ec9d0e8a034958d1086c56976d15325a13453be99306dbd8233cb1d8d4"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/schedule-timeline.tsx",
+      "sha256": "f70ebee274ec16ec038536bf3669bca666db6a60c4987302247d09d3d5537978"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/settings.tsx",
+      "sha256": "8a84d59c773c442c9fd7a847259672c548e95cab1731888fc8541a6f8eaa191c"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/voice.tsx",
+      "sha256": "6e715a3bd66b64b75e968242f1bc1d012c63bb84b31b452cbf2ccb68afb5db39"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/weekly-hours.tsx",
+      "sha256": "4bb327f9f7d19d184a7523692014304a8ce0ae431ceca2c9342900400794d493"
+    },
+    {
+      "tree": "staff",
+      "file": "src/modules/whatsapp.tsx",
+      "sha256": "28dc57de4746005ad991680468261fe7b13c212088522423b3934e8566a0e2e1"
+    },
+    {
+      "tree": "staff",
+      "file": "src/talk.tsx",
+      "sha256": "323c11ddaace13765395bf506dd798cffcd015a12a0e6ace7e687db10e3d2a3c"
+    },
+    {
+      "tree": "backend",
+      "file": "apps/api/src/server.ts",
+      "sha256": "b491f2be4fe90e2986b1161a6a5d6dc85ef9b7c5159cc05f59f2ca81171c5be9"
+    },
+    {
+      "tree": "backend",
+      "file": "apps/api/src/http/routes/booking.ts",
+      "sha256": "a8086a6e44f46d8bd2643bd231ec6820afd256e4d80e5dbe0824d36eeae61757"
+    },
+    {
+      "tree": "backend",
+      "file": "apps/api/src/http/routes/calendar.ts",
+      "sha256": "04e98ddf803d1378ed1cc041c28d90704e16bbf1ad59a16fb1831b5a4d4ab91c"
+    },
+    {
+      "tree": "backend",
+      "file": "apps/api/src/http/routes/clinical.ts",
+      "sha256": "84b5e02655b20e16ec3bb014a015e4eac8c37952b06b978f4a03db84b26f7ad1"
+    },
+    {
+      "tree": "backend",
+      "file": "apps/api/src/http/routes/directory.ts",
+      "sha256": "08c9f015add637b44565bfa3145614df3e708a06eba594208a0dddf12c28a67f"
+    },
+    {
+      "tree": "backend",
+      "file": "apps/api/src/http/routes/patients.ts",
+      "sha256": "2c9acd08849b0574e64ac0e9b7b1eb710e4452babf466be2206448bbddefcc34"
+    },
+    {
+      "tree": "backend",
+      "file": "apps/api/src/http/routes/queue.ts",
+      "sha256": "8e6fb987906d5e6e86c214c6cfb37457c813bcec61816b69db1f9416abf7f3ab"
+    },
+    {
+      "tree": "backend",
+      "file": "apps/api/src/http/routes/telehealth.ts",
+      "sha256": "2e97766640c7d6399c303bedd75f48ce33ba94b8bf5b9db7805c57d44af2acaf"
+    }
+  ]
+}

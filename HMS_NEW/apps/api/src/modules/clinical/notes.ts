@@ -155,12 +155,12 @@ export async function signNote(db: Kysely<DB>, caller: Caller, input: { noteId: 
 
 export async function voidNote(db: Kysely<DB>, caller: Caller, input: { noteId: string; reason: string }) {
   if (input.reason.trim().length < 3) throw invalid('a reason is required');
-  const now = clock(caller);
   return runCommand(db, { ...caller, module: 'clinical', name: 'clinical.void_note', request: input }, async (ctx) => {
     const note = await ctx.tx.selectFrom('clinical.clinical_note').selectAll().where('id', '=', input.noteId).forUpdate().executeTakeFirst();
     if (!note) throw notFound('note', { noteId: input.noteId });
     if (note.status === 'entered_in_error') return { noteId: note.id, status: 'entered_in_error' };
-    if (note.author_staff_id !== ctx.actor.staffId) await assertChartAccess(ctx.tx, ctx.actor.staffId, note.patient_id, now);
+    // Only the author retracts their own note (G40); others ask the author or amend with a reason.
+    if (note.author_staff_id !== ctx.actor.staffId) throw forbidden('only the author can mark this note entered in error');
     await ctx.tx.updateTable('clinical.clinical_note').set({ status: 'entered_in_error', status_reason: input.reason }).where('id', '=', note.id).execute();
     ctx.audit({ action: 'status_change', subjectType: 'clinical.clinical_note', subjectId: note.id, patientId: note.patient_id, reason: input.reason });
     return { noteId: note.id, status: 'entered_in_error' };

@@ -3,6 +3,7 @@ packages:
   - "apps/*"
 
 # Only these packages may run install scripts (pnpm blocks all others).
-# @embedded-postgres/linux-x64: recreates shared-library symlinks for the bundled PostgreSQL binaries.
+# Embedded PostgreSQL platform packages: recreates shared-library symlinks for the bundled PostgreSQL binaries.
 onlyBuiltDependencies:
   - "@embedded-postgres/linux-x64"
+  - "@embedded-postgres/darwin-arm64"

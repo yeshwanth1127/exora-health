@@ -19,9 +19,18 @@ export interface Principal {
 export const forbidden = (message: string, details?: Record<string, unknown>) => new DomainError('forbidden', message, details);
 
 export async function resolvePrincipal(db: Kysely<DB>, identity: Identity, requestedTenantId: string | undefined): Promise<Principal> {
-  const { rows: accounts } = await sql<{ tenant_id: string; user_account_id: string; staff_id: string | null; patient_id: string | null; status: string }>`
-    SELECT * FROM platform.accounts_for_identity(${identity.issuer}, ${identity.subject})`.execute(db);
-  const active = accounts.filter((a) => a.status === 'active');
+  const lookup = async () =>
+    (
+      await sql<{ tenant_id: string; user_account_id: string; staff_id: string | null; patient_id: string | null; status: string }>`
+        SELECT * FROM platform.accounts_for_identity(${identity.issuer}, ${identity.subject})`.execute(db)
+    ).rows.filter((a) => a.status === 'active');
+  let active = await lookup();
+  // First sign-in after a staff invite: link open invites for this verified email, then look again.
+  if (identity.verifiedEmail && (!active.length || (requestedTenantId && !active.some((a) => a.tenant_id === requestedTenantId)))) {
+    const { rows } = await sql<{ linked: number }>`
+      SELECT platform.link_staff_invites(${identity.issuer}, ${identity.subject}, ${identity.verifiedEmail}) AS linked`.execute(db);
+    if (rows[0]!.linked > 0) active = await lookup();
+  }
   if (!active.length) throw forbidden('no active account for this identity');
 
   let account = active[0]!;
@@ -30,8 +39,11 @@ export async function resolvePrincipal(db: Kysely<DB>, identity: Identity, reque
     if (!match) throw forbidden('no active account for this identity in the requested tenant');
     account = match;
   } else if (active.length > 1) {
+    // Names come from a definer function that only returns tenants this identity belongs to (G02).
+    const { rows: named } = await sql<{ tenant_id: string; name: string }>`SELECT * FROM platform.tenants_for_identity(${identity.issuer}, ${identity.subject})`.execute(db);
     throw new DomainError('validation', 'this identity has accounts in several tenants; send the X-Tenant-Id header', {
       tenants: active.map((a) => a.tenant_id),
+      tenantNames: named.map((t) => ({ tenantId: t.tenant_id, name: t.name })),
     });
   }
   if (!account.staff_id) throw forbidden('patient portal accounts are not supported by this API yet');
@@ -75,4 +87,32 @@ export function authorize(principal: Principal, permission: string, facilityId?:
     else ok = scopes.has(facilityId); // facility-scoped grant must match
   }
   if (!ok) throw forbidden(`missing permission ${permission}${facilityId ? ' for this facility' : ''}`, { permission, facilityId: facilityId ?? null });
+}
+
+/** Facilities where the principal holds `permission`: null = every facility, empty = none. */
+export function grantedFacilities(principal: Principal, permission: string): Set<string> | null {
+  const scopes = principal.grants.get(permission);
+  if (scopes?.has(null)) return null;
+  return new Set([...(scopes ?? [])].filter((f): f is string => f !== null));
+}
+
+/**
+ * For a change that reaches several facilities: the permission must cover every one of them.
+ * Reaching no known facility needs an every-facility grant (never "any grant suffices").
+ */
+export function authorizeEvery(principal: Principal, permission: string, facilityIds: Iterable<string>): void {
+  const granted = grantedFacilities(principal, permission);
+  if (granted === null) return;
+  const ids = [...new Set(facilityIds)];
+  const missing = ids.filter((f) => !granted.has(f));
+  if (!ids.length || missing.length) {
+    throw forbidden(`missing permission ${permission} for ${ids.length ? 'every affected facility' : 'all facilities'}`, { permission, facilityIds: missing });
+  }
+}
+
+/** The permission must cover at least one of the facilities. */
+export function authorizeAny(principal: Principal, permission: string, facilityIds: Iterable<string>): void {
+  const granted = grantedFacilities(principal, permission);
+  if (granted === null) return;
+  if (![...facilityIds].some((f) => granted.has(f))) throw forbidden(`missing permission ${permission} for this practitioner's facilities`, { permission });
 }

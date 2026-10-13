@@ -7,6 +7,8 @@ import type { AuthConfig } from '../config.ts';
 export interface Identity {
   issuer: string;
   subject: string;
+  /** Present only when the provider marks it verified (`email_verified: true`); used to accept staff invites. */
+  verifiedEmail?: string | undefined;
 }
 
 export type TokenVerifier = (token: string) => Promise<Identity>;
@@ -31,7 +33,8 @@ export function createVerifier(auth: AuthConfig): TokenVerifier {
               audience: auth.audience,
             });
       if (!payload.sub || !payload.iss) throw new AuthenticationError('token has no subject');
-      return { issuer: payload.iss, subject: payload.sub };
+      const email = payload.email_verified === true && typeof payload.email === 'string' ? payload.email.trim() : '';
+      return { issuer: payload.iss, subject: payload.sub, ...(email ? { verifiedEmail: email } : {}) };
     } catch (err) {
       if (err instanceof AuthenticationError) throw err;
       throw new AuthenticationError('invalid or expired token');

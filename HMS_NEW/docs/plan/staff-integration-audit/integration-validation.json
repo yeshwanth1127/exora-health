@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-10-10T19:13:50.290Z",
+  "frontendTests": {
+    "pass": 13,
+    "fail": 0
+  },
+  "frontendTypecheck": "PASS",
+  "backendTypecheck": "PASS",
+  "productionBuild": true,
+  "lint": {
+    "errors": 0,
+    "warnings": 19
+  },
+  "diffWhitespace": "PASS",
+  "originalSourceHashes": {
+    "pass": 73,
+    "fail": 0
+  },
+  "backendLedger": {
+    "open": 35,
+    "closed": 0
+  },
+  "nursingSelfJoin": "FAIL — G35; UI action removed",
+  "developmentIdentityPickerAbsent": true,
+  "legacyPythonEndpointAbsent": true
+}

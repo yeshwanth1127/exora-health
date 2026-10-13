@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-10-10T19:12:01.137Z",
+  "fixture": "isolated synthetic OP-000002 in hms_staff_integration",
+  "chartStatus": 403,
+  "chartReason": "no_care_relationship",
+  "selfJoinStatus": 409,
+  "selfJoinMessage": "already a participant in that role",
+  "persistedNurseParticipants": 0,
+  "rootCause": "addParticipant calls ensureEncounterAccess, which inserts the actor, then explicitly inserts the same participant and raises a unique conflict; transaction rolls back",
+  "ledgerId": "G35"
+}

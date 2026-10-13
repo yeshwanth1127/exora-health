@@ -25,5 +25,8 @@
     "packages/**/*.ts",
     "apps/**/*.ts",
     "vitest.config.ts"
+  ],
+  "exclude": [
+    "apps/staff-web"
   ]
 }

@@ -55,6 +55,16 @@ async function moveToken(
     const token = await ctx.tx.selectFrom('booking.queue_token').selectAll().where('id', '=', tokenId).forUpdate().executeTakeFirst();
     if (!token) throw notFound('queue token', { tokenId });
     if (!from.includes(token.status)) throw preconditionFailed(`token is ${token.status}; cannot move to ${to}`);
+    if (to === 'done' && token.appointment_id) {
+      // An open consultation is finished through the encounter, which then completes the token (G15).
+      const open = await ctx.tx
+        .selectFrom('clinical.encounter')
+        .select('id')
+        .where('appointment_id', '=', token.appointment_id)
+        .where('status', 'in', ['planned', 'arrived', 'in_progress'])
+        .executeTakeFirst();
+      if (open) throw preconditionFailed('finish the consultation to complete this token', { reason: 'encounter_open', encounterId: open.id });
+    }
     await ctx.tx
       .updateTable('booking.queue_token')
       .set({

@@ -20,7 +20,7 @@ let facility2: string;
 let doctor: string;
 let monday: string;
 const run = randomUUID().slice(0, 8); // identities are global, so make this run's subjects unique
-const tokens: Record<'admin' | 'frontDesk' | 'nurse' | 'doctor' | 'bot', string> = {} as never;
+const tokens: Record<'admin' | 'branchAdmin' | 'frontDesk' | 'nurse' | 'doctor' | 'bot', string> = {} as never;
 
 const ist = (date: string, time: string) => `${date}T${time}:00+05:30`;
 
@@ -53,6 +53,7 @@ beforeAll(async () => {
     one(`INSERT INTO platform.staff (tenant_id, employee_no, given_name, display_name, staff_type, is_system_account) VALUES ($1, $2, $3, $3, $4, $5) RETURNING id`, [t.tenantId, no, name, type, system]);
   const people = {
     admin: await staff('A1', 'Admin', 'admin'),
+    branchAdmin: await staff('A2', 'Branch 1 Admin', 'admin'),
     frontDesk: await staff('F1', 'Front Desk', 'admin'),
     nurse: await staff('N1', 'Nurse', 'nurse'),
     doctor: await staff('D1', 'Dr API', 'doctor'),
@@ -61,6 +62,7 @@ beforeAll(async () => {
   doctor = people.doctor;
   const grants: Array<[keyof typeof people, string, string | null]> = [
     ['admin', 'tenant_admin', null],
+    ['branchAdmin', 'tenant_admin', t.facilityId], // administers Branch 1 only
     ['frontDesk', 'front_desk', t.facilityId], // Branch 1 only
     ['nurse', 'nurse', t.facilityId],
     ['doctor', 'doctor', null],
@@ -159,6 +161,472 @@ describe('permissions', () => {
   });
 });
 
+describe('facility scope of schedule changes (G01)', () => {
+  // The doctor works Mondays at Branch 1 and Tuesdays at Branch 2; branchAdmin manages Branch 1 only.
+  const later = (days: number) => new Date(Date.parse(monday) + days * 86_400_000).toISOString().slice(0, 10);
+  const as = (token: string, body: object) => ({ token, body });
+
+  it('weekly sessions: only at a facility the caller manages, and ending one checks its facility', async () => {
+    const add = (facilityId: string) => call('POST', `/v1/practitioners/${doctor}/weekly-sessions`, as(tokens.branchAdmin, { facilityId, weekday: 3, start: '09:00', end: '10:00', slotMinutes: 15, effectiveFrom: '2030-01-01' }));
+    expect((await add(t.facilityId)).status).toBe(201);
+    expect((await add(facility2)).status).toBe(403);
+    const { rows: [branch2Rule] } = await admin.query<{ id: string }>(`SELECT id FROM booking.schedule_rule WHERE facility_id = $1 LIMIT 1`, [facility2]);
+    expect((await call('POST', `/v1/weekly-sessions/${branch2Rule!.id}/end`, as(tokens.branchAdmin, { effectiveTo: '2031-01-01' }))).status).toBe(403);
+    expect((await call('POST', `/v1/weekly-sessions/${randomUUID()}/end`, as(tokens.branchAdmin, { effectiveTo: '2031-01-01' }))).status).toBe(404);
+  });
+
+  it('leave and blocks reach every facility the doctor works at; extra hours only their own', async () => {
+    const exception = (token: string, body: object) => call('POST', `/v1/practitioners/${doctor}/exceptions`, as(token, { onDate: later(23), ...body }));
+    expect((await exception(tokens.branchAdmin, { kind: 'closed', reason: 'Leave' })).status).toBe(403);
+    expect((await exception(tokens.branchAdmin, { kind: 'block', start: '10:00', end: '11:00' })).status).toBe(403);
+    expect((await exception(tokens.branchAdmin, { kind: 'extra_hours', facilityId: t.facilityId, start: '14:00', end: '15:00', slotMinutes: 15 })).status).toBe(201);
+    expect((await exception(tokens.branchAdmin, { kind: 'extra_hours', facilityId: facility2, start: '14:00', end: '15:00', slotMinutes: 15 })).status).toBe(403);
+  });
+
+  it("a day plan must cover every facility it can take sessions from", async () => {
+    const plan = (date: string, blocks: object[]) => call('PUT', `/v1/practitioners/${doctor}/day-plans/${date}`, as(tokens.branchAdmin, { replacesWeekly: true, blocks }));
+    const branch1Block = { facilityId: t.facilityId, start: '09:00', end: '10:00', slotMinutes: 15 };
+    expect((await plan(later(22), [branch1Block])).status).toBe(403); // a Tuesday: replaces the Branch 2 session
+    expect((await plan(later(22), [])).status).toBe(403);
+    expect((await plan(later(21), [branch1Block])).status).toBe(200); // a Monday: Branch 1 only
+    expect((await call('PUT', `/v1/practitioners/${doctor}/day-plans/${later(22)}`, as(tokens.admin, { replacesWeekly: true, blocks: [] }))).status).toBe(200);
+  });
+
+  it('creating a calendar needs scope at one of the doctor\'s facilities', async () => {
+    expect((await call('POST', `/v1/practitioners/${doctor}/calendar`, { token: tokens.branchAdmin })).status).toBe(200);
+  });
+
+  it('facility-scoped readers see only their facilities\' sessions and slots', async () => {
+    const sessions = await call('GET', `/v1/practitioners/${doctor}/sessions?from=${monday}&to=${later(1)}`, { token: tokens.frontDesk });
+    expect(sessions.status).toBe(200);
+    expect(new Set(sessions.body.items.map((s: { facilityId: string }) => s.facilityId))).toEqual(new Set([t.facilityId]));
+    const all = await call('GET', `/v1/practitioners/${doctor}/sessions?from=${monday}&to=${later(1)}`);
+    expect(new Set(all.body.items.map((s: { facilityId: string }) => s.facilityId))).toEqual(new Set([t.facilityId, facility2]));
+    const slots = await call('GET', `/v1/practitioners/${doctor}/slots?from=${later(1)}&to=${later(1)}`, { token: tokens.frontDesk, now: ist(monday, '07:00') });
+    expect(slots.body.items).toEqual([]);
+  });
+});
+
+describe('schedule scope, reads and reversals (G37, G06, G07, G05)', () => {
+  const later = (days: number) => new Date(Date.parse(monday) + days * 86_400_000).toISOString().slice(0, 10);
+  const day = () => later(28); // a Monday: Branch 1 weekly session 09:00–11:00 (8 slots)
+  const slotsAt = async (facilityId: string) =>
+    (await call('GET', `/v1/practitioners/${doctor}/slots?from=${day()}&to=${day()}&facilityId=${facilityId}`, { now: ist(monday, '07:00') })).body.items.length;
+
+  it('a clinic closure leaves the other clinic bookable, and revoking it restores the slots', async () => {
+    const extra = await call('POST', `/v1/practitioners/${doctor}/exceptions`, { idem: true, body: { onDate: day(), kind: 'extra_hours', facilityId: facility2, start: '14:00', end: '15:00', slotMinutes: 30 } });
+    expect(extra.status).toBe(201);
+    expect([await slotsAt(t.facilityId), await slotsAt(facility2)]).toEqual([8, 2]);
+
+    const closed = await call('POST', `/v1/practitioners/${doctor}/exceptions`, { token: tokens.branchAdmin, body: { onDate: day(), kind: 'closed', facilityId: t.facilityId, reason: 'Branch 1 maintenance' } });
+    expect(closed.status).toBe(201);
+    expect([await slotsAt(t.facilityId), await slotsAt(facility2)]).toEqual([0, 2]);
+    const block = await call('POST', `/v1/practitioners/${doctor}/exceptions`, { body: { onDate: day(), kind: 'block', facilityId: facility2, start: '14:00', end: '14:30' } });
+    expect(block.status).toBe(201);
+    expect(await slotsAt(facility2)).toBe(1);
+
+    // Reads: Branch 1 front desk sees its own and every-clinic exceptions, not Branch 2's
+    const seen = await call('GET', `/v1/practitioners/${doctor}/exceptions?from=${day()}&to=${day()}`, { token: tokens.frontDesk });
+    expect(seen.body.items.map((e: { scheduleExceptionId: string }) => e.scheduleExceptionId)).toEqual([closed.body.scheduleExceptionId]);
+
+    // Reversal: needs scope and a reason, is audited, and is idempotent
+    const revoke = (id: string, token = tokens.branchAdmin) => call('POST', `/v1/schedule-exceptions/${id}/revoke`, { token, body: { reason: 'Maintenance moved' } });
+    expect((await revoke(block.body.scheduleExceptionId)).status).toBe(403);
+    expect((await call('POST', `/v1/schedule-exceptions/${closed.body.scheduleExceptionId}/revoke`, { token: tokens.branchAdmin, body: { reason: '' } })).status).toBe(400);
+    expect((await revoke(closed.body.scheduleExceptionId)).status).toBe(200);
+    expect((await revoke(closed.body.scheduleExceptionId)).status).toBe(200);
+    expect(await slotsAt(t.facilityId)).toBe(8);
+    const { rows } = await admin.query(`SELECT count(*)::int AS n FROM platform.audit_event WHERE subject_id = $1 AND action = 'status_change'`, [closed.body.scheduleExceptionId]);
+    expect(rows[0].n).toBe(1);
+  });
+
+  it('previews the appointments a closure would affect without saving anything', async () => {
+    const hold = await call('POST', '/v1/holds', { token: tokens.frontDesk, idem: true, now: ist(monday, '07:00'), body: { staffId: doctor, slotStart: ist(day(), '10:00') } });
+    const booked = await call('POST', '/v1/appointments', { token: tokens.frontDesk, idem: true, now: ist(monday, '07:00'), body: { reservationId: hold.body.reservationId, bookingParty: { name: 'Preview', phone: '+919800000001' }, originChannel: 'front_desk' } });
+    expect(booked.status).toBe(201);
+    const preview = (body: object, token = tokens.admin) => call('POST', `/v1/practitioners/${doctor}/exceptions/preview`, { token, body: { onDate: day(), ...body } });
+    expect((await preview({ facilityId: t.facilityId })).body).toEqual({ affectedAppointmentIds: [booked.body.appointmentId] });
+    expect((await preview({ facilityId: facility2 })).body).toEqual({ affectedAppointmentIds: [] });
+    expect((await preview({ start: '11:00', end: '12:00' })).body).toEqual({ affectedAppointmentIds: [] });
+    expect((await preview({}, tokens.frontDesk)).status).toBe(403);
+    expect((await call('GET', `/v1/practitioners/${doctor}/exceptions?from=${day()}&to=${day()}`)).body.items).toHaveLength(3); // unchanged
+  });
+
+  it('holidays are listed and revoked, and a revoked date can be declared again', async () => {
+    const tuesday = later(29);
+    const sessionsOn = async () => (await call('GET', `/v1/practitioners/${doctor}/sessions?from=${tuesday}&to=${tuesday}`)).body.items.length;
+    expect(await sessionsOn()).toBe(1);
+    const holiday = await call('POST', `/v1/facilities/${facility2}/holidays`, { body: { date: tuesday, name: 'Festival' } });
+    expect(holiday.status).toBe(201);
+    expect(await sessionsOn()).toBe(0);
+    expect((await call('GET', `/v1/facilities/${facility2}/holidays?from=${tuesday}&to=${tuesday}`)).body.items).toMatchObject([{ name: 'Festival', revokedAt: null }]);
+    expect((await call('GET', `/v1/facilities/${facility2}/holidays?from=${tuesday}&to=${tuesday}`, { token: tokens.frontDesk })).status).toBe(403);
+    const revoke = (token: string) => call('POST', `/v1/facility-holidays/${holiday.body.facilityHolidayId}/revoke`, { token, body: { reason: 'Declared by mistake' } });
+    expect((await revoke(tokens.branchAdmin)).status).toBe(403);
+    expect((await revoke(tokens.admin)).status).toBe(200);
+    expect(await sessionsOn()).toBe(1);
+    expect((await call('POST', `/v1/facilities/${facility2}/holidays`, { body: { date: tuesday, name: 'Festival (corrected)' } })).status).toBe(201);
+  });
+
+  it('reads the weekly plan and day plan; a stale or retried day-plan save cannot add a revision', async () => {
+    const weekly = await call('GET', `/v1/practitioners/${doctor}/weekly-sessions?from=${monday}`, { token: tokens.frontDesk });
+    expect(weekly.status).toBe(200);
+    expect(new Set(weekly.body.items.map((r: { facilityId: string }) => r.facilityId))).toEqual(new Set([t.facilityId]));
+
+    const planOn = later(35);
+    expect((await call('GET', `/v1/practitioners/${doctor}/day-plans/${planOn}`)).body).toMatchObject({ revision: 0, blocks: [] });
+    const body = { baseRevision: 0, replacesWeekly: true, blocks: [{ facilityId: t.facilityId, start: '08:00', end: '09:00', slotMinutes: 20 }] };
+    const key = `plan-${run}`;
+    const first = await call('PUT', `/v1/practitioners/${doctor}/day-plans/${planOn}`, { idem: key, body });
+    expect(first.body).toMatchObject({ revision: 1 });
+    expect((await call('PUT', `/v1/practitioners/${doctor}/day-plans/${planOn}`, { idem: key, body })).body).toMatchObject({ revision: 1 });
+    expect(await call('PUT', `/v1/practitioners/${doctor}/day-plans/${planOn}`, { body })).toMatchObject({ status: 409, body: { error: { details: { reason: 'stale_revision', currentRevision: 1 } } } });
+    expect((await call('GET', `/v1/practitioners/${doctor}/day-plans/${planOn}`)).body).toMatchObject({ revision: 1, replacesWeekly: true, blocks: [{ facilityId: t.facilityId, slotMinutes: 20 }] });
+  });
+});
+
+describe('weekly plan replacement (G07)', () => {
+  const later = (days: number) => new Date(Date.parse(monday) + days * 86_400_000).toISOString().slice(0, 10);
+  const plan = () => ({
+    facilityId: t.facilityId,
+    visitMode: 'in_person',
+    effectiveFrom: later(42), // a Monday
+    effectiveTo: later(56),
+    slotMinutes: 20,
+    sessions: [{ weekday: 1, start: '10:00', end: '12:00' }, { weekday: 4, start: '09:00', end: '10:00' }],
+  });
+  const sessionsOn = async (date: string) =>
+    (await call('GET', `/v1/practitioners/${doctor}/sessions?from=${date}&to=${date}`)).body.items.map((x: { startsAt: string; slotMinutes: number | null }) => [x.startsAt.slice(11, 16), x.slotMinutes]);
+
+  it('previews without saving, refuses while appointments fall outside, then replaces atomically', async () => {
+    const before = await sessionsOn(later(42));
+    expect(before).toEqual([['03:30', 15], ['11:30', null]]); // 09:00 and 17:00 IST
+
+    const hold = await call('POST', '/v1/holds', { token: tokens.frontDesk, idem: true, now: ist(monday, '07:00'), body: { staffId: doctor, slotStart: ist(later(49), '09:00') } });
+    const booked = await call('POST', '/v1/appointments', { token: tokens.frontDesk, idem: true, now: ist(monday, '07:00'), body: { reservationId: hold.body.reservationId, bookingParty: { name: 'Outside', phone: '+919800000002' }, originChannel: 'front_desk' } });
+    expect(booked.status).toBe(201);
+
+    const preview = await call('POST', `/v1/practitioners/${doctor}/weekly-plan/preview`, { body: plan() });
+    expect(preview.body).toMatchObject({ canSave: false, affectedAppointmentIds: [booked.body.appointmentId] });
+    expect(preview.body.otherPublishedHours).toContainEqual({ facilityId: facility2, facilityName: 'Branch 2', visitMode: 'in_person', weekday: 2, start: '10:00', end: '12:00' });
+    expect(await sessionsOn(later(42))).toEqual(before); // nothing saved
+    expect(await call('PUT', `/v1/practitioners/${doctor}/weekly-plan`, { body: plan() })).toMatchObject({ status: 409, body: { error: { details: { reason: 'affected_appointments' } } } });
+
+    expect((await call('POST', `/v1/appointments/${booked.body.appointmentId}/cancel`, { token: tokens.frontDesk, body: { reason: 'Doctor hours changing' } })).status).toBe(200);
+    const key = `weekly-${run}`;
+    const saved = await call('PUT', `/v1/practitioners/${doctor}/weekly-plan`, { idem: key, body: plan() });
+    expect(saved).toMatchObject({ status: 200, body: { canSave: true, affectedAppointmentIds: [] } });
+    expect((await call('PUT', `/v1/practitioners/${doctor}/weekly-plan`, { idem: key, body: plan() })).status).toBe(200); // retried: no duplicate rules
+
+    expect(await sessionsOn(later(42))).toEqual([['04:30', 20]]); // Monday 10:00 IST
+    expect(await sessionsOn(later(45))).toEqual([['03:30', 20]]); // Thursday 09:00 IST
+    expect(await sessionsOn(later(56))).toEqual(before); // the old hours resume after the range
+    expect(await sessionsOn(later(43))).toEqual([['04:30', 30]]); // Branch 2 Tuesday kept
+  });
+
+  it('checks clinic scope, overlap with other clinics, and the start date', async () => {
+    expect((await call('PUT', `/v1/practitioners/${doctor}/weekly-plan`, { token: tokens.branchAdmin, body: { ...plan(), facilityId: facility2 } })).status).toBe(403);
+    const clash = { ...plan(), facilityId: facility2, sessions: [{ weekday: 1, start: '11:00', end: '13:00' }] };
+    expect(await call('PUT', `/v1/practitioners/${doctor}/weekly-plan`, { body: clash })).toMatchObject({ status: 409, body: { error: { details: { reason: 'overlaps_other_hours' } } } });
+    expect(await call('PUT', `/v1/practitioners/${doctor}/weekly-plan`, { now: ist(monday, '07:00'), body: { ...plan(), effectiveFrom: monday } })).toMatchObject({ status: 422, body: { error: { details: { reason: 'starts_too_soon' } } } });
+  });
+});
+
+describe('overbooking per clinic (phase 3)', () => {
+  const later = (days: number) => new Date(Date.parse(monday) + days * 86_400_000).toISOString().slice(0, 10);
+  const day = () => later(63); // a Monday: Branch 1 session 09:00–11:00, 15-minute slots
+  const now = () => ist(monday, '07:00');
+  let n = 0;
+  const party = () => ({ name: `Overbook ${++n}`, phone: `+9198100${String(n).padStart(5, '0')}` });
+  const book = async (time: string) => {
+    const hold = await call('POST', '/v1/holds', { token: tokens.frontDesk, idem: true, now: now(), body: { staffId: doctor, slotStart: ist(day(), time) } });
+    const booked = await call('POST', '/v1/appointments', { token: tokens.frontDesk, idem: true, now: now(), body: { reservationId: hold.body.reservationId, bookingParty: party(), originChannel: 'front_desk' } });
+    expect(booked.status).toBe(201);
+    return booked.body.appointmentId as string;
+  };
+  const overbook = (time: string, token = tokens.frontDesk, extra: object = {}) =>
+    call('POST', '/v1/appointments/overbook', {
+      token,
+      idem: true,
+      now: now(),
+      body: { staffId: doctor, slotStart: ist(day(), time), bookingParty: party(), originChannel: 'front_desk', overbookReason: 'Urgent review', ...extra },
+    });
+  const toggle = (enabled: boolean, token = tokens.branchAdmin, facilityId = t.facilityId) =>
+    call('PUT', `/v1/facilities/${facilityId}/overbooking`, { token, now: now(), body: { enabled } });
+
+  it('is off by default; only a clinic administrator can turn it on for their clinic', async () => {
+    await book('09:00');
+    expect(await overbook('09:00')).toMatchObject({ body: { error: { details: { reason: 'overbooking_disabled' } } } });
+    expect((await toggle(true, tokens.frontDesk)).status).toBe(403);
+    expect((await toggle(true, tokens.branchAdmin, facility2)).status).toBe(403);
+    expect(await toggle(true)).toMatchObject({ status: 200, body: { enabled: true, maxPerSession: 3 } });
+    expect((await call('GET', `/v1/facilities/${t.facilityId}/overbooking`, { token: tokens.frontDesk, now: now() })).body).toMatchObject({ enabled: true });
+    expect((await call('GET', `/v1/facilities/${facility2}/overbooking`, { now: now() })).body).toMatchObject({ enabled: false });
+    const { rows } = await admin.query(`SELECT count(*)::int AS n FROM platform.audit_event WHERE subject_type = 'platform.config_setting' AND tenant_id = $1`, [t.tenantId]);
+    expect(rows[0].n).toBe(1);
+  });
+
+  it('needs the overbook permission, a reason, and a taken, unblocked slot', async () => {
+    expect(await overbook('09:00', tokens.nurse)).toMatchObject({ status: 403, body: { error: { details: { permission: 'appointments.book' } } } });
+    expect(await overbook('09:00', tokens.bot)).toMatchObject({ status: 403, body: { error: { details: { permission: 'appointments.overbook' } } } });
+    expect((await overbook('09:00', tokens.frontDesk, { overbookReason: '' })).status).toBe(400);
+    expect(await overbook('09:15')).toMatchObject({ status: 409, body: { error: { details: { reason: 'slot_free' } } } });
+    await book('10:30');
+    expect((await call('POST', `/v1/practitioners/${doctor}/exceptions`, { body: { onDate: day(), kind: 'block', facilityId: t.facilityId, start: '10:30', end: '10:45' } })).status).toBe(201);
+    expect(await overbook('10:30')).toMatchObject({ status: 409, body: { error: { details: { reason: 'slot_blocked' } } } });
+  });
+
+  it('allows at most three per session, even under concurrency, and leaves double-booking protection intact', async () => {
+    await book('09:30');
+    const results = await Promise.all(['09:00', '09:00', '09:30', '09:30', '09:00'].map((time) => overbook(time)));
+    expect(results.map((r) => r.status).sort()).toEqual([201, 201, 201, 409, 409]);
+    expect(results.filter((r) => r.status === 409).every((r) => r.body.error.details.reason === 'overbook_limit')).toBe(true);
+    const made = results.filter((r) => r.status === 201).map((r) => r.body.appointmentId as string);
+
+    const read = await call('GET', `/v1/appointments/${made[0]}`, { token: tokens.frontDesk });
+    expect(read.body).toMatchObject({ status: 'confirmed', overbookReason: 'Urgent review', feeMinor: 50000 });
+    const { rows } = await admin.query(`SELECT reason FROM platform.audit_event WHERE subject_id = $1 AND action = 'create'`, [made[0]]);
+    expect(rows[0].reason).toBe('Overbooked: Urgent review');
+    // Normal holds still can't overlap a booked slot
+    expect(await call('POST', '/v1/holds', { token: tokens.frontDesk, idem: true, now: now(), body: { staffId: doctor, slotStart: ist(day(), '09:00') } })).toMatchObject({ status: 409 });
+
+    // Cancelling an overbook frees one place in the session
+    expect((await call('POST', `/v1/appointments/${made[0]}/cancel`, { token: tokens.frontDesk, body: { reason: 'Patient called' } })).status).toBe(200);
+    expect((await overbook('09:00')).status).toBe(201);
+    expect(await overbook('09:30')).toMatchObject({ status: 409, body: { error: { details: { reason: 'overbook_limit' } } } });
+  });
+
+  it('turning it off stops new overbooks', async () => {
+    const off = await call('PUT', `/v1/facilities/${t.facilityId}/overbooking`, { token: tokens.branchAdmin, now: ist(monday, '07:05'), body: { enabled: false } });
+    expect(off).toMatchObject({ status: 200, body: { enabled: false } });
+    expect(await toggle(true)).toMatchObject({ status: 409, body: { error: { details: { reason: 'concurrent_change' } } } }); // same instant as the first change
+    const late = await call('POST', '/v1/appointments/overbook', {
+      token: tokens.frontDesk, idem: true, now: ist(monday, '07:10'),
+      body: { staffId: doctor, slotStart: ist(day(), '09:30'), bookingParty: party(), originChannel: 'front_desk', overbookReason: 'Urgent review' },
+    });
+    expect(late).toMatchObject({ body: { error: { details: { reason: 'overbooking_disabled' } } } });
+  });
+});
+
+describe('directory, fees, templates and appointment search (phase 4)', () => {
+  const later = (days: number) => new Date(Date.parse(monday) + days * 86_400_000).toISOString().slice(0, 10);
+  const day = () => later(70); // a Monday
+  const now = () => ist(monday, '07:00');
+  const booked: Array<{ appointmentId: string; confirmationCode: string; feeMinor: number | null }> = [];
+  beforeAll(async () => {
+    const people = [['Lakshmi Narayan', '+919822200001'], ['Ravi Teja', '+919822200002'], ['Lakshmi Devi', '+919822200003'], ['100% Sure', '+919822200004']];
+    for (const [i, [name, phone]] of people.entries()) {
+      const hold = await call('POST', '/v1/holds', { token: tokens.frontDesk, idem: true, now: now(), body: { staffId: doctor, slotStart: ist(day(), `09:${String(i * 15).padStart(2, '0')}`) } });
+      const res = await call('POST', '/v1/appointments', { token: tokens.frontDesk, idem: true, now: now(), body: { reservationId: hold.body.reservationId, bookingParty: { name, phone }, originChannel: 'front_desk' } });
+      expect(res.status).toBe(201);
+      booked.push(res.body);
+    }
+  });
+
+  it("reads a clinic's departments, services and consult rooms within facility scope", async () => {
+    const dir = await call('GET', `/v1/facilities/${t.facilityId}/directory`, { token: tokens.frontDesk });
+    expect(dir.body.departments).toMatchObject([{ code: 'GM', name: 'General Medicine' }]);
+    expect(dir.body.services).toMatchObject([{ code: 'GM-OPD', serviceMode: 'in_person' }]);
+    expect(dir.body.consultRooms).toEqual([]);
+    expect((await call('GET', `/v1/facilities/${facility2}/directory`, { token: tokens.frontDesk })).status).toBe(403);
+  });
+
+  it('quotes the fee booking charges, from the active price list', async () => {
+    const fees = await call('GET', `/v1/practitioners/${doctor}/fees?facilityId=${t.facilityId}&on=${day()}`, { token: tokens.frontDesk });
+    expect(fees.body.items).toMatchObject([{ serviceName: 'GM OPD', visitMode: 'in_person', pricedOn: day(), feeMinor: 50000 }]);
+    expect(fees.body.items[0].feeMinor).toBe(booked[0]!.feeMinor);
+    expect((await call('GET', `/v1/practitioners/${doctor}/fees?facilityId=${facility2}&on=${day()}`)).body.items).toMatchObject([{ feeMinor: null, visitMode: 'in_person' }]); // no service, so no price
+    expect((await call('GET', `/v1/practitioners/${doctor}/fees?facilityId=${facility2}&on=${day()}`, { token: tokens.frontDesk })).status).toBe(403);
+  });
+
+  it('note templates carry their field order', async () => {
+    const { body } = await call('GET', '/v1/note-templates');
+    const soap = body.items.filter((x: { code: string }) => x.code === 'opd_consultation');
+    expect(soap).toHaveLength(1);
+    expect(soap[0].schema.propertyOrder).toEqual(['subjective', 'objective', 'assessment', 'plan']);
+  });
+
+  it('searches by name, phone digits and confirmation code; wildcards are literal', async () => {
+    const search = async (q: string) =>
+      (await call('GET', `/v1/appointments?from=${day()}&to=${day()}&facilityId=${t.facilityId}&q=${encodeURIComponent(q)}`, { token: tokens.frontDesk })).body.items.map((a: { bookingPartyName: string }) => a.bookingPartyName);
+    expect(await search('lakshmi')).toEqual(['Lakshmi Narayan', 'Lakshmi Devi']);
+    expect(await search('2200002')).toEqual(['Ravi Teja']);
+    expect(await search(booked[2]!.confirmationCode.toLowerCase())).toEqual(['Lakshmi Devi']);
+    expect(await search('0%')).toEqual(['100% Sure']);
+    expect(await search('__')).toEqual([]);
+    expect((await call('GET', `/v1/appointments?from=${day()}&to=${day()}&facilityId=${t.facilityId}&q=a`, { token: tokens.frontDesk })).status).toBe(400);
+  });
+
+  it('pages deterministically with a cursor, and rejects a tampered cursor', async () => {
+    const url = (extra: string) => `/v1/appointments?from=${day()}&to=${day()}&facilityId=${t.facilityId}${extra}`;
+    const all = (await call('GET', url(''), { token: tokens.frontDesk })).body;
+    expect(all.nextCursor).toBeNull();
+    const paged: string[] = [];
+    let cursor: string | null = null;
+    do {
+      const page: { status: number; body: { items: Array<{ appointmentId: string }>; nextCursor: string | null } } = await call('GET', url(`&limit=1${cursor ? `&cursor=${cursor}` : ''}`), { token: tokens.frontDesk });
+      expect(page.body.items.length).toBeLessThanOrEqual(1);
+      paged.push(...page.body.items.map((a) => a.appointmentId));
+      cursor = page.body.nextCursor;
+    } while (cursor);
+    expect(paged).toEqual(all.items.map((a: { appointmentId: string }) => a.appointmentId));
+    expect(paged).toHaveLength(4);
+    expect((await call('GET', url('&cursor=bm90LWEtY3Vyc29y'), { token: tokens.frontDesk })).status).toBe(400);
+  });
+});
+
+describe('operations summary (phase 5, G12)', () => {
+  const at = () => ist(monday, '07:00');
+  const summary = () => call('GET', `/v1/operations/summary?facilityId=${t.facilityId}&date=${monday}`, { token: tokens.frontDesk, now: at() });
+
+  it("summarises one clinic exactly as stored, and counts live holds", async () => {
+    const before = await summary();
+    expect(before.status).toBe(200);
+    const { rows: [stored] } = await admin.query(
+      `SELECT count(*)::int AS total, count(*) FILTER (WHERE origin_channel = 'front_desk')::int AS desk FROM booking.appointment WHERE facility_id = $1`,
+      [t.facilityId],
+    );
+    const s = before.body;
+    // Front desk has scoped comms.read; an empty persisted local queue is known zero.
+    expect(s.summary).toMatchObject({ appointmentsTotal: stored.total, pendingNotifications: 0, voiceSessions: 0 });
+    expect(s.byStatus.reduce((n: number, x: { value: number }) => n + x.value, 0)).toBe(stored.total);
+    expect(s.byChannel.find((x: { label: string }) => x.label === 'front_desk')?.value ?? 0).toBe(stored.desk);
+    expect(s.dailyBookings).toHaveLength(14);
+    expect(s.dailyBookings.at(-1).date).toBe(monday);
+    expect(s.recent.length).toBeGreaterThan(0);
+    expect(s.recent.every((a: { facilityId: string }) => a.facilityId === t.facilityId)).toBe(true);
+
+    const day = new Date(Date.parse(monday) + 84 * 86_400_000).toISOString().slice(0, 10);
+    const slots = await call('GET', `/v1/practitioners/${doctor}/slots?facilityId=${t.facilityId}&from=${day}&to=${day}`, { token: tokens.frontDesk, now: at() });
+    const free = slots.body.items.find((x: { status: string }) => x.status === 'free');
+    expect((await call('POST', '/v1/holds', { token: tokens.frontDesk, idem: true, now: at(), body: { staffId: doctor, slotStart: free.slotStart } })).status).toBe(201);
+    expect((await summary()).body.summary.activeHolds).toBe(s.summary.activeHolds + 1);
+  });
+
+  it('lists the tenant\'s latest outbox events, metadata only, to tenant-wide auditors', async () => {
+    const res = await call('GET', '/v1/operations/events?limit=20', { token: tokens.admin });
+    expect(res.status).toBe(200);
+    const { rows } = await admin.query<{ id: string }>(
+      `SELECT id FROM platform.outbox_event WHERE tenant_id = $1 ORDER BY occurred_at DESC, id DESC LIMIT 20`,
+      [t.tenantId],
+    );
+    expect(rows.length).toBeGreaterThan(0);
+    expect(res.body.items.map((e: { eventId: string }) => e.eventId)).toEqual(rows.map((r) => r.id));
+    for (const e of res.body.items) {
+      expect(Object.keys(e).sort()).toEqual(['aggregateId', 'aggregateType', 'attempts', 'eventId', 'eventType', 'occurredAt', 'processedAt', 'status']);
+    }
+    // A Branch 1 administrator and front desk can't see events from every clinic
+    expect((await call('GET', '/v1/operations/events', { token: tokens.branchAdmin })).status).toBe(403);
+    expect((await call('GET', '/v1/operations/events', { token: tokens.frontDesk })).status).toBe(403);
+    expect((await call('GET', '/v1/operations/events?limit=1000', { token: tokens.admin })).status).toBe(400);
+  });
+
+  it("is limited to the caller's clinics", async () => {
+    expect((await call('GET', `/v1/operations/summary?facilityId=${facility2}&date=${monday}`, { token: tokens.frontDesk })).status).toBe(403);
+    expect((await call('GET', `/v1/operations/summary?facilityId=${t.facilityId}`, { token: tokens.frontDesk })).status).toBe(400);
+  });
+});
+
+describe('waitlist (G11)', () => {
+  const addDays = (d: string, n: number) => new Date(Date.parse(d) + n * 86_400_000).toISOString().slice(0, 10);
+  const week = () => addDays(monday, 98); // a Monday: the doctor is at Branch 1 on Mondays, Branch 2 on Tuesdays
+  const now = () => ist(monday, '07:00');
+  const later = (minutes: number) => new Date(Date.parse(now()) + minutes * 60_000).toISOString();
+  const add = (token: string, body: Record<string, unknown> = {}) =>
+    call('POST', '/v1/waitlist', {
+      token,
+      idem: true,
+      now: now(),
+      body: { facilityId: t.facilityId, staffId: doctor, preferredFrom: week(), preferredTo: addDays(week(), 1), bookingParty: { name: 'Waiting Caller', phone: '+919833300001' }, notes: 'Mornings only', ...body },
+    });
+  const freeSlots = async (facilityId: string, on: string) =>
+    (await call('GET', `/v1/practitioners/${doctor}/slots?facilityId=${facilityId}&from=${on}&to=${on}`, { token: tokens.admin, now: now() })).body.items
+      .filter((x: { status: string }) => x.status === 'free')
+      .map((x: { slotStart: string }) => x.slotStart);
+  const offer = (id: string, slotStart: string, token = tokens.frontDesk, at = now()) =>
+    call('POST', `/v1/waitlist/${id}/offer`, { token, idem: true, now: at, body: { slotStart } });
+  const list = (at = now(), facilityId = t.facilityId, token = tokens.frontDesk) =>
+    call('GET', `/v1/waitlist?facilityId=${facilityId}`, { token, now: at });
+  const entry = async (id: string, at = now()) => (await list(at)).body.items.find((e: { waitlistEntryId: string }) => e.waitlistEntryId === id);
+
+  it('front desk and the booking bot add requests at their clinic; nurses and other clinics cannot', async () => {
+    const added = await add(tokens.frontDesk);
+    expect(added).toMatchObject({ status: 201, body: { status: 'waiting' } });
+    expect(await entry(added.body.waitlistEntryId)).toMatchObject({ status: 'waiting', bookingPartyName: 'Waiting Caller', bookingPartyPhone: '+919833300001', notes: 'Mornings only', offer: null });
+    expect((await add(tokens.bot, { bookingParty: { name: 'Bot Caller', phone: '+919833300002', verifiedChannel: 'whatsapp' } })).status).toBe(201);
+    expect((await add(tokens.nurse)).status).toBe(403);
+    expect((await add(tokens.frontDesk, { facilityId: facility2 })).status).toBe(403);
+    expect((await list(now(), facility2)).status).toBe(403);
+    expect((await add(tokens.frontDesk, { preferredTo: addDays(week(), 61) })).status).toBe(400);
+    expect((await add(tokens.frontDesk, { bookingParty: { name: 'No Phone' } })).status).toBe(400);
+  });
+
+  it('offers one slot at a time, within the dates and the clinic; declining frees the slot', async () => {
+    const id = (await add(tokens.frontDesk)).body.waitlistEntryId;
+    const [first, second] = await freeSlots(t.facilityId, week());
+    expect((await offer(id, ist(addDays(week(), 7), '09:00'))).status).toBe(400); // outside the requested dates
+    const branch2 = (await freeSlots(facility2, addDays(week(), 1)))[0];
+    expect((await offer(id, branch2, tokens.admin)).body.error.details.reason).toBe('slot_unavailable'); // the doctor's Branch 2 slot
+
+    const both = await Promise.all([offer(id, first), offer(id, second)]);
+    expect(both.map((r) => r.status).sort()).toEqual([201, 409]);
+    const made = both.find((r) => r.status === 201)!.body;
+    expect(Date.parse(made.expiresAt) - Date.parse(now())).toBe(15 * 60_000);
+    expect(await entry(id)).toMatchObject({ status: 'offered', offer: { offerId: made.offerId } });
+    expect(await freeSlots(t.facilityId, week())).not.toContain(made.slotStart);
+    // The offer's hold can only be released by declining, never through the plain hold route
+    const { rows: [r] } = await admin.query<{ reservation_id: string }>(`SELECT reservation_id FROM booking.waitlist_offer WHERE id = $1`, [made.offerId]);
+    expect((await call('DELETE', `/v1/holds/${r!.reservation_id}`, { token: tokens.frontDesk })).status).toBe(404);
+
+    const declined = await call('POST', `/v1/waitlist-offers/${made.offerId}/decline`, { token: tokens.frontDesk, now: now() });
+    expect(declined).toMatchObject({ status: 200, body: { status: 'waiting' } });
+    expect(await freeSlots(t.facilityId, week())).toContain(made.slotStart);
+    expect((await call('POST', `/v1/waitlist-offers/${made.offerId}/accept`, { token: tokens.frontDesk, idem: true, now: now() })).body.error.details.reason).toBe('offer_expired');
+  });
+
+  it('accepting books the held slot for the caller exactly once', async () => {
+    const id = (await add(tokens.frontDesk)).body.waitlistEntryId;
+    const made = (await offer(id, (await freeSlots(t.facilityId, week()))[0])).body;
+    const key = `accept-${run}`;
+    const accepted = await call('POST', `/v1/waitlist-offers/${made.offerId}/accept`, { token: tokens.frontDesk, idem: key, now: later(5) });
+    expect(accepted).toMatchObject({ status: 201, body: { status: 'confirmed', startsAt: made.slotStart } });
+    const again = await call('POST', `/v1/waitlist-offers/${made.offerId}/accept`, { token: tokens.frontDesk, idem: key, now: later(5) });
+    expect(again.body.appointmentId).toBe(accepted.body.appointmentId);
+    const appt = await call('GET', `/v1/appointments/${accepted.body.appointmentId}`, { token: tokens.frontDesk });
+    expect(appt.body).toMatchObject({ bookingPartyName: 'Waiting Caller', patientId: null, originChannel: 'front_desk' });
+    expect(await entry(id)).toBeUndefined(); // accepted requests leave the active list
+    expect((await call('GET', `/v1/waitlist?facilityId=${t.facilityId}&status=accepted`, { token: tokens.frontDesk })).body.items.map((e: { waitlistEntryId: string }) => e.waitlistEntryId)).toContain(id);
+  });
+
+  it('an unanswered offer lapses after 15 minutes: it cannot be accepted and the request waits again', async () => {
+    const id = (await add(tokens.frontDesk)).body.waitlistEntryId;
+    const made = (await offer(id, (await freeSlots(t.facilityId, week()))[0])).body;
+    expect((await entry(id, later(16))).status).toBe('waiting');
+    const late = await call('POST', `/v1/waitlist-offers/${made.offerId}/accept`, { token: tokens.frontDesk, idem: true, now: later(16) });
+    expect(late.body.error.details.reason).toBe('offer_expired');
+    expect((await offer(id, made.slotStart, tokens.frontDesk, later(16))).status).toBe(201); // can be offered again
+  });
+
+  it('withdrawing needs a reason and releases a pending offer; other clinics cannot act on a request', async () => {
+    const id = (await add(tokens.frontDesk)).body.waitlistEntryId;
+    const made = (await offer(id, (await freeSlots(t.facilityId, week()))[0])).body;
+    expect((await call('POST', `/v1/waitlist/${id}/withdraw`, { token: tokens.frontDesk, body: {} })).status).toBe(400);
+    expect(await call('POST', `/v1/waitlist/${id}/withdraw`, { token: tokens.frontDesk, now: now(), body: { reason: 'Found another doctor' } })).toMatchObject({ status: 200, body: { status: 'withdrawn' } });
+    expect(await freeSlots(t.facilityId, week())).toContain(made.slotStart);
+
+    const elsewhere = await add(tokens.admin, { facilityId: facility2, preferredFrom: addDays(week(), 1), preferredTo: addDays(week(), 1) });
+    expect(elsewhere.status).toBe(201);
+    const slot2 = (await freeSlots(facility2, addDays(week(), 1)))[0];
+    expect((await offer(elsewhere.body.waitlistEntryId, slot2)).status).toBe(403);
+    const adminOffer = await offer(elsewhere.body.waitlistEntryId, slot2, tokens.admin);
+    expect(adminOffer.status).toBe(201);
+    expect((await call('POST', `/v1/waitlist-offers/${adminOffer.body.offerId}/accept`, { token: tokens.frontDesk, idem: true, now: now() })).status).toBe(403);
+    expect((await call('POST', `/v1/waitlist-offers/${adminOffer.body.offerId}/decline`, { token: tokens.frontDesk, now: now() })).status).toBe(403);
+    expect((await call('POST', `/v1/waitlist/${elsewhere.body.waitlistEntryId}/withdraw`, { token: tokens.frontDesk, body: { reason: 'Not mine' } })).status).toBe(403);
+    expect((await call('POST', `/v1/waitlist/${randomUUID()}/withdraw`, { token: tokens.frontDesk, body: { reason: 'Unknown' } })).status).toBe(404);
+  });
+});
+
 describe('validation', () => {
   it('rejects bad input with 400 and the field issues', async () => {
     const res = await call('POST', '/v1/patients', { token: tokens.frontDesk, idem: true, body: { givenName: '', sex: 'x', registeredFacilityId: 'nope', source: 'front_desk' } });
@@ -210,6 +678,16 @@ describe('the booking journey over HTTP', () => {
     expect(reg).toMatchObject({ status: 201, body: { mrn: '000001' } });
     const found = await call('GET', '/v1/patients?phone=%2B919811122233', { token: tokens.frontDesk });
     expect(found.body.items.map((p: { patientId: string }) => p.patientId)).toEqual([reg.body.patientId]);
+    // Type-ahead: a fragment of the name finds her too; LIKE wildcards are literal
+    const typed = await call('GET', '/v1/patients?q=nit', { token: tokens.frontDesk });
+    expect(typed.body.items.map((p: { patientId: string }) => p.patientId)).toContain(reg.body.patientId);
+    expect((await call('GET', '/v1/patients?q=%25%25', { token: tokens.frontDesk })).body.items).toEqual([]);
+    // Without search terms the page lists the clinic's registered patients, newest first; other clinics need their own grant
+    const listed = await call('GET', `/v1/patients?facilityId=${t.facilityId}&limit=1`, { token: tokens.frontDesk });
+    expect(listed).toMatchObject({ status: 200, body: { items: [{ patientId: reg.body.patientId, mrn: '000001' }], more: false } });
+    expect((await call('GET', `/v1/patients?facilityId=${t.facilityId}&offset=1`, { token: tokens.frontDesk })).body).toEqual({ items: [], more: false });
+    expect((await call('GET', `/v1/patients?facilityId=${facility2}`, { token: tokens.frontDesk })).status).toBe(403);
+    expect((await call('GET', `/v1/patients?facilityId=${facility2}`, { token: tokens.admin })).body).toEqual({ items: [], more: false });
     const checkedIn = await call('POST', `/v1/appointments/${appointmentId}/check-in`, { token: tokens.frontDesk, idem: true, now: morning, body: { patientId: reg.body.patientId } });
     expect(checkedIn).toMatchObject({ status: 200, body: { tokenNo: 1 } });
 

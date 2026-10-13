@@ -12,6 +12,15 @@ import { parse, sendError } from './http/support.ts';
 import { registerClinicalRoutes } from './http/routes/clinical.ts';
 import { registerBookingRoutes } from './http/routes/booking.ts';
 import { registerCalendarRoutes } from './http/routes/calendar.ts';
+import { registerCommsRoutes } from './http/routes/comms.ts';
+import { registerCommsSummaryRoutes } from './http/routes/comms-summary.ts';
+import { registerVoiceGrowthRoutes } from './http/routes/voice-growth.ts';
+import { loadChannelSettings, type ChannelSettings } from './modules/comms/voice-growth.ts';
+import { registerAccessRoutes } from './http/routes/access.ts';
+import { registerAdminRoutes } from './http/routes/admin.ts';
+import { registerBoardRoutes } from './http/routes/board.ts';
+import { registerRecordRoutes } from './http/routes/records.ts';
+import { registerRegistryRoutes } from './http/routes/registry.ts';
 import { registerDirectoryRoutes } from './http/routes/directory.ts';
 import { registerPatientRoutes } from './http/routes/patients.ts';
 import { registerQueueRoutes } from './http/routes/queue.ts';
@@ -30,17 +39,27 @@ export interface ServerDeps {
    * Development only: enables POST /dev/login, which signs a token for a seeded identity so a local
    * front-end can sign in without an identity provider. Never set in production.
    */
-  devLogin?: (subject: string) => Promise<string>;
+  devLogin?: (subject: string, email?: string) => Promise<string>;
   /** Virtual OPD settings (Jitsi signing, join window); defaults to the environment's. */
   telehealth?: TelehealthSettings;
+  channels?: ChannelSettings;
 }
 
 const REQUEST_ID = /^[A-Za-z0-9_.:-]{8,128}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export interface RouteEntry {
+  method: string;
+  url: string;
+}
+const routeTables = new WeakMap<FastifyInstance, RouteEntry[]>();
+/** Every route the server registered (method and pattern), e.g. for the frontend coverage test. */
+export const routesOf = (app: FastifyInstance): readonly RouteEntry[] => routeTables.get(app) ?? [];
+
 export function buildServer(deps: ServerDeps): FastifyInstance {
   const app = Fastify({
-    logger: deps.logger ?? false,
+    // Query strings carry patient search terms (names, phones), so request logs keep the path only.
+    logger: deps.logger ? { serializers: { req: (req) => ({ method: req.method, url: req.url.split('?')[0], reqId: req.id, remoteAddress: req.ip }) } } : false,
     // Use the caller's X-Request-Id when it's sane, else a fresh UUID; it is recorded on audit/outbox rows.
     genReqId: (req) => {
       const header = req.headers['x-request-id'];
@@ -57,12 +76,19 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   });
   app.decorateRequest('principal', null);
   app.decorateRequest('clockOverride', undefined);
+  const table: RouteEntry[] = [];
+  routeTables.set(app, table);
+  app.addHook('onRoute', (route) => {
+    for (const method of [route.method].flat()) if (method !== 'HEAD') table.push({ method, url: route.url });
+  });
 
   app.addHook('onSend', async (request, reply) => {
     reply.header('x-request-id', request.id);
   });
 
   app.addHook('onRequest', async (request) => {
+    // This exact provider endpoint verifies its own challenge/HMAC in the encapsulated router.
+    if (request.url.split('?')[0] === '/v1/integrations/whatsapp/webhook' && ['GET','POST'].includes(request.method)) return;
     if (deps.allowClockOverride && request.url.startsWith('/tele/v1/')) {
       const now = request.headers['x-test-now'];
       if (typeof now === 'string') request.clockOverride = new Date(now);
@@ -100,9 +126,9 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   if (deps.devLogin) {
     const devLogin = deps.devLogin;
     app.post('/dev/login', async (request) => {
-      const { subject } = parse(z.object({ subject: z.string().trim().min(1).max(100) }), request.body);
-      // The token is only useful if the subject has an account; /v1/me will say who it is.
-      return { token: await devLogin(subject), tokenType: 'Bearer', note: 'development login — disabled outside AUTH_MODE=dev' };
+      const { subject, email } = parse(z.object({ subject: z.string().trim().min(1).max(100), email: z.email().optional() }), request.body);
+      // The token is only useful if the subject has an account (or `email` has an open staff invite); /v1/me says who it is.
+      return { token: await devLogin(subject, email), tokenType: 'Bearer', note: 'development login — disabled outside AUTH_MODE=dev' };
     });
   }
 
@@ -118,12 +144,20 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
     };
   });
 
+  registerCommsRoutes(app, deps.db);
+  registerCommsSummaryRoutes(app, deps.db);
+  registerVoiceGrowthRoutes(app, deps.db, deps.channels ?? loadChannelSettings());
+  registerAccessRoutes(app, deps.db);
   registerDirectoryRoutes(app, deps.db);
   registerPatientRoutes(app, deps.db);
   registerCalendarRoutes(app, deps.db);
   registerBookingRoutes(app, deps.db);
   registerQueueRoutes(app, deps.db);
   registerClinicalRoutes(app, deps.db);
+  registerAdminRoutes(app, deps.db);
+  registerRegistryRoutes(app, deps.db);
+  registerRecordRoutes(app, deps.db);
+  registerBoardRoutes(app, deps.db);
   registerTelehealthRoutes(app, deps.db, deps.telehealth ?? loadTelehealthSettings());
   return app;
 }

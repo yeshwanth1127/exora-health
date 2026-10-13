@@ -132,6 +132,9 @@ export interface BookingFacilityHoliday {
   holiday_on: string;
   id: Generated<string>;
   name: string;
+  revoke_reason: string | null;
+  revoked_at: Timestamp | null;
+  revoked_by: string | null;
   tenant_id: string;
   updated_at: Generated<Timestamp>;
   updated_by: string | null;
@@ -168,6 +171,7 @@ export interface BookingReservation {
   hold_expires_at: Timestamp | null;
   id: Generated<string>;
   idempotency_key: string | null;
+  overbook_reason: string | null;
   owner_id: string | null;
   owner_type: string | null;
   period: string;
@@ -207,12 +211,16 @@ export interface BookingScheduleException {
   on_date: string;
   reason: string | null;
   resource_id: string;
+  revoke_reason: string | null;
+  revoked_at: Timestamp | null;
+  revoked_by: string | null;
   slot_minutes: number | null;
   start_local: string | null;
   tenant_id: string;
   updated_at: Generated<Timestamp>;
   updated_by: string | null;
   version: Generated<number>;
+  visit_mode: string | null;
 }
 
 export interface BookingScheduleRule {
@@ -237,6 +245,8 @@ export interface BookingScheduleRule {
   version: Generated<number>;
   visit_mode: Generated<string>;
   weekday: number;
+  withdrawn_at: Timestamp | null;
+  withdrawn_by: string | null;
 }
 
 export interface BookingWaitlistEntry {
@@ -671,6 +681,63 @@ export interface ClinicalAllergyIntolerance {
   version: Generated<number>;
 }
 
+export interface ClinicalBirthRecord {
+  apgar_1: number | null;
+  apgar_5: number | null;
+  attended_by: string;
+  baby_patient_id: string | null;
+  birth_order: Generated<number>;
+  birth_weight_g: number | null;
+  born_at: Timestamp;
+  civil_registration_ref: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  delivery_method: string;
+  encounter_id: string;
+  gestation_weeks: number | null;
+  id: Generated<string>;
+  is_live_birth: boolean;
+  mother_patient_id: string;
+  reported_at: Timestamp | null;
+  sex: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface ClinicalCarePlan {
+  authored_by: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  encounter_id: string | null;
+  id: Generated<string>;
+  patient_id: string;
+  period_end: string | null;
+  period_start: Generated<string>;
+  status: Generated<string>;
+  tenant_id: string;
+  title: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface ClinicalCarePlanActivity {
+  care_plan_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  description: string;
+  frequency: string | null;
+  id: Generated<string>;
+  kind: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
 export interface ClinicalClinicalNote {
   author_staff_id: string;
   created_at: Generated<Timestamp>;
@@ -722,6 +789,30 @@ export interface ClinicalCondition {
   updated_at: Generated<Timestamp>;
   updated_by: string | null;
   verification_status: Generated<string>;
+  version: Generated<number>;
+}
+
+export interface ClinicalDeathRecord {
+  body_released_at: Timestamp | null;
+  body_released_to: string | null;
+  cause_chain: Json;
+  certified_by: string | null;
+  contributing_conditions: Generated<Json>;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  died_at: Timestamp;
+  encounter_id: string;
+  id: Generated<string>;
+  is_mlc: Generated<boolean>;
+  manner: string;
+  mccd_form: string | null;
+  mccd_issued_at: Timestamp | null;
+  patient_id: string;
+  post_mortem_required: Generated<boolean>;
+  pronounced_by: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
   version: Generated<number>;
 }
 
@@ -805,6 +896,60 @@ export interface ClinicalFormTemplate {
   tenant_id: string | null;
 }
 
+export interface ClinicalImmunization {
+  administered_at: Timestamp;
+  administered_by: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  dose_number: number | null;
+  encounter_id: string | null;
+  id: Generated<string>;
+  item_batch_id: string | null;
+  lot_number: string | null;
+  not_done_reason: string | null;
+  patient_id: string;
+  route: string | null;
+  site: string | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  vaccine: string;
+  vaccine_concept_id: string | null;
+  version: Generated<number>;
+}
+
+export interface ClinicalMlcRecord {
+  brought_by_name: string | null;
+  brought_by_phone: string | null;
+  brought_by_relation: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  encounter_id: string;
+  evidence_handover: Generated<Json>;
+  facility_id: string;
+  id: Generated<string>;
+  incident_at: Timestamp | null;
+  incident_place: string | null;
+  injury_details: Generated<Json>;
+  intimation_mode: string | null;
+  intimation_ref: string | null;
+  is_pocso: Generated<boolean>;
+  mlc_no: string;
+  mlc_type: string;
+  officer_badge_no: string | null;
+  officer_name: string | null;
+  patient_id: string;
+  police_intimated_at: Timestamp | null;
+  police_station: string | null;
+  recorded_by: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+  wound_certificate_document_id: string | null;
+}
+
 export interface ClinicalObservation {
   category: string;
   code: string;
@@ -828,6 +973,31 @@ export interface ClinicalObservation {
   updated_by: string | null;
   value_num: Numeric | null;
   value_text: string | null;
+  version: Generated<number>;
+}
+
+export interface ClinicalReferral {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  direction: string;
+  encounter_id: string;
+  external_doctor: string | null;
+  external_org: string | null;
+  id: Generated<string>;
+  patient_id: string;
+  reason: string;
+  referred_by: string;
+  responded_at: Timestamp | null;
+  responded_by: string | null;
+  response_note: string | null;
+  status: Generated<string>;
+  tenant_id: string;
+  to_department_id: string | null;
+  to_facility_id: string | null;
+  to_staff_id: string | null;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  urgency: Generated<string>;
   version: Generated<number>;
 }
 
@@ -899,6 +1069,345 @@ export interface ClinicalTeleSessionEvent {
   occurred_at: Generated<Timestamp>;
   session_id: string;
   tenant_id: string;
+}
+
+export interface ClinicalTriageAssessment {
+  arrival_mode: string | null;
+  assessed_at: Generated<Timestamp>;
+  assessed_by: string;
+  category: string;
+  chief_complaint: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  encounter_id: string;
+  id: Generated<string>;
+  patient_id: string;
+  reassess_due_at: Timestamp | null;
+  tenant_id: string;
+  triage_scale: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface CommsAsset {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  filename: string;
+  id: Generated<string>;
+  mime_type: string;
+  object_key: string;
+  owner_id: string | null;
+  owner_type: string;
+  sha256: string;
+  size_bytes: number;
+  status: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsBookingLink {
+  booking_url: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsBookingLinkChange {
+  actor_staff_id: string;
+  after_url: string;
+  before_url: string | null;
+  created_at: Generated<Timestamp>;
+  facility_id: string;
+  id: Generated<string>;
+  tenant_id: string;
+}
+
+export interface CommsCampaign {
+  approval_hash: string | null;
+  approved_by: string | null;
+  approved_count: Generated<number>;
+  asset_id: string | null;
+  budget_minor: Int8;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  interest: string | null;
+  local_tested: Generated<boolean>;
+  parameters: Json;
+  rate_minor: number;
+  reserved_minor: Generated<Int8>;
+  scheduled_at: Timestamp;
+  status: Generated<string>;
+  template_id: string;
+  tenant_id: string;
+  title: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsCampaignRecipient {
+  address_hash: string;
+  campaign_id: string;
+  contact_point_id: string;
+  created_at: Generated<Timestamp>;
+  excluded_reason: string | null;
+  id: Generated<string>;
+  reserved_minor: number;
+  status: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsChannelAccount {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  phone_number_id: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsContactInterest {
+  contact_point_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  evidence: string;
+  id: Generated<string>;
+  interest: string;
+  tenant_id: string;
+}
+
+export interface CommsContactPoint {
+  address: string;
+  booking_party_id: string | null;
+  channel: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  patient_id: string | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsConversation {
+  assigned_staff_id: string | null;
+  contact_point_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  last_inbound_at: Timestamp | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsDeliveryReceipt {
+  account_id: string;
+  id: Generated<string>;
+  provider_event_id: string;
+  provider_message_id: string;
+  provider_status: string;
+  received_at: Generated<Timestamp>;
+  tenant_id: string;
+}
+
+export interface CommsFollowupRule {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  delay_hours: number;
+  enabled: boolean;
+  facility_id: string;
+  id: Generated<string>;
+  kind: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsInboundMessage {
+  account_id: string;
+  conversation_id: string;
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  provider_message_id: string;
+  received_at: Timestamp;
+  tenant_id: string;
+  text_content: string;
+}
+
+export interface CommsMessageTemplate {
+  body: string;
+  category: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  header: string;
+  id: Generated<string>;
+  language: string;
+  name: string;
+  parameter_count: number;
+  provider_approval: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsMessagingConsentEvent {
+  action: string;
+  contact_point_id: string;
+  evidence: string;
+  explicit_opt_in: Generated<boolean>;
+  id: Generated<string>;
+  occurred_at: Generated<Timestamp>;
+  purpose: string;
+  recorded_by: string | null;
+  source: string;
+  tenant_id: string;
+}
+
+export interface CommsOutboundMessage {
+  attempts: Generated<number>;
+  contact_point_id: string;
+  conversation_id: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  reminder_job_id: string | null;
+  status: Generated<string>;
+  tenant_id: string;
+  text_content: string | null;
+  transport: Generated<string>;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsProviderEvent {
+  account_id: string;
+  event_key: string;
+  id: Generated<string>;
+  payload: Json;
+  received_at: Generated<Timestamp>;
+  tenant_id: string;
+}
+
+export interface CommsReminderJob {
+  appointment_id: string | null;
+  contact_point_id: string | null;
+  created_at: Generated<Timestamp>;
+  due_at: Timestamp;
+  expires_at: Timestamp;
+  facility_id: string;
+  id: Generated<string>;
+  kind: string;
+  purpose: string;
+  reason: string | null;
+  rule_version: number | null;
+  status: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+  waitlist_offer_id: string | null;
+}
+
+export interface CommsSupportCase {
+  conversation_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  description: string;
+  id: Generated<string>;
+  kind: string;
+  rating: number | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsVoiceCall {
+  agent_version: number | null;
+  appointment_id: string | null;
+  available_until: Timestamp | null;
+  consent_evidence: string | null;
+  consented_at: Timestamp | null;
+  created_at: Generated<Timestamp>;
+  ended_at: Timestamp | null;
+  facility_id: string;
+  id: Generated<string>;
+  last_sequence: number;
+  recording_allowed: Generated<boolean>;
+  recording_revoked_at: Timestamp | null;
+  recording_url: string | null;
+  runtime_account_id: string;
+  session_id: string;
+  started_at: Timestamp;
+  status: string;
+  tenant_id: string;
+  tool_calls: Generated<number>;
+  transcript_allowed: Generated<boolean>;
+  transcript_revoked_at: Timestamp | null;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsVoiceConsentEvent {
+  call_id: string;
+  created_at: Generated<Timestamp>;
+  evidence: string;
+  expires_at: Timestamp;
+  id: Generated<string>;
+  occurred_at: Timestamp;
+  recording_effective: boolean;
+  recording_requested: boolean;
+  tenant_id: string;
+  transcript_effective: boolean;
+  transcript_requested: boolean;
+}
+
+export interface CommsVoiceRecordingAccess {
+  actor_staff_id: string;
+  call_id: string;
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  kind: string;
+  outcome: string;
+  tenant_id: string;
+}
+
+export interface CommsVoiceTranscript {
+  call_id: string;
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  tenant_id: string;
+  turns: Json;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsVoiceTranscriptRevision {
+  call_id: string;
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  sequence: number;
+  source: Generated<string>;
+  tenant_id: string;
+  turns: Json;
 }
 
 export interface PatientPatient {
@@ -1016,6 +1525,9 @@ export interface PatientPatientIdentifier {
   is_primary: Generated<boolean>;
   issuer: string | null;
   patient_id: string;
+  removed_at: Timestamp | null;
+  removed_by: string | null;
+  removed_reason: string | null;
   system: string;
   tenant_id: string;
   updated_at: Generated<Timestamp>;
@@ -1150,10 +1662,12 @@ export interface PlatformEmergencyAccessGrant {
 export interface PlatformFacility {
   address_line1: string | null;
   address_line2: string | null;
+  arrival_instructions: string | null;
   city: string | null;
   code: string;
   created_at: Generated<Timestamp>;
   created_by: string | null;
+  directions_url: string | null;
   district: string | null;
   email: string | null;
   facility_type: string;
@@ -1404,8 +1918,9 @@ export interface PlatformUserAccount {
   email: string | null;
   failed_login_count: Generated<number>;
   id: Generated<string>;
-  identity_issuer: string;
-  identity_subject: string;
+  identity_issuer: string | null;
+  identity_subject: string | null;
+  invite_expires_at: Timestamp | null;
   last_login_at: Timestamp | null;
   mfa_enrolled: Generated<boolean>;
   patient_id: string | null;
@@ -1455,19 +1970,50 @@ export interface DB {
   "catalog.team_fee_rule": CatalogTeamFeeRule;
   "catalog.terminology_concept": CatalogTerminologyConcept;
   "clinical.allergy_intolerance": ClinicalAllergyIntolerance;
+  "clinical.birth_record": ClinicalBirthRecord;
+  "clinical.care_plan": ClinicalCarePlan;
+  "clinical.care_plan_activity": ClinicalCarePlanActivity;
   "clinical.clinical_note": ClinicalClinicalNote;
   "clinical.clinical_note_version": ClinicalClinicalNoteVersion;
   "clinical.condition": ClinicalCondition;
+  "clinical.death_record": ClinicalDeathRecord;
   "clinical.encounter": ClinicalEncounter;
   "clinical.encounter_diagnosis": ClinicalEncounterDiagnosis;
   "clinical.encounter_participant": ClinicalEncounterParticipant;
   "clinical.encounter_status_history": ClinicalEncounterStatusHistory;
   "clinical.form_template": ClinicalFormTemplate;
+  "clinical.immunization": ClinicalImmunization;
+  "clinical.mlc_record": ClinicalMlcRecord;
   "clinical.observation": ClinicalObservation;
+  "clinical.referral": ClinicalReferral;
   "clinical.tele_consent": ClinicalTeleConsent;
   "clinical.tele_consent_document": ClinicalTeleConsentDocument;
   "clinical.tele_session": ClinicalTeleSession;
   "clinical.tele_session_event": ClinicalTeleSessionEvent;
+  "clinical.triage_assessment": ClinicalTriageAssessment;
+  "comms.asset": CommsAsset;
+  "comms.booking_link": CommsBookingLink;
+  "comms.booking_link_change": CommsBookingLinkChange;
+  "comms.campaign": CommsCampaign;
+  "comms.campaign_recipient": CommsCampaignRecipient;
+  "comms.channel_account": CommsChannelAccount;
+  "comms.contact_interest": CommsContactInterest;
+  "comms.contact_point": CommsContactPoint;
+  "comms.conversation": CommsConversation;
+  "comms.delivery_receipt": CommsDeliveryReceipt;
+  "comms.followup_rule": CommsFollowupRule;
+  "comms.inbound_message": CommsInboundMessage;
+  "comms.message_template": CommsMessageTemplate;
+  "comms.messaging_consent_event": CommsMessagingConsentEvent;
+  "comms.outbound_message": CommsOutboundMessage;
+  "comms.provider_event": CommsProviderEvent;
+  "comms.reminder_job": CommsReminderJob;
+  "comms.support_case": CommsSupportCase;
+  "comms.voice_call": CommsVoiceCall;
+  "comms.voice_consent_event": CommsVoiceConsentEvent;
+  "comms.voice_recording_access": CommsVoiceRecordingAccess;
+  "comms.voice_transcript": CommsVoiceTranscript;
+  "comms.voice_transcript_revision": CommsVoiceTranscriptRevision;
   "patient.patient": PatientPatient;
   "patient.patient_address": PatientPatientAddress;
   "patient.patient_consent": PatientPatientConsent;
