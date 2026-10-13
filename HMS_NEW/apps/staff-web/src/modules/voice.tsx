@@ -466,8 +466,22 @@ export function VoiceModule({
           <>
             {!demo && !r.data.configuration.calls_ready && (
               <Notice
-                title="Call history integration needs setup"
-                text="Connect the clinic’s authenticated runtime and pinned agent version to receive call history."
+                title="Call history isn’t connected"
+                text="Ask the integration owner to complete this clinic’s authenticated voice connection. Existing history remains available."
+                action={
+                  <details>
+                    <summary className="cursor-pointer font-medium">
+                      View connection requirements
+                    </summary>
+                    <p className="mt-2">
+                      The integration owner must connect an authenticated
+                      runtime, pin the approved agent version and verify
+                      call-history ingestion. Recording and transcript access
+                      require their own readiness and consent checks. This
+                      screen cannot enable provider credentials.
+                    </p>
+                  </details>
+                }
               />
             )}
             {r.data.can_review_recordings &&
@@ -603,8 +617,9 @@ export function VoiceModule({
                               colSpan={5}
                               className="py-12 text-center text-muted-foreground"
                             >
-                              Calls will appear here when patients use the voice
-                              assistant.
+                              {r.data.configuration.calls_ready
+                                ? "No calls recorded for this clinic. New call records will appear after the connected assistant handles a call."
+                                : "No call records are available. Ask the integration owner to complete the connection requirements above."}
                             </TableCell>
                           </TableRow>
                         )}

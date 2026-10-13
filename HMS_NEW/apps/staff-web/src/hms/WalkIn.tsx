@@ -21,7 +21,9 @@ export function WalkIn({
     [register, setRegister] = useState(false),
     [reason, setReason] = useState(""),
     [priority, setPriority] = useState("normal");
-  useUnsaved(cmd.unknown || !!reason.trim());
+  useUnsaved(
+    cmd.unknown || !!patient || !!reason.trim() || priority !== "normal",
+  );
   return (
     <div className="p-6 space-y-5">
       <ErrorMessage text={cmd.error} />

@@ -121,12 +121,12 @@ export function AvailabilityCalendar({
               aria-label={`${fullDate.format(new Date(`${day}T12:00:00Z`))}, ${caption}`}
               disabled={disabled || loading || failed || past}
               onClick={() => onSelect(day)}
-              className={`min-h-16 rounded-md border px-1 py-2 text-center transition-colors disabled:opacity-40 ${day === date ? "border-foreground bg-foreground text-background" : count ? "border-border bg-background hover:border-foreground" : "border-transparent text-muted-foreground hover:bg-muted"}`}
+              className={`min-h-16 rounded-md border px-1 py-2 text-center transition-colors disabled:opacity-40 ${day === date ? "border-blue-600 bg-blue-600 text-white" : count ? "border-emerald-200 bg-background hover:border-emerald-600" : "border-transparent text-muted-foreground hover:bg-muted"}`}
             >
               <span className="block text-sm font-semibold">
                 {Number(day.slice(-2))}
               </span>
-              <span className="mt-1 block text-[10px] leading-tight">
+              <span className="mt-1 block text-xs leading-tight">
                 {caption}
               </span>
             </button>

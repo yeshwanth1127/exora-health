@@ -1,6 +1,6 @@
 import { PatientVisitActions } from "./PatientVisits";
 import { appointmentModeLabel, type AppointmentMode } from "./booking-workflow";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +15,11 @@ import {
 } from "@/components/ui/table";
 import { PageTitle } from "@/components/workspace";
 import { useCommand, useQuery, useWorkspace } from "./hooks";
+import { WorkspaceEmpty } from "./WorkspaceEmpty";
 import { query } from "./client";
 import { FullPage } from "./FullPage";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { confirmLeave, useUnsaved } from "./leave";
+import { requestLeave, useUnsaved } from "./leave";
 import { label, needsCareAccess } from "./model";
 import { E164, PINCODE, blankToNull, changedFields, isStale } from "./forms";
 import {
@@ -46,9 +47,12 @@ export function TestPatientBadge({ patientId }: { patientId: string }) {
 
 export function PatientLookup({
   onSelect,
+  onRegister,
 }: {
   onSelect: (patient: Patient) => void;
+  onRegister?: () => void;
 }) {
+  const searchInput = useRef<HTMLInputElement>(null);
   const [text, setText] = useState(""),
     [search, setSearch] = useState("");
   useEffect(() => {
@@ -71,6 +75,7 @@ export function PatientLookup({
         <Search className="size-4 text-muted-foreground" />
         <Input
           aria-label="Patient search"
+          ref={searchInput}
           placeholder="Type a name, MRN or phone"
           autoComplete="off"
           value={text}
@@ -100,11 +105,33 @@ export function PatientLookup({
           <span>Select</span>
         </Button>
       ))}
-      {search.length >= 2 && result.data?.items.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          No match. Check the details before registering a new patient.
-        </p>
+      {search.length < 2 && (
+        <WorkspaceEmpty
+          title="Find the patient first"
+          description="Search by name, MRN or phone to avoid duplicate registration."
+          action={{
+            label: "Focus search",
+            onClick: () => searchInput.current?.focus(),
+          }}
+        />
       )}
+      {search.length >= 2 &&
+        !result.loading &&
+        !result.error &&
+        result.data?.items.length === 0 && (
+          <WorkspaceEmpty
+            title="No patient found"
+            description="Check the name or phone before registering someone new. Registration is available in the patient step when your role permits it."
+            action={
+              onRegister
+                ? { label: "Register patient", onClick: onRegister }
+                : {
+                    label: "Edit search",
+                    onClick: () => searchInput.current?.focus(),
+                  }
+            }
+          />
+        )}
     </div>
   );
 }
@@ -122,7 +149,10 @@ export function RegisterPatient({
     [phone, setPhone] = useState(""),
     [birthDate, setBirthDate] = useState(""),
     [sex, setSex] = useState("unknown");
-  useUnsaved(!!(givenName || familyName || phone || birthDate) || cmd.unknown);
+  useUnsaved(
+    !!(givenName || familyName || phone || birthDate) || sex !== "unknown",
+    { pending: cmd.busy || cmd.unknown },
+  );
   return (
     <form
       className="space-y-4"
@@ -279,7 +309,7 @@ export function Patients() {
         patientId={openedId}
         onBack={() => {
           setOpenedId(null);
-          history.replaceState(null, "", location.pathname);
+          history.replaceState(history.state, "", location.pathname);
         }}
       />
     );
@@ -299,7 +329,12 @@ export function Patients() {
       />
       <Card>
         <CardContent className="pt-6">
-          <PatientLookup onSelect={select} />
+          <PatientLookup
+            onSelect={select}
+            onRegister={
+              can("patients.register") ? () => setRegister(true) : undefined
+            }
+          />
         </CardContent>
       </Card>
       {/* Remounting starts the list again at page 1 for a new clinic or a new registration. */}
@@ -430,7 +465,7 @@ function PatientRecord({
                   <TestPatientBadge patientId={patientId} />
                 </span>
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-base text-muted-foreground">
                 MRN {d.mrn} · {label(d.sex)} ·{" "}
                 {d.birthDate ?? "Birth date not recorded"}
               </p>
@@ -456,10 +491,10 @@ function PatientRecord({
         <Tabs
           value={tab}
           onValueChange={(v) => {
-            if (confirmLeave()) {
+            requestLeave(() => {
               setTab(v);
               setEditing(false);
-            }
+            });
           }}
         >
           <TabsList
@@ -471,7 +506,7 @@ function PatientRecord({
               className="h-auto min-h-16 flex-col items-start justify-center rounded-lg border border-border px-5 py-3 text-left text-foreground data-active:border-foreground data-active:bg-foreground data-active:text-background"
             >
               <span className="font-semibold">Overview</span>
-              <span className="text-xs font-normal opacity-75">
+              <span className="text-sm font-normal opacity-80">
                 Patient details & contacts
               </span>
             </TabsTrigger>
@@ -481,7 +516,7 @@ function PatientRecord({
                 className="h-auto min-h-16 flex-col items-start justify-center rounded-lg border border-border px-5 py-3 text-left text-foreground data-active:border-foreground data-active:bg-foreground data-active:text-background"
               >
                 <span className="font-semibold">Medical history</span>
-                <span className="text-xs font-normal opacity-75">
+                <span className="text-sm font-normal opacity-80">
                   Previous visits, allergies & records
                 </span>
               </TabsTrigger>
@@ -517,7 +552,7 @@ function PatientRecord({
                     />
                   ) : (
                     <>
-                      <dl className="grid grid-cols-3 gap-x-8 gap-y-5 text-sm">
+                      <dl className="grid grid-cols-3 gap-x-8 gap-y-5 text-base">
                         {[
                           [
                             "Name",
@@ -582,14 +617,13 @@ function PatientRecord({
           </section>
         )}
         {tab === "history" && can("clinical.read") && (
-          <section className="space-y-5">
-            <h2 className="text-lg font-semibold">Medical history</h2>
-            <p className="text-sm text-muted-foreground">
+          <section className="space-y-6 text-base">
+            <h2 className="text-xl font-semibold">Medical history</h2>
+            <p className="text-base text-muted-foreground">
               Review allergies, ongoing problems, vitals and previous visits.
               Open a visit for its full notes and clinical record.
             </p>
-            <PatientChart patientId={patientId} />
-            <PatientRegistry section="history" patientId={patientId} />
+            <PatientChart patientId={patientId} includeRegistry />
           </section>
         )}
       </LoadingState>
@@ -599,76 +633,106 @@ function PatientRecord({
 export function PatientChart({
   patientId,
   editable = true,
+  includeRegistry = false,
 }: {
   patientId: string;
   editable?: boolean;
+  includeRegistry?: boolean;
 }) {
-  const { go } = useWorkspace();
-  const result = useQuery<Chart>(`/v1/patients/${patientId}/chart`);
-  if (needsCareAccess(result.failure))
-    return <BreakGlass patientId={patientId} onGranted={result.refresh} />;
+  const { go, can } = useWorkspace();
+  const result = useQuery<Chart>(
+    can("clinical.read") ? `/v1/patients/${patientId}/chart` : null,
+  );
+  if (result.failure?.status === 403 || !can("clinical.read"))
+    return (
+      <div className="space-y-4">
+        <Hint>
+          Your account cannot open this patient's medical history. Ask the
+          clinic administrator to arrange access.
+        </Hint>
+        {needsCareAccess(result.failure) && can("break_glass.use") && (
+          <BreakGlass patientId={patientId} onGranted={result.refresh} />
+        )}
+      </div>
+    );
+  const fresh = !result.error && !result.loading && !result.failure;
   return (
     <LoadingState {...result}>
       {result.data && (
-        <div className="space-y-5">
+        <div className="space-y-6">
           <AllergiesProblems
             patientId={patientId}
             allergies={result.data.allergies}
             problems={result.data.problems}
-            editable={editable}
+            editable={editable && can("clinical.write") && fresh}
             onChanged={result.refresh}
           />
-          <h3 className="font-semibold">Latest vitals</h3>
-          {result.data.latestVitals.length ? (
-            result.data.latestVitals.map((v) => (
-              <div
-                key={v.code}
-                className="flex justify-between border-b py-2 text-sm"
-              >
-                <span>{v.display}</span>
-                <span>
-                  {v.valueNum ?? v.valueText} {v.unit}
-                </span>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground">No vitals recorded.</p>
-          )}
-          <h3 className="font-semibold">Previous visits</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Visit</TableHead>
-                <TableHead>Doctor</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {result.data.encounters.map((e) => (
-                <TableRow key={e.encounterId}>
-                  <TableCell>
-                    <Button
-                      variant="link"
-                      onClick={() =>
-                        go(`consultations?encounter=${e.encounterId}`)
-                      }
-                    >
-                      {e.encounterNo}
-                    </Button>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(e.arrivedAt).toLocaleDateString("en-IN")}
-                    </p>
-                  </TableCell>
-                  <TableCell>{e.attendingName}</TableCell>
-                  <TableCell>
-                    <Status value={e.status} />
-                  </TableCell>
+          <section className="space-y-3 border-t pt-5">
+            <h3 className="font-semibold">Latest vitals</h3>
+            {result.data.latestVitals.length ? (
+              result.data.latestVitals.map((v) => (
+                <div
+                  key={v.code}
+                  className="flex justify-between border-b py-2 text-sm"
+                >
+                  <span>{v.display}</span>
+                  <span>
+                    {v.valueNum ?? v.valueText} {v.unit}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No vitals recorded.
+              </p>
+            )}
+          </section>
+          <section className="space-y-3 border-t pt-5">
+            <h3 className="font-semibold">Previous visits</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Visit</TableHead>
+                  <TableHead>Doctor</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          {result.data.encounters.length === 0 && (
-            <Empty>No visits recorded.</Empty>
+              </TableHeader>
+              <TableBody>
+                {result.data.encounters.map((e) => (
+                  <TableRow key={e.encounterId}>
+                    <TableCell>
+                      <Button
+                        variant="link"
+                        onClick={() =>
+                          go(`consultations?encounter=${e.encounterId}`)
+                        }
+                      >
+                        {e.encounterNo}
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(e.arrivedAt).toLocaleDateString("en-IN")}
+                      </p>
+                    </TableCell>
+                    <TableCell>{e.attendingName}</TableCell>
+                    <TableCell>
+                      <Status value={e.status} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {!result.data.encounters.length && (
+              <p className="text-sm text-muted-foreground">
+                No visits recorded.
+              </p>
+            )}
+          </section>
+          {includeRegistry && fresh && (
+            <PatientRegistry
+              section="history"
+              patientId={patientId}
+              allowNka={editable && result.data.allergies.length === 0}
+            />
           )}
         </div>
       )}
@@ -722,7 +786,7 @@ function EditPatient({
   const set = (k: keyof typeof start) => (v: string | boolean) =>
     setF((x) => ({ ...x, [k]: v }));
   const dirty = JSON.stringify(f) !== JSON.stringify(start);
-  useUnsaved(dirty || cmd.unknown);
+  useUnsaved(dirty, { pending: cmd.busy || cmd.unknown });
   const problems = [
     !f.givenName.trim() && "Enter the given name.",
     f.phone &&

@@ -153,8 +153,23 @@ export function WhatsAppModule({
           <>
             {localNotifications ? (
               <Notice
-                title="Local notification records · no messages are delivered"
-                text="Inbox, content, campaigns and visit rules use saved local records. Automatic provider delivery is unavailable."
+                title="Message delivery isn’t connected"
+                text="Inbox, content, campaigns and visit rules use saved local records. Supported preparation will not reach patients yet."
+                action={
+                  <details>
+                    <summary className="cursor-pointer font-medium">
+                      Review setup requirements
+                    </summary>
+                    <p className="mt-2">
+                      The integration owner must configure the approved WhatsApp
+                      account and provider credentials, verify signed inbound
+                      webhooks, and validate a permitted delivery flow.
+                      Messaging permission and STOP handling remain required.
+                      This page does not connect a provider or send a test
+                      message.
+                    </p>
+                  </details>
+                }
               />
             ) : (
               !config.data.outreach_enabled &&
@@ -904,8 +919,14 @@ function Followups({
           "Doctor-requested follow-up",
           "Staff choose a contact date for a completed visit",
         ],
-        reschedule: ["Visit moved by the clinic", "After staff reschedule a visit"],
-        cancellation: ["Visit cancelled by the clinic", "After staff cancel a visit"],
+        reschedule: [
+          "Visit moved by the clinic",
+          "After staff reschedule a visit",
+        ],
+        cancellation: [
+          "Visit cancelled by the clinic",
+          "After staff cancel a visit",
+        ],
         feedback: ["Post-visit feedback", "After a persisted completed visit"],
         no_show: [
           "Missed-visit rebooking",

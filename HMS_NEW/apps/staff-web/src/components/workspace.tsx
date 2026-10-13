@@ -1,7 +1,4 @@
 import {
-  Children,
-  cloneElement,
-  isValidElement,
   useCallback,
   useContext,
   useEffect,
@@ -21,7 +18,6 @@ import { api } from "@/lib/api";
 import { OriginalResourceContext, isDraft } from "./resource-source";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -32,12 +28,22 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { SharedField, type SharedFieldProps } from "./shared-field";
+import { useFieldContext } from "./field-context";
+import {
+  loadPresentation,
+  describedBy,
+  revealInvalidFields,
+} from "./form-feedback";
 
 /** Writes for original components: through the resource source when one is provided. */
 export function useApi() {
   const source = useContext(OriginalResourceContext);
   return useCallback(
-    <T,>(path: string, options?: { method?: string; body?: unknown }): Promise<T> =>
+    <T,>(
+      path: string,
+      options?: { method?: string; body?: unknown },
+    ): Promise<T> =>
       source
         ? source.write
           ? source.write<T>(path, options)
@@ -127,13 +133,18 @@ export function Resource({
   error,
   refresh,
   children,
+  data,
+  failure,
 }: {
   loading: boolean;
   error: string;
   refresh: () => void;
   children: ReactNode;
+  data?: unknown;
+  failure?: { status?: number; code?: string } | null;
 }) {
-  if (error)
+  const state = loadPresentation({ loading, error, data, failure });
+  if (state === "error")
     return (
       <Notice
         title="We couldn’t load this page"
@@ -146,7 +157,29 @@ export function Resource({
         }
       />
     );
-  if (loading)
+  if (state === "stale")
+    return (
+      <>
+        <Notice
+          title="Refresh failed · showing previously loaded data"
+          text={error}
+          action={
+            <Button variant="outline" onClick={refresh}>
+              <RefreshCw />
+              Try again
+            </Button>
+          }
+        />
+        <fieldset
+          disabled
+          aria-label="Previously loaded data · actions unavailable"
+          className="min-w-0"
+        >
+          {children}
+        </fieldset>
+      </>
+    );
+  if (state === "loading")
     return (
       <div aria-label="Loading workspace" className="space-y-4">
         <Skeleton className="h-12 w-64" />
@@ -196,138 +229,90 @@ export function SectionTitle({
     </div>
   );
 }
-export function Field({
-  label,
-  hint,
-  error: suppliedError,
-  id,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  error?: string;
-  id: string;
-  children: ReactNode;
-}) {
-  // Honor native constraints in every shared field, including existing forms.
-  const control = Children.toArray(children).find(
-    (child) => isValidElement<{ id?: string }>(child) && child.props.id === id,
-  );
-  let error = suppliedError;
-  if (
-    !error &&
-    isValidElement<{
-      type?: string;
-      value?: string | number;
-      required?: boolean;
-      disabled?: boolean;
-      readOnly?: boolean;
-      minLength?: number;
-      min?: string | number;
-      max?: string | number;
-    }>(control) &&
-    !control.props.disabled &&
-    !control.props.readOnly
-  ) {
-    const p = control.props,
-      value = String(p.value ?? "");
-    if (p.required && !value.trim())
-      error = `Enter ${label.toLowerCase()} to continue.`;
-    else if (p.minLength && value.length < p.minLength)
-      error = `Enter at least ${p.minLength} characters for ${label.toLowerCase()}.`;
-    else if (
-      p.type === "number" &&
-      value &&
-      (!Number.isFinite(Number(value)) ||
-        (p.min !== undefined && Number(value) < Number(p.min)) ||
-        (p.max !== undefined && Number(value) > Number(p.max)))
-    )
-      error = `Enter ${label.toLowerCase()}${p.min !== undefined ? ` from ${p.min}` : ""}${p.max !== undefined ? ` up to ${p.max}` : ""}.`;
-    else if (
-      ["date", "datetime-local", "time"].includes(p.type ?? "") &&
-      value &&
-      ((p.min !== undefined && value < String(p.min)) ||
-        (p.max !== undefined && value > String(p.max)))
-    )
-      error = `Choose ${label.toLowerCase()} within the allowed range.`;
-    else if (p.type === "url" && value && !/^https?:\/\/[^\s]+$/.test(value))
-      error = "Enter a complete link starting with https:// or http://.";
-  }
-  return (
-    <div className="space-y-2" data-field-error={error ? "true" : undefined}>
-      <Label htmlFor={id}>{label}</Label>
-      {Children.map(children, (child) =>
-        error &&
-        isValidElement<{
-          id?: string;
-          "aria-invalid"?: boolean;
-          "aria-describedby"?: string;
-        }>(child) &&
-        child.props.id === id
-          ? cloneElement(child, {
-              "aria-invalid": true,
-              "aria-describedby": `${id}-error`,
-            })
-          : child,
-      )}
-      {error && (
-        <p
-          id={`${id}-error`}
-          role="alert"
-          className="flex items-start gap-1.5 text-xs text-destructive"
-        >
-          <TriangleAlert className="mt-0.5 size-3 shrink-0" />
-          {error}
-        </p>
-      )}
-      {hint && !error && (
-        <p className="text-xs leading-relaxed text-muted-foreground">{hint}</p>
-      )}
-    </div>
-  );
+export function Field(props: SharedFieldProps) {
+  return <SharedField {...props} />;
 }
 export function Choice({
   label,
   value,
   onChange,
   options,
+  disabled = false,
+  id,
+  controlId,
   hint,
   error,
-  disabled = false,
+  serverError,
+  required,
+  touched,
+  submitted,
+  validationMode,
+  "aria-describedby": extraDescription,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: [string, string][];
-  hint?: string;
   disabled?: boolean;
+  id?: string;
+  controlId?: string;
+  hint?: string;
   error?: string;
+  serverError?: string;
+  required?: boolean;
+  touched?: boolean;
+  submitted?: boolean;
+  validationMode?: "onBlur" | "always";
+  "aria-describedby"?: string;
 }) {
-  const id = useId();
-  return (
-    <Field label={label} id={id} hint={hint} error={error}>
-      <Select
-        items={options.map(([value, label]) => ({ value, label }))}
-        value={value}
-        onValueChange={(v) => onChange(String(v ?? ""))}
-        disabled={disabled}
+  const generated = useId(),
+    parent = useFieldContext(),
+    control = controlId ?? id ?? parent?.controlId ?? generated;
+  const content = (
+    <Select
+      items={options.map(([value, label]) => ({ value, label }))}
+      value={value}
+      onValueChange={(v) => onChange(String(v ?? ""))}
+      disabled={disabled}
+    >
+      <SelectTrigger
+        id={control}
+        className="w-full"
+        aria-label={label}
+        aria-required={required ?? parent?.required}
+        aria-invalid={parent?.invalid || undefined}
+        aria-describedby={describedBy(
+          extraDescription,
+          parent?.descriptionId,
+          parent?.errorId,
+        )}
       >
-        <SelectTrigger
-          id={id}
-          className="w-full"
-          aria-invalid={!!error}
-          aria-describedby={error ? `${id}-error` : undefined}
-        >
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map(([key, text]) => (
-            <SelectItem key={key} value={key}>
-              {text}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map(([key, text]) => (
+          <SelectItem key={key} value={key}>
+            {text}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+  return parent?.controlId === control ? (
+    content
+  ) : (
+    <Field
+      label={label}
+      id={control}
+      hint={hint}
+      error={error}
+      serverError={serverError}
+      required={required}
+      touched={touched}
+      submitted={submitted}
+      validationMode={validationMode}
+    >
+      {content}
     </Field>
   );
 }
@@ -405,9 +390,11 @@ export function Action({
   success,
   disabled = false,
   variant = "default",
+  validate = false,
 }: {
   children: ReactNode;
   run: () => Promise<unknown>;
+  validate?: boolean;
   success?: string;
   disabled?: boolean;
   variant?: "default" | "outline" | "ghost" | "destructive";
@@ -419,7 +406,13 @@ export function Action({
       variant={variant}
       disabled={disabled || busy || isDraft(source)}
       title={isDraft(source) ? source!.unavailableWrite : undefined}
-      onClick={async () => {
+      onClick={async (event) => {
+        if (validate) {
+          const surface = event.currentTarget.closest<HTMLElement>(
+            'form, [data-slot="dialog-content"], [data-slot="sheet-content"]',
+          );
+          if (surface && !revealInvalidFields(surface)) return;
+        }
         setBusy(true);
         try {
           await run();

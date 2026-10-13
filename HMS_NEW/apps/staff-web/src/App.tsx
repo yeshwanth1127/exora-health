@@ -1,4 +1,10 @@
-import { useEffect, useState, type ComponentProps } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+} from "react";
 import {
   LayoutDashboard,
   Headphones,
@@ -42,9 +48,10 @@ import {
 import { HmsError, request, setIdentity, setTenant } from "@/hms/client";
 import { devLoginEnabled, finishLogin, oidc } from "@/hms/auth";
 import { can, permittedFacilities, practitionersFor } from "@/hms/model";
-import { WorkspaceContext } from "@/hms/hooks";
-import { confirmLeave } from "@/hms/leave";
-import { Choice, Empty, ErrorMessage, Hint } from "@/hms/ui";
+import { WorkspaceContext, useQuery } from "@/hms/hooks";
+import { hasUnsavedChanges, requestLeave, leaveState } from "@/hms/leave";
+import { LeaveDialog } from "@/hms/LeaveDialog";
+import { Choice, Empty, ErrorMessage, Hint, LoadingState } from "@/hms/ui";
 import { Input } from "@/components/ui/input";
 import { Patients } from "@/hms/Patients";
 import {
@@ -57,11 +64,6 @@ import { WhatsApp } from "@/hms/WhatsApp";
 import { Voice } from "@/hms/Voice";
 import { Growth } from "@/hms/Growth";
 import { SettingsPage } from "@/hms/Settings";
-import {
-  ConsentDocuments,
-  ModuleSwitches,
-  Registrations,
-} from "@/hms/AdminPanels";
 import { Schedules } from "@/hms/Schedules";
 import { Overview } from "@/hms/Overview";
 import { Catalogue } from "@/hms/Catalogue";
@@ -169,7 +171,10 @@ export default function App() {
   return location.pathname === "/staff/video-consult" ? (
     <PatientVideo />
   ) : (
-    <StaffApp />
+    <>
+      <LeaveDialog />
+      <StaffApp />
+    </>
   );
 }
 function StaffApp() {
@@ -186,13 +191,31 @@ function StaffApp() {
     () => location.pathname.split("/")[2] || "appointments",
   );
   const [navVersion, setNavVersion] = useState(0);
+  const route = useRef({
+    url: location.pathname + location.search + location.hash,
+    index: 0,
+  });
+  const historyDecision = useRef<{
+    target: string;
+    index: number;
+    phase: "restoring" | "accepting";
+  } | null>(null);
+  const [listedClinics, setListedClinics] = useState(0);
   function go(next: string) {
-    if (!confirmLeave()) return;
-    history.pushState(null, "", `/staff/${next}`);
-    if (next.split("?")[0] === page) setNavVersion((n) => n + 1);
-    setPage(next.split("?")[0]);
+    requestLeave(() => {
+      const index = route.current.index + 1;
+      history.pushState({ hmsIndex: index }, "", `/staff/${next}`);
+      route.current = {
+        url: location.pathname + location.search + location.hash,
+        index,
+      };
+      if (next.split("?")[0] === page) setNavVersion((n) => n + 1);
+      setPage(next.split("?")[0]);
+    });
   }
   function signout() {
+    leaveState.stay();
+    historyDecision.current = null;
     setIdentity("");
     setToken("");
     setMe(null);
@@ -204,6 +227,8 @@ function StaffApp() {
   async function accept(tokenValue: string, tenant = "") {
     setBusy(true);
     setError("");
+    leaveState.stay();
+    historyDecision.current = null;
     setIdentity(tokenValue, tenant);
     setToken(tokenValue);
     setMe(null);
@@ -216,6 +241,7 @@ function StaffApp() {
       const result = await request<{ items: Facility[] }>("/v1/facilities");
       const allowed = permittedFacilities(identity, result.items);
       setTenantOptions([]);
+      setListedClinics(result.items.length);
       setFacilities(allowed);
       setFacilityId(allowed[0]?.facilityId ?? "");
       setMe(identity);
@@ -241,9 +267,71 @@ function StaffApp() {
   }
   useEffect(() => {
     let alive = true;
-    const pop = () => {
+    history.replaceState({ ...history.state, hmsIndex: 0 }, "", location.href);
+    const renderRoute = () => {
+      route.current = {
+        url: location.pathname + location.search + location.hash,
+        index: history.state?.hmsIndex ?? route.current.index,
+      };
       setPage(location.pathname.split("/")[2] || "appointments");
       setNavVersion((n) => n + 1);
+    };
+    const pop = () => {
+      const pending = historyDecision.current;
+      if (pending?.phase === "restoring") {
+        if (history.state?.hmsIndex !== route.current.index) {
+          // Another Back/Forward arrived before restoration. Keep the task mounted.
+          const index = history.state?.hmsIndex;
+          if (Number.isInteger(index)) history.go(route.current.index - index);
+          else
+            history.replaceState(
+              { hmsIndex: route.current.index },
+              "",
+              route.current.url,
+            );
+          return;
+        }
+        historyDecision.current = null;
+        requestLeave(() => {
+          historyDecision.current = { ...pending, phase: "accepting" };
+          history.go(pending.index - route.current.index);
+        });
+        return;
+      }
+      if (pending?.phase === "accepting") {
+        if (history.state?.hmsIndex !== pending.index) {
+          const index = history.state?.hmsIndex;
+          if (Number.isInteger(index)) history.go(pending.index - index);
+          return;
+        }
+        historyDecision.current = null;
+        renderRoute();
+        return;
+      }
+      const target = location.pathname + location.search + location.hash;
+      const index = history.state?.hmsIndex;
+      if (
+        hasUnsavedChanges() &&
+        (target !== route.current.url || index !== route.current.index)
+      ) {
+        if (Number.isInteger(index) && index !== route.current.index) {
+          historyDecision.current = { target, index, phase: "restoring" };
+          history.go(route.current.index - index);
+        } else {
+          // Legacy entries lack an index. Restore the current task before asking.
+          history.replaceState(
+            { hmsIndex: route.current.index },
+            "",
+            route.current.url,
+          );
+          requestLeave(() => {
+            history.replaceState({ hmsIndex: route.current.index }, "", target);
+            renderRoute();
+          });
+        }
+        return;
+      }
+      renderRoute();
     };
     const end = () => signout();
     window.addEventListener("popstate", pop);
@@ -254,7 +342,8 @@ function StaffApp() {
       void finishLogin()
         .then((user) => {
           if (!alive) return;
-          history.replaceState(null, "", "/staff/appointments");
+          history.replaceState({ hmsIndex: 0 }, "", "/staff/appointments");
+          route.current = { url: "/staff/appointments", index: 0 };
           setPage("appointments");
           return accept(user.access_token);
         })
@@ -383,7 +472,19 @@ function StaffApp() {
     return (
       <div className="p-8 space-y-4">
         <Brand />
-        <Hint>No clinic is available for your permissions.</Hint>
+        <h1 className="text-xl font-semibold">
+          {listedClinics
+            ? "You don’t have clinic access yet"
+            : "Your clinic workspace needs provisioning"}
+        </h1>
+        <Hint>
+          {listedClinics
+            ? "Ask your clinic administrator to assign access, then refresh your account."
+            : "No clinic was returned for this account. First-clinic creation needs a verified organization setup permission; contact your organization administrator."}
+        </Hint>
+        <Button onClick={() => void accept(token, me.tenantId)} disabled={busy}>
+          Refresh access
+        </Button>
         <Button variant="outline" onClick={signout}>
           Sign out
         </Button>
@@ -538,7 +639,7 @@ function StaffApp() {
             </div>
             <NavigationButton
               onClick={() => {
-                if (confirmLeave()) signout();
+                requestLeave(signout);
               }}
             >
               <LogOut />
@@ -577,10 +678,10 @@ function StaffApp() {
                     label: f.name,
                   }))}
                   onChange={(id) => {
-                    if (confirmLeave()) {
+                    requestLeave(() => {
                       setTenant(me.tenantId);
                       setFacilityId(id);
-                    }
+                    });
                   }}
                 />
               </div>
@@ -665,7 +766,28 @@ function DevSignIn({
     </Card>
   );
 }
-function Directory({
+type DirectoryProps = {
+  me: Me;
+  facility: Facility;
+  page: string;
+  allowed: boolean;
+  go: (page: string) => void;
+};
+function Directory(props: DirectoryProps) {
+  return (
+    <WorkspaceContext.Provider
+      value={{
+        me: props.me,
+        facility: props.facility,
+        practitioners: [],
+        go: props.go,
+      }}
+    >
+      <DirectoryContent {...props} />
+    </WorkspaceContext.Provider>
+  );
+}
+function DirectoryContent({
   me,
   facility,
   page,
@@ -678,23 +800,25 @@ function Directory({
   allowed: boolean;
   go: (page: string) => void;
 }) {
-  const [practitioners, setPractitioners] = useState<Practitioner[]>([]),
-    [error, setError] = useState(""),
-    [reloads, setReloads] = useState(0);
-  useEffect(() => {
-    const controller = new AbortController();
-    void request<{ items: Practitioner[] }>(
-      `/v1/practitioners?facilityId=${facility.facilityId}`,
-      { signal: controller.signal },
-    )
-      .then((r) =>
-        setPractitioners(practitionersFor(r.items, facility.facilityId)),
-      )
-      .catch((e) => {
-        if (e.name !== "AbortError") setError(e.message);
-      });
-    return () => controller.abort();
-  }, [facility.facilityId, reloads]);
+  const canReadDoctors = can(me, "catalog.read", facility.facilityId);
+  const doctors = useQuery<{ items: Practitioner[] }>(
+    canReadDoctors
+      ? `/v1/practitioners?facilityId=${facility.facilityId}`
+      : null,
+  );
+  const practitioners = useMemo(
+    () => practitionersFor(doctors.data?.items ?? [], facility.facilityId),
+    [doctors.data, facility.facilityId],
+  );
+  const needsDoctors = [
+    "appointments",
+    "waitlist",
+    "queue",
+    "schedules",
+    "doctors",
+  ].includes(page);
+  const directoryBlocked =
+    needsDoctors && (!canReadDoctors || doctors.loading || !!doctors.error);
   return (
     <WorkspaceContext.Provider
       value={{
@@ -702,13 +826,26 @@ function Directory({
         facility,
         practitioners,
         go,
-        reloadPractitioners: () => setReloads((n) => n + 1),
+        reloadPractitioners: () => {
+          void doctors.refresh();
+        },
       }}
     >
       <main className="workspace-content flex-1">
-        <ErrorMessage text={error} />
         {!allowed ? (
           <Empty>This page is not available for your clinic permissions.</Empty>
+        ) : directoryBlocked ? (
+          !canReadDoctors ? (
+            <Hint>
+              Doctor directory access is required to use this page. Ask your
+              clinic administrator to review your access. Workspace settings and
+              other permitted pages remain available.
+            </Hint>
+          ) : (
+            <LoadingState {...doctors}>
+              <p className="text-sm">Doctor directory</p>
+            </LoadingState>
+          )
         ) : page === "catalogue" ? (
           <Catalogue />
         ) : page === "operations" || page === "activity" ? (
@@ -736,37 +873,9 @@ function Directory({
         ) : page === "loyalty" ? (
           <PendingModule key={page} page={page} />
         ) : (
-          <Settings me={me} />
+          <SettingsPage />
         )}
       </main>
     </WorkspaceContext.Provider>
-  );
-}
-function Settings({ me }: { me: Me }) {
-  return (
-    <div className="space-y-6">
-      <SettingsPage />
-      <ModuleSwitches />
-      <Registrations />
-      <ConsentDocuments />
-      <Card>
-        <CardContent className="pt-6 space-y-2">
-          <p className="text-sm font-medium">Your access</p>
-          {Object.entries(me.permissions).map(([permission, scopes]) => (
-            <div
-              key={permission}
-              className="flex justify-between border-b py-2 text-xs gap-4"
-            >
-              <span>{permission}</span>
-              <span className="text-muted-foreground">
-                {scopes.includes("*")
-                  ? "All clinics"
-                  : `${scopes.length} clinic(s)`}
-              </span>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    </div>
   );
 }

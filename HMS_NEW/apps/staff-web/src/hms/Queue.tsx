@@ -2,7 +2,7 @@ import { patientDisplayName } from "./patient-presentation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ListOrdered, RefreshCw, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DayNavigator } from "@/components/date-controls";
 import { Card } from "@/components/ui/card";
 import {
   Table,
@@ -16,7 +16,8 @@ import { PageTitle } from "@/components/workspace";
 import { useCommand, useQuery, useWorkspace } from "./hooks";
 import { query, request } from "./client";
 import { today, label } from "./model";
-import { Choice, Empty, ErrorMessage, Hint, LoadingState, Status } from "./ui";
+import { Choice, ErrorMessage, Hint, LoadingState, Status } from "./ui";
+import { WorkspaceEmpty } from "./WorkspaceEmpty";
 import {
   Sheet,
   SheetContent,
@@ -25,7 +26,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { WalkIn } from "./WalkIn";
-import { confirmLeave } from "./leave";
+import { requestLeave } from "./leave";
 import type { QueueToken, PatientDetail, Practitioner } from "./types";
 
 export function Queue() {
@@ -84,7 +85,7 @@ export function Queue() {
           </div>
         }
       />
-      <div className="flex flex-wrap gap-3 mb-5">
+      <div className="flex flex-wrap items-start gap-3 mb-5">
         <div className="w-60">
           <Choice
             label="Queue doctor"
@@ -99,12 +100,11 @@ export function Queue() {
             ]}
           />
         </div>
-        <Input
-          type="date"
-          aria-label="Queue date"
-          className="w-44"
+        <DayNavigator
+          label="Queue day"
+          timezone={facility.timezone}
           value={date}
-          onChange={(e) => setDate(e.target.value)}
+          onChange={setDate}
         />
         <Button
           variant="outline"
@@ -126,7 +126,7 @@ export function Queue() {
         <Sheet
           open
           onOpenChange={(open) => {
-            if (!open && confirmLeave()) setWalkIn(false);
+            if (!open) requestLeave(() => setWalkIn(false));
           }}
         >
           <SheetContent className="overflow-y-auto">
@@ -237,10 +237,37 @@ export function Queue() {
               </TableBody>
             </Table>
             {result.data?.items.length === 0 && (
-              <Empty>
-                No queue tokens for {selected ? "this doctor" : "this clinic"}{" "}
-                and day.
-              </Empty>
+              <WorkspaceEmpty
+                title={
+                  doctors.length
+                    ? "No queue arrivals for this day"
+                    : "No doctors in this clinic"
+                }
+                description={
+                  doctors.length
+                    ? `No queue tokens for ${selected ? "this doctor" : "this clinic"} on ${date}. Check another day or record a walk-in after choosing a doctor.`
+                    : "Add a doctor and their clinic assignment before recording arrivals."
+                }
+                action={
+                  doctors.length
+                    ? selected &&
+                      can("appointments.check_in") &&
+                      can("patients.read")
+                      ? {
+                          label: "Record a walk-in",
+                          onClick: () => setWalkIn(true),
+                        }
+                      : date !== today(facility.timezone)
+                        ? {
+                            label: "View today",
+                            onClick: () => setDate(today(facility.timezone)),
+                          }
+                        : undefined
+                  : can("catalog.manage") && can("catalog.read")
+                      ? { label: "Open doctors", onClick: () => go("doctors") }
+                      : undefined
+                }
+              />
             )}
           </Card>
         </LoadingState>

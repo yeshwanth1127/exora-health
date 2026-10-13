@@ -14,7 +14,7 @@ export function AppointmentWorkspace({ page }: { page: string }) {
     <Tabs value={page} onValueChange={go} className="gap-6">
       <TabsList
         aria-label="Appointment workspace"
-        className="w-full gap-3 bg-transparent p-0 group-data-horizontal/tabs:h-auto"
+        className="w-fit flex-wrap justify-start gap-1 bg-transparent p-0 group-data-horizontal/tabs:h-auto"
       >
         {[
           {
@@ -33,15 +33,8 @@ export function AppointmentWorkspace({ page }: { page: string }) {
             description: "Manage patients who arrived",
           },
         ].map((item) => (
-          <TabsTrigger
-            key={item.id}
-            value={item.id}
-            className="h-auto min-h-20 flex-col items-start justify-center rounded-lg border border-border px-5 py-3 text-left text-foreground data-active:border-foreground data-active:bg-foreground data-active:text-background"
-          >
-            <span className="text-base font-semibold">{item.title}</span>
-            <span className="text-xs font-normal opacity-75">
-              {item.description}
-            </span>
+          <TabsTrigger key={item.id} value={item.id} variant="workflow">
+            {item.title}
           </TabsTrigger>
         ))}
       </TabsList>
@@ -64,26 +57,14 @@ export function ActivityWorkspace({ page }: { page: string }) {
     <Tabs value={page} onValueChange={go} className="gap-6">
       <TabsList
         aria-label="Activity workspace"
-        className="w-full gap-3 bg-transparent p-0 group-data-horizontal/tabs:h-auto"
+        className="w-fit flex-wrap justify-start gap-1 bg-transparent p-0 group-data-horizontal/tabs:h-auto"
       >
-        <TabsTrigger
-          className="h-auto min-h-16 flex-col items-start justify-center rounded-lg border border-border px-5 py-3 text-left text-foreground data-active:border-foreground data-active:bg-foreground data-active:text-background"
-          value="activity"
-        >
-          <span className="font-semibold">Staff activity</span>
-          <span className="text-xs font-normal opacity-75">
-            Changes, chart access & audit history
-          </span>
+        <TabsTrigger variant="workflow" value="activity">
+          Staff activity
         </TabsTrigger>
         {can("appointments.read") && (
-          <TabsTrigger
-            className="h-auto min-h-16 flex-col items-start justify-center rounded-lg border border-border px-5 py-3 text-left text-foreground data-active:border-foreground data-active:bg-foreground data-active:text-background"
-            value="operations"
-          >
-            <span className="font-semibold">System status</span>
-            <span className="text-xs font-normal opacity-75">
-              Background events & service readiness
-            </span>
+          <TabsTrigger variant="workflow" value="operations">
+            System status
           </TabsTrigger>
         )}
       </TabsList>

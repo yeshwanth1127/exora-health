@@ -1,25 +1,25 @@
 import { useEffect } from "react";
-export function confirmLeave() {
-  return window.dispatchEvent(
-    new Event("hms-before-navigation", { cancelable: true }),
-  );
+import { LeaveState } from "./leave-state";
+export const leaveState = new LeaveState();
+export function requestLeave(action: () => void) {
+  leaveState.request(action);
 }
-export function useUnsaved(dirty: boolean) {
+export function hasUnsavedChanges() {
+  return leaveState.isDirty();
+}
+export function useUnsaved(dirty: boolean, options?: { pending?: boolean }) {
+  const pending = options?.pending ?? false;
   useEffect(() => {
-    if (!dirty) return;
-    const leave = (event: Event) => {
-      if (!window.confirm("Discard the unsaved changes?"))
-        event.preventDefault();
-    };
+    if (!dirty && !pending) return;
+    const unregister = leaveState.register(pending);
     const unload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = "";
     };
-    window.addEventListener("hms-before-navigation", leave);
     window.addEventListener("beforeunload", unload);
     return () => {
-      window.removeEventListener("hms-before-navigation", leave);
+      unregister();
       window.removeEventListener("beforeunload", unload);
     };
-  }, [dirty]);
+  }, [dirty, pending]);
 }

@@ -321,6 +321,24 @@ export function GrowthModule({
           </Card>
           {summary && (
             <>
+              {summary.summary.appointments_in_cohort === 0 && (
+                <Alert>
+                  <AlertTitle>No activity recorded for this period</AlertTitle>
+                  <AlertDescription>
+                    Choose another period or review your clinic’s booking link.
+                    No bookings in this cohort does not mean the clinic has
+                    never had activity.
+                    <div className="mt-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => onNavigate("links")}
+                      >
+                        Review booking link
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
               <p className="text-sm text-muted-foreground">
                 {summary.filters.start_date} – {summary.filters.end_date} ·{" "}
                 {summary.filters.timezone} ·{" "}

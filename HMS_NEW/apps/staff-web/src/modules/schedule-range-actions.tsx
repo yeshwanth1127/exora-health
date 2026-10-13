@@ -1,5 +1,5 @@
 import { OriginalResourceContext, isDraft } from "@/components/resource-source";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useState, useSyncExternalStore } from "react";
 import { Plus, LockKeyhole, CalendarPlus } from "lucide-react";
 import { dateTime, type Catalogue } from "@/lib/api";
 import {
@@ -23,6 +23,9 @@ import {
 import { clockLabel, minute, type Doctor } from "./clinic-types";
 import type { DeskAppointment } from "./NurseDesk";
 import { AppointmentActions } from "./appointment-actions";
+import { requestLeave, useUnsaved, leaveState } from "@/hms/leave";
+import { useLegacyCommand } from "@/hms/operational-command";
+import { RecoveryNotice } from "@/hms/OperationalRecovery";
 
 export type ScheduleRange = {
   doctor: Doctor;
@@ -66,6 +69,10 @@ export function ScheduleRangeActions({
   onSaved: (day?: string) => void;
 }) {
   const source = useContext(OriginalResourceContext);
+  const locked = useSyncExternalStore(
+    leaveState.subscribe,
+    leaveState.isBlocked,
+  );
   const permissions = { can: (key: string) => !!allowed[key] };
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -88,6 +95,13 @@ export function ScheduleRangeActions({
           ? "block"
           : "open",
     );
+  useUnsaved(
+    day !== range.day ||
+      start !== timeValue(range.start) ||
+      end !== timeValue(range.end) ||
+      branch !== range.branch ||
+      mode !== (range.mode ?? "in_person"),
+  );
   const branches = catalogue.branches.filter(
     (b) =>
       b.is_active &&
@@ -146,15 +160,15 @@ export function ScheduleRangeActions({
     },
     refresh: () => onSaved(),
     saved: () => {
+      // The parent closes a confirmed save without treating its persisted draft as unsaved.
       onSaved(day);
-      onClose();
     },
   };
   return (
     <Sheet
       open
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open) requestLeave(onClose);
       }}
     >
       <SheetContent
@@ -175,131 +189,137 @@ export function ScheduleRangeActions({
           </SheetDescription>
         </SheetHeader>
         <div className="px-4 pb-6 space-y-5">
-          {isDraft(source) && (
-            <Alert>
-              <AlertDescription>
-                Draft only. Open, block, exact-time booking and conflict review
-                need backend integration. No changes can be saved from this
-                sheet.
-              </AlertDescription>
-            </Alert>
-          )}
-          <Field label="Appointment date" id="range-date" error={dateError}>
-            <Input
-              id="range-date"
-              type="date"
-              value={day}
-              onChange={(e) => setDay(e.target.value)}
-              onInput={(e) => setDay(e.currentTarget.value)}
-              aria-invalid={!!dateError}
-              aria-describedby={dateError ? "range-date-error" : undefined}
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label="From · IST (24-hour)"
-              id="range-start"
-              error={startError}
-            >
+          <fieldset disabled={locked} className="space-y-5 min-w-0">
+            {isDraft(source) && (
+              <Alert>
+                <AlertDescription>
+                  Draft only. Open, block, exact-time booking and conflict
+                  review need backend integration. No changes can be saved from
+                  this sheet.
+                </AlertDescription>
+              </Alert>
+            )}
+            <Field label="Appointment date" id="range-date" error={dateError}>
               <Input
+                id="range-date"
+                type="date"
+                value={day}
+                onChange={(e) => setDay(e.target.value)}
+                onInput={(e) => setDay(e.currentTarget.value)}
+                aria-invalid={!!dateError}
+                aria-describedby={dateError ? "range-date-error" : undefined}
+              />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="From · IST (24-hour)"
                 id="range-start"
-                type="text"
-                placeholder="HH:MM"
-                maxLength={5}
-                value={start}
-                aria-invalid={!!startError}
-                aria-describedby={startError ? "range-start-error" : undefined}
-                onChange={(e) => setStart(e.target.value)}
-              />
-            </Field>
-            <Field
-              label="To · IST (24-hour)"
-              id="range-end"
-              error={endError || (valid && action === "book" ? timeError : "")}
-            >
-              <Input
+                error={startError}
+              >
+                <Input
+                  id="range-start"
+                  type="text"
+                  placeholder="HH:MM"
+                  maxLength={5}
+                  value={start}
+                  aria-invalid={!!startError}
+                  aria-describedby={
+                    startError ? "range-start-error" : undefined
+                  }
+                  onChange={(e) => setStart(e.target.value)}
+                />
+              </Field>
+              <Field
+                label="To · IST (24-hour)"
                 id="range-end"
-                type="text"
-                placeholder="HH:MM"
-                maxLength={5}
-                value={end}
-                aria-invalid={
-                  !!endError || (valid && action === "book" && !!timeError)
+                error={
+                  endError || (valid && action === "book" ? timeError : "")
                 }
-                aria-describedby={
-                  endError || (valid && action === "book" && timeError)
-                    ? "range-end-error"
-                    : undefined
-                }
-                onChange={(e) => setEnd(e.target.value)}
-              />
-            </Field>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Use any minute. 10:00 = 10 AM · 14:00 = 2 PM · 19:00 = 7 PM.
-          </p>
-          <Choice
-            label="Visit type"
-            value={mode}
-            onChange={(v) => {
-              setMode(v);
-              setBranch("");
-            }}
-            options={[
-              ["in_person", "In person"],
-              ...(range.doctor.accepts_virtual
-                ? [["virtual", "Virtual"] as [string, string]]
-                : []),
-            ]}
-          />
-          <Choice
-            label="Clinic"
-            error={clinicError}
-            value={location?.id ?? ""}
-            onChange={setBranch}
-            options={branches.map((b) => [b.id, b.name])}
-          />
-          <div
-            className="grid grid-cols-3 gap-2"
-            role="group"
-            aria-label="Time range action"
-          >
-            {[
-              ["book", "Appointment", CalendarPlus, bookCapability],
-              ["block", "Block time", LockKeyhole, "schedule.block"],
-              ["open", "Open time", Plus, "schedules.manage"],
-            ].map(([key, title, Icon, capability]) => {
-              const Symbol = Icon as typeof Plus;
-              return (
-                <Button
-                  key={String(key)}
-                  variant={action === key ? "default" : "outline"}
-                  className="h-auto py-3 flex-col gap-2 text-xs"
-                  aria-pressed={action === key}
-                  disabled={!permissions.can(String(capability))}
-                  onClick={() => setAction(String(key))}
-                >
-                  <Symbol className="size-4" />
-                  {String(title)}
-                </Button>
-              );
-            })}
-          </div>
+              >
+                <Input
+                  id="range-end"
+                  type="text"
+                  placeholder="HH:MM"
+                  maxLength={5}
+                  value={end}
+                  aria-invalid={
+                    !!endError || (valid && action === "book" && !!timeError)
+                  }
+                  aria-describedby={
+                    endError || (valid && action === "book" && timeError)
+                      ? "range-end-error"
+                      : undefined
+                  }
+                  onChange={(e) => setEnd(e.target.value)}
+                />
+              </Field>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Use any minute. 10:00 = 10 AM · 14:00 = 2 PM · 19:00 = 7 PM.
+            </p>
+            <Choice
+              label="Visit type"
+              value={mode}
+              onChange={(v) => {
+                requestLeave(() => {
+                  setMode(v);
+                  setBranch("");
+                });
+              }}
+              options={[
+                ["in_person", "In person"],
+                ...(range.doctor.accepts_virtual
+                  ? [["virtual", "Virtual"] as [string, string]]
+                  : []),
+              ]}
+            />
+            <Choice
+              label="Clinic"
+              error={clinicError}
+              value={location?.id ?? ""}
+              onChange={(value) => requestLeave(() => setBranch(value))}
+              options={branches.map((b) => [b.id, b.name])}
+            />
+            <div
+              className="grid grid-cols-3 gap-2"
+              role="group"
+              aria-label="Time range action"
+            >
+              {[
+                ["book", "Appointment", CalendarPlus, bookCapability],
+                ["block", "Block time", LockKeyhole, "schedule.block"],
+                ["open", "Open time", Plus, "schedules.manage"],
+              ].map(([key, title, Icon, capability]) => {
+                const Symbol = Icon as typeof Plus;
+                return (
+                  <Button
+                    key={String(key)}
+                    variant={action === key ? "default" : "outline"}
+                    className="h-auto py-3 flex-col gap-2 text-xs"
+                    aria-pressed={action === key}
+                    disabled={!permissions.can(String(capability))}
+                    onClick={() => {
+                      if (action !== key)
+                        requestLeave(() => setAction(String(key)));
+                    }}
+                  >
+                    <Symbol className="size-4" />
+                    {String(title)}
+                  </Button>
+                );
+              })}
+            </div>
+          </fieldset>
           <div key={`${action}:${branch}:${mode}`}>
             {action === "book" && permissions.can(bookCapability) && (
               <BookRange {...context} />
             )}
-            {valid &&
-              action === "block" &&
-              permissions.can("schedule.block") && (
-                <BlockRange
-                  key={`${day}:${branch}:${start}:${end}`}
-                  {...context}
-                />
-              )}
-            {valid &&
-              action === "open" &&
-              permissions.can("schedules.manage") && <OpenRange {...context} />}
+            {action === "block" && permissions.can("schedule.block") && (
+              <BlockRange {...context} />
+            )}
+            {action === "open" && permissions.can("schedules.manage") && (
+              <OpenRange {...context} />
+            )}
           </div>
         </div>
       </SheetContent>
@@ -315,115 +335,138 @@ function BlockRange({
   saved,
   allowed,
   refresh,
+  valid,
 }: Context) {
   const api = useApi();
+  const command = useLegacyCommand();
+  const locked = useSyncExternalStore(
+    leaveState.subscribe,
+    leaveState.isBlocked,
+  );
+  const [previewBusy, setPreviewBusy] = useState(false);
   const [editing, setEditing] = useState<DeskAppointment | null>(null);
   const [reason, setReason] = useState(""),
-    [preview, setPreview] = useState<DeskAppointment[] | null>(null);
+    [review, setReview] = useState<{
+      signature: string;
+      items: DeskAppointment[];
+    } | null>(null);
   const body = {
     doctor_id: range.doctor.id,
     branch_id: branch,
-    starts_at: timestamp(range.day, start),
-    ends_at: timestamp(range.day, end),
+    starts_at: valid ? timestamp(range.day, start) : "",
+    ends_at: valid ? timestamp(range.day, end) : "",
     reason: reason.trim(),
   };
+  const signature = JSON.stringify(body);
+  const preview = review?.signature === signature ? review.items : null;
+  const setPreview = (items: DeskAppointment[] | null) =>
+    setReview(items ? { signature, items } : null);
+  useUnsaved(!!reason.trim() || previewBusy, { pending: previewBusy });
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Move or delete every overlapping appointment before blocking this range.
-        We check for new conflicts again when you save.
-      </p>
-      <Field
-        label="Reason for blocking"
-        id="range-reason"
-        error={
-          reason.trim().length < 2
-            ? "Enter a block reason with at least 2 characters."
-            : undefined
-        }
-      >
-        <Input
+      <RecoveryNotice command={command} onRecovered={saved} />
+      <fieldset disabled={locked || previewBusy} className="space-y-4 min-w-0">
+        <p className="text-sm text-muted-foreground">
+          Move or delete every overlapping appointment before blocking this
+          range. We check for new conflicts again when you save.
+        </p>
+        <Field
+          label="Reason for blocking"
           id="range-reason"
-          value={reason}
-          maxLength={240}
-          onChange={(e) => {
-            setReason(e.target.value);
-            setPreview(null);
-          }}
-          placeholder="Break, leave or clinic meeting"
-        />
-      </Field>
-      {preview === null ? (
-        <Action
-          disabled={reason.trim().length < 2}
-          run={async () => {
-            const result = await api<{
-              affected_appointments: DeskAppointment[];
-            }>("/api/v1/admin/schedule-exceptions/preview", {
-              method: "POST",
-              body,
-            });
-            setPreview(result.affected_appointments);
-          }}
+          error={
+            reason.trim().length < 2
+              ? "Enter a block reason with at least 2 characters."
+              : undefined
+          }
         >
-          Review affected appointments
-        </Action>
-      ) : (
-        <>
-          <Alert>
-            <AlertDescription>
-              {preview.length
-                ? `${preview.length} ${preview.length === 1 ? "appointment overlaps" : "appointments overlap"} this range. Resolve each one before blocking.`
-                : "No existing appointments overlap this range."}
-            </AlertDescription>
-          </Alert>
-          <div className="max-h-48 overflow-y-auto space-y-2">
-            {preview.map((a) => (
-              <div
-                key={a.id}
-                className="flex items-center justify-between gap-3 border rounded-md p-3"
-              >
-                <p className="text-sm">
-                  {a.patient_name}
-                  <span className="block text-xs text-muted-foreground mt-1">
-                    {dateTime(a.starts_at)}
-                  </span>
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setEditing(a)}
-                >
-                  Move / delete
-                </Button>
-              </div>
-            ))}
-          </div>
-          <Button variant="outline" onClick={() => setPreview(null)}>
-            Review again
-          </Button>
-          <Action
-            disabled={preview.length > 0}
-            run={async () => {
-              await api("/api/v1/admin/schedule-exceptions", {
-                method: "POST",
-                body: {
-                  ...body,
-                  acknowledged_appointments: [],
-                },
-              });
-              saved();
+          <Input
+            id="range-reason"
+            value={reason}
+            maxLength={240}
+            onChange={(e) => {
+              setReason(e.target.value);
+              setPreview(null);
             }}
-            success="Time blocked"
+            placeholder="Break, leave or clinic meeting"
+          />
+        </Field>
+        {preview === null ? (
+          <Action
+            disabled={!valid || reason.trim().length < 2}
+            run={async () => {
+              setPreviewBusy(true);
+              try {
+                const result = await api<{
+                  affected_appointments: DeskAppointment[];
+                }>("/api/v1/admin/schedule-exceptions/preview", {
+                  method: "POST",
+                  body,
+                });
+                setPreview(result.affected_appointments);
+              } finally {
+                setPreviewBusy(false);
+              }
+            }}
           >
-            Block selected time
+            Review affected appointments
           </Action>
-        </>
-      )}
+        ) : (
+          <>
+            <Alert>
+              <AlertDescription>
+                {preview.length
+                  ? `${preview.length} ${preview.length === 1 ? "appointment overlaps" : "appointments overlap"} this range. Resolve each one before blocking.`
+                  : "No existing appointments overlap this range."}
+              </AlertDescription>
+            </Alert>
+            <div className="max-h-48 overflow-y-auto space-y-2">
+              {preview.map((a) => (
+                <div
+                  key={a.id}
+                  className="flex items-center justify-between gap-3 border rounded-md p-3"
+                >
+                  <p className="text-sm">
+                    {a.patient_name}
+                    <span className="block text-xs text-muted-foreground mt-1">
+                      {dateTime(a.starts_at)}
+                    </span>
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditing(a)}
+                  >
+                    Move / delete
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <Button variant="outline" onClick={() => setPreview(null)}>
+              Review again
+            </Button>
+            <Action
+              disabled={!valid || preview.length > 0}
+              run={async () => {
+                await command.write("/api/v1/admin/schedule-exceptions", {
+                  method: "POST",
+                  body: {
+                    ...body,
+                    acknowledged_appointments: [],
+                  },
+                });
+                saved();
+              }}
+              success="Time blocked"
+            >
+              Block selected time
+            </Action>
+          </>
+        )}
+      </fieldset>
       <Sheet
         open={!!editing}
         onOpenChange={(open) => {
-          if (!open) setEditing(null);
+          if (!open) requestLeave(() => setEditing(null));
         }}
       >
         <SheetContent className="sm:max-w-md overflow-y-auto">
@@ -454,49 +497,59 @@ function BlockRange({
   );
 }
 
-function OpenRange({ range, branch, mode, start, end, saved }: Context) {
-  const api = useApi();
+function OpenRange({ range, branch, mode, start, end, saved, valid }: Context) {
+  const command = useLegacyCommand();
   const [minutes, setMinutes] = useState(range.slotMinutes ?? 30);
+  useUnsaved(minutes !== (range.slotMinutes ?? 30));
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Open or extend hours for this date only. Already-open hours are kept;
-        only missing ranges are added. Use Unblock to reopen an existing block.
-      </p>
-      <Choice
-        label="Standard patient slot length"
-        value={String(minutes)}
-        onChange={(v) => setMinutes(Number(v))}
-        options={[10, 15, 20, 30, 45, 60].map((n) => [
-          String(n),
-          `${n} minutes`,
-        ])}
-      />
-      <p className="text-sm tabular-nums">
-        {clockLabel(start)}–{clockLabel(end)} · staff can use exact minutes
-      </p>
-      <Action
-        run={async () => {
-          await api("/api/v1/admin/schedule-timeline/open", {
-            method: "POST",
-            body: {
-              doctor_id: range.doctor.id,
-              branch_id: branch,
-              consultation_type: mode,
-              schedule_date: range.day,
-              effective_from: range.day,
-              effective_until: range.day,
-              starts_at_local: start,
-              ends_at_local: end,
-              slot_minutes: minutes,
-            },
-          });
-          saved();
-        }}
-        success="Hours opened for the selected date"
+      <RecoveryNotice command={command} onRecovered={saved} />
+      <fieldset
+        disabled={command.busy || command.unknown}
+        className="space-y-4 min-w-0"
       >
-        Open selected time
-      </Action>
+        <p className="text-sm text-muted-foreground">
+          Open or extend hours for this date only. Already-open hours are kept;
+          only missing ranges are added. Use Unblock to reopen an existing
+          block.
+        </p>
+        <Choice
+          label="Standard patient slot length"
+          value={String(minutes)}
+          onChange={(v) => setMinutes(Number(v))}
+          options={[10, 15, 20, 30, 45, 60].map((n) => [
+            String(n),
+            `${n} minutes`,
+          ])}
+        />
+        <p className="text-sm tabular-nums">
+          {clockLabel(start)}–{clockLabel(end)} · staff can use exact minutes
+        </p>
+        <Action
+          disabled={!valid}
+          run={async () => {
+            if (!valid) return;
+            await command.write("/api/v1/admin/schedule-timeline/open", {
+              method: "POST",
+              body: {
+                doctor_id: range.doctor.id,
+                branch_id: branch,
+                consultation_type: mode,
+                schedule_date: range.day,
+                effective_from: range.day,
+                effective_until: range.day,
+                starts_at_local: start,
+                ends_at_local: end,
+                slot_minutes: minutes,
+              },
+            });
+            saved();
+          }}
+          success="Hours opened for the selected date"
+        >
+          Open selected time
+        </Action>
+      </fieldset>
     </div>
   );
 }
@@ -513,7 +566,7 @@ function BookRange({
   onSelectSlot,
   allowed,
 }: Context) {
-  const api = useApi();
+  const command = useLegacyCommand();
   const [name, setName] = useState(""),
     [phone, setPhone] = useState(""),
     [reason, setReason] = useState(""),
@@ -532,7 +585,9 @@ function BookRange({
     overbookReason,
   ]);
   const visibleError = error?.key === draftKey ? error.message : "";
-  const operation = useRef({ signature: "", key: "" });
+  useUnsaved(
+    !!name.trim() || !!phone || !!reason.trim() || !!overbookReason.trim(),
+  );
   const startsAt = valid ? timestamp(range.day, start) : "",
     endsAt = valid ? timestamp(range.day, end) : "";
   const check = useResource<{
@@ -566,184 +621,190 @@ function BookRange({
   const validPhone = /^\+[1-9][0-9]{6,14}$/.test(normalizedPhone);
   return (
     <div className="space-y-4">
-      {valid && check.loading ? (
-        <p role="status" className="text-sm text-muted-foreground">
-          Checking this time…
-        </p>
-      ) : valid && check.error ? (
-        <Button variant="outline" size="sm" onClick={check.refresh}>
-          Check again
-        </Button>
-      ) : valid && check.fresh && check.data ? (
-        <p className="text-sm text-muted-foreground">
-          {range.overbook && !check.data.overlapping_bookings
-            ? "This time is free now. Use Book appointment instead."
-            : check.data.range_unsupported
-              ? "Overbooking supports one whole published booked slot. Choose a slot below to replace the selected range explicitly."
-              : overbook
-                ? "This published slot is booked. This will add an extra appointment for the full slot and requires a reason."
-                : check.data.overlapping_bookings
-                  ? "This range is occupied. Choose an available range."
-                  : "This time is available. We check it again when you save."}
-        </p>
-      ) : null}
-      {check.fresh && check.data?.range_unsupported && (
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">
-            Your chosen {start}–{end} range is unchanged. Available published
-            overbooking slots:
+      <RecoveryNotice command={command} onRecovered={saved} />
+      <fieldset
+        disabled={command.busy || command.unknown}
+        className="space-y-4 min-w-0"
+      >
+        {valid && check.loading ? (
+          <p role="status" className="text-sm text-muted-foreground">
+            Checking this time…
           </p>
-          {check.data.overbooking_slots?.map((slot) => (
-            <Button
-              key={slot.starts_at}
-              variant="outline"
-              size="sm"
-              onClick={() => onSelectSlot(slot.starts_at, slot.ends_at)}
-            >
-              Select {dateTime(slot.starts_at)} to{" "}
-              {new Intl.DateTimeFormat("en-IN", {
-                timeZone: "Asia/Kolkata",
-                hour: "numeric",
-                minute: "2-digit",
-              }).format(new Date(slot.ends_at))}
-            </Button>
-          ))}
-        </div>
-      )}
-      <Field
-        label="Patient name"
-        id="timeline-patient"
-        error={
-          name.trim().length < 2
-            ? "Enter a patient name with at least 2 characters."
-            : undefined
-        }
-      >
-        <Input
-          id="timeline-patient"
-          aria-invalid={name.trim().length < 2}
-          aria-describedby={
-            name.trim().length < 2 ? "timeline-patient-error" : undefined
-          }
-          autoComplete="off"
-          maxLength={160}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-      </Field>
-      <Field
-        label="Patient phone"
-        id="timeline-phone"
-        error={
-          !validPhone
-            ? "Enter a 10-digit Indian phone number, or + followed by country code and number."
-            : undefined
-        }
-        hint="Enter a 10-digit Indian number, or include + and the country code for another country."
-      >
-        <Input
-          id="timeline-phone"
-          aria-invalid={!validPhone}
-          aria-describedby={!validPhone ? "timeline-phone-error" : undefined}
-          type="tel"
-          placeholder="9876543210 or +919876543210"
-          maxLength={24}
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
-      </Field>
-      <Field label="Visit reason · optional" id="timeline-visit-reason">
-        <Textarea
-          id="timeline-visit-reason"
-          maxLength={800}
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-        />
-      </Field>
-      {overbook && (
+        ) : valid && check.error ? (
+          <Button variant="outline" size="sm" onClick={check.refresh}>
+            Check again
+          </Button>
+        ) : valid && check.fresh && check.data ? (
+          <p className="text-sm text-muted-foreground">
+            {range.overbook && !check.data.overlapping_bookings
+              ? "This time is free now. Use Book appointment instead."
+              : check.data.range_unsupported
+                ? "Overbooking supports one whole published booked slot. Choose a slot below to replace the selected range explicitly."
+                : overbook
+                  ? "This published slot is booked. This will add an extra appointment for the full slot and requires a reason."
+                  : check.data.overlapping_bookings
+                    ? "This range is occupied. Choose an available range."
+                    : "This time is available. We check it again when you save."}
+          </p>
+        ) : null}
+        {check.fresh && check.data?.range_unsupported && (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Your chosen {start}–{end} range is unchanged. Available published
+              overbooking slots:
+            </p>
+            {check.data.overbooking_slots?.map((slot) => (
+              <Button
+                key={slot.starts_at}
+                variant="outline"
+                size="sm"
+                onClick={() => onSelectSlot(slot.starts_at, slot.ends_at)}
+              >
+                Select {dateTime(slot.starts_at)} to{" "}
+                {new Intl.DateTimeFormat("en-IN", {
+                  timeZone: "Asia/Kolkata",
+                  hour: "numeric",
+                  minute: "2-digit",
+                }).format(new Date(slot.ends_at))}
+              </Button>
+            ))}
+          </div>
+        )}
         <Field
-          label="Reason for the extra appointment"
-          id="timeline-overbook-reason"
+          label="Patient name"
+          id="timeline-patient"
           error={
-            overbookReason.trim().length < 3
-              ? "Enter a reason with at least 3 characters."
+            name.trim().length < 2
+              ? "Enter a patient name with at least 2 characters."
               : undefined
           }
-          hint="At most 3 extra appointments per doctor session. The reason is recorded with the booking."
         >
-          <Textarea
-            id="timeline-overbook-reason"
-            aria-invalid={overbookReason.trim().length < 3}
-            maxLength={500}
-            value={overbookReason}
-            onChange={(e) => setOverbookReason(e.target.value)}
+          <Input
+            id="timeline-patient"
+            aria-invalid={name.trim().length < 2}
+            aria-describedby={
+              name.trim().length < 2 ? "timeline-patient-error" : undefined
+            }
+            autoComplete="off"
+            maxLength={160}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
           />
         </Field>
-      )}
-      {visibleError && (
-        <Alert variant="destructive">
-          <AlertDescription>{visibleError}</AlertDescription>
-        </Alert>
-      )}
-      <p className="text-xs text-muted-foreground">
-        Consultation fee:{" "}
-        {range.doctor.consultation_fee === null
-          ? "Not provided"
-          : `₹${range.doctor.consultation_fee}`}
-        . No WhatsApp message is sent by this action.
-      </p>
-      <Action
-        disabled={
-          !valid ||
-          check.loading ||
-          !!check.error ||
-          !check.data ||
-          !check.fresh ||
-          name.trim().length < 2 ||
-          !validPhone ||
-          !!check.data.range_unsupported ||
-          (!!check.data.overlapping_bookings && !overbook) ||
-          (overbook && overbookReason.trim().length < 3)
-        }
-        run={async () => {
-          const body = {
-            doctor_id: range.doctor.id,
-            branch_id: branch,
-            consultation_type: mode,
-            starts_at: startsAt,
-            ends_at: endsAt,
-            patient_name: name.trim(),
-            patient_phone: normalizedPhone,
-            reason: reason.trim() || null,
-            ...(overbook
-              ? { overbook: true, overbook_reason: overbookReason.trim() }
-              : {}),
-          };
-          const signature = JSON.stringify(body);
-          if (operation.current.signature !== signature)
-            operation.current = { signature, key: crypto.randomUUID() };
-          try {
-            await api("/api/v1/admin/schedule-timeline/appointments", {
-              method: "POST",
-              body: { ...body, idempotency_key: operation.current.key },
-            });
-            saved();
-          } catch (e) {
-            setError({
-              key: draftKey,
-              message:
-                e instanceof Error
-                  ? e.message
-                  : "Could not book this appointment.",
-            });
-            check.refresh();
-            throw e;
+        <Field
+          label="Patient phone"
+          id="timeline-phone"
+          error={
+            !validPhone
+              ? "Enter a 10-digit Indian phone number, or + followed by country code and number."
+              : undefined
           }
-        }}
-        success="Appointment booked"
-      >
-        {overbook ? "Add extra appointment" : "Book appointment"}
-      </Action>
+          hint="Enter a 10-digit Indian number, or include + and the country code for another country."
+        >
+          <Input
+            id="timeline-phone"
+            aria-invalid={!validPhone}
+            aria-describedby={!validPhone ? "timeline-phone-error" : undefined}
+            type="tel"
+            placeholder="9876543210 or +919876543210"
+            maxLength={24}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+        </Field>
+        <Field label="Visit reason · optional" id="timeline-visit-reason">
+          <Textarea
+            id="timeline-visit-reason"
+            maxLength={800}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </Field>
+        {overbook && (
+          <Field
+            label="Reason for the extra appointment"
+            id="timeline-overbook-reason"
+            error={
+              overbookReason.trim().length < 3
+                ? "Enter a reason with at least 3 characters."
+                : undefined
+            }
+            hint="At most 3 extra appointments per doctor session. The reason is recorded with the booking."
+          >
+            <Textarea
+              id="timeline-overbook-reason"
+              aria-invalid={overbookReason.trim().length < 3}
+              maxLength={500}
+              value={overbookReason}
+              onChange={(e) => setOverbookReason(e.target.value)}
+            />
+          </Field>
+        )}
+        {visibleError && (
+          <Alert variant="destructive">
+            <AlertDescription>{visibleError}</AlertDescription>
+          </Alert>
+        )}
+        <p className="text-xs text-muted-foreground">
+          Consultation fee:{" "}
+          {range.doctor.consultation_fee === null
+            ? "Not provided"
+            : `₹${range.doctor.consultation_fee}`}
+          . No WhatsApp message is sent by this action.
+        </p>
+        <Action
+          disabled={
+            !valid ||
+            check.loading ||
+            !!check.error ||
+            !check.data ||
+            !check.fresh ||
+            name.trim().length < 2 ||
+            !validPhone ||
+            !!check.data.range_unsupported ||
+            (!!check.data.overlapping_bookings && !overbook) ||
+            (overbook && overbookReason.trim().length < 3)
+          }
+          run={async () => {
+            const body = {
+              doctor_id: range.doctor.id,
+              branch_id: branch,
+              consultation_type: mode,
+              starts_at: startsAt,
+              ends_at: endsAt,
+              patient_name: name.trim(),
+              patient_phone: normalizedPhone,
+              reason: reason.trim() || null,
+              ...(overbook
+                ? { overbook: true, overbook_reason: overbookReason.trim() }
+                : {}),
+            };
+            try {
+              await command.write(
+                "/api/v1/admin/schedule-timeline/appointments",
+                {
+                  method: "POST",
+                  body,
+                },
+              );
+              saved();
+            } catch (e) {
+              setError({
+                key: draftKey,
+                message:
+                  e instanceof Error
+                    ? e.message
+                    : "Could not book this appointment.",
+              });
+              check.refresh();
+              throw e;
+            }
+          }}
+          success="Appointment booked"
+        >
+          {overbook ? "Add extra appointment" : "Book appointment"}
+        </Action>
+      </fieldset>
     </div>
   );
 }

@@ -9,6 +9,8 @@ import {
 import { request, query } from "./client";
 import { useWorkspace } from "./hooks";
 import { today } from "./model";
+import { patientDisplayName } from "./patient-presentation";
+import { SetupGuide } from "./SetupGuide";
 import type { Appointment } from "./types";
 
 type OutboxEvent = {
@@ -87,8 +89,12 @@ export function Overview({
             id: a.appointmentId,
             // The caller is not the patient; never show their name as the patient's.
             patient_name:
-              a.patientName ??
-              (a.patientId ? "Patient name unavailable" : "Patient not linked"),
+              a.patientId && a.patientName
+                ? patientDisplayName(a.patientId, a.patientName)
+                : (a.patientName ??
+                  (a.patientId
+                    ? "Patient name unavailable"
+                    : "Patient not linked")),
             patient_phone: "",
             doctor: { name: a.practitionerName },
             branch: { name: facility.name },
@@ -104,7 +110,10 @@ export function Overview({
   );
   return (
     <OriginalResourceContext.Provider value={source}>
-      <OperationsModule page={page} />
+      <OperationsModule
+        page={page}
+        setup={page === "overview" ? <SetupGuide /> : undefined}
+      />
     </OriginalResourceContext.Provider>
   );
 }

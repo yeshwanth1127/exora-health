@@ -14,17 +14,10 @@ import {
 } from "@/components/ui/table";
 import { PageTitle } from "@/components/workspace";
 import { useCommand, useQuery, useWorkspace } from "./hooks";
+import { WorkspaceEmpty } from "./WorkspaceEmpty";
 import { query } from "./client";
 import { today, label, needsCareAccess, templateFields } from "./model";
-import {
-  Choice,
-  Empty,
-  ErrorMessage,
-  Field,
-  Hint,
-  LoadingState,
-  Status,
-} from "./ui";
+import { Choice, ErrorMessage, Field, Hint, LoadingState, Status } from "./ui";
 import { FullPage } from "./FullPage";
 import { PatientChart, TestPatientBadge } from "./Patients";
 import { NewConsultation } from "./NewConsultation";
@@ -43,7 +36,7 @@ import type {
 } from "./types";
 
 export function Consultations() {
-  const { facility, can } = useWorkspace();
+  const { facility, can, go } = useWorkspace();
   const params = new URLSearchParams(location.search);
   const patientId = params.get("patient");
   const [openedId, setOpenedId] = useState(() => params.get("encounter"));
@@ -64,7 +57,7 @@ export function Consultations() {
     setSelected(null);
     setCreating(false);
     setOpenedId(null);
-    history.replaceState(null, "", location.pathname);
+    history.replaceState(history.state, "", location.pathname);
     result.refresh();
   };
   if (creating)
@@ -80,7 +73,7 @@ export function Consultations() {
             setCreating(false);
             setOpenedId(id);
             history.replaceState(
-              null,
+              history.state,
               "",
               `${location.pathname}?encounter=${id}`,
             );
@@ -249,10 +242,26 @@ export function Consultations() {
           {result.data?.items.filter(
             (e) => !patientId || e.patientId === patientId,
           ).length === 0 && (
-            <Empty>
-              No visits match this patient and date. If a patient was just
-              checked in, refresh shortly.
-            </Empty>
+            <WorkspaceEmpty
+              title={
+                patientId || status !== "all"
+                  ? "No visits match this patient, status and date"
+                  : "No visits to work on"
+              }
+              description={
+                patientId || status !== "all"
+                  ? "Choose another patient, status or date. A filtered list does not show every visit at this clinic."
+                  : "Check in a booked patient or record a walk-in arrival first. Newly checked-in visits may take a moment to appear."
+              }
+              action={
+                can("appointments.read")
+                  ? {
+                      label: "Open appointments",
+                      onClick: () => go("appointments"),
+                    }
+                  : undefined
+              }
+            />
           )}
         </Card>
       </LoadingState>

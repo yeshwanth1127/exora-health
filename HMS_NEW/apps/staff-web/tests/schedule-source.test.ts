@@ -420,3 +420,76 @@ test("overbooking requires both clinic policy and permission and an explicit rea
   );
   assert.equal(calls.length, 0);
 });
+
+const weeklyBodyForRecovery = {
+  doctor_id: "doctor-a",
+  branch_id: "clinic-a",
+  consultation_type: "in_person",
+  effective_from: "2026-10-19",
+  effective_until: null,
+  slot_minutes: 15,
+  groups: [{ days: [0], windows: [{ start: "09:00", end: "13:00" }] }],
+  idempotency_key: "original-weekly-intent",
+};
+
+test("confirmed weekly save is not turned into failure by a subsequent conflict read", async () => {
+  const calls: { path: string; method: string; key?: string }[] = [];
+  globalThis.fetch = async (path, options) => {
+    calls.push({
+      path: String(path),
+      method: options?.method ?? "GET",
+      key: ((options?.headers ?? {}) as Record<string, string>)[
+        "Idempotency-Key"
+      ],
+    });
+    if (options?.method === "PUT")
+      return Response.json({
+        affectedAppointmentIds: ["restricted-appointment"],
+        canSave: true,
+        otherPublishedHours: [],
+      });
+    return Response.json(
+      { error: { code: "forbidden", message: "Read is not permitted" } },
+      { status: 403 },
+    );
+  };
+  const source = scheduleSource(me, facility, [], "2026-10-19", false);
+  const result = await source.write!("/api/v1/admin/schedule-timeline/weekly", {
+    method: "PUT",
+    body: weeklyBodyForRecovery,
+  });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].method, "PUT");
+  assert.equal(calls[0].key, "original-weekly-intent");
+  assert.deepEqual(result, {
+    affected_appointments: [],
+    can_save: true,
+    other_published_hours: [],
+  });
+});
+
+test("weekly preview still fails closed if an affected appointment cannot be read", async () => {
+  const methods: string[] = [];
+  globalThis.fetch = async (_path, options) => {
+    methods.push(options?.method ?? "GET");
+    return options?.method === "POST"
+      ? Response.json({
+          affectedAppointmentIds: ["restricted-appointment"],
+          canSave: false,
+          otherPublishedHours: [],
+        })
+      : Response.json(
+          { error: { code: "forbidden", message: "Read is not permitted" } },
+          { status: 403 },
+        );
+  };
+  const source = scheduleSource(me, facility, [], "2026-10-19", false);
+  await assert.rejects(
+    source.write!("/api/v1/admin/schedule-timeline/weekly/preview", {
+      method: "POST",
+      body: weeklyBodyForRecovery,
+    }),
+    /Read is not permitted/,
+  );
+  assert.deepEqual(methods, ["POST", "GET"]);
+});

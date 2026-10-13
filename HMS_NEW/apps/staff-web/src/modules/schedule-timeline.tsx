@@ -1,10 +1,12 @@
 import { OriginalResourceContext, isDraft } from "@/components/resource-source";
-import { confirmLeave } from "@/hms/leave";
+import { useLegacyCommand } from "@/hms/operational-command";
+import { RecoveryNotice } from "@/hms/OperationalRecovery";
+import { requestLeave, useUnsaved } from "@/hms/leave";
+import { FullPage } from "@/hms/FullPage";
+import { DayNavigator } from "@/components/date-controls";
 import { WeeklyHours } from "./weekly-hours";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  ChevronLeft,
-  ChevronRight,
   RefreshCw,
   CalendarDays,
   Clock3,
@@ -18,7 +20,6 @@ import {
   Field,
   Resource,
   usePermissions,
-  useApi,
   useResource,
 } from "@/components/workspace";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,12 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { type Catalogue, dateTime } from "@/lib/api";
 import {
@@ -90,11 +97,6 @@ const classes = {
     "schedule-blocked border-border text-muted-foreground hover:bg-muted",
   held: "bg-muted border-foreground/50 border-dashed text-foreground hover:bg-secondary",
 };
-const addDay = (day: string, n: number) => {
-  const d = new Date(`${day}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
-};
 const dateLabel = (day: string) =>
   new Intl.DateTimeFormat("en-IN", {
     weekday: "long",
@@ -148,7 +150,11 @@ export function ScheduleTimeline({
   initialDoctorId,
   initialVisitMode = "in_person",
   onDoctorProfile,
+  facilityId,
+  pageHeader,
 }: {
+  facilityId?: string;
+  pageHeader?: ReactNode;
   day: string;
   setDay: (day: string) => void;
   ownDoctorId?: string;
@@ -157,7 +163,7 @@ export function ScheduleTimeline({
   onDoctorProfile?: (id: string) => void;
 }) {
   const draft = isDraft(useContext(OriginalResourceContext));
-  const api = useApi();
+  const unblockCommand = useLegacyCommand();
   const permissions = usePermissions();
   const [unblockReason, setUnblockReason] = useState("");
   const canManage =
@@ -166,8 +172,7 @@ export function ScheduleTimeline({
     permissions.can("appointments.create");
   const doctors = useResource<Doctor[]>("/api/v1/admin/doctors"),
     catalogue = useResource<Catalogue>("/api/v1/admin/catalogue");
-  const [branch, setBranch] = useState(""),
-    [department, setDepartment] = useState("all"),
+  const [department, setDepartment] = useState("all"),
     [query, setQuery] = useState(""),
     [selected, setSelected] = useState<{ span: Span; doctor: Doctor } | null>(
       null,
@@ -182,6 +187,7 @@ export function ScheduleTimeline({
     ),
     [weeklyPicker, setWeeklyPicker] = useState(false),
     [weeklyDoctor, setWeeklyDoctor] = useState("");
+  useUnsaved(selected?.span.kind === "blocked" && !!unblockReason.trim());
   const [consumedLink, setConsumedLink] = useState("");
   const canEditWeekly = permissions.can("schedules.manage");
   const requestedLink = `${initialDoctorId}:${initialVisitMode}`;
@@ -196,7 +202,7 @@ export function ScheduleTimeline({
   const weeklySelection = weekly ?? requestedDoctor;
   const selectedWeeklyMode = weekly ? weeklyMode : initialVisitMode;
   const timelineViewport = useRef<HTMLDivElement>(null);
-  const pendingNow = useRef(true);
+  const pendingNow = useRef(false);
   const [highlight, setHighlight] = useState<{
     doctor: string;
     start: number;
@@ -230,7 +236,7 @@ export function ScheduleTimeline({
     };
   }, []);
   const chosenBranch =
-    branch ||
+    facilityId ||
     catalogue.data?.branches.find((b) => b.is_active && !b.is_virtual)?.id ||
     "all";
   const board = useResource<Board>(
@@ -331,12 +337,14 @@ export function ScheduleTimeline({
         "Clinic unavailable")
       : "All clinics";
   const changeDay = (value: string) => {
-    if (!confirmLeave()) return;
-    setSelected(null);
-    setRange(null);
-    setHighlight(null);
-    gesture.current = null;
-    setDay(value);
+    requestLeave(() => {
+      setSelected(null);
+      setRange(null);
+      setHighlight(null);
+      gesture.current = null;
+      setDay(value);
+      timelineViewport.current?.scrollTo({ left: 0, behavior: "instant" });
+    });
   };
   const selectRange = (
     doctor: Doctor,
@@ -373,44 +381,74 @@ export function ScheduleTimeline({
     setNow(Date.now());
     changeDay(clinicToday());
   };
+  const closeWeekly = () => {
+    setConsumedLink(requestedLink);
+    setWeekly(null);
+    setWeeklyPicker(false);
+  };
+  if (weeklySelection && catalogue.data)
+    return (
+      <WeeklyHours
+        doctor={weeklySelection}
+        initialMode={selectedWeeklyMode}
+        onDoctorProfile={onDoctorProfile}
+        catalogue={catalogue.data}
+        branch={chosenBranch === "all" ? "" : chosenBranch}
+        day={day}
+        allowed={permissions.data?.allowed ?? {}}
+        onClose={closeWeekly}
+        onOneOff={() => {
+          closeWeekly();
+          setDay(clinicToday());
+          timelineViewport.current?.scrollTo({ left: 0, behavior: "instant" });
+        }}
+        onSaved={refreshBoard}
+      />
+    );
+  if (weeklyPicker)
+    return (
+      <FullPage
+        title="Configure weekly hours"
+        description="Choose the doctor whose recurring hours you want to publish."
+        back="Back to schedules"
+        onBack={closeWeekly}
+      >
+        <div className="max-w-xl space-y-5">
+          <Resource {...doctors}>
+            <Choice
+              label="Doctor"
+              value={weeklyDoctor}
+              onChange={setWeeklyDoctor}
+              options={(doctors.data ?? [])
+                .filter((d) => d.is_active)
+                .map((d) => [d.id, d.name])}
+            />
+            <Button
+              disabled={!weeklyDoctor}
+              onClick={() => {
+                const doctor = doctors.data?.find((d) => d.id === weeklyDoctor);
+                if (doctor) {
+                  setWeeklyPicker(false);
+                  setWeekly(doctor);
+                }
+              }}
+            >
+              Continue to hours
+            </Button>
+          </Resource>
+        </div>
+      </FullPage>
+    );
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="Previous day"
-            onClick={() => changeDay(addDay(day, -1))}
-          >
-            <ChevronLeft />
-          </Button>
-          <Input
-            aria-label="Schedule date"
-            type="date"
-            value={day}
-            className="w-40 tabular-nums"
-            onInput={(e) => {
-              if (e.currentTarget.value) changeDay(e.currentTarget.value);
-            }}
-            onChange={(e) => {
-              if (e.target.value) {
-                changeDay(e.target.value);
-              }
-            }}
-          />
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="Next day"
-            onClick={() => changeDay(addDay(day, 1))}
-          >
-            <ChevronRight />
-          </Button>
-          <Button variant="ghost" onClick={jumpToNow}>
-            Today
-          </Button>
-        </div>
+      {pageHeader}
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
+        <DayNavigator
+          value={day}
+          onChange={changeDay}
+          timezone="Asia/Kolkata"
+          label="Schedule date"
+        />
         <div className="flex flex-wrap items-end gap-3">
           <div className="w-40">
             <Choice
@@ -419,7 +457,7 @@ export function ScheduleTimeline({
               onChange={setScale}
               options={[
                 ["180", "Compact"],
-                ["320", "Meeting view"],
+                ["320", "Detailed"],
                 ["480", "Extra space"],
               ]}
             />
@@ -453,6 +491,17 @@ export function ScheduleTimeline({
               Teleconsultation hours
             </Button>
           )}
+          <Button
+            variant="outline"
+            onClick={() =>
+              timelineViewport.current?.scrollTo({
+                left: 0,
+                behavior: "smooth",
+              })
+            }
+          >
+            Show working hours
+          </Button>
           <Button variant="outline" onClick={refresh}>
             <RefreshCw />
             Refresh
@@ -465,22 +514,7 @@ export function ScheduleTimeline({
           Your current role can view the timeline.
         </p>
       )}
-      <div className="grid sm:grid-cols-3 gap-3 mb-6">
-        <Choice
-          label="Clinic"
-          value={chosenBranch}
-          onChange={(v) => {
-            setBranch(v);
-            setRange(null);
-            setSelected(null);
-          }}
-          options={[
-            ["all", "All clinics"],
-            ...(catalogue.data?.branches ?? []).map(
-              (b) => [b.id, b.name] as [string, string],
-            ),
-          ]}
-        />
+      <div className="grid grid-cols-2 gap-3 mb-6">
         <Choice
           label="Department"
           value={department}
@@ -676,36 +710,6 @@ export function ScheduleTimeline({
                           Date-specific hours
                         </span>
                       )}
-                      {permissions.can("schedules.manage") && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="justify-start h-8 text-xs border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100"
-                          disabled={!row.doctor.is_active}
-                          onClick={() => {
-                            setWeeklyMode("in_person");
-                            setWeekly(row.doctor);
-                          }}
-                        >
-                          <CalendarDays className="size-3.5" />
-                          Weekly hours
-                        </Button>
-                      )}
-                      {(ownRow || canEditWeekly) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="justify-start h-8 text-xs"
-                          disabled={!canEditWeekly || !row.doctor.is_active}
-                          onClick={() => {
-                            setWeeklyMode("virtual");
-                            setWeekly(row.doctor);
-                          }}
-                        >
-                          <Video className="size-3.5" />
-                          Teleconsultation hours
-                        </Button>
-                      )}
                       {(ownRow || permissions.can("appointments.create")) && (
                         <Button
                           variant="outline"
@@ -723,21 +727,63 @@ export function ScheduleTimeline({
                           Book appointment
                         </Button>
                       )}
-                      {(ownRow || permissions.can("schedule.block")) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="justify-start h-8 text-xs"
-                          disabled={
-                            !permissions.can("schedule.block") ||
-                            !row.doctor.is_active ||
-                            day < clinicToday()
-                          }
-                          onClick={() => planRange("block")}
-                        >
-                          <LockKeyhole className="size-3.5" />
-                          Block time
-                        </Button>
+                      {(ownRow ||
+                        canEditWeekly ||
+                        permissions.can("schedule.block")) && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="justify-start h-8 text-xs"
+                              />
+                            }
+                          >
+                            Manage time
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="min-w-52">
+                            {canEditWeekly && (
+                              <DropdownMenuItem
+                                disabled={!row.doctor.is_active}
+                                onClick={() => {
+                                  setWeeklyMode("in_person");
+                                  setWeekly(row.doctor);
+                                }}
+                              >
+                                <CalendarDays />
+                                Weekly hours
+                              </DropdownMenuItem>
+                            )}
+                            {(ownRow || canEditWeekly) && (
+                              <DropdownMenuItem
+                                disabled={
+                                  !canEditWeekly || !row.doctor.is_active
+                                }
+                                onClick={() => {
+                                  setWeeklyMode("virtual");
+                                  setWeekly(row.doctor);
+                                }}
+                              >
+                                <Video />
+                                Teleconsultation hours
+                              </DropdownMenuItem>
+                            )}
+                            {(ownRow || permissions.can("schedule.block")) && (
+                              <DropdownMenuItem
+                                disabled={
+                                  !permissions.can("schedule.block") ||
+                                  !row.doctor.is_active ||
+                                  day < clinicToday()
+                                }
+                                onClick={() => planRange("block")}
+                              >
+                                <LockKeyhole />
+                                Block time
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                       {ownRow &&
                         (!permissions.can("appointments.create") ||
@@ -970,7 +1016,8 @@ export function ScheduleTimeline({
               <div className="px-6 py-16 text-center">
                 <p className="font-medium">No doctors match these filters</p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Try another clinic, department or doctor name.
+                  Try another department or doctor name. The clinic is selected
+                  in the workspace header.
                 </p>
                 <Button
                   variant="outline"
@@ -978,7 +1025,6 @@ export function ScheduleTimeline({
                   onClick={() => {
                     setQuery("");
                     setDepartment("all");
-                    setBranch("all");
                   }}
                 >
                   Clear filters
@@ -1008,7 +1054,7 @@ export function ScheduleTimeline({
       <Sheet
         open={!!selected}
         onOpenChange={(open) => {
-          if (!open && confirmLeave()) setSelected(null);
+          if (!open) requestLeave(() => setSelected(null));
         }}
       >
         <SheetContent className="sm:max-w-md overflow-y-auto">
@@ -1162,38 +1208,52 @@ export function ScheduleTimeline({
                   selected.span.exception_id &&
                   permissions.can("schedule.block") && (
                     <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground">
-                        Unblock removes this whole block (
-                        {dateTime(selected.span.starts_at)}–
-                        {dateTime(selected.span.ends_at)}). Unoccupied published
-                        slots become available again.
-                      </p>
-                      <Field label="Reason for unblocking" id="unblock-reason">
-                        <Input
-                          id="unblock-reason"
-                          value={unblockReason}
-                          maxLength={240}
-                          onChange={(e) => setUnblockReason(e.target.value)}
-                        />
-                      </Field>
-                      <Action
-                        disabled={unblockReason.trim().length < 3}
-                        run={async () => {
-                          await api(
-                            `/api/v1/admin/schedule-exceptions/${selected.span.exception_id}`,
-                            {
-                              method: "DELETE",
-                              body: { reason: unblockReason.trim() },
-                            },
-                          );
-                          setUnblockReason("");
-                          setSelected(null);
-                          refresh();
-                        }}
-                        success="Time unblocked"
+                      <RecoveryNotice command={unblockCommand} />
+                      {unblockCommand.error && !unblockCommand.unknown && (
+                        <p role="alert" className="text-sm text-destructive">
+                          {unblockCommand.error}
+                        </p>
+                      )}
+                      <fieldset
+                        disabled={unblockCommand.busy || unblockCommand.unknown}
+                        className="space-y-3"
                       >
-                        Unblock this time
-                      </Action>
+                        <p className="text-sm text-muted-foreground">
+                          Unblock removes this whole block (
+                          {dateTime(selected.span.starts_at)}–
+                          {dateTime(selected.span.ends_at)}). Unoccupied
+                          published slots become available again.
+                        </p>
+                        <Field
+                          label="Reason for unblocking"
+                          id="unblock-reason"
+                        >
+                          <Input
+                            id="unblock-reason"
+                            value={unblockReason}
+                            maxLength={240}
+                            onChange={(e) => setUnblockReason(e.target.value)}
+                          />
+                        </Field>
+                        <Action
+                          disabled={unblockReason.trim().length < 3}
+                          run={async () => {
+                            await unblockCommand.write(
+                              `/api/v1/admin/schedule-exceptions/${selected.span.exception_id}`,
+                              {
+                                method: "DELETE",
+                                body: { reason: unblockReason.trim() },
+                              },
+                            );
+                            setUnblockReason("");
+                            setSelected(null);
+                            refresh();
+                          }}
+                          success="Time unblocked"
+                        >
+                          Unblock this time
+                        </Action>
+                      </fieldset>
                     </div>
                   )}
               </div>
@@ -1201,65 +1261,6 @@ export function ScheduleTimeline({
           )}
         </SheetContent>
       </Sheet>
-      <Sheet open={weeklyPicker} onOpenChange={setWeeklyPicker}>
-        <SheetContent style={{ width: "min(100vw, 460px)", maxWidth: "100vw" }}>
-          <SheetHeader>
-            <SheetTitle>
-              {weeklyMode === "virtual"
-                ? "Configure teleconsultation hours"
-                : "Configure weekly hours"}
-            </SheetTitle>
-            <SheetDescription>
-              Choose a doctor, then select repeat days and split shifts.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="px-4 space-y-5">
-            <Choice
-              label="Doctor"
-              value={weeklyDoctor}
-              onChange={setWeeklyDoctor}
-              options={(doctors.data ?? [])
-                .filter((d) => d.is_active)
-                .map((d) => [d.id, d.name])}
-            />
-            <Button
-              disabled={!weeklyDoctor}
-              onClick={() => {
-                const doctor = doctors.data?.find((d) => d.id === weeklyDoctor);
-                if (doctor) {
-                  setWeeklyPicker(false);
-                  setWeekly(doctor);
-                }
-              }}
-            >
-              {weeklyMode === "virtual"
-                ? "Set teleconsultation hours"
-                : "Set weekly hours"}
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
-      {weeklySelection && catalogue.data && (
-        <WeeklyHours
-          key={`${weeklySelection.id}:${selectedWeeklyMode}`}
-          doctor={weeklySelection}
-          initialMode={selectedWeeklyMode}
-          onDoctorProfile={onDoctorProfile}
-          catalogue={catalogue.data}
-          branch={chosenBranch === "all" ? "" : chosenBranch}
-          day={day}
-          allowed={permissions.data?.allowed ?? {}}
-          onClose={() => {
-            if (confirmLeave()) {
-              setConsumedLink(requestedLink);
-              setWeekly(null);
-            }
-          }}
-          // Catalogue refresh unmounts WeeklyHours and discards its unsaved draft.
-          // Resolving appointments or saving hours needs only a fresh board.
-          onSaved={refreshBoard}
-        />
-      )}
       {range && catalogue.data && (
         <ScheduleRangeActions
           key={`${range.doctor.id}:${range.day}:${range.start}:${range.end}:${range.branch}:${rangeIntent}`}
@@ -1279,11 +1280,12 @@ export function ScheduleTimeline({
                 }
               : (permissions.data?.allowed ?? {})
           }
-          onClose={() => {
-            if (confirmLeave()) setRange(null);
-          }}
+          onClose={() => setRange(null)}
           onSaved={(nextDay) => {
-            if (nextDay) setDay(nextDay);
+            if (nextDay) {
+              setDay(nextDay);
+              setRange(null);
+            }
             refresh();
           }}
         />

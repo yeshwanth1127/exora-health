@@ -20,17 +20,10 @@ import {
 } from "@/components/ui/sheet";
 import { PageTitle } from "@/components/workspace";
 import { useCommand, useQuery, useWorkspace } from "./hooks";
+import { WorkspaceEmpty } from "./WorkspaceEmpty";
 import { query } from "./client";
 import { time, today } from "./model";
-import {
-  Choice,
-  Empty,
-  ErrorMessage,
-  Field,
-  Hint,
-  LoadingState,
-  Status,
-} from "./ui";
+import { Choice, ErrorMessage, Field, Hint, LoadingState, Status } from "./ui";
 export type JoinGrant = {
   domain: string;
   roomName: string;
@@ -53,7 +46,7 @@ type Tele = {
   patientWaitingSince: string | null;
 };
 export function Teleconsultations() {
-  const { facility } = useWorkspace();
+  const { facility, can, go } = useWorkspace();
   const [date, setDate] = useState(today(facility.timezone)),
     [selected, setSelected] = useState<Tele | null>(null);
   const result = useQuery<{ items: Tele[] }>(
@@ -106,7 +99,18 @@ export function Teleconsultations() {
             </TableBody>
           </Table>
           {result.data?.items.length === 0 && (
-            <Empty>No virtual consultations for this day.</Empty>
+            <WorkspaceEmpty
+              title={`No video visits for ${date}`}
+              description="Scheduled video appointments appear here. Booking availability, consent and the video connection are separate checks."
+              action={
+                can("appointments.book")
+                  ? {
+                      label: "Book video appointment",
+                      onClick: () => go("appointments?book=1&mode=virtual"),
+                    }
+                  : { label: "View schedules", onClick: () => go("schedules") }
+              }
+            />
           )}
         </Card>
       </LoadingState>

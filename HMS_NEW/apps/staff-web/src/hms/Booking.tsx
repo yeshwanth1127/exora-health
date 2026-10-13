@@ -1,3 +1,4 @@
+import { ArrowRight } from "lucide-react";
 import {
   activeAppointments,
   appointmentModeLabel,
@@ -18,7 +19,8 @@ import { query, request } from "./client";
 import { today, time, money } from "./model";
 import { useUnsaved } from "./leave";
 import { PatientLookup, RegisterPatient } from "./Patients";
-import { Choice, Empty, ErrorMessage, Field, Hint, LoadingState } from "./ui";
+import { WorkspaceEmpty } from "./WorkspaceEmpty";
+import { Choice, ErrorMessage, Field, Hint, LoadingState } from "./ui";
 import type {
   Appointment,
   BookingResult,
@@ -98,11 +100,25 @@ export function Booking({
     callerName.trim().length > 0 &&
     /^\+[1-9][0-9]{7,14}$/.test(callerPhone);
   const who = !!move || !!patient || callerReady;
-  const [clock, setClock] = useState(() => Date.now()),
-    [result, setResult] = useState<BookingResult | null>(null);
-  useUnsaved(cmd.unknown);
-  const activeHold = useRef<Hold | null>(null);
   const clinicToday = today(facility.timezone);
+  const [clock, setClock] = useState(() => Date.now()),
+    [result, setResult] = useState<BookingResult | null>(null),
+    [releasing, setReleasing] = useState(false);
+  useUnsaved(
+    releasing ||
+      (!result &&
+        (cmd.unknown ||
+          !!hold ||
+          !!patient ||
+          !!callerName.trim() ||
+          !!callerPhone ||
+          !!reason.trim() ||
+          !!chosen ||
+          date !== (move?.sessionOn ?? clinicToday) ||
+          visitMode !== (move?.visitMode ?? "in_person"))),
+    { pending: releasing || cmd.busy || cmd.unknown },
+  );
+  const activeHold = useRef<Hold | null>(null);
   const range = monthRange(date.slice(0, 7), clinicToday);
   const slots = useQuery<{ items: Slot[] }>(
     staffId && step === 2 && range.from <= range.to
@@ -132,13 +148,19 @@ export function Booking({
     ? Math.max(0, Math.floor((Date.parse(hold.holdExpiresAt) - clock) / 1000))
     : 0;
   async function release() {
-    if (hold) {
-      await request(`/v1/holds/${hold.reservationId}`, {
+    const current = activeHold.current;
+    if (!current) return;
+    // Claim cleanup before awaiting so unmount cannot release the same hold twice.
+    activeHold.current = null;
+    setReleasing(true);
+    try {
+      await request(`/v1/holds/${current.reservationId}`, {
         method: "DELETE",
       }).catch(() => {});
-      activeHold.current = null;
       setHold(null);
       slots.refresh();
+    } finally {
+      setReleasing(false);
     }
   }
   if (result)
@@ -165,25 +187,28 @@ export function Booking({
         aria-label="Booking steps"
       >
         {["Patient", "Doctor & time", "Review & confirm"].map((title, i) => (
-          <li
-            key={title}
-            aria-current={step === i + 1 ? "step" : undefined}
-            className={
-              step === i + 1 ? "font-semibold" : "text-muted-foreground"
-            }
-          >
-            {i + 1}. {title}
+          <li key={title} aria-current={step === i + 1 ? "step" : undefined}>
+            <span
+              className={
+                step === i + 1
+                  ? "font-semibold text-primary"
+                  : "text-muted-foreground"
+              }
+            >
+              {i + 1}. {title}
+            </span>
           </li>
         ))}
       </ol>
-      <div className={`${step === 2 ? "max-w-6xl" : "max-w-3xl"} space-y-5`}>
+      <div className={`${step === 2 ? "max-w-6xl" : "max-w-3xl"} space-y-6`}>
         <section className="space-y-3">
-          <h2 className="font-semibold">Appointment type</h2>
+          <h2 className="text-lg font-semibold">Appointment type</h2>
           <div className="grid grid-cols-2 gap-3">
             {(["in_person", "virtual"] as const).map((mode) => (
               <Button
                 key={mode}
                 variant={visitMode === mode ? "default" : "outline"}
+
                 aria-pressed={visitMode === mode}
                 disabled={!!hold || cmd.busy || cmd.unknown}
                 onClick={() => setVisitMode(mode)}
@@ -192,7 +217,7 @@ export function Booking({
               </Button>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {visitMode === "virtual"
               ? "Choose a published teleconsultation slot. The saved appointment creates the video consultation."
               : "The patient visits the clinic in person."}
@@ -217,9 +242,7 @@ export function Booking({
         <ErrorMessage text={initialPatient.error} />
         {step === 1 && (
           <section className="space-y-5">
-            <h2 className="text-lg font-semibold">
-              Who is the appointment for?
-            </h2>
+            <h2 className="text-lg font-semibold">Choose the patient</h2>
             <p className="text-sm text-muted-foreground">
               Search for a returning patient, register a new patient, or record
               a booking contact to link at arrival.
@@ -230,15 +253,17 @@ export function Booking({
                 original in history.
               </Hint>
             ) : patient ? (
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-6">
                 <div>
                   <p className="font-medium">
                     {patientDisplayName(patient.patientId, patient.name)}
                   </p>
-                  <p className="text-xs text-muted-foreground">{patient.mrn}</p>
+                  <p className="text-sm text-muted-foreground">
+                    MRN {patient.mrn}
+                  </p>
                 </div>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   disabled={cmd.busy || !!hold}
                   onClick={() => setPatient(null)}
                 >
@@ -272,7 +297,7 @@ export function Booking({
                     onChange={(e) => setCallerPhone(e.target.value.trim())}
                   />
                 </Field>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   The patient is registered and linked when they arrive, before
                   check-in.
                 </p>
@@ -290,13 +315,13 @@ export function Booking({
                 <div className="flex flex-wrap gap-2">
                   {can("patients.register") && (
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       onClick={() => setRegister((v) => !v)}
                     >
                       {register ? "Back to search" : "Register a new patient"}
                     </Button>
                   )}
-                  <Button variant="ghost" onClick={() => setCaller(true)}>
+                  <Button variant="outline" onClick={() => setCaller(true)}>
                     Book for a caller who isn't registered
                   </Button>
                 </div>
@@ -310,9 +335,20 @@ export function Booking({
                 )}
               </>
             )}
-            <Button disabled={!who || cmd.busy} onClick={() => setStep(2)}>
-              Continue to doctor & time
-            </Button>
+            <div className="flex items-center justify-between gap-4 border-t pt-5">
+              <p className="font-medium">
+                {who
+                  ? "Patient selected. Choose a doctor and time next."
+                  : "Select a patient or enter the booking contact to continue."}
+              </p>
+              <Button
+                className="bg-blue-600 text-white hover:bg-blue-700"
+                disabled={!who || cmd.busy}
+                onClick={() => setStep(2)}
+              >
+                Continue to doctor & time <ArrowRight className="size-5" />
+              </Button>
+            </div>
           </section>
         )}
         {step === 2 && (
@@ -376,7 +412,7 @@ export function Booking({
                     </p>
                     <Button
                       variant="outline"
-                      disabled={cmd.busy || cmd.unknown}
+                      disabled={releasing || cmd.busy || cmd.unknown}
                       onClick={() => void release()}
                     >
                       Choose another slot
@@ -404,18 +440,21 @@ export function Booking({
                           }}
                         >
                           <span>{time(s.slotStart, facility.timezone)}</span>
-                          <span className="text-[10px] text-muted-foreground">
+                          <span className="text-sm text-muted-foreground">
                             {appointmentModeLabel(s.visitMode)}
                           </span>
                         </Button>
                       ))}
                     </div>
                     {availableSlots.length === 0 && (
-                      <Empty>
-                        No {appointmentModeLabel(visitMode).toLowerCase()} slots
-                        on this day. Choose a day marked with open times, or
-                        another doctor.
-                      </Empty>
+                      <WorkspaceEmpty
+                        title={`No open ${appointmentModeLabel(visitMode).toLowerCase()} times on ${date}`}
+                        description={
+                          availability.get(date)?.published
+                            ? "Published times are booked, held or blocked. Choose another day marked with open times; this doctor does not need setup repeated."
+                            : "No upcoming bookable slots were returned for this date and visit type. Choose another day or review the doctor's published hours."
+                        }
+                      />
                     )}
                   </LoadingState>
                 )}
@@ -429,7 +468,7 @@ export function Booking({
                 )}
                 {visitMode === "virtual" && !hold && (
                   <div className="space-y-3 border-t pt-4">
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       {bookable.find((p) => p.staffId === staffId)
                         ?.acceptsVirtual
                         ? "Teleconsultation availability comes from this doctor’s published weekly hours."
@@ -446,7 +485,7 @@ export function Booking({
                         Set teleconsultation hours
                       </Button>
                     ) : (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         Ask the clinic administrator to publish teleconsultation
                         hours.
                       </p>
@@ -455,24 +494,27 @@ export function Booking({
                 )}
               </div>
             </div>
-            <div className="flex gap-3">
-              {!move && (
-                <Button
-                  variant="outline"
-                  disabled={cmd.busy || cmd.unknown}
-                  onClick={async () => {
-                    await release();
-                    setStep(1);
-                  }}
-                >
-                  Back to patient
-                </Button>
-              )}
+            <div className="flex items-center justify-between gap-4 border-t pt-5">
+              <div className="flex items-center gap-3">
+                {!move && (
+                  <Button
+                    variant="outline"
+                    disabled={cmd.busy || cmd.unknown}
+                    onClick={async () => {
+                      await release();
+                      setStep(1);
+                    }}
+                  >
+                    Back to patient
+                  </Button>
+                )}
+              </div>
               <Button
+                className="bg-blue-600 text-white hover:bg-blue-700"
                 disabled={!hold || seconds === 0 || cmd.busy}
                 onClick={() => setStep(3)}
               >
-                Review appointment
+                Review appointment <ArrowRight className="size-5" />
               </Button>
             </div>
           </section>
@@ -482,7 +524,7 @@ export function Booking({
             <h2 className="text-lg font-semibold">Review before confirming</h2>
             <div className="rounded-lg border p-5 grid gap-4 sm:grid-cols-2">
               <div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Patient / booking contact
                 </p>
                 <p className="font-medium">
@@ -494,25 +536,25 @@ export function Booking({
                 <p className="text-sm">{patient?.mrn ?? callerPhone}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Doctor</p>
+                <p className="text-sm text-muted-foreground">Doctor</p>
                 <p className="font-medium">
                   {bookable.find((p) => p.staffId === staffId)?.name}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Date & time</p>
+                <p className="text-sm text-muted-foreground">Date & time</p>
                 <p>
                   {date} · {hold && time(hold.slotStart, facility.timezone)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Appointment type
                 </p>
                 <p>{appointmentModeLabel(visitMode)}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Slot hold</p>
+                <p className="text-sm text-muted-foreground">Slot hold</p>
                 <p role="status">
                   {seconds
                     ? `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} remaining`
@@ -541,7 +583,7 @@ export function Booking({
                 onChange={(e) => setReason(e.target.value)}
               />
             </Field>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               The booked fee is confirmed when the appointment is saved. A fee
               quote is not available yet.
             </p>
@@ -560,71 +602,76 @@ export function Booking({
               </label>
             )}
             <ErrorMessage text={cmd.error} />
-            <Button
-              disabled={
-                cmd.busy ||
-                !hold ||
-                seconds === 0 ||
-                !who ||
-                (!cmd.unknown && (!checkReady || !duplicateReady))
-              }
-              onClick={async () => {
-                if (!hold) return;
-                if (!cmd.unknown && existing.enabled) {
-                  const checked = await existing.refresh();
-                  if (!checked) return;
-                  const currentDuplicates = activeAppointments(
-                    checked,
-                    move?.appointmentId,
-                  );
-                  const currentKey = JSON.stringify([
-                    patient?.patientId,
-                    currentDuplicates.map((a) => a.appointmentId),
-                  ]);
-                  if (
-                    !move &&
-                    currentDuplicates.length &&
-                    acknowledged !== currentKey
-                  )
-                    return;
+            <div className="flex items-center justify-between gap-4 border-t pt-5">
+              <p className="font-medium">
+                Confirm these details to save the appointment.
+              </p>
+              <Button
+                disabled={
+                  cmd.busy ||
+                  !hold ||
+                  seconds === 0 ||
+                  !who ||
+                  (!cmd.unknown && (!checkReady || !duplicateReady))
                 }
-                const path = move
-                  ? `/v1/appointments/${move.appointmentId}/reschedule`
-                  : "/v1/appointments";
-                const body = move
-                  ? {
-                      newReservationId: hold.reservationId,
-                      ...(reason ? { reason } : {}),
-                    }
-                  : {
-                      reservationId: hold.reservationId,
-                      ...(patient
-                        ? { patientId: patient.patientId }
-                        : {
-                            bookingParty: {
-                              name: callerName.trim(),
-                              phone: callerPhone,
-                            },
-                          }),
-                      originChannel: "front_desk",
-                      ...(reason ? { reason } : {}),
-                    };
-                const value = await cmd.run<BookingResult>(path, body, true);
-                if (value) {
-                  activeHold.current = null;
-                  setHold(null);
-                  setResult(value);
-                }
-              }}
-            >
-              {cmd.busy
-                ? "Saving…"
-                : cmd.unknown
-                  ? "Recover appointment request"
-                  : move
-                    ? "Confirm move"
-                    : "Confirm appointment"}
-            </Button>
+                onClick={async () => {
+                  if (!hold) return;
+                  if (!cmd.unknown && existing.enabled) {
+                    const checked = await existing.refresh();
+                    if (!checked) return;
+                    const currentDuplicates = activeAppointments(
+                      checked,
+                      move?.appointmentId,
+                    );
+                    const currentKey = JSON.stringify([
+                      patient?.patientId,
+                      currentDuplicates.map((a) => a.appointmentId),
+                    ]);
+                    if (
+                      !move &&
+                      currentDuplicates.length &&
+                      acknowledged !== currentKey
+                    )
+                      return;
+                  }
+                  const path = move
+                    ? `/v1/appointments/${move.appointmentId}/reschedule`
+                    : "/v1/appointments";
+                  const body = move
+                    ? {
+                        newReservationId: hold.reservationId,
+                        ...(reason ? { reason } : {}),
+                      }
+                    : {
+                        reservationId: hold.reservationId,
+                        ...(patient
+                          ? { patientId: patient.patientId }
+                          : {
+                              bookingParty: {
+                                name: callerName.trim(),
+                                phone: callerPhone,
+                              },
+                            }),
+                        originChannel: "front_desk",
+                        ...(reason ? { reason } : {}),
+                      };
+                  const value = await cmd.run<BookingResult>(path, body, true);
+                  if (value) {
+                    activeHold.current = null;
+                    setHold(null);
+                    setResult(value);
+                  }
+                }}
+              >
+                {cmd.busy
+                  ? "Saving…"
+                  : cmd.unknown
+                    ? "Recover appointment request"
+                    : move
+                      ? "Confirm move"
+                      : "Confirm appointment"}
+              </Button>
+            </div>
           </section>
         )}
       </div>

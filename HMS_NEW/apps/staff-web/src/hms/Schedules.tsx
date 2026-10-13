@@ -6,6 +6,7 @@ import {
   type OriginalResourceSource,
 } from "@/components/resource-source";
 import { useQuery, useWorkspace } from "./hooks";
+import { Hint } from "./ui";
 import { today } from "./model";
 import { scheduleSource } from "./schedule-source";
 
@@ -24,26 +25,37 @@ export function Schedules() {
     () => scheduleSource(me, facility, practitioners, day, overbooking),
     [me, facility, practitioners, day, overbooking],
   );
+  if (facility.timezone !== "Asia/Kolkata")
+    return (
+      <>
+        <PageTitle
+          title="Schedules"
+          description="Doctor schedules and weekly hours."
+        />
+        <Hint>
+          This scheduling editor currently supports clinics using Asia/Kolkata.
+          Ask the administrator to review this clinic’s timezone; do not publish
+          hours using a different timezone.
+        </Hint>
+      </>
+    );
   return (
-    <>
-      <PageTitle
-        title="Schedules"
-        description="Doctor schedules and weekly hours."
-      />
-      <div className="mt-5">
-        <OriginalResourceContext.Provider value={source}>
-          <ScheduleTimeline
-            day={day}
-            setDay={setDay}
-            ownDoctorId={me.staffType === "doctor" ? me.staffId : undefined}
-            initialDoctorId={requestedDoctor}
-            initialVisitMode={requestedMode}
-            onDoctorProfile={(id) =>
-              go(`doctors?doctor=${encodeURIComponent(id)}`)
-            }
+    <OriginalResourceContext.Provider value={source}>
+      <ScheduleTimeline
+        pageHeader={
+          <PageTitle
+            title="Schedules"
+            description="Doctor schedules and weekly hours."
           />
-        </OriginalResourceContext.Provider>
-      </div>
-    </>
+        }
+        facilityId={facility.facilityId}
+        day={day}
+        setDay={setDay}
+        ownDoctorId={me.staffType === "doctor" ? me.staffId : undefined}
+        initialDoctorId={requestedDoctor}
+        initialVisitMode={requestedMode}
+        onDoctorProfile={(id) => go(`doctors?doctor=${encodeURIComponent(id)}`)}
+      />
+    </OriginalResourceContext.Provider>
   );
 }

@@ -498,7 +498,10 @@ export function scheduleSource(
         const body = { ...window, kind: "block", reason: b.reason };
         return request<T>(base, {
           method: "POST",
-          idempotencyKey: keyFor([base, body]),
+          idempotencyKey:
+            typeof b.idempotency_key === "string"
+              ? b.idempotency_key
+              : keyFor([base, body]),
           body,
         });
       }
@@ -522,7 +525,10 @@ export function scheduleSource(
         };
         return request<T>(`/v1/practitioners/${b.doctor_id}/exceptions`, {
           method: "POST",
-          idempotencyKey: keyFor(["extra", b.doctor_id, body]),
+          idempotencyKey:
+            typeof b.idempotency_key === "string"
+              ? b.idempotency_key
+              : keyFor(["extra", b.doctor_id, body]),
           body,
         });
       }
@@ -538,19 +544,21 @@ export function scheduleSource(
             ...(preview
               ? {}
               : {
-                  idempotencyKey: keyFor([
-                    "weekly",
-                    b.doctor_id,
-                    weeklyBody(b),
-                  ]),
+                  idempotencyKey:
+                    typeof b.idempotency_key === "string"
+                      ? b.idempotency_key
+                      : keyFor(["weekly", b.doctor_id, weeklyBody(b)]),
                 }),
             body: weeklyBody(b),
           },
         );
         return {
-          affected_appointments: await appointmentsById(
-            r.affectedAppointmentIds,
-          ),
+          // Only a preview needs hydrated conflicts. The PUT response already confirms
+          // the save; a later denied/conflicting appointment read must not turn it
+          // into an apparently failed command that invites another write.
+          affected_appointments: preview
+            ? await appointmentsById(r.affectedAppointmentIds)
+            : [],
           can_save: r.canSave,
           other_published_hours: r.otherPublishedHours.map((h) => ({
             branch: h.facilityName,

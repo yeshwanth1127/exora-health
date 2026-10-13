@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { confirmLeave } from "./leave";
+import { requestLeave } from "./leave";
 
 export function FullPage({
   title,
@@ -24,7 +24,7 @@ export function FullPage({
         variant="ghost"
         className="-ml-3"
         onClick={() => {
-          if (confirmLeave()) onBack();
+          requestLeave(onBack);
         }}
       >
         <ArrowLeft />

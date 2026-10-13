@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
@@ -47,14 +48,26 @@ type Event = {
 };
 type Doctor = { id: string; name: string; departments: { id: string }[] };
 
-export function OperationsModule({ page }: { page: string }) {
+export function OperationsModule({
+  page,
+  setup,
+}: {
+  page: string;
+  setup?: ReactNode;
+}) {
   return page === "catalogue" ? (
     <CataloguePage />
   ) : (
-    <ActivityPage overview={page === "overview"} />
+    <ActivityPage overview={page === "overview"} setup={setup} />
   );
 }
-function ActivityPage({ overview }: { overview: boolean }) {
+function ActivityPage({
+  overview,
+  setup,
+}: {
+  overview: boolean;
+  setup?: ReactNode;
+}) {
   const r = useResource<Analytics>("/api/v1/admin/analytics");
   const events = useResource<Event[]>(
     overview ? null : "/api/v1/admin/operations",
@@ -73,29 +86,29 @@ function ActivityPage({ overview }: { overview: boolean }) {
         [
           "Total appointments",
           s.appointments_total,
-          `${s.appointments_upcoming ?? 0} upcoming`,
+          `All time · ${s.appointments_upcoming ?? 0} confirmed for today or later`,
         ],
         [
           "Retained confirmations",
           `${s.conversion_rate ?? 0}%`,
-          `${s.appointments_confirmed ?? 0} confirmed, checked in or completed`,
+          `All time · ${s.appointments_confirmed ?? 0} confirmed, checked in or completed / ${s.appointments_total ?? 0} total bookings; not attendance`,
         ],
         [
-          "Active doctors",
+          "Doctors with active hours",
           s.active_doctors,
-          `${s.schedule_rules ?? 0} schedule rules`,
+          `Effective today · ${s.schedule_rules ?? 0} weekly rules`,
         ],
         [
           "Local notification jobs",
           s.pending_notifications,
-          `Not sent · ${s.active_holds ?? 0} active slot holds`,
+          `Current scheduled or queued jobs · not delivery receipts. ${s.active_holds ?? 0} unexpired holds`,
         ],
         [
           "Voice bookings",
           s.voice_bookings,
           s.voice_sessions_total == null
             ? "Call sessions not connected"
-            : `${s.voice_sessions_total} call sessions`,
+            : `All time · ${s.voice_sessions_total} recorded call sessions`,
         ],
       ]
     : [
@@ -131,6 +144,7 @@ function ActivityPage({ overview }: { overview: boolean }) {
           </Button>
         }
       />
+      {overview && setup}
       <Resource
         loading={r.loading || (!overview && events.loading)}
         error={r.error || (!overview ? events.error || health.error : "")}
@@ -194,29 +208,35 @@ function ActivityPage({ overview }: { overview: boolean }) {
                       />
                     </BarChart>
                   </ChartContainer>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Bookings</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {(r.data?.daily_bookings ?? []).map((d) => (
-                        <TableRow key={d.date}>
-                          <TableCell>{d.date}</TableCell>
-                          <TableCell>{d.bookings}</TableCell>
+                  <details>
+                    <summary className="text-sm font-medium cursor-pointer mb-3">
+                      View data
+                    </summary>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Bookings</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {(r.data?.daily_bookings ?? []).map((d) => (
+                          <TableRow key={d.date}>
+                            <TableCell>{d.date}</TableCell>
+                            <TableCell>{d.bookings}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </details>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader>
                   <CardTitle>Appointment health</CardTitle>
                   <CardDescription>
-                    Current statuses and booking channels.
+                    All-time bookings · current statuses and originating
+                    channels.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -257,42 +277,47 @@ function ActivityPage({ overview }: { overview: boolean }) {
                       />
                     </BarChart>
                   </ChartContainer>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Appointments</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {(r.data?.by_status ?? []).map((d) => (
-                        <TableRow key={d.label}>
-                          <TableCell>
-                            <StateBadge value={d.label} />
-                          </TableCell>
-                          <TableCell>{d.value}</TableCell>
+                  <details>
+                    <summary className="text-sm font-medium cursor-pointer mb-3">
+                      View data
+                    </summary>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Appointments</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  <Table className="mt-6">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Channel</TableHead>
-                        <TableHead>Appointments</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {(r.data?.by_channel ?? []).map((d) => (
-                        <TableRow key={d.label}>
-                          <TableCell>
-                            <StateBadge value={d.label} />
-                          </TableCell>
-                          <TableCell>{d.value}</TableCell>
+                      </TableHeader>
+                      <TableBody>
+                        {(r.data?.by_status ?? []).map((d) => (
+                          <TableRow key={d.label}>
+                            <TableCell>
+                              <StateBadge value={d.label} />
+                            </TableCell>
+                            <TableCell>{d.value}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    <Table className="mt-6">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Channel</TableHead>
+                          <TableHead>Appointments</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {(r.data?.by_channel ?? []).map((d) => (
+                          <TableRow key={d.label}>
+                            <TableCell>
+                              <StateBadge value={d.label} />
+                            </TableCell>
+                            <TableCell>{d.value}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </details>
                 </CardContent>
               </Card>
             </div>

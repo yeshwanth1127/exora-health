@@ -1,3 +1,4 @@
+import { useUnsaved } from "./leave";
 import {
   createContext,
   useCallback,
@@ -27,7 +28,11 @@ export function useWorkspace() {
       can(value.me, permission, value.facility.facilityId),
   };
 }
-export function useQuery<T>(path: string | null, pollMs = 0, decode?: (value: unknown) => T) {
+export function useQuery<T>(
+  path: string | null,
+  pollMs = 0,
+  decode?: (value: unknown) => T,
+) {
   const { me, facility } = useWorkspace();
   const key = `${me.tenantId}:${facility.facilityId}:${path}`;
   const reload = useRef<(() => Promise<boolean>) | null>(null);
@@ -75,11 +80,13 @@ export function useQuery<T>(path: string | null, pollMs = 0, decode?: (value: un
           const failure = e instanceof HmsError ? e : null;
           setState((old) => ({
             key,
-            data: [401, 403, 404].includes(failure?.status ?? 0) || failure?.code === "invalid_response"
-              ? null
-              : old.key === key
-                ? old.data
-                : null,
+            data:
+              [401, 403, 404].includes(failure?.status ?? 0) ||
+              failure?.code === "invalid_response"
+                ? null
+                : old.key === key
+                  ? old.data
+                  : null,
             error: e instanceof Error ? e.message : "Could not load this page.",
             failure,
             loading: false,
@@ -124,6 +131,7 @@ export function useCommand() {
     [error, setError] = useState(""),
     [failure, setFailure] = useState<HmsError | null>(null),
     [unknown, setUnknown] = useState(false);
+  useUnsaved(busy || unknown, { pending: busy || unknown });
   const keys = useRef(new IntentKeys()),
     inFlight = useRef(false),
     uncertainIntent = useRef("");

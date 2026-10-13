@@ -3,7 +3,7 @@
 // own fees, and their calendar. Each change is authorised by the API at the clinic it affects:
 // catalog.manage (profile, clinics), pricing.manage (fees), staff.manage (name, phone), schedules.manage
 // (calendar). A doctor without a calendar or weekly hours can't be booked, and the page says so.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CalendarPlus, Plus, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,10 +28,11 @@ import {
 } from "@/components/ui/sheet";
 import { PageTitle } from "@/components/workspace";
 import { useCommand, useQuery, useWorkspace } from "./hooks";
-import { query } from "./client";
+import { query, request } from "./client";
 import { can as canAt, label, money, today } from "./model";
-import { confirmLeave, useUnsaved } from "./leave";
+import { requestLeave, useUnsaved } from "./leave";
 import {
+  CODE,
   E164,
   addDays,
   isStale,
@@ -40,12 +41,14 @@ import {
   rupeesToMinor,
 } from "./forms";
 import { Choice, Empty, ErrorMessage, Field, Hint, LoadingState } from "./ui";
+import { WorkspaceEmpty } from "./WorkspaceEmpty";
 import type {
   ClinicDirectory,
   PriceBookItem,
   PriceMode,
   PractitionerDetail,
   Specialty,
+  Practitioner,
 } from "./types";
 
 const REASONS: Record<string, string> = {
@@ -82,7 +85,17 @@ type Fee = {
 };
 
 export function Doctors() {
-  const { facility, practitioners, can, reloadPractitioners } = useWorkspace();
+  const { facility, can, go, reloadPractitioners } = useWorkspace();
+  const doctors = useQuery<{ items: Practitioner[] }>(
+    `/v1/practitioners?facilityId=${facility.facilityId}`,
+  );
+  const practitioners =
+    doctors.data?.items.filter((p) => p.facilityId === facility.facilityId) ??
+    [];
+  const refresh = () => {
+    void doctors.refresh();
+    reloadPractitioners?.();
+  };
   const [selectedId, setSelectedId] = useState<string | null>(() =>
       new URLSearchParams(location.search).get("doctor"),
     ),
@@ -102,80 +115,96 @@ export function Doctors() {
           ) : undefined
         }
       />
-      <Card className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Doctor</TableHead>
-              <TableHead>Department & clinic</TableHead>
-              <TableHead>Fee</TableHead>
-              <TableHead>Booking</TableHead>
-              <TableHead>Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {practitioners.map((p) => (
-              <TableRow key={p.staffId}>
-                <TableCell className="font-medium">
-                  {p.name}
-                  <p className="text-xs text-muted-foreground font-normal mt-1">
-                    {p.specialtyName ?? "Specialty not provided"}
-                    {p.acceptsVirtual ? " · video visits" : ""}
-                  </p>
-                </TableCell>
-                <TableCell>
-                  {p.department}
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {facility.name}
-                  </p>
-                </TableCell>
-                <TableCell>
-                  <Fees staffId={p.staffId} />
-                </TableCell>
-                <TableCell>
-                  {p.calendarId ? (
-                    "Calendar ready"
-                  ) : can("schedules.manage") ? (
-                    <SetUpCalendar
-                      staffId={p.staffId}
-                      onDone={() => reloadPractitioners?.()}
-                    />
-                  ) : (
-                    <span className="text-muted-foreground">
-                      No calendar yet
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedId(p.staffId)}
-                  >
-                    Doctor details
-                  </Button>
-                </TableCell>
+      <LoadingState {...doctors}>
+        <Card className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Doctor</TableHead>
+                <TableHead>Department & clinic</TableHead>
+                <TableHead className="w-40">Fee</TableHead>
+                <TableHead>Booking</TableHead>
+                <TableHead className="sticky right-0 z-10 bg-card w-40">
+                  Action
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        {!practitioners.length && (
-          <Empty>
-            No doctors work at this clinic yet. Add one to start booking.
-          </Empty>
-        )}
-      </Card>
+            </TableHeader>
+            <TableBody>
+              {practitioners.map((p) => (
+                <TableRow key={p.staffId}>
+                  <TableCell className="font-medium">
+                    {p.name}
+                    <p className="text-xs text-muted-foreground font-normal mt-1">
+                      {p.specialtyName ?? "Specialty not provided"}
+                      {p.acceptsVirtual ? " · video visits" : ""}
+                    </p>
+                  </TableCell>
+                  <TableCell>
+                    {p.department}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {facility.name}
+                    </p>
+                  </TableCell>
+                  <TableCell className="max-w-40 whitespace-normal">
+                    <Fees compact staffId={p.staffId} />
+                  </TableCell>
+                  <TableCell>
+                    {p.calendarId ? (
+                      "Calendar ready"
+                    ) : can("schedules.manage") ? (
+                      <SetUpCalendar staffId={p.staffId} onDone={refresh} />
+                    ) : (
+                      <span className="text-muted-foreground">
+                        No calendar yet
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="sticky right-0 z-10 bg-card">
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedId(p.staffId)}
+                    >
+                      Doctor details
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {!practitioners.length && (
+            <WorkspaceEmpty
+              title={
+                can("catalog.manage")
+                  ? "Add your first doctor"
+                  : "This clinic has no doctors set up"
+              }
+              description="Connect a doctor to this clinic, then set their consultation and hours."
+              action={
+                can("catalog.manage")
+                  ? { label: "Add doctor", onClick: () => setAdding(true) }
+                  : {
+                      label: "View setup requirements",
+                      onClick: () => go("overview"),
+                    }
+              }
+            />
+          )}
+        </Card>
+      </LoadingState>
       <p className="mt-4 text-xs text-muted-foreground">
         Fees are quoted for the services each doctor holds weekly hours for in
-        the next two weeks, exactly as booking prices them. A doctor is bookable
-        once they have a calendar and weekly hours (Schedules).
+        the next two weeks, exactly as booking prices them. Booking also needs a
+        compatible consultation, an effective fee and available published hours.
+        Review the booking flow before confirming.
       </p>
       <Sheet
         open={!!selected}
         onOpenChange={(open) => {
-          if (!open && confirmLeave()) {
-            setSelectedId(null);
-            history.replaceState(null, "", location.pathname);
-          }
+          if (!open)
+            requestLeave(() => {
+              setSelectedId(null);
+              history.replaceState(history.state, "", location.pathname);
+            });
         }}
       >
         <SheetContent className="overflow-y-auto sm:max-w-xl">
@@ -189,7 +218,7 @@ export function Doctors() {
             <DoctorDetails
               key={selected.staffId}
               staffId={selected.staffId}
-              onChanged={() => reloadPractitioners?.()}
+              onChanged={refresh}
             />
           )}
         </SheetContent>
@@ -197,22 +226,24 @@ export function Doctors() {
       <Sheet
         open={adding}
         onOpenChange={(open) => {
-          if (open || confirmLeave()) setAdding(open);
+          if (open) setAdding(true);
+          else requestLeave(() => setAdding(false));
         }}
       >
         <SheetContent className="overflow-y-auto sm:max-w-lg">
           <SheetHeader>
             <SheetTitle>Add doctor to {facility.name}</SheetTitle>
             <SheetDescription>
-              New to the hospital? Invite them first in Workspace settings → Add
-              staff member, then add them here.
+              Choose an existing doctor or create the missing staff account and
+              department here. Invitation, clinic affiliation and calendar are
+              separate saved steps.
             </SheetDescription>
           </SheetHeader>
           {adding && (
             <AddDoctor
               onAdded={() => {
                 setAdding(false);
-                reloadPractitioners?.();
+                refresh();
               }}
             />
           )}
@@ -230,6 +261,7 @@ function SetUpCalendar({
   onDone: () => void;
 }) {
   const cmd = useCommand();
+  useUnsaved(false, { pending: cmd.busy || cmd.unknown });
   return (
     <div className="space-y-1">
       <Button
@@ -237,7 +269,14 @@ function SetUpCalendar({
         size="sm"
         disabled={cmd.busy}
         onClick={async () => {
-          if (await cmd.run(`/v1/practitioners/${staffId}/calendar`)) onDone();
+          if (
+            await cmd.run(
+              `/v1/practitioners/${staffId}/calendar`,
+              undefined,
+              true,
+            )
+          )
+            onDone();
         }}
       >
         <CalendarPlus />
@@ -258,7 +297,24 @@ type StaffAccount = {
 /** Picks a staff member (doctors first) and adds them to a department here, then opens their calendar. */
 function AddDoctor({ onAdded }: { onAdded: () => void }) {
   const { facility, practitioners, can } = useWorkspace(),
-    cmd = useCommand();
+    cmd = useCommand(),
+    calendarCmd = useCommand();
+  const [affiliated, setAffiliated] = useState<string | null>(null);
+  const [prerequisite, setPrerequisite] = useState<
+      "staff" | "department" | null
+    >(null),
+    [notice, setNotice] = useState(""),
+    [focusTarget, setFocusTarget] = useState("");
+  useEffect(() => {
+    if (!prerequisite && focusTarget) {
+      const frame = requestAnimationFrame(() => {
+        document
+          .querySelector<HTMLButtonElement>(`[aria-label="${focusTarget}"]`)
+          ?.focus();
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [prerequisite, focusTarget]);
   const listable = can("access.manage");
   const staff = useQuery<{ items: StaffAccount[] }>(
     listable ? `/v1/staff-accounts?facilityId=${facility.facilityId}` : null,
@@ -280,7 +336,20 @@ function AddDoctor({ onAdded }: { onAdded: () => void }) {
     [from, setFrom] = useState(today(facility.timezone));
   const dept =
     departmentId || directory.data?.departments[0]?.departmentId || "";
-  useUnsaved(!!staffId);
+  useUnsaved(
+    calendarCmd.busy ||
+      calendarCmd.unknown ||
+      cmd.unknown ||
+      (!affiliated &&
+        (!!staffId ||
+          !!departmentId ||
+          !!roleTitle ||
+          from !== today(facility.timezone))),
+    {
+      pending:
+        cmd.busy || cmd.unknown || calendarCmd.busy || calendarCmd.unknown,
+    },
+  );
   if (!listable)
     return (
       <div className="p-6">
@@ -288,6 +357,100 @@ function AddDoctor({ onAdded }: { onAdded: () => void }) {
           Adding a doctor needs access management at this clinic to see the
           staff list. Ask an administrator.
         </Hint>
+      </div>
+    );
+  if (prerequisite)
+    return (
+      <DoctorPrerequisite
+        kind={prerequisite}
+        onBack={() => setPrerequisite(null)}
+        onCreated={async (id) => {
+          if (prerequisite === "staff") {
+            const current = await request<{ items: StaffAccount[] }>(
+              `/v1/staff-accounts?facilityId=${facility.facilityId}`,
+            );
+            const created = current.items.find(
+              (s) => s.staffId === id && s.status === "active",
+            );
+            if (!created)
+              throw new Error(
+                "The saved staff account is not yet visible as active at this clinic. Check access before continuing; it will not be created again.",
+              );
+            if (!(await staff.refresh()))
+              throw new Error(
+                "The staff account was saved but the selector could not refresh. Retry this saved-record check before continuing.",
+              );
+            setStaffId(id);
+            setFocusTarget("Staff member");
+            setNotice(
+              "Staff account saved and selected. Sign-in invitation is pending; delivery and professional registration are separate checks.",
+            );
+          } else {
+            const current = await request<ClinicDirectory>(
+              `/v1/facilities/${facility.facilityId}/directory`,
+            );
+            if (
+              current.facilityId !== facility.facilityId ||
+              !current.departments.some(
+                (d) => d.departmentId === id && d.status === "active",
+              )
+            )
+              throw new Error(
+                "The saved department is not yet visible as active at this clinic. Retry the read before continuing; it will not be created again.",
+              );
+            if (!(await directory.refresh()))
+              throw new Error(
+                "The department was saved but the selector could not refresh. Retry this saved-record check before continuing.",
+              );
+            setDepartmentId(id);
+            setFocusTarget("Department");
+            setNotice(
+              "Department saved and selected. Your doctor details were kept.",
+            );
+          }
+          setPrerequisite(null);
+        }}
+      />
+    );
+  if (affiliated)
+    return (
+      <div className="p-6 space-y-4">
+        <h3 className="font-medium">
+          Doctor added. Calendar setup needs attention.
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          The clinic affiliation was saved. It will not be added again.{" "}
+          {can("schedules.manage")
+            ? "Continue with the calendar before publishing hours."
+            : "An administrator with schedule management access must set up the calendar."}
+        </p>
+        <Refused cmd={calendarCmd} />
+        {calendarCmd.unknown && (
+          <Hint>
+            The calendar outcome is uncertain. Retrying this naturally
+            idempotent operation checks or creates this same doctor's calendar.
+          </Hint>
+        )}
+        {can("schedules.manage") && (
+          <Button
+            disabled={calendarCmd.busy}
+            onClick={async () => {
+              if (
+                await calendarCmd.run(
+                  `/v1/practitioners/${affiliated}/calendar`,
+                  undefined,
+                  true,
+                )
+              )
+                onAdded();
+            }}
+          >
+            {calendarCmd.busy ? "Checking…" : "Resume calendar setup"}
+          </Button>
+        )}
+        <Button variant="outline" disabled={calendarCmd.busy} onClick={onAdded}>
+          Return to doctors
+        </Button>
       </div>
     );
   return (
@@ -307,62 +470,118 @@ function AddDoctor({ onAdded }: { onAdded: () => void }) {
         );
         if (!added) return;
         // A calendar lets the doctor be given weekly hours; it's shared by every clinic they work at.
-        if (can("schedules.manage"))
-          await cmd.run(`/v1/practitioners/${staffId}/calendar`);
-        onAdded();
+        setAffiliated(staffId);
+        if (
+          can("schedules.manage") &&
+          (await calendarCmd.run(
+            `/v1/practitioners/${staffId}/calendar`,
+            undefined,
+            true,
+          ))
+        )
+          onAdded();
       }}
     >
-      <LoadingState {...staff}>
-        <Field title="Staff member" id="add-doctor">
-          <Choice
-            label="Staff member"
-            value={staffId}
-            onChange={setStaffId}
-            options={candidates.map((s) => ({
-              value: s.staffId,
-              label: `${s.displayName} · ${label(s.staffType)}`,
-            }))}
+      {notice && <Hint>{notice}</Hint>}
+      <fieldset disabled={cmd.busy || cmd.unknown} className="space-y-4">
+        <LoadingState {...staff}>
+          <Field title="Staff member" id="add-doctor">
+            <Choice
+              label="Staff member"
+              value={staffId}
+              onChange={setStaffId}
+              options={candidates.map((s) => ({
+                value: s.staffId,
+                label: `${s.displayName} · ${label(s.staffType)}`,
+              }))}
+            />
+          </Field>
+          {can("staff.manage") && can("access.manage") && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setPrerequisite("staff")}
+            >
+              <UserPlus />
+              Create doctor staff account
+            </Button>
+          )}
+          {!candidates.length && (
+            <Empty>
+              Everyone with access here already works at this clinic.
+            </Empty>
+          )}
+        </LoadingState>
+        <LoadingState {...directory}>
+          <Field title="Department" id="add-doctor-dept">
+            <Choice
+              label="Department"
+              value={dept}
+              onChange={setDepartmentId}
+              options={(directory.data?.departments ?? []).map((d) => ({
+                value: d.departmentId,
+                label: d.name,
+              }))}
+            />
+          </Field>
+          {can("facility.manage") && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setPrerequisite("department")}
+            >
+              <Plus />
+              Add department
+            </Button>
+          )}
+          {!directory.data?.departments.length && !can("facility.manage") && (
+            <Hint>
+              A clinic administrator needs to add a department. Your current
+              selection remains here.
+            </Hint>
+          )}
+        </LoadingState>
+        <Field title="Role title (optional)" id="add-doctor-title">
+          <Input
+            id="add-doctor-title"
+            value={roleTitle}
+            maxLength={80}
+            placeholder="Consultant"
+            onChange={(e) => setRoleTitle(e.target.value)}
           />
         </Field>
-        {!candidates.length && (
-          <Empty>Everyone with access here already works at this clinic.</Empty>
-        )}
-      </LoadingState>
-      <Field title="Department" id="add-doctor-dept">
-        <Choice
-          label="Department"
-          value={dept}
-          onChange={setDepartmentId}
-          options={(directory.data?.departments ?? []).map((d) => ({
-            value: d.departmentId,
-            label: d.name,
-          }))}
-        />
-      </Field>
-      {!directory.data?.departments.length && (
-        <Hint>Add a department in the Hospital catalogue first.</Hint>
-      )}
-      <Field title="Role title (optional)" id="add-doctor-title">
-        <Input
-          id="add-doctor-title"
-          value={roleTitle}
-          maxLength={80}
-          placeholder="Consultant"
-          onChange={(e) => setRoleTitle(e.target.value)}
-        />
-      </Field>
-      <Field title="Works here from" id="add-doctor-from">
-        <Input
-          id="add-doctor-from"
-          type="date"
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
-        />
-      </Field>
+        <Field title="Works here from" id="add-doctor-from">
+          <Input
+            id="add-doctor-from"
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+          />
+        </Field>
+      </fieldset>
       <Refused cmd={cmd} />
-      <Button type="submit" disabled={cmd.busy || !staffId || !dept || !from}>
+      <Button
+        type="submit"
+        disabled={
+          cmd.busy ||
+          calendarCmd.busy ||
+          staff.loading ||
+          !!staff.error ||
+          directory.loading ||
+          !!directory.error ||
+          !staffId ||
+          !dept ||
+          !from
+        }
+      >
         <Plus />
-        {cmd.busy ? "Adding…" : "Add to this clinic"}
+        {cmd.busy
+          ? "Adding…"
+          : cmd.unknown
+            ? "Check original doctor request"
+            : "Add to this clinic"}
       </Button>
     </form>
   );
@@ -399,6 +618,10 @@ function DoctorDetails({
               onSaved={changed}
             />
             <Clinics d={detail.data} onChanged={changed} />
+            <div className="space-y-2">
+              <h3 className="font-semibold">Booking fee preview</h3>
+              <Fees staffId={staffId} />
+            </div>
             <DoctorFees staffId={staffId} />
           </>
         )}
@@ -444,7 +667,7 @@ function ProfileForm({
     (v: (typeof start)[K]) =>
       setF((x) => ({ ...x, [k]: v }));
   const dirty = JSON.stringify(f) !== JSON.stringify(start);
-  useUnsaved(dirty);
+  useUnsaved(dirty, { pending: cmd.busy || cmd.unknown });
   const years = f.experience.trim() === "" ? null : Number(f.experience);
   const problems = [
     years !== null &&
@@ -595,7 +818,7 @@ function ContactForm({
   const [name, setName] = useState(d.displayName),
     [phone, setPhone] = useState(d.phone ?? "");
   const dirty = name.trim() !== d.displayName || phone !== (d.phone ?? "");
-  useUnsaved(dirty);
+  useUnsaved(dirty, { pending: cmd.busy || cmd.unknown });
   if (!can("staff.manage"))
     return (
       <div className="space-y-1 text-sm">
@@ -676,6 +899,9 @@ function Clinics({
   const [ending, setEnding] = useState<string | null>(null),
     [until, setUntil] = useState(addDays(day, 1)),
     [reason, setReason] = useState("");
+  useUnsaved(!!ending && (!!reason || until !== addDays(day, 1)), {
+    pending: cmd.busy || cmd.unknown,
+  });
   return (
     <div className="space-y-3">
       <h3 className="font-semibold">Clinics</h3>
@@ -803,6 +1029,9 @@ function DoctorFees({ staffId }: { staffId: string }) {
   const items = prices.data?.items ?? [];
   const own = items.filter((i) => i.staffId === staffId);
   const feeMinor = rupeesToMinor(feeText);
+  useUnsaved(!!feeText || !!serviceId || mode !== "any" || from !== day, {
+    pending: cmd.busy || cmd.unknown,
+  });
   const name = (id: string) =>
     services.find((s) => s.healthcareServiceId === id)?.name ?? "Service";
   return (
@@ -846,6 +1075,9 @@ function DoctorFees({ staffId }: { staffId: string }) {
               )
             ) {
               setFeeText("");
+              setServiceId("");
+              setMode("any");
+              setFrom(day);
               void prices.refresh();
             }
           }}
@@ -914,7 +1146,13 @@ function DoctorFees({ staffId }: { staffId: string }) {
 }
 
 /** Fee per service and visit mode for the next two weeks of weekly hours, priced as booking prices it. */
-function Fees({ staffId }: { staffId: string }) {
+function Fees({
+  staffId,
+  compact = false,
+}: {
+  staffId: string;
+  compact?: boolean;
+}) {
   const { facility } = useWorkspace();
   const fees = useQuery<{ items: Fee[] }>(
     `/v1/practitioners/${staffId}/fees?${query({ facilityId: facility.facilityId, on: today(facility.timezone) })}`,
@@ -929,6 +1167,24 @@ function Fees({ staffId }: { staffId: string }) {
         No weekly hours in the next two weeks
       </span>
     );
+  if (compact) {
+    const amounts = fees.data.items
+      .map((f) => f.feeMinor)
+      .filter((v): v is number => v !== null);
+    return (
+      <div className="space-y-1">
+        <span>
+          {amounts.length
+            ? `${money(Math.min(...amounts))}${Math.max(...amounts) !== Math.min(...amounts) ? `–${money(Math.max(...amounts))}` : ""}`
+            : "Not priced"}
+        </span>
+        <p className="text-xs text-muted-foreground">
+          {fees.data.items.length} price
+          {fees.data.items.length === 1 ? "" : "s"} · see details
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="space-y-1">
       {fees.data.items.map((f) => (
@@ -941,5 +1197,280 @@ function Fees({ staffId }: { staffId: string }) {
         </div>
       ))}
     </div>
+  );
+}
+
+/** One prerequisite editor within the same doctor sheet; affiliation draft remains in its parent. */
+function DoctorPrerequisite({
+  kind,
+  onBack,
+  onCreated,
+}: {
+  kind: "staff" | "department";
+  onBack: () => void;
+  onCreated: (id: string) => Promise<void>;
+}) {
+  const { facility, can } = useWorkspace(),
+    cmd = useCommand();
+  const allowed =
+    kind === "staff"
+      ? can("staff.manage") && can("access.manage")
+      : can("facility.manage");
+  const roles = useQuery<{
+    roles: { roleId: string; name: string; permissions: string[] }[];
+  }>(kind === "staff" && allowed ? "/v1/roles" : null);
+  const specialties = useQuery<{ items: Specialty[] }>(
+    kind === "department" && allowed ? "/v1/specialties" : null,
+  );
+  useEffect(() => {
+    document.getElementById("doctor-prereq-name")?.focus();
+  }, []);
+  const [name, setName] = useState(""),
+    [code, setCode] = useState(""),
+    [email, setEmail] = useState(""),
+    [phone, setPhone] = useState(""),
+    [role, setRole] = useState(""),
+    [specialty, setSpecialty] = useState("none"),
+    [savedId, setSavedId] = useState(""),
+    [readError, setReadError] = useState(""),
+    [unidentified, setUnidentified] = useState(false),
+    [checking, setChecking] = useState(false);
+  const valid =
+    name.trim().length >= 2 &&
+    (kind === "staff"
+      ? /^[A-Za-z0-9._/-]{1,30}$/.test(code) &&
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
+        !!role &&
+        (!phone || E164.test(phone)) &&
+        !!roles.data &&
+        !roles.error
+      : CODE.test(code));
+  const draftDirty =
+    !savedId &&
+    !!(name || code || email || phone || role || specialty !== "none");
+  const pending = cmd.busy || cmd.unknown || checking || unidentified;
+  useUnsaved(draftDirty, { pending });
+  const back = () => {
+    if (pending) return;
+    if (draftDirty) requestLeave(onBack);
+    else onBack();
+  };
+  async function resume(id: string) {
+    setChecking(true);
+    setReadError("");
+    try {
+      await onCreated(id);
+    } catch (e) {
+      setReadError(
+        e instanceof Error ? e.message : "Could not verify the created record.",
+      );
+    } finally {
+      setChecking(false);
+    }
+  }
+  if (!allowed)
+    return (
+      <div className="p-6 space-y-4">
+        <Hint>
+          Your current clinic permissions do not allow this prerequisite. Ask
+          the clinic administrator.
+        </Hint>
+        <Button variant="outline" onClick={back}>
+          Back to doctor
+        </Button>
+      </div>
+    );
+  if (savedId)
+    return (
+      <div className="p-6 space-y-4">
+        <h3 className="font-medium">
+          {kind === "staff" ? "Staff account" : "Department"} saved
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Confirming the actual saved record at this clinic before selecting it.
+          This step will not create another record.
+        </p>
+        <ErrorMessage text={readError} />
+        <Button disabled={checking} onClick={() => void resume(savedId)}>
+          {checking ? "Checking…" : "Retry saved-record check"}
+        </Button>
+        <Button variant="outline" disabled={checking} onClick={back}>
+          Back to doctor
+        </Button>
+      </div>
+    );
+  return (
+    <form
+      className="p-6 space-y-4"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!valid || unidentified) return;
+        const result =
+          kind === "staff"
+            ? await cmd.run<{ staffId: string }>(
+                "/v1/staff-accounts",
+                {
+                  displayName: name.trim(),
+                  employeeNo: code.trim(),
+                  staffType: "doctor",
+                  email: email.trim(),
+                  ...(phone ? { phone } : {}),
+                  roleId: role,
+                  facilityId: facility.facilityId,
+                },
+                true,
+              )
+            : await cmd.run<{ departmentId: string }>(
+                `/v1/facilities/${facility.facilityId}/departments`,
+                {
+                  code: code.trim(),
+                  name: name.trim(),
+                  kind: "clinical",
+                  specialty: specialty === "none" ? null : specialty,
+                },
+                true,
+              );
+        if (!result) return;
+        const id = "staffId" in result ? result.staffId : result.departmentId;
+        if (typeof id !== "string" || !id) {
+          setUnidentified(true);
+          setReadError(
+            "The server did not identify the saved record. Keep this form open and review the request with the administrator.",
+          );
+          return;
+        }
+        setSavedId(id);
+        await resume(id);
+      }}
+    >
+      <h3 className="font-semibold">
+        {kind === "staff"
+          ? "Create doctor staff account"
+          : "Add clinical department"}
+      </h3>
+      <p className="text-sm text-muted-foreground">
+        {facility.name} · Your doctor affiliation draft stays here while you
+        complete this step.
+      </p>
+      <fieldset
+        disabled={cmd.busy || cmd.unknown || unidentified}
+        className="space-y-4"
+      >
+        <Field
+          title={kind === "staff" ? "Doctor’s full name" : "Department name"}
+          id="doctor-prereq-name"
+        >
+          <Input
+            id="doctor-prereq-name"
+            value={name}
+            maxLength={kind === "staff" ? 100 : 120}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Field>
+        <Field
+          title={kind === "staff" ? "Employee number" : "Department code"}
+          id="doctor-prereq-code"
+        >
+          <Input
+            id="doctor-prereq-code"
+            value={code}
+            maxLength={30}
+            onChange={(e) => setCode(e.target.value)}
+          />
+        </Field>
+        {kind === "staff" ? (
+          <>
+            <Field title="Work email" id="doctor-prereq-email">
+              <Input
+                id="doctor-prereq-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </Field>
+            <Field
+              title="Mobile (optional, +country code)"
+              id="doctor-prereq-phone"
+            >
+              <Input
+                id="doctor-prereq-phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.trim())}
+              />
+            </Field>
+            <LoadingState {...roles}>
+              <Field title="Role at this clinic" id="doctor-prereq-role">
+                <Choice
+                  label="Role at this clinic"
+                  value={role}
+                  onChange={setRole}
+                  options={(roles.data?.roles ?? []).map((r) => ({
+                    value: r.roleId,
+                    label: r.name,
+                  }))}
+                />
+              </Field>
+              {role && (
+                <details>
+                  <summary className="text-sm cursor-pointer">
+                    Review role permissions
+                  </summary>
+                  <p className="text-xs text-muted-foreground">
+                    {roles.data?.roles
+                      .find((r) => r.roleId === role)
+                      ?.permissions.join(", ")}
+                  </p>
+                </details>
+              )}
+            </LoadingState>
+            <Hint>
+              Creates a doctor-type staff record, a pending sign-in invitation
+              and the selected role at this clinic. Invitation delivery,
+              clinical registration, affiliation and calendar are separate. The
+              server checks whether you may grant this role.
+            </Hint>
+          </>
+        ) : (
+          <LoadingState {...specialties}>
+            <Field title="Specialty (optional)" id="doctor-prereq-specialty">
+              <Choice
+                label="Department specialty"
+                value={specialty}
+                onChange={setSpecialty}
+                options={[
+                  { value: "none", label: "Not set" },
+                  ...(specialties.data?.items ?? []).map((s) => ({
+                    value: s.code,
+                    label: s.name,
+                  })),
+                ]}
+              />
+            </Field>
+          </LoadingState>
+        )}
+      </fieldset>
+      <Refused cmd={cmd} />
+      <ErrorMessage text={readError} />
+      <div className="flex gap-3">
+        <Button type="submit" disabled={cmd.busy || unidentified || !valid}>
+          {cmd.busy
+            ? "Saving…"
+            : cmd.unknown
+              ? "Check original request"
+              : kind === "staff"
+                ? "Create staff account"
+                : "Create department"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={cmd.busy || cmd.unknown || unidentified}
+          onClick={back}
+        >
+          Back to doctor
+        </Button>
+      </div>
+    </form>
   );
 }

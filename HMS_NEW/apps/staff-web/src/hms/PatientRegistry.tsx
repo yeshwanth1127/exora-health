@@ -114,10 +114,12 @@ export function PatientRegistry({
   patientId,
   onMerged,
   section = "overview",
+  allowNka = true,
 }: {
   patientId: string;
   onMerged?: () => void;
   section?: "overview" | "history";
+  allowNka?: boolean;
 }) {
   const { can } = useWorkspace();
   const reg = useQuery<Registry>(`/v1/patients/${patientId}/registry`);
@@ -161,13 +163,15 @@ export function PatientRegistry({
           )}
           {section === "history" && (
             <>
-              {can("clinical.write") && reg.data.status !== "merged" && (
-                <ConfirmNka
-                  patientId={patientId}
-                  confirmedAt={reg.data.nkaConfirmedAt}
-                  onDone={refresh}
-                />
-              )}
+              {allowNka &&
+                can("clinical.write") &&
+                reg.data.status !== "merged" && (
+                  <ConfirmNka
+                    patientId={patientId}
+                    confirmedAt={reg.data.nkaConfirmedAt}
+                    onDone={refresh}
+                  />
+                )}
               <Flags
                 r={reg.data}
                 editable={can("patient_flags.manage")}
@@ -757,16 +761,18 @@ export function ConfirmNka({
     );
   return (
     <div>
+      <p className="mb-3 text-sm text-muted-foreground">
+        Record allergy status after checking with the patient.
+      </p>
       <Button
-        variant="ghost"
-        size="sm"
-        disabled={cmd.busy}
+        variant="outline"
+        disabled={cmd.busy || cmd.unknown}
         onClick={async () => {
           if (await cmd.run(`/v1/patients/${patientId}/no-known-allergies`))
             onDone();
         }}
       >
-        Confirm no known allergies
+        Record no known allergies
       </Button>
       <Refused cmd={cmd} />
     </div>
