@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { AlertTriangle, CalendarCheck, Copy, ImagePlus, MessageCircle, Phone, Send, Star, X } from "lucide-react";
+import { AlertTriangle, CalendarCheck, Copy, ImagePlus, Phone, Send, Star, X } from "lucide-react";
+import { WhatsAppIcon } from "@/components/brand-icons";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -162,7 +163,7 @@ export function Reviews({ data, change, exora, canManage }: { data: GbpData; cha
               <Copy /> Copy link
             </Button>
             <Button size="sm" variant="outline" nativeButton={false} render={<a href={`https://wa.me/?text=${encodeURIComponent(`Thank you for visiting ${exora.name}. If you have a minute, please share your experience: ${link}`)}`} target="_blank" rel="noreferrer" />}>
-              <MessageCircle /> Share
+              <WhatsAppIcon /> Share
             </Button>
           </div>
           <label className="flex items-start justify-between gap-3 border-t pt-3 text-sm">
@@ -188,6 +189,7 @@ const templates: [string, PostKind, string, string, Post["button"]][] = [
   ["General update", "update", "", "", null],
 ];
 const buttonText = { book: "Book", call: "Call now", learn: "Learn more" } as const;
+const day = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString([], { day: "numeric", month: "short" });
 
 export function Posts({ data, change, exora, canManage }: { data: GbpData; change: GChange; exora: Exora; canManage: boolean }) {
   const [kind, setKind] = useState<PostKind>("update");
@@ -197,22 +199,29 @@ export function Posts({ data, change, exora, canManage }: { data: GbpData; chang
   const [image, setImage] = useState<Attachment | null>(null);
   const [when, setWhen] = useState<"now" | "later">("now");
   const [at, setAt] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const problems = [
     !text.trim() && "Write the post.",
     text.length > 1500 && "Keep it under 1500 characters.",
     kind !== "update" && !title.trim() && "Add a title.",
+    kind !== "update" && !(from && to) && `Pick when the ${kind} starts and ends.`,
+    kind !== "update" && from && to && to < from && "The end date is before the start date.",
     /\b\d{10}\b|\+91/.test(text) && "Remove phone numbers. Use the Call button instead.",
     when === "later" && !(at && new Date(at).getTime() > Date.now()) && "Pick a time in the future.",
   ].filter(Boolean) as string[];
   const publish = () => {
     const post: Post = {
       id: uid(), kind, title: title.trim(), text: text.trim(), button, image,
+      dates: kind === "update" ? undefined : { from, to },
       at: when === "later" ? new Date(at).getTime() : Date.now(),
       status: when === "later" ? "scheduled" : "checking", views: 0,
     };
     change((d) => ({ ...d, posts: [post, ...d.posts] }));
     setText("");
     setTitle("");
+    setFrom("");
+    setTo("");
     setImage(null);
     toast.success(when === "later" ? "Post scheduled" : "Posted to Google");
   };
@@ -240,6 +249,18 @@ export function Posts({ data, change, exora, canManage }: { data: GbpData; chang
                   <Label htmlFor="post-title">Title</Label>
                   <Input id="post-title" maxLength={58} value={title} onChange={(e) => setTitle(e.target.value)} />
                 </div>
+              )}
+              {kind !== "update" && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="post-from">Starts</Label>
+                    <Input id="post-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="post-to">Ends</Label>
+                    <Input id="post-to" type="date" min={from} value={to} onChange={(e) => setTo(e.target.value)} />
+                  </div>
+                </>
               )}
             </div>
             <div className="space-y-2">
@@ -290,6 +311,7 @@ export function Posts({ data, change, exora, canManage }: { data: GbpData; chang
                   <p className="font-medium">{p.title || p.text.slice(0, 60)}</p>
                   <p className="text-xs text-muted-foreground">
                     {p.kind[0].toUpperCase() + p.kind.slice(1)} · {p.status === "scheduled" ? `Scheduled for ${new Date(p.at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}` : since(p.at)}
+                    {p.dates && ` · runs ${day(p.dates.from)}–${day(p.dates.to)}`}
                     {p.status === "live" && p.views > 0 && ` · ${p.views} views`}
                   </p>
                 </div>
@@ -320,6 +342,7 @@ export function Posts({ data, change, exora, canManage }: { data: GbpData; chang
           {image ? <div className="px-3"><HeaderPreview id="post:new" header={image} /></div> : null}
           <div className="space-y-2 p-3 text-[13px]">
             {kind !== "update" && title && <p className="text-base font-medium">{title}</p>}
+            {kind !== "update" && from && to && <p className="text-xs text-[#70757a]">{day(from)} – {day(to)}</p>}
             <p className="whitespace-pre-wrap text-[#4d5156]">{text || "Your post text appears here."}</p>
             {button && (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-[#dadce0] px-3 py-1.5 text-[#1a73e8]">

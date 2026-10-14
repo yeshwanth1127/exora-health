@@ -56,6 +56,8 @@ export type Post = {
   text: string;
   button: "book" | "call" | "learn" | null;
   image: Attachment | null;
+  /** Events and offers only; Google requires a date range for them. YYYY-MM-DD. */
+  dates?: { from: string; to: string };
   at: number;
   status: "scheduled" | "checking" | "live" | "rejected";
   views: number;
