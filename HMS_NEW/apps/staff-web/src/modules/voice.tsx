@@ -208,12 +208,6 @@ function TranscriptReview({ call }: { call: Call }) {
                 ]}
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              {language === "english"
-                ? "English text is shown where provided. Original-language text is used when an English version is unavailable."
-                : "Original-language text is shown where provided. English is used when that text is unavailable."}{" "}
-              Turn numbers show conversation order.
-            </p>
             <div
               className="max-h-[50dvh] overflow-y-auto rounded-md border px-4"
               role="log"
@@ -393,10 +387,6 @@ function RecordingReview({
             </div>
           </dl>
         </details>
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          Recording and transcript access is logged against your administrator
-          account. Recently ended calls may still be processing.
-        </p>
       </section>
       <TranscriptReview key={call.id} call={call} />
     </div>
@@ -453,7 +443,6 @@ export function VoiceModule({
     <div className="space-y-6">
       <PageTitle
         title="Voice"
-        description="Review assistant calls and the bookings they created."
         action={
           <Button variant="outline" onClick={r.refresh}>
             <RefreshCw />

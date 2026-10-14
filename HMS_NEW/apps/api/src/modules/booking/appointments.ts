@@ -1,9 +1,10 @@
+import { lockAccess } from '../access/staff.ts';
 // The booking flow: hold a slot → book it → (reschedule | cancel | no-show) → check in → queue token.
 // Walk-ins skip the hold and go straight to the queue. Double-booking is impossible regardless of
 // this code: the reservation exclusion constraint rejects any overlapping hold or booking.
 import { randomInt } from 'node:crypto';
 import { sql, type DB, type Kysely, type Transaction } from '@hms/db';
-import { conflict, invalid, notFound, pgCode, preconditionFailed, runCommand, runQuery, writeAudit, writeOutbox, type AuditInput, type CommandContext, type EventInput } from '@hms/platform';
+import { conflict, DomainError, invalid, notFound, pgCode, preconditionFailed, runCommand, runQuery, writeAudit, writeOutbox, type AuditInput, type CommandContext, type EventInput } from '@hms/platform';
 import { clock, type Caller } from '../../caller.ts';
 import { practitionerResourceId } from './calendar.ts';
 
@@ -360,34 +361,39 @@ async function overbookingOn(tx: Transaction<DB>, facilityId: string, at: Date):
 }
 
 export async function getOverbooking(db: Kysely<DB>, caller: Caller, facilityId: string) {
-  const enabled = await runQuery(db, caller.tenantId, (tx) => overbookingOn(tx, facilityId, clock(caller)));
-  return { facilityId, enabled, maxPerSession: MAX_OVERBOOKS_PER_SESSION };
+  return runQuery(db, caller.tenantId, async (tx) => {
+    const facility = await tx.selectFrom('platform.facility').select('id').where('id', '=', facilityId).executeTakeFirst();
+    if (!facility) throw notFound('facility', { facilityId });
+    const row = await tx.selectFrom('platform.config_setting').select(['id', 'value']).where('key', '=', OVERBOOKING_KEY).where('facility_id', '=', facilityId).where('effective_from', '<=', clock(caller)).orderBy('effective_from', 'desc').orderBy('id', 'desc').executeTakeFirst();
+    return { facilityId, enabled: (row?.value as { enabled?: unknown } | undefined)?.enabled === true, version: row?.id ?? null, maxPerSession: MAX_OVERBOOKS_PER_SESSION };
+  });
 }
 
-/** Turns overbooking on or off for one clinic. Settings are versioned: each change is a new row. */
-export async function setOverbooking(db: Kysely<DB>, caller: Caller, input: { facilityId: string; enabled: boolean }) {
-  const now = clock(caller);
-  return runCommand(db, { ...caller, module: 'platform', name: 'platform.set_overbooking', request: input }, async (ctx) => {
-    const before = await overbookingOn(ctx.tx, input.facilityId, now);
-    const { id } = await ctx.tx
-      .insertInto('platform.config_setting')
-      .values({
-        tenant_id: ctx.tenantId,
-        facility_id: input.facilityId,
-        key: OVERBOOKING_KEY,
-        value: JSON.stringify({ enabled: input.enabled }),
-        effective_from: now,
-        created_by: ctx.actor.staffId ?? null,
-        updated_by: ctx.actor.staffId ?? null,
-      })
-      .returning('id')
-      .executeTakeFirstOrThrow()
-      .catch((err: unknown) => {
-        if (pgCode(err) === '23505') throw conflict('the setting changed at the same moment; try again', { reason: 'concurrent_change' });
-        throw err;
-      });
-    ctx.audit({ action: 'update', subjectType: 'platform.config_setting', subjectId: id, diff: { key: OVERBOOKING_KEY, facilityId: input.facilityId, enabled: [before, input.enabled] } });
-    return { facilityId: input.facilityId, enabled: input.enabled, maxPerSession: MAX_OVERBOOKS_PER_SESSION };
+/** Immutable policy row identity is the CAS token. Locking the clinic also protects the unset state. */
+export async function setOverbooking(db: Kysely<DB>, caller: Caller, input: { facilityId: string; enabled: boolean; version: string | null }, idempotencyKey?: string) {
+  return runCommand(db, { ...caller, module: 'platform', name: 'platform.set_overbooking', idempotencyKey, request: input }, async (ctx) => {
+    await lockAccess(ctx);
+    const { rows: authority } = await sql`
+      SELECT 1 FROM platform.staff_permission sp
+      JOIN platform.staff s ON s.id = sp.staff_id AND s.status = 'active' AND NOT s.is_system_account
+      JOIN platform.user_account ua ON ua.staff_id = s.id AND ua.status = 'active'
+      WHERE sp.staff_id = ${ctx.actor.staffId ?? null} AND sp.permission = 'config.manage'
+        AND (sp.facility_id IS NULL OR sp.facility_id = ${input.facilityId}) LIMIT 1`.execute(ctx.tx);
+    if (ctx.actor.kind !== 'staff' || !authority.length) throw new DomainError('forbidden', 'booking policy access was revoked; reload your account', { reason: 'access_revoked' });
+
+    const facility = await ctx.tx.selectFrom('platform.facility').select('id').where('id', '=', input.facilityId).forUpdate().executeTakeFirst();
+    if (!facility) throw notFound('facility', { facilityId: input.facilityId });
+    const now = clock(caller);
+    const before = await ctx.tx.selectFrom('platform.config_setting').select(['id', 'value', 'effective_from']).where('key', '=', OVERBOOKING_KEY).where('facility_id', '=', input.facilityId).where('effective_from', '<=', now).orderBy('effective_from', 'desc').orderBy('id', 'desc').executeTakeFirst();
+    if ((before?.id ?? null) !== input.version) throw conflict('this policy was changed by someone else; reload and review again', { reason: 'stale_version', currentVersion: before?.id ?? null });
+    const enabled = (before?.value as { enabled?: unknown } | undefined)?.enabled === true;
+    if (enabled === input.enabled) return { facilityId: input.facilityId, enabled, version: before?.id ?? null, maxPerSession: MAX_OVERBOOKS_PER_SESSION };
+    const { id } = await ctx.tx.insertInto('platform.config_setting').values({ tenant_id: ctx.tenantId, facility_id: input.facilityId, key: OVERBOOKING_KEY, value: JSON.stringify({ enabled: input.enabled }), effective_from: now, created_by: ctx.actor.staffId ?? null, updated_by: ctx.actor.staffId ?? null }).returning('id').executeTakeFirstOrThrow().catch((err: unknown) => {
+      if (pgCode(err) === '23505') throw conflict('the setting changed at the same moment; reload and review again', { reason: 'concurrent_change' });
+      throw err;
+    });
+    ctx.audit({ action: 'update', subjectType: 'platform.config_setting', subjectId: id, diff: { key: OVERBOOKING_KEY, facilityId: input.facilityId, enabled: [enabled, input.enabled] } });
+    return { facilityId: input.facilityId, enabled: input.enabled, version: id, maxPerSession: MAX_OVERBOOKS_PER_SESSION };
   });
 }
 
@@ -504,10 +510,10 @@ async function cancelLocked(ctx: CommandContext, appt: { id: string; reservation
   });
 }
 
-export async function cancelAppointment(db: Kysely<DB>, caller: Caller, input: { appointmentId: string; reason: string }) {
+export async function cancelAppointment(db: Kysely<DB>, caller: Caller, input: { appointmentId: string; reason: string }, idempotencyKey?: string) {
   if (!input.reason.trim()) throw invalid('a cancellation reason is required');
   const now = clock(caller);
-  return runCommand(db, { ...caller, module: 'booking', name: 'booking.cancel_appointment', request: input }, async (ctx) => {
+  return runCommand(db, { ...caller, module: 'booking', name: 'booking.cancel_appointment', idempotencyKey, request: input }, async (ctx) => {
     const appt = await lockAppointment(ctx.tx, input.appointmentId);
     await cancelLocked(ctx, appt, input.reason, now);
     return { appointmentId: appt.id, status: 'cancelled' as const };

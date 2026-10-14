@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -207,10 +206,6 @@ export function ModuleSwitches() {
     <Card className="mb-7">
       <CardHeader>
         <CardTitle className="text-base">Modules</CardTitle>
-        <CardDescription>
-          A suspended module stops new work (bookings, orders, bills…) but keeps
-          its records readable. Core modules are always on.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         <LoadingState {...mods}>
@@ -347,10 +342,6 @@ export function Registrations() {
         <CardTitle className="text-base">
           Professional registrations and invites
         </CardTitle>
-        <CardDescription>
-          Doctors and nurses need a current council registration to sign notes.
-          Invites last 14 days.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {expired.length > 0 && (
@@ -653,10 +644,6 @@ export function ConsentDocuments() {
         <CardTitle className="text-base">
           Teleconsultation consent documents
         </CardTitle>
-        <CardDescription>
-          Patients agree to the current published version before a video visit.
-          Published versions can't be edited; publish a new one.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <LoadingState {...docs}>
@@ -913,10 +900,6 @@ export function BreakGlassReview() {
     <Card className="mt-6">
       <CardHeader>
         <CardTitle className="text-base">Emergency access review</CardTitle>
-        <CardDescription>
-          Every break-glass chart access is reviewed by someone other than the
-          person who used it.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="w-44">
@@ -951,7 +934,7 @@ export function BreakGlassReview() {
                 </p>
               ) : g.staffId === me.staffId ? (
                 <p className="text-xs text-muted-foreground">
-                  Your own access is reviewed by someone else.
+                  Awaiting another reviewer
                 </p>
               ) : (
                 <div className="flex gap-2">

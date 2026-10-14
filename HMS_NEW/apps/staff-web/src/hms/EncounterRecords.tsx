@@ -115,10 +115,6 @@ export function EncounterRecords({
         <summary className="cursor-pointer font-medium">
           Additional hospital records
         </summary>
-        <p className="py-3 text-sm text-muted-foreground">
-          Open only when relevant: triage, immunizations, medico-legal concerns,
-          births and death records.
-        </p>
         <Triage
           encounterId={encounterId}
           records={records}
@@ -1034,9 +1030,6 @@ function Mlc({
               Police informed {when(m.police_intimated_at)}.
             </p>
           )}
-          <p className="text-xs text-muted-foreground col-span-2">
-            Treatment never waits on these details; they can be completed later.
-          </p>
           {editable && (
             <div className="col-span-2">
               <Refused cmd={cmd} />
@@ -1282,9 +1275,6 @@ function VitalRecords({
               onCheckedChange={(v) => setB({ ...b, live: v })}
             />
           </div>
-          <p className="text-xs text-muted-foreground col-span-2">
-            Register the newborn as their own patient on the Patients page.
-          </p>
           <div className="col-span-2">
             <Refused cmd={cmd} />
             <Button type="submit" disabled={cmd.busy}>

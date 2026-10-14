@@ -64,8 +64,10 @@ export async function updateRegistration(
   db: Kysely<DB>,
   caller: Caller,
   input: { registrationId: string; version: number; validUntil?: string | null | undefined; verify?: boolean | undefined },
+
+  idempotencyKey?: string,
 ) {
-  return runCommand(db, { ...caller, module: 'platform', name: 'platform.update_registration' }, async (ctx) => {
+  return runCommand(db, { ...caller, module: 'platform', name: 'platform.update_registration', idempotencyKey, request: input }, async (ctx) => {
     const r = await ctx.tx.selectFrom('platform.staff_registration').selectAll().where('id', '=', input.registrationId).forUpdate().executeTakeFirst();
     if (!r) throw notFound('registration', { registrationId: input.registrationId });
     if (r.version !== input.version) throw conflict('this registration was changed by someone else; reload and try again', { reason: 'stale_version', currentVersion: r.version });
@@ -134,8 +136,8 @@ export async function assignCare(
   });
 }
 
-export async function endCareAssignment(db: Kysely<DB>, caller: Caller, input: { careAssignmentId: string; reason: string }) {
-  return runCommand(db, { ...caller, module: 'platform', name: 'platform.end_care_assignment' }, async (ctx) => {
+export async function endCareAssignment(db: Kysely<DB>, caller: Caller, input: { careAssignmentId: string; reason: string }, idempotencyKey?: string) {
+  return runCommand(db, { ...caller, module: 'platform', name: 'platform.end_care_assignment', idempotencyKey, request: input }, async (ctx) => {
     const c = await ctx.tx.selectFrom('platform.care_assignment').selectAll().where('id', '=', input.careAssignmentId).forUpdate().executeTakeFirst();
     if (!c) throw notFound('care assignment', { careAssignmentId: input.careAssignmentId });
     const now = clock(caller);
@@ -183,8 +185,8 @@ export async function listBreakGlass(db: Kysely<DB>, caller: Caller, f: { status
   });
 }
 
-export async function reviewBreakGlass(db: Kysely<DB>, caller: Caller, input: { grantId: string; outcome: 'appropriate' | 'inappropriate'; note: string }) {
-  return runCommand(db, { ...caller, module: 'platform', name: 'platform.review_break_glass' }, async (ctx) => {
+export async function reviewBreakGlass(db: Kysely<DB>, caller: Caller, input: { grantId: string; outcome: 'appropriate' | 'inappropriate'; note: string }, idempotencyKey?: string) {
+  return runCommand(db, { ...caller, module: 'platform', name: 'platform.review_break_glass', idempotencyKey, request: input }, async (ctx) => {
     const g = await ctx.tx.selectFrom('platform.emergency_access_grant').selectAll().where('id', '=', input.grantId).forUpdate().executeTakeFirst();
     if (!g) throw notFound('emergency access', { grantId: input.grantId });
     if (g.reviewed_at) throw conflict('this emergency access was already reviewed', { reason: 'already_reviewed' });
@@ -195,7 +197,7 @@ export async function reviewBreakGlass(db: Kysely<DB>, caller: Caller, input: { 
     if (input.outcome === 'inappropriate') {
       ctx.emit({ eventType: 'access.break_glass_inappropriate', aggregateType: 'platform.emergency_access_grant', aggregateId: g.id, payload: { grantId: g.id, staffId: g.staff_id } });
     }
-    return { grantId: g.id, reviewOutcome: input.outcome, reviewedAt: now };
+    return { grantId: g.id, reviewOutcome: input.outcome, reviewedAt: now, reviewerStaffId: ctx.actor.staffId! };
   });
 }
 
@@ -233,9 +235,9 @@ export async function moduleStates(db: Kysely<DB>, caller: Caller) {
   });
 }
 
-export async function setModuleState(db: Kysely<DB>, caller: Caller, input: { module: ModuleCode; state: ModuleStatus; version: number; reason: string }) {
+export async function setModuleState(db: Kysely<DB>, caller: Caller, input: { module: ModuleCode; state: ModuleStatus; version: number; reason: string }, idempotencyKey?: string) {
   if (CORE.includes(input.module)) throw invalid('core modules are always on', { reason: 'core_module' });
-  return runCommand(db, { ...caller, module: 'platform', name: 'platform.set_module_state' }, async (ctx) => {
+  return runCommand(db, { ...caller, module: 'platform', name: 'platform.set_module_state', idempotencyKey, request: input }, async (ctx) => {
     const r = await ctx.tx.selectFrom('platform.module_state').selectAll().where('module_code', '=', input.module).forUpdate().executeTakeFirst();
     const from = (r?.state ?? 'active') as ModuleStatus;
     if ((r?.version ?? 0) !== input.version) throw conflict('this module was changed by someone else; reload and try again', { reason: 'stale_version', currentVersion: r?.version ?? 0 });
@@ -259,8 +261,8 @@ export async function assertModuleActive(db: Kysely<DB>, caller: Caller, module:
 // ---- invites ---------------------------------------------------------------------------------------------
 
 /** Gives an unused invite 14 more days (e.g. it expired before the person first signed in). */
-export async function renewInvite(db: Kysely<DB>, caller: Caller, input: { staffId: string }) {
-  return runCommand(db, { ...caller, module: 'platform', name: 'platform.renew_invite' }, async (ctx) => {
+export async function renewInvite(db: Kysely<DB>, caller: Caller, input: { staffId: string }, idempotencyKey?: string) {
+  return runCommand(db, { ...caller, module: 'platform', name: 'platform.renew_invite', idempotencyKey, request: input }, async (ctx) => {
     const ua = await ctx.tx.selectFrom('platform.user_account').select(['id', 'status', 'identity_subject']).where('staff_id', '=', input.staffId).forUpdate().executeTakeFirst();
     if (!ua) throw notFound('invite', { staffId: input.staffId });
     if (ua.identity_subject || ua.status !== 'invited') throw conflict('this person has already signed in', { reason: 'already_linked' });
@@ -278,7 +280,11 @@ export async function sessionContext(db: Kysely<DB>, caller: Caller, facilityIds
     const tenant = await tx.selectFrom('platform.tenant').select(['id as tenantId', 'name', 'slug', 'status', 'default_currency as currency', 'default_timezone as timezone']).executeTakeFirstOrThrow();
     let q = tx.selectFrom('platform.facility').select(['id as facilityId', 'code', 'name', 'facility_type as facilityType', 'city', 'timezone']).where('status', '=', 'active');
     if (facilityIds) q = q.where('id', 'in', facilityIds.length ? facilityIds : ['00000000-0000-0000-0000-000000000000']);
-    return { tenant, facilities: await q.orderBy('name').execute() };
+    const facilities = await q.orderBy('name').execute();
+    const total = await tx.selectFrom('platform.facility').select(({ fn }) => fn.countAll<number>().as('n')).where('status', '=', 'active').executeTakeFirstOrThrow();
+    const organization = await tx.selectFrom('platform.organization').select('id').where('parent_id', 'is', null).where('status', '=', 'active').executeTakeFirst();
+    const setup = await tx.selectFrom('platform.staff_permission').select('staff_id').where('staff_id', '=', caller.actor.staffId ?? '').where('permission', '=', 'facility.manage').where('facility_id', 'is', null).executeTakeFirst();
+    return { tenant, facilities, bootstrap: { state: Number(total.n) === 0 ? 'zero_clinics' : facilities.length === 0 ? 'inaccessible_clinics' : 'ready', canCreateClinic: !!setup && !!organization && caller.actor.kind === 'staff', organizationProvisioned: !!organization } };
   });
 }
 

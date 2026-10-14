@@ -31,26 +31,17 @@ import { AppointmentActions } from "./appointment-actions";
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 function ScheduleSection({
   title,
-  description,
   children,
 }: {
   title: string;
-  description?: string;
   children: ReactNode;
 }) {
   return (
     <section className="flex flex-col gap-5 border-b pb-6">
       <header className="flex items-start gap-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">
-            {title}
-          </h2>
-          {description && (
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {description}
-            </p>
-          )}
-        </div>
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">
+          {title}
+        </h2>
       </header>
       {children}
     </section>
@@ -76,7 +67,6 @@ const tomorrow = () =>
 
 export function WeeklyHours({
   doctor,
-  catalogue,
   branch: initialBranch,
   initialMode = "in_person",
   onDoctorProfile,
@@ -104,15 +94,6 @@ export function WeeklyHours({
   const [mode, setMode] = useState<string>(initialMode);
   const virtualUnavailable = mode === "virtual" && !doctor.accepts_virtual;
   const [starts] = useState(() => (day > tomorrow() ? day : tomorrow()));
-  const branches = catalogue.branches.filter(
-    (b) =>
-      b.is_active &&
-      (source
-        ? doctor.branches.some((c) => c.id === b.id)
-        : mode === "virtual"
-          ? b.is_virtual && doctor.accepts_virtual
-          : !b.is_virtual && doctor.branches.some((c) => c.id === b.id)),
-  );
   const template = useResource<Template>(
     branch && !isDraft(source) && !virtualUnavailable
       ? "/api/v1/admin/schedule-timeline/weekly?" +
@@ -128,10 +109,9 @@ export function WeeklyHours({
     <FullPage
       title={
         mode === "virtual"
-          ? "Teleconsultation weekly hours"
-          : "In-person weekly hours"
+          ? `${doctor.name} · Teleconsultation hours`
+          : `${doctor.name} · In-person hours`
       }
-      description={`${doctor.name} · ${branches.find((b) => b.id === branch)?.name ?? "Selected clinic"} · IST`}
       back="Back to schedules"
       onBack={onClose}
     >
@@ -151,9 +131,6 @@ export function WeeklyHours({
               ["virtual", "Teleconsultation"],
             ]}
           />
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            In-person and teleconsultation hours are separate schedules.
-          </p>
           {virtualUnavailable && (
             <Alert>
               <AlertDescription>
@@ -380,7 +357,6 @@ function WeeklyEditor({
       >
         <ScheduleSection
           title="Repeat dates"
-          description="Choose when this weekly pattern starts and whether it ends."
         >
           <label className="flex items-center gap-3 text-base ">
             <input
@@ -431,7 +407,6 @@ function WeeklyEditor({
         </ScheduleSection>
         <ScheduleSection
           title="Days & working hours"
-          description="Group days that share hours. Add a second range for a split shift."
         >
           <p className="text-sm text-muted-foreground">
             {draft
@@ -630,7 +605,6 @@ function WeeklyEditor({
         </ScheduleSection>
         <ScheduleSection
           title="Slot duration & review"
-          description="Set the standard patient slot, then check existing appointments before saving."
         >
           <div className="grid grid-cols-[minmax(240px,1fr)_2fr] items-start gap-8">
             <Field

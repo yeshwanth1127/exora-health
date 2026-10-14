@@ -24,6 +24,9 @@ import {
   addDays,
 } from 'date-fns';
 import { demoStartDate, initialDemoDate } from '../../data/demoAvailability';
+import { bookingDay, normalizeBookingPhone, plainDate, type PublicCatalog } from '../../lib/publicBookingApi';
+import { slotLabel } from '../../lib/hmsAvailability';
+import { useHmsBookingBridge } from '../../lib/useHmsBookingBridge';
 import {
   trackBookingFlowStarted,
   trackBookingStepViewed,
@@ -61,6 +64,7 @@ export interface DoctorScheduleProfile {
 }
 
 interface OriginalScheduleAppointmentPageProps {
+  catalog?: PublicCatalog;
   doctor: DoctorScheduleProfile;
   initialStep?: 1 | 2;
   initialDate?: string;
@@ -74,6 +78,7 @@ interface OriginalScheduleAppointmentPageProps {
 }
 
 export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointmentPageProps> = ({
+  catalog,
   doctor,
   initialStep = 1,
   initialDate,
@@ -94,7 +99,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
 
   useEffect(() => {
     trackBookingStepViewed(currentStep);
-    if (currentStep === 3) {
+    if (currentStep === 3 && !catalog) {
       trackBookingPreviewCompleted('booking');
     }
   }, [currentStep]);
@@ -104,8 +109,8 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
   const [visitType, setVisitType] = useState<'Office Visit' | 'Video Visit'>(initialVisitType);
   const [selectedLocation, setSelectedLocation] = useState(doctor.practiceName || 'Sri Lakshmi Hospital');
 
-  const [calendarMonth, setCalendarMonth] = useState<Date>(() => initialDemoDate(initialDate));
-  const [selectedDate, setSelectedDate] = useState<string>(() => format(initialDemoDate(initialDate), 'yyyy-MM-dd'));
+  const [calendarMonth, setCalendarMonth] = useState<Date>(() => (catalog ? new Date((initialDate && plainDate(initialDate) && initialDate>=catalog.today && initialDate<=catalog.bookingUntil ? initialDate : catalog.today)+'T12:00:00') : initialDemoDate(initialDate)));
+  const [selectedDate, setSelectedDate] = useState<string>(() => format((catalog ? new Date((initialDate && plainDate(initialDate) && initialDate>=catalog.today && initialDate<=catalog.bookingUntil ? initialDate : catalog.today)+'T12:00:00') : initialDemoDate(initialDate)), 'yyyy-MM-dd'));
   const [selectedSlot, setSelectedSlot] = useState<string>(initialSlot || '');
 
   // Step 2: Patient Information State (styled using login modal components)
@@ -129,10 +134,20 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
   // Validation & Error state
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Step 3 is a local walkthrough; no booking is submitted here.
+  const booking=useHmsBookingBridge(catalog,doctor.id,visitType==='Video Visit'?'virtual':'in_person',!!selectedSlot||!!fullName||!!phone||!!email||!!reason);
+  const selectedQuote=catalog ? booking.slots.find(slot=>bookingDay(slot.startsAt,catalog.timezone)===selectedDate && slotLabel(slot,catalog.timezone)===selectedSlot) : undefined;
+  useEffect(()=>{if(booking.receipt)setCurrentStep(3);else if(booking.error && !booking.unknown)setCurrentStep(1);},[booking.receipt,booking.error,booking.unknown]);
+  useEffect(()=>{if(catalog && currentStep===2 && !booking.availability.loading && !selectedQuote && !booking.unknown && !booking.receipt)setCurrentStep(1);},[catalog,currentStep,booking.availability.loading,selectedQuote,booking.unknown,booking.receipt]);
+  async function confirmBooking() {
+    const normalized=normalizeBookingPhone(phone);
+    if(!selectedQuote || !normalized || !catalog)return;
+    await booking.submit({slotToken:selectedQuote.slotToken,name:fullName.trim(),phone:normalized,...(email.trim()?{email:email.trim()}:{}),...(reason.trim()?{reason:reason.trim()}: {})},selectedQuote);
+  }
+
 
   // Dynamic slot generation for any selected date (>3 slots per day supported!)
   const getSlotsForDate = useCallback((dateStr: string): string[] => {
+    if(catalog)return [...booking.slots,...booking.unpricedSlots].filter(slot=>bookingDay(slot.startsAt,catalog.timezone)===dateStr).map(slot=>slotLabel(slot,catalog.timezone));
     if (doctor.availableSlots && doctor.availableSlots[dateStr] && doctor.availableSlots[dateStr].length > 0) {
       return doctor.availableSlots[dateStr];
     }
@@ -154,7 +169,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
     } else {
       return ['09:15 AM', '10:00 AM', '11:30 AM', '01:15 PM', '02:45 PM', '04:00 PM'];
     }
-  }, [doctor.availableSlots]);
+  }, [doctor.availableSlots,catalog,booking.slots,booking.unpricedSlots]);
 
   // Current day slots list
   const currentDaySlots = useMemo(() => {
@@ -184,11 +199,11 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
         dayNum: format(day, 'd'),
         dateStr: dStr,
         isCurrentMonth: isSameMonth(day, calendarMonth),
-        hasSlots: true,
+        hasSlots: catalog ? getSlotsForDate(dStr).length>0 : true,
         isSelected: dStr === selectedDate,
       };
     });
-  }, [calendarMonth, selectedDate]);
+  }, [calendarMonth, selectedDate,catalog,getSlotsForDate]);
 
   // Handle advancing to Step 2 when slot is picked in Step 1
   const handleSelectSlotInStep1 = (slot: string) => {
@@ -303,24 +318,26 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
     const trimmedName = fullName.trim();
     if (!trimmedName) {
       newErrors.fullName = 'Full name is required';
-    } else if (trimmedName.split(/\s+/).length < 2) {
+    } else if (catalog ? trimmedName.length<2 || trimmedName.length>100 : trimmedName.split(/\s+/).length < 2) {
       newErrors.fullName = 'Please enter both your first and last name';
     }
 
     // 2. Date of birth
-    if (!dob.trim()) {
+    if (!catalog && !dob.trim()) {
       newErrors.dob = 'A valid date is required';
     }
 
     // 3. Sex
-    if (!gender) {
+    if (!catalog && !gender) {
       newErrors.gender = 'This field is required';
     }
 
     // 4. Mobile phone number
     if (!phone.trim()) {
       newErrors.phone = 'Mobile phone number is required';
-    } else if (!otpVerified) {
+    } else if (catalog && !normalizeBookingPhone(phone)) {
+      newErrors.phone='Enter a valid mobile number, including country code for numbers outside India.';
+    } else if (!catalog && !otpVerified) {
       newErrors.otp = 'Enter a six-digit demo code before continuing';
       if (!otpSent) {
         setOtpSent(true);
@@ -345,6 +362,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
       return;
     }
 
+    if(catalog && !selectedQuote){setErrors({slot:'This time is no longer available. Choose a time again.'});setCurrentStep(1);return;}
     // All requirements satisfied -> advance to Step 3
     setErrors({});
     trackBookingStepCompleted(2);
@@ -356,12 +374,13 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
 
   return (
     <div className="min-h-screen bg-white text-neutral-900 flex flex-col font-sans">
+      {catalog && (booking.error || booking.unknown) && <div role="alert" className="max-w-7xl mx-auto px-8 py-4"><p>{booking.error || 'The original booking outcome needs to be recovered before starting another.'}</p>{booking.unknown && <button type="button" disabled={booking.busy} onClick={()=>void booking.submit()} className="mt-3 rounded-full bg-[#154734] text-white px-5 py-3">Recover original booking</button>}</div>}
       {/* ── MAIN CONTENT CONTAINER ── */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
-          <p role="status" className="rounded-xl border border-[#dce9df] bg-[#eef5eb] px-4 py-3 text-sm text-[#315943]">
+          {!catalog && <p role="status" className="rounded-xl border border-[#dce9df] bg-[#eef5eb] px-4 py-3 text-sm text-[#315943]">
             Sample walkthrough: dates, time slots, verification and confirmation are examples. No appointment is reserved and no message is sent. Use the standard booking view for live availability and Virtual OPD bookings.
-          </p>
+          </p>}
           <div className="max-w-2xl" aria-label={`Booking progress: step ${currentStep} of 3`}>
             <div className="mb-2 flex justify-between text-xs font-semibold text-[#315943]"><span>Step {currentStep} of 3</span><span>{currentStep === 1 ? 'Visit details' : currentStep === 2 ? 'Your details' : 'Review'}</span></div>
             <div role="progressbar" aria-valuemin={1} aria-valuemax={3} aria-valuenow={currentStep} aria-label="Booking progress" className="h-1.5 overflow-hidden rounded-full bg-[#dce9df]"><div className="h-full rounded-full bg-[#24553c] transition-[width]" style={{ width: `${currentStep / 3 * 100}%` }} /></div>
@@ -494,7 +513,8 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                         type="radio"
                         name="visitType"
                         checked={visitType === 'Office Visit'}
-                        onChange={() => setVisitType('Office Visit')}
+                        onChange={() => {setVisitType('Office Visit');setSelectedSlot('');}}
+                        disabled={booking.frozen}
                         className="size-4.5 text-[#154734] focus:ring-[#154734] cursor-pointer accent-[#154734]"
                       />
                       <span>Office Visit</span>
@@ -505,7 +525,8 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                         type="radio"
                         name="visitType"
                         checked={visitType === 'Video Visit'}
-                        onChange={() => setVisitType('Video Visit')}
+                        onChange={() => {setVisitType('Video Visit');setSelectedSlot('');}}
+                        disabled={booking.frozen || (!!catalog && !doctor.offersVideo)}
                         className="size-4.5 text-[#154734] focus:ring-[#154734] cursor-pointer accent-[#154734]"
                       />
                       <span>Video Visit</span>
@@ -547,7 +568,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     <div className="pt-1">
                       <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 text-sky-800 border border-sky-200 text-xs font-bold">
                         <CalendarCheck className="size-4 text-sky-600" />
-                        <span>Sample times from {format(demoStartDate(), 'MMM d')}</span>
+                        <span>{catalog ? `Published schedule · ${catalog.timezone}` : `Sample times from ${format(demoStartDate(), 'MMM d')}`}</span>
                       </div>
                     </div>
                   </div>
@@ -585,7 +606,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     <button
                       type="button"
                       onClick={() => setCalendarMonth((m) => subMonths(m, 1))}
-                      disabled={startOfMonth(calendarMonth) <= startOfMonth(demoStartDate())}
+                      disabled={booking.frozen || startOfMonth(calendarMonth) <= startOfMonth(catalog ? new Date(catalog.today+'T12:00:00') : demoStartDate())}
                       className="text-xs font-semibold text-neutral-700 hover:text-[#154734] inline-flex items-center gap-0.5 cursor-pointer"
                     >
                       <ChevronLeft className="size-4" />
@@ -600,6 +621,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     <button
                       type="button"
                       onClick={() => setCalendarMonth((m) => addMonths(m, 1))}
+                      disabled={booking.frozen || (!!catalog && format(addMonths(calendarMonth,1),'yyyy-MM')>catalog.bookingUntil.slice(0,7))}
                       className="text-xs font-semibold text-neutral-700 hover:text-[#154734] inline-flex items-center gap-0.5 cursor-pointer"
                     >
                       <span>{format(addMonths(calendarMonth, 1), 'MMM')}</span>
@@ -626,7 +648,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                         <div key={cell.dateStr} className="h-10 flex items-center justify-center">
                           <button
                             type="button"
-                            disabled={cell.dateStr < format(demoStartDate(), 'yyyy-MM-dd')}
+                            disabled={booking.frozen || (catalog ? !cell.hasSlots || cell.dateStr<catalog.today || cell.dateStr>catalog.bookingUntil : cell.dateStr < format(demoStartDate(), 'yyyy-MM-dd'))}
                             onClick={() => {
                               setSelectedDate(cell.dateStr);
                               if (!cell.isCurrentMonth) {
@@ -657,9 +679,10 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     {formattedSelectedDate}
                   </div>
                   <div className="text-xs font-semibold text-neutral-600">
-                    Afternoon Slots:
+                    {catalog ? 'Available appointment times:' : 'Afternoon Slots:'}
                   </div>
 
+                  {catalog && <>{booking.unpricedSlots.some(q=>bookingDay(q.startsAt,catalog.timezone)===selectedDate) && <p className="text-sm text-amber-800">The hospital has published these times, but the fee for {booking.unpricedSlots.find(q=>bookingDay(q.startsAt,catalog.timezone)===selectedDate)?.serviceName} has not been configured. Contact reception to book.</p>}<p role="status">{booking.availability.loading ? 'Loading available times…' : booking.availability.error || (!currentDaySlots.length ? 'No published times on this date. Choose a highlighted date on the calendar.' : booking.slots.some(q=>bookingDay(q.startsAt,catalog.timezone)===selectedDate) ? 'Choose a time to continue to your details.' : 'These scheduled times are not yet available for online booking.')}</p>{booking.availability.error && <button type="button" onClick={booking.refresh} className="underline">Try again</button>}</>}
                   {/* Slot buttons grid (More than 3 slots supported!) */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {currentDaySlots.map((slot: string) => {
@@ -669,7 +692,9 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                           key={slot}
                           type="button"
                           onClick={() => handleSelectSlotInStep1(slot)}
-                          className={`py-2 px-2 rounded-md font-bold text-xs transition cursor-pointer text-center ${
+                          disabled={booking.frozen || (!!catalog && !booking.slots.some(q=>bookingDay(q.startsAt,catalog.timezone)===selectedDate && slotLabel(q,catalog.timezone)===slot))}
+                          title={catalog && booking.unpricedSlots.some(q=>bookingDay(q.startsAt,catalog.timezone)===selectedDate && slotLabel(q,catalog.timezone)===slot) ? 'Consultation fee not configured — contact reception' : undefined}
+                          className={`py-2 px-2 rounded-md font-bold text-xs transition cursor-pointer text-center disabled:bg-stone-200 disabled:text-stone-600 disabled:cursor-not-allowed ${
                             isSelected
                               ? 'bg-[#1b5b39] text-white ring-2 ring-[#cbe6a3]'
                               : 'bg-[#154734] hover:bg-[#0f3426] active:scale-95 text-white'
@@ -690,11 +715,11 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     Explore similar providers
                   </h4>
                   <p className="text-[11px] text-neutral-600 leading-relaxed">
-                    Browse providers similar to {doctor.name.split(',')[0]} in this walkthrough.
+                    Browse providers similar to {doctor.name.split(',')[0]}{catalog ? '.' : ' in this walkthrough.'}
                   </p>
                   <button
                     type="button"
-                    onClick={onBackToSearch}
+                    onClick={()=>{if(booking.frozen)return;if(booking.receipt)booking.reset();onBackToSearch();}}
                     className="w-full bg-[#154734] hover:bg-[#0f3426] active:scale-95 text-white font-bold text-xs py-2 px-4 rounded-md transition cursor-pointer"
                   >
                     View Similar Providers
@@ -722,7 +747,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                         Sri Lakshmi appointment demo
                       </h3>
                       <p className="text-xs text-neutral-600 leading-relaxed">
-                        Continue as a guest with sample details. This walkthrough does not create a patient account.
+                        {catalog ? 'Enter the patient and booking contact details below.' : 'Continue as a guest with sample details. This walkthrough does not create a patient account.'}
                       </p>
                     </div>
                     <div className="size-8 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 ml-3">
@@ -734,7 +759,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     </div>
                   </div>
 
-                  {showSignInAccordion && onOpenLogin && (
+                  {!catalog && showSignInAccordion && onOpenLogin && (
                     <div className="mt-4 pt-4 border-t border-neutral-200 flex items-center gap-3">
                       <button
                         type="button"
@@ -797,7 +822,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                 </div>
 
                 {/* Patient Information Form (Single Name field, Optional Email, Inline OTP) */}
-                <form onSubmit={handleProceedToConfirmation} className="space-y-5 pt-1" noValidate>
+                <form onSubmit={handleProceedToConfirmation} className="space-y-5 pt-1" noValidate><fieldset disabled={booking.frozen} className="contents">
                   {/* 1. Legal Full Name (Single Field with First and Last) */}
                   <div id="field-fullName" className="space-y-1.5">
                     <label htmlFor="patient-full-name" className="flex items-center gap-1.5 text-[13px] font-semibold text-neutral-800">
@@ -807,6 +832,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     </label>
                     <input
                       id="patient-full-name"
+                      maxLength={catalog ? 100 : undefined}
                       type="text"
                       value={fullName}
                       onChange={(e) => {
@@ -828,6 +854,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     )}
                   </div>
 
+                  {!catalog && <>
                   {/* 2. Date of Birth & Sex */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     {/* Date of Birth */}
@@ -930,6 +957,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     )}
                   </div>
 
+                  </>}
                   {/* 3. Mobile Phone Number & Inline OTP Verification */}
                   <div id="field-phone" className="space-y-2">
                     <label htmlFor="patient-phone" className="block text-[13px] font-semibold text-neutral-800">
@@ -954,7 +982,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                         }`}
                       />
 
-                      {!otpVerified && (
+                      {!catalog && !otpVerified && (
                         <button
                           type="button"
                           onClick={handleSendOtp}
@@ -974,7 +1002,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     )}
 
                     {/* Verified Status Banner */}
-                    {otpVerified && (
+                    {!catalog && otpVerified && (
                       <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-[14px] text-xs font-semibold">
                         <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
                         <span>Demo code accepted. Your phone number has not been verified.</span>
@@ -982,7 +1010,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     )}
 
                     {/* Inline OTP Code Verification Panel (from AaveLoginFlow) */}
-                    {otpSent && !otpVerified && (
+                    {!catalog && otpSent && !otpVerified && (
                       <div className="bg-[#f4f8f2] border border-[#c8dec9] rounded-2xl p-4 sm:p-5 space-y-3.5 animate-fadeIn">
                         <div className="flex items-center justify-between">
                           <div>
@@ -1114,6 +1142,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                     </label>
                     <textarea
                       id="patient-reason"
+                      maxLength={catalog ? 500 : undefined}
                       rows={3}
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
@@ -1132,7 +1161,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                       <ArrowRight className="size-4" />
                     </button>
                   </div>
-                </form>
+                </fieldset></form>
               </div>
 
               {/* Right Column: Sticky Appointment Summary Card (1:1 with media_1790071408155.png) */}
@@ -1230,15 +1259,15 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
               <div className="bg-white rounded-2xl border border-neutral-200 shadow-lg p-6 sm:p-10 text-center space-y-6">
                 {/* Success Check Icon */}
                 <div className="size-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
-                  <CheckCircle2 className="size-10" />
+                  {catalog && !booking.receipt ? <CalendarCheck className="size-10" /> : <CheckCircle2 className="size-10" />}
                 </div>
 
                 <div className="space-y-1.5">
                   <h2 className="text-2xl font-extrabold text-neutral-950">
-                    Walkthrough complete
+                    {catalog ? booking.receipt ? 'Appointment confirmed' : 'Review your appointment' : 'Walkthrough complete'}
                   </h2>
                   <p className="text-xs sm:text-sm text-neutral-600">
-                    This was a sample walkthrough. No appointment has been reserved, and no SMS or calendar invitation has been sent. Contact the clinic to confirm availability before making plans.
+                    {catalog ? booking.receipt ? `Booking reference: ${booking.receipt.confirmationCode}` : 'Check the patient, doctor, time and fee, then confirm your booking.' : 'This was a sample walkthrough. No appointment has been reserved, and no SMS or calendar invitation has been sent. Contact the clinic to confirm availability before making plans.'}
                   </p>
                 </div>
 
@@ -1247,11 +1276,11 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                   <div className="flex items-start gap-4 pb-3 border-b border-neutral-200">
                     <img
                       src={doctor.photo}
-                      alt={doctor.name}
+                      alt={booking.receipt?.doctorName ?? doctor.name}
                       className="size-14 rounded-lg object-cover object-top border border-neutral-300 shrink-0"
                     />
                     <div>
-                      <div className="font-bold text-base text-neutral-900">{doctor.name}</div>
+                      <div className="font-bold text-base text-neutral-900">{booking.receipt?.doctorName ?? doctor.name}</div>
                       <div className="text-xs text-neutral-600">{doctor.specialty}</div>
                       <div className="text-xs text-[#154734] font-semibold mt-0.5">New Patient {visitType}</div>
                     </div>
@@ -1260,7 +1289,7 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-neutral-700">
                     <div>
                       <span className="font-bold text-neutral-900 block">Date &amp; Time:</span>
-                      <span>{formattedSelectedDate} at {selectedSlot}</span>
+                      <span>{booking.receipt ? new Intl.DateTimeFormat('en-IN',{timeZone:booking.receipt.timezone,dateStyle:'full',timeStyle:'short'}).format(new Date(booking.receipt.startsAt)) : `${formattedSelectedDate} at ${selectedSlot}`}</span>
                     </div>
                     <div>
                       <span className="font-bold text-neutral-900 block">Patient:</span>
@@ -1277,19 +1306,22 @@ export const OriginalScheduleAppointmentPage: React.FC<OriginalScheduleAppointme
                   </div>
                 </div>
 
+                {catalog && <p className="font-semibold">Consultation fee: {new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format((booking.receipt?.feeMinor??selectedQuote?.feeMinor??0)/100)}</p>}
+                {catalog && !booking.receipt && <button type="button" disabled={booking.frozen} onClick={()=>setCurrentStep(2)} className="underline">Edit patient details</button>}
+                {catalog && !booking.receipt && <button type="button" disabled={booking.frozen || !selectedQuote} onClick={()=>void confirmBooking()} className="w-full rounded-[12px] bg-[#154734] text-white py-3 font-bold disabled:opacity-50">{booking.busy ? 'Confirming…' : 'Confirm appointment'}</button>}
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={onBackToSearch}
+                    onClick={()=>{if(booking.frozen)return;if(booking.receipt)booking.reset();onBackToSearch();}}
                     className="w-full sm:w-auto px-6 py-2.5 rounded-[12px] bg-[#154734] hover:bg-[#0f3426] active:scale-95 text-white text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
                   >
-                    <span>Find Another Doctor</span>
+                    <span>{catalog && !booking.receipt ? 'Choose another doctor' : 'Find Another Doctor'}</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={onBackToHome}
+                    onClick={()=>{if(booking.frozen)return;if(booking.receipt)booking.reset();onBackToHome();}}
                     className="w-full sm:w-auto px-5 py-2.5 rounded-[12px] border border-green-200 bg-green-50 text-[#154734] text-xs font-bold hover:bg-green-100 transition cursor-pointer"
                   >
                     Return to Home

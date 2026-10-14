@@ -6,6 +6,8 @@ export const WhatsAppSettingsSchema = z.object({
   accountId: Id.nullable(),
   phoneNumberId: z.string().nullable(),
   providerConfigured: z.boolean(),
+  templateStatusAvailable: z.boolean().default(false),
+  templateSubmissionAvailable: z.boolean().default(false),
   webhookReady: z.boolean(),
   operationalCounts: z.object({
     openConversations: z.number().int(),
@@ -31,6 +33,9 @@ export const ConversationSchema = z.object({
   facilityId: Id,
   contactPointId: Id,
   status: z.enum(['open', 'closed']),
+  automationState: z.enum(['automation', 'handoff_requested', 'human']),
+  automationAllowed: z.boolean(),
+  automationBlockedReasons: z.array(z.enum(['closed', 'human_handoff', 'module_inactive', 'consent_missing_or_withdrawn', 'reply_window_expired', 'contact_inactive'])),
   assignedStaffId: Id.nullable(),
   assignedStaffName: z.string().nullable(),
   version: z.number().int(),
@@ -104,6 +109,32 @@ export const WhatsAppUploadSchema = z.strictObject({
   mimeType: z.enum(['image/jpeg', 'image/png', 'application/pdf']),
   dataBase64: z.string().min(4).max(14_000_000),
 });
+export const TemplateProviderStatusCheckSchema = z.object({
+  status: z.string().nullable(), match: z.enum(['exact','different','missing','unsupported']),
+  checkedAt: Time, providerTemplateId: z.string().nullable(), localVersion: z.number().int().positive(),
+});
+export const TemplateProviderStatusInputSchema = z.strictObject({ facilityId: Id, version: z.number().int().positive() });
+export const TemplateSubmissionInputSchema = z.strictObject({
+  facilityId: Id, version: z.number().int().positive(),
+  samples: z.array(z.string().trim().min(1).max(200)).max(10),
+  fictionalExamples: z.literal(true),
+});
+export const TemplateSubmissionSchema = z.object({
+  id: Id, templateId: Id, facilityId: Id, templateVersion: z.number().int().positive(),
+  providerName: z.string(), body: z.string(), language: z.string(), category: z.enum(['utility','marketing']),
+  parameterCount: z.number().int().min(0).max(10), samples: z.array(z.string()),
+  state: z.enum(['queued','dispatching','submitted','uncertain','failed','conflict','cancelled']),
+  providerTemplateId: z.string().nullable(), providerStatus: z.string().nullable(),
+  reason: z.string().nullable(), createdAt: Time, updatedAt: Time,
+  currentDraftMatches: z.boolean(), version: z.number().int().positive(),
+});
+export const TemplateSubmissionResultSchema = z.object({
+  templateId: Id, version: z.number().int().positive(), submission: TemplateSubmissionSchema,
+});
+export const TemplateProviderStatusResultSchema = z.object({
+  templateId: Id, version: z.number().int().positive(), providerStatus: z.string().nullable(),
+  match: z.enum(['exact','different','missing','unsupported']), checkedAt: Time, providerTemplateId: z.string().nullable(),
+});
 export const MessageTemplateSchema = z.object({
   id: Id,
   facilityId: Id,
@@ -114,7 +145,11 @@ export const MessageTemplateSchema = z.object({
   parameterCount: z.number().int(),
   header: z.enum(['text', 'image', 'none']),
   providerApproval: z.enum(['not_synced', 'approved', 'rejected', 'pending']),
+  providerStatusCheck: TemplateProviderStatusCheckSchema.nullable().optional(),
+  submission: TemplateSubmissionSchema.nullable().optional(),
   simulationOnly: z.literal(true),
+  editable: z.boolean(),
+  editBlockedReason: z.string().nullable(),
   version: z.number().int(),
 });
 export const MessageTemplatesResponseSchema = z.object({ items: z.array(MessageTemplateSchema) });
@@ -127,6 +162,7 @@ export const MessageTemplateCreateSchema = z.strictObject({
   parameterCount: z.number().int().min(0).max(10),
   header: z.enum(['text', 'image', 'none']).default('none'),
 });
+export const MessageTemplateEditSchema = MessageTemplateCreateSchema.extend({ version: z.number().int().min(1) });
 export const CampaignCreateSchema = z.strictObject({
   facilityId: Id,
   title: z.string().trim().min(3).max(120),

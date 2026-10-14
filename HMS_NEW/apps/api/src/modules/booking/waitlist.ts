@@ -230,7 +230,7 @@ export async function acceptWaitlistOffer(db: Kysely<DB>, caller: Caller, input:
       reason: null,
       rescheduledFromId: null,
     });
-    await ctx.tx.updateTable('booking.waitlist_offer').set({ outcome: 'accepted' }).where('id', '=', offer.id).execute();
+    await ctx.tx.updateTable('booking.waitlist_offer').set({ outcome: 'accepted', updated_by: ctx.actor.staffId ?? null }).where('id', '=', offer.id).execute();
     await ctx.tx.updateTable('booking.waitlist_entry').set({ status: 'accepted' }).where('id', '=', entry.id).execute();
     ctx.audit({ action: 'status_change', subjectType: 'booking.waitlist_entry', subjectId: entry.id, patientId: party.patient_id, diff: { status: 'accepted', appointmentId: appointment.appointmentId } });
     ctx.emit({eventType:'waitlist.offer_closed',aggregateType:'booking.waitlist_offer',aggregateId:offer.id,payload:{offerId:offer.id,outcome:'accepted'}});
@@ -240,14 +240,14 @@ export async function acceptWaitlistOffer(db: Kysely<DB>, caller: Caller, input:
 
 async function closeOffer(ctx: CommandContext, offer: { id: string; reservation_id: string }) {
   ctx.emit({eventType:'waitlist.offer_closed',aggregateType:'booking.waitlist_offer',aggregateId:offer.id,payload:{offerId:offer.id,outcome:'declined'}});
-  await ctx.tx.updateTable('booking.waitlist_offer').set({ outcome: 'declined' }).where('id', '=', offer.id).execute();
+  await ctx.tx.updateTable('booking.waitlist_offer').set({ outcome: 'declined', updated_by: ctx.actor.staffId ?? null }).where('id', '=', offer.id).execute();
   await ctx.tx.updateTable('booking.reservation').set({ status: 'released' }).where('id', '=', offer.reservation_id).where('status', '=', 'held').execute();
 }
 
 /** The caller said no: the slot is released and the request waits again. */
-export async function declineWaitlistOffer(db: Kysely<DB>, caller: Caller, input: { offerId: string }) {
+export async function declineWaitlistOffer(db: Kysely<DB>, caller: Caller, input: { offerId: string }, idempotencyKey?: string) {
   const now = clock(caller);
-  return runCommand(db, { ...caller, module: 'booking', name: 'booking.waitlist_decline', request: input }, async (ctx) => {
+  return runCommand(db, { ...caller, module: 'booking', name: 'booking.waitlist_decline', idempotencyKey, request: input }, async (ctx) => {
     const entry = await lockEntry(ctx, await entryOfOffer(ctx, input.offerId), now);
     const offer = await pendingOffer(ctx, entry.id);
     if (!offer || offer.id !== input.offerId) throw preconditionFailed('this offer has expired or was answered', { reason: 'offer_expired' });
@@ -259,9 +259,9 @@ export async function declineWaitlistOffer(db: Kysely<DB>, caller: Caller, input
 }
 
 /** Removes a request; a pending offer is declined and its slot released. */
-export async function withdrawFromWaitlist(db: Kysely<DB>, caller: Caller, input: { waitlistEntryId: string; reason: string }) {
+export async function withdrawFromWaitlist(db: Kysely<DB>, caller: Caller, input: { waitlistEntryId: string; reason: string }, idempotencyKey?: string) {
   const now = clock(caller);
-  return runCommand(db, { ...caller, module: 'booking', name: 'booking.waitlist_withdraw', request: input }, async (ctx) => {
+  return runCommand(db, { ...caller, module: 'booking', name: 'booking.waitlist_withdraw', idempotencyKey, request: input }, async (ctx) => {
     const entry = await lockEntry(ctx, input.waitlistEntryId, now);
     if (!['waiting', 'offered'].includes(entry.status)) throw conflict(`this request is already ${entry.status}`, { reason: 'not_active' });
     const offer = await pendingOffer(ctx, entry.id);
@@ -269,5 +269,31 @@ export async function withdrawFromWaitlist(db: Kysely<DB>, caller: Caller, input
     await ctx.tx.updateTable('booking.waitlist_entry').set({ status: 'withdrawn' }).where('id', '=', entry.id).execute();
     ctx.audit({ action: 'status_change', subjectType: 'booking.waitlist_entry', subjectId: entry.id, reason: input.reason, diff: { status: 'withdrawn' } });
     return { waitlistEntryId: entry.id, status: 'withdrawn' };
+  });
+}
+
+/** Addressable offer history, including closed offers that disappear from the active list.
+ * Expiry is derived on reads; it must never be mistaken for a successful decline. */
+export async function getWaitlistOffer(db: Kysely<DB>, caller: Caller, offerId: string) {
+  const now = clock(caller);
+  return runQuery(db, caller.tenantId, async (tx) => {
+    const { rows: [offer] } = await sql<{
+      offerId: string; waitlistEntryId: string; facilityId: string | null;
+      outcome: string; version: number; closedByStaffId: string | null;
+      closedAt: Date | null; expiresAt: Date; appointmentId: string | null;
+    }>`SELECT o.id AS "offerId", o.waitlist_entry_id AS "waitlistEntryId",
+      e.facility_id AS "facilityId",
+      CASE WHEN o.outcome = 'pending' AND o.expires_at <= ${now} THEN 'expired' ELSE o.outcome END AS outcome,
+      o.version,
+      CASE WHEN o.outcome IN ('accepted', 'declined') THEN o.updated_by ELSE NULL END AS "closedByStaffId",
+      CASE WHEN o.outcome = 'expired' OR (o.outcome = 'pending' AND o.expires_at <= ${now}) THEN o.expires_at
+           WHEN o.outcome IN ('accepted', 'declined') THEN o.updated_at ELSE NULL END AS "closedAt",
+      o.expires_at AS "expiresAt", a.id AS "appointmentId"
+      FROM booking.waitlist_offer o
+      JOIN booking.waitlist_entry e ON e.id = o.waitlist_entry_id
+      LEFT JOIN booking.appointment a ON a.reservation_id = o.reservation_id
+      WHERE o.id = ${offerId}`.execute(tx);
+    if (!offer) throw notFound('waitlist offer', { offerId });
+    return offer;
   });
 }

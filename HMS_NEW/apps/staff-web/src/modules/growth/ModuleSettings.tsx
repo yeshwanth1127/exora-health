@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -86,10 +85,6 @@ export function ModuleSettings({
       <div>
         <p className="text-sm text-muted-foreground">Clinic configuration</p>
         <h1 className="mt-1 text-3xl font-semibold tracking-tight">Modules</h1>
-        <p className="mt-2 text-muted-foreground">
-          Choose the optional tools your clinic uses. Staff permissions still
-          apply.
-        </p>
       </div>
       {error && (
         <Alert variant="destructive">
@@ -110,10 +105,6 @@ export function ModuleSettings({
       <Card>
         <CardHeader>
           <CardTitle>Core clinic workspace</CardTitle>
-          <CardDescription>
-            Appointments, doctors and schedules remain available as the core
-            workspace.
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <Badge variant="secondary">Included</Badge>
@@ -122,10 +113,6 @@ export function ModuleSettings({
       <Card>
         <CardHeader>
           <CardTitle>Optional modules</CardTitle>
-          <CardDescription>
-            Disabling a module blocks access through its APIs. It does not
-            delete saved data or grant staff new permissions.
-          </CardDescription>
         </CardHeader>
         <CardContent className="divide-y">
           {data?.modules.map((item) => (
@@ -163,10 +150,6 @@ export function ModuleSettings({
           Only your clinic administrator can enable or disable modules.
         </p>
       )}
-      <p className="text-xs text-muted-foreground">
-        These settings apply to this clinic deployment. This backend does not
-        yet isolate multiple clients within one shared database.
-      </p>
     </div>
   );
 }

@@ -1,8 +1,9 @@
+import { lockAccess } from '../access/staff.ts';
 // Directory administration: clinics, departments, consult rooms and bookable services. Routes check the
 // permission at the clinic involved; these commands add the rules that need the database (no stale
 // edits, nothing switched off while it's still in use, the tenant always keeps one active clinic).
 import { sql, type DB, type Kysely, type Transaction } from '@hms/db';
-import { conflict, invalid, notFound, pgCode, preconditionFailed, runCommand, runQuery, type CommandContext } from '@hms/platform';
+import { conflict, DomainError, invalid, notFound, pgCode, preconditionFailed, runCommand, runQuery, type CommandContext } from '@hms/platform';
 import { clock, type Caller } from '../../caller.ts';
 import { publishPrice, type PriceMode } from './pricing.ts';
 
@@ -115,6 +116,11 @@ export async function createFacility(
   idempotencyKey: string,
 ) {
   return runCommand(db, { ...caller, module: 'platform', name: 'platform.create_facility', idempotencyKey, request: input }, async (ctx) => {
+    await lockAccess(ctx);
+    await sql`SELECT pg_advisory_xact_lock(hashtextextended(${ctx.tenantId + ':clinic-creation'}, 0))`.execute(ctx.tx);
+    if (ctx.actor.kind !== 'staff' || !ctx.actor.staffId) throw new DomainError('forbidden', 'staff clinic setup permission is required');
+    const allowed = await ctx.tx.selectFrom('platform.staff_permission').select('staff_id').where('staff_id', '=', ctx.actor.staffId ?? '').where('permission', '=', 'facility.manage').where('facility_id', 'is', null).executeTakeFirst();
+    if (!allowed || ctx.actor.kind !== 'staff') throw new DomainError('forbidden', 'organization-wide clinic setup permission is required');
     // New clinics join the tenant's top-level organisation (provisioning creates it).
     const org = await ctx.tx.selectFrom('platform.organization').select('id').where('parent_id', 'is', null).where('status', '=', 'active').orderBy('created_at').executeTakeFirst();
     if (!org) throw preconditionFailed('this hospital account has no organisation yet');
@@ -124,16 +130,22 @@ export async function createFacility(
         .values({ tenant_id: ctx.tenantId, organization_id: org.id, code: input.code, ...facilityColumns(input), name: input.name, facility_type: input.facilityType, state_code: input.stateCode, created_by: ctx.actor.staffId ?? null })
         .returning('id')
         .executeTakeFirstOrThrow();
+      // A bounded setup role on this clinic ensures its creator can read and manage its directory.
+      // No tenant-wide, clinical, access-management or booking permission is provisioned here.
+      const role = await ctx.tx.selectFrom('platform.role').select('id').where('code', '=', 'clinic_setup').where('tenant_id', 'is', null).where('status', '=', 'active').executeTakeFirst();
+      if (!role) throw preconditionFailed('clinic setup role has not been provisioned');
+      const grant = await ctx.tx.insertInto('platform.role_grant').values({ tenant_id: ctx.tenantId, staff_id: ctx.actor.staffId!, role_id: role.id, facility_id: id, granted_by: ctx.actor.staffId!, created_by: ctx.actor.staffId! }).returning('id').executeTakeFirstOrThrow();
+      ctx.audit({ action: 'create', subjectType: 'platform.role_grant', subjectId: grant.id, diff: { facilityId: id, role: 'clinic_setup', staffId: ctx.actor.staffId } });
       ctx.audit({ action: 'create', subjectType: 'platform.facility', subjectId: id, diff: { code: input.code, name: input.name } });
-      return { facilityId: id };
+      return { facilityId: id, creatorAccess: { grantId: grant.id, facilityId: id, permissions: ['catalog.read', 'facility.manage'] } };
     } catch (err) {
       facilityError(err);
     }
   });
 }
 
-export async function updateFacility(db: Kysely<DB>, caller: Caller, input: FacilityFields & { facilityId: string; version: number; status?: Status | undefined }) {
-  return runCommand(db, { ...caller, module: 'platform', name: 'platform.update_facility' }, async (ctx) => {
+export async function updateFacility(db: Kysely<DB>, caller: Caller, input: FacilityFields & { facilityId: string; version: number; status?: Status | undefined }, idempotencyKey?: string) {
+  return runCommand(db, { ...caller, module: 'platform', name: 'platform.update_facility', idempotencyKey, request: input }, async (ctx) => {
     const before = await ctx.tx.selectFrom('platform.facility').selectAll().where('id', '=', input.facilityId).forUpdate().executeTakeFirst();
     if (!before) throw notFound('facility', { facilityId: input.facilityId });
     assertVersion(before.version, input.version, 'clinic');
@@ -207,8 +219,10 @@ export async function updateDepartment(
   db: Kysely<DB>,
   caller: Caller,
   input: { departmentId: string; version: number; name?: string | undefined; kind?: DepartmentKind | undefined; specialty?: string | null | undefined; status?: Status | undefined },
+
+  idempotencyKey?: string,
 ) {
-  return runCommand(db, { ...caller, module: 'platform', name: 'platform.update_department' }, async (ctx) => {
+  return runCommand(db, { ...caller, module: 'platform', name: 'platform.update_department', idempotencyKey, request: input }, async (ctx) => {
     const before = await ctx.tx.selectFrom('platform.department').selectAll().where('id', '=', input.departmentId).forUpdate().executeTakeFirst();
     if (!before) throw notFound('department', { departmentId: input.departmentId });
     assertVersion(before.version, input.version, 'department');
@@ -263,8 +277,10 @@ export async function updateConsultRoom(
   db: Kysely<DB>,
   caller: Caller,
   input: { locationId: string; version: number; name?: string | undefined; departmentId?: string | null | undefined; status?: Status | undefined },
+
+  idempotencyKey?: string,
 ) {
-  return runCommand(db, { ...caller, module: 'platform', name: 'platform.update_consult_room' }, async (ctx) => {
+  return runCommand(db, { ...caller, module: 'platform', name: 'platform.update_consult_room', idempotencyKey, request: input }, async (ctx) => {
     const before = await ctx.tx.selectFrom('platform.location').selectAll().where('id', '=', input.locationId).where('kind', '=', 'consult_room').forUpdate().executeTakeFirst();
     if (!before) throw notFound('consult room', { locationId: input.locationId });
     assertVersion(before.version, input.version, 'room');
@@ -359,8 +375,10 @@ export async function updateService(
   db: Kysely<DB>,
   caller: Caller,
   input: { healthcareServiceId: string; version: number; name?: string | undefined; serviceMode?: ServiceMode | undefined; defaultDurationMin?: number | undefined; isPublic?: boolean | undefined; status?: Status | undefined },
+
+  idempotencyKey?: string,
 ) {
-  return runCommand(db, { ...caller, module: 'catalog', name: 'catalog.update_service' }, async (ctx) => {
+  return runCommand(db, { ...caller, module: 'catalog', name: 'catalog.update_service', idempotencyKey, request: input }, async (ctx) => {
     const before = await ctx.tx.selectFrom('catalog.healthcare_service').selectAll().where('id', '=', input.healthcareServiceId).forUpdate().executeTakeFirst();
     if (!before) throw notFound('service', { healthcareServiceId: input.healthcareServiceId });
     assertVersion(before.version, input.version, 'service');
@@ -389,8 +407,10 @@ export async function setServiceFee(
   db: Kysely<DB>,
   caller: Caller,
   input: { healthcareServiceId: string; staffId?: string | null | undefined; mode: PriceMode; feeMinor: number | null; effectiveFrom: string },
+
+  idempotencyKey?: string,
 ) {
-  return runCommand(db, { ...caller, module: 'catalog', name: 'catalog.set_fee' }, async (ctx) => {
+  return runCommand(db, { ...caller, module: 'catalog', name: 'catalog.set_fee', idempotencyKey, request: input }, async (ctx) => {
     const svc = await ctx.tx
       .selectFrom('catalog.healthcare_service as hs')
       .innerJoin('platform.department as d', 'd.id', 'hs.department_id')

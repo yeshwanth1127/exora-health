@@ -493,3 +493,30 @@ test("weekly preview still fails closed if an affected appointment cannot be rea
   );
   assert.deepEqual(methods, ["POST", "GET"]);
 });
+
+test("lost schedule cancellation and unblock responses replay their original key through the real adapter", async () => {
+  const { OperationalIntent, legacyKeyed } = await import("../src/hms/operational-intent.ts");
+  const id = "00000000-0000-4000-8000-000000000001";
+  for (const path of [`/api/v1/admin/schedule-timeline/appointments/${id}`, `/api/v1/admin/schedule-exceptions/${id}`]) {
+    const calls: { path: string; body: any; headers: Record<string, string> }[] = [];
+    globalThis.fetch = async (route, options) => {
+      calls.push({ path: String(route), body: JSON.parse(String(options?.body)), headers: options?.headers as Record<string,string> });
+      if (calls.length === 1) throw new TypeError("Response lost after commit");
+      return Response.json({ saved: true });
+    };
+    const source = scheduleSource(me, facility, [], "2026-10-19", false);
+    const machine = new OperationalIntent((route, options) => source.write!(route, {
+      method: options.method,
+      body: { ...(options.body as object), idempotency_key: options.idempotencyKey },
+    }), () => 1);
+    const body = { reason: "Original reason" };
+    await assert.rejects(machine.execute(path, { method:"DELETE", body }, legacyKeyed(path,"DELETE")));
+    body.reason = "Edited after timeout";
+    await machine.replay();
+    assert.equal(calls.length, 2);
+    assert.equal(calls[0].headers["Idempotency-Key"], calls[1].headers["Idempotency-Key"]);
+    assert.deepEqual(calls.map(c => c.body), [{ reason: "Original reason" }, { reason: "Original reason" }]);
+    assert.ok(calls[0].path.endsWith(path.includes("schedule-exceptions") ? "/revoke" : "/cancel"));
+    assert.equal(machine.unknown, false);
+  }
+});

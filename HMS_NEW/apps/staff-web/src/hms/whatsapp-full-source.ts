@@ -104,11 +104,12 @@ export function fullWhatsAppSource(
         value: unknown,
       ): { success: true; data: T } | { success: false };
     },
+    key?: string,
   ) => {
     const raw = await request<unknown>(path, {
       method,
       body,
-      idempotencyKey: intents.for(path, body),
+      idempotencyKey: key ?? intents.for(path, body),
     });
     const result = schema ? decode(schema, raw) : (raw as T);
     intents.complete(path, body);
@@ -278,6 +279,11 @@ export function fullWhatsAppSource(
               name: c.name ?? c.contactAddress,
               preview: "",
               assigned_to: c.assignedStaffName,
+              assigned_staff_id: c.assignedStaffId,
+              version: c.version,
+              automation_state: c.automationState,
+              automation_allowed: c.automationAllowed,
+              automation_blocked_reasons: c.automationBlockedReasons,
               updated_at: c.updatedAt,
               open: c.status === "open",
               kinds: c.kinds ?? (c.status === "open" ? ["reception"] : []),
@@ -301,7 +307,15 @@ export function fullWhatsAppSource(
         return {
           sender_id: r.conversation.id,
           display_address: r.conversation.contactAddress,
-          active_handoff: r.conversation.status === "open",
+          open: r.conversation.status === "open",
+          active_handoff:
+            r.conversation.status === "open" &&
+            r.conversation.automationState !== "automation",
+          version: r.conversation.version,
+          automation_state: r.conversation.automationState,
+          automation_allowed: r.conversation.automationAllowed,
+          automation_blocked_reasons: r.conversation.automationBlockedReasons,
+          assigned_staff_id: r.conversation.assignedStaffId,
           assigned_to: r.conversation.assignedStaffName,
           can_reply: r.conversation.canReply,
           cases: r.cases,
@@ -327,22 +341,26 @@ export function fullWhatsAppSource(
     ): Promise<unknown | undefined> {
       const b = (options.body ?? {}) as Record<string, unknown>;
       const reception = path.match(
-        /^\/api\/v1\/admin\/whatsapp\/reception\/([0-9a-f-]{36})(\/reply)?$/i,
+        /^\/api\/v1\/admin\/whatsapp\/reception\/([0-9a-f-]{36})(\/(reply|handoff|resume))?$/i,
       );
       if (reception) {
-        const version = versions.get(reception[1]);
-        if (reception[2])
+        const version = b.version ?? versions.get(reception[1]);
+        const key =
+          typeof b.idempotency_key === "string" ? b.idempotency_key : undefined;
+        if (reception[3] === "reply")
           return send(
             `/v1/conversations/${reception[1]}/reply`,
             ConversationReplySchema.parse({ version, text: b.text }),
             "POST",
             ConversationThreadSchema,
+            key,
           );
         return send(
-          `/v1/conversations/${reception[1]}/${b.status === "closed" ? "close" : "assign"}`,
+          `/v1/conversations/${reception[1]}/${reception[3] ?? (b.status === "closed" ? "close" : "assign")}`,
           VersionCommandSchema.parse({ version }),
           "POST",
           ConversationThreadSchema,
+          key,
         );
       }
       const caseStatus = path.match(

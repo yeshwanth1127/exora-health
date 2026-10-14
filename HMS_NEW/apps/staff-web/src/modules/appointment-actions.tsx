@@ -142,10 +142,6 @@ export function AppointmentActions({
         </div>
         {editing && (
           <div className="space-y-4 border-t pt-4">
-            <p className="text-sm text-muted-foreground">
-              Enter exact start and end times. The doctor, clinic, patient and
-              notes stay with this visit.
-            </p>
             <Field
               label="New start · IST"
               id="move-start"

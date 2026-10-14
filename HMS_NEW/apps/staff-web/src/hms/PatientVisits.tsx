@@ -152,11 +152,6 @@ export function PatientVisitActions({ patientId }: { patientId: string }) {
               ? "Create another unbooked visit"
               : "Create an unbooked visit"}
           </Button>
-          <p className="text-xs text-muted-foreground">
-            For care without a booking. For an existing appointment, open its
-            booking and check in; an unbooked visit does not complete that
-            appointment.
-          </p>
         </div>
       )}
     </section>

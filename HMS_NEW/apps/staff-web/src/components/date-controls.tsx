@@ -172,8 +172,8 @@ export function DateRangeField({
         </SharedField>
       </div>
       {(boundaryLabel || timezone) && (
-        <p id={`${id}-boundary`} className="text-xs text-muted-foreground">
-          {boundaryLabel ?? timezone} · Both selected dates are included.
+        <p id={`${id}-boundary`} className="text-sm text-muted-foreground">
+          Both selected dates are included · {boundaryLabel ?? timezone}
         </p>
       )}
     </div>

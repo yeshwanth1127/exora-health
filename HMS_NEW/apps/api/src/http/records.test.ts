@@ -297,7 +297,7 @@ describe('M04 board, exact-time holds, outcome lookup and queue sync', () => {
     const hold = ok(await range('09:05', '09:20', key), 201);
     expect(reason(await range('09:10', '09:25'))).toBe('slot_unavailable');
     expect(ok(await k.call(p.frontDesk, 'GET', `/v1/request-outcomes/${key}`))).toMatchObject({ status: 'completed', result: { reservationId: hold.reservationId } });
-    expect(ok(await k.call(p.frontDesk, 'GET', `/v1/request-outcomes/never-sent-${k.run}`))).toMatchObject({ status: 'unknown' });
+    expect((await k.call(p.frontDesk, 'GET', `/v1/request-outcomes/never-sent-${k.run}`)).status).toBe(404);
     const booked = ok(await k.call(p.frontDesk, 'POST', '/v1/appointments', { reservationId: hold.reservationId, patientId: (await k.call(p.frontDesk, 'POST', '/v1/patients', { givenName: 'Exact', sex: 'male', registeredFacilityId: f1, source: 'front_desk' }, true)).body.patientId, originChannel: 'front_desk' }, true), 201);
     expect(booked).toMatchObject({ startsAt: new Date(ist(day, '09:05')).toISOString(), endsAt: new Date(ist(day, '09:20')).toISOString(), feeMinor: 40000 });
     // A bot can't hold free-form time.

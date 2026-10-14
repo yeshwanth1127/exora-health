@@ -26,8 +26,14 @@ import { format, addDays } from 'date-fns';
 // Keep the original layout while reading the same Sri Lakshmi roster as the updated flow.
 import { DOCTOR_PROFILES } from '../../data/doctorProfiles';
 import { demoStartDate } from '../../data/demoAvailability';
+import type { PublicCatalog } from '../../lib/publicBookingApi';
+import { doctorDepartment, matchesDoctorDepartment, scheduleProfile, symptomDepartment, usePublicAvailability } from '../../lib/hmsAvailability';
 
 export interface OriginalSearchResultsPageProps {
+  catalog?: PublicCatalog;
+  rosterLoading?: boolean;
+  rosterError?: string;
+  onRosterRetry?: () => void;
   careType: string;
   specialtyId?: string;
   dateTime?: string;
@@ -43,6 +49,7 @@ export interface OriginalSearchResultsPageProps {
 }
 
 export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps> = ({
+  catalog, rosterLoading, rosterError, onRosterRetry,
   careType,
   specialtyId,
   initialQuery = '',
@@ -52,7 +59,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
   onOpenBooking,
 }) => {
   // Search header state matching 1:1 reference
-  const [searchQuery, setSearchQuery] = useState(initialQuery || careType || 'Pediatric Dermatology');
+  const [searchQuery, setSearchQuery] = useState(initialQuery || (catalog ? '' : careType || 'Pediatric Dermatology'));
   const [selectedInsurance, setSelectedInsurance] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('All Bengaluru branches');
 
@@ -73,8 +80,8 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
   const [dateOffset, setDateOffset] = useState(0);
 
   const baseDate = useMemo(() => {
-    return addDays(demoStartDate(), dateOffset);
-  }, [dateOffset]);
+    return addDays(catalog ? new Date(catalog.today+'T12:00:00') : demoStartDate(), dateOffset);
+  }, [dateOffset,catalog]);
 
   const fiveDays = useMemo(() => {
     return Array.from({ length: 5 }, (_, i) => {
@@ -96,12 +103,14 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
   // Selected doctor for detailed photo/profile modal
   const [selectedDoctorDetail, setSelectedDoctorDetail] = useState<typeof DOCTOR_PROFILES[0] | null>(null);
 
-  // 7 Providers matching the 1:1 reference
+  // {catalog ? matchedDoctors.length : 7} Providers matching the 1:1 reference
   const matchedDoctors = useMemo(() => {
-    let list = [...doctors];
+    const source = catalog ? catalog.doctors.map(d=>({id:d.slug,name:d.name,title:d.roleTitle??d.specialty??'',departmentId:doctorDepartment(d),departmentName:d.departments.join(' · '),bio:d.bio??'',experienceYears:d.experienceYears??0})) : doctors;
+    let list = [...source];
     const q = searchQuery.toLowerCase().trim();
+    const department = catalog ? (searchQuery===initialQuery ? specialtyId ?? symptomDepartment(searchQuery) : symptomDepartment(searchQuery)) : specialtyId;
 
-    if (q && q !== 'all' && q !== 'pediatric dermatology') {
+    if (q && q !== 'all' && q !== 'pediatric dermatology' && !(catalog && department)) {
       list = list.filter(
         (d) =>
           d.name.toLowerCase().includes(q) ||
@@ -111,13 +120,13 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
       );
     }
 
-    if (specialtyId && (!q || q.length < 3)) {
-      const direct = doctors.filter((d) => d.departmentId === specialtyId);
-      if (direct.length > 0) list = direct;
+    if (department && (catalog || !q || q.length < 3)) {
+      const direct = source.filter((d) => catalog ? catalog.doctors.some(p=>p.slug===d.id && matchesDoctorDepartment(p,department)) : d.departmentId === department);
+      list = list.filter(d=>direct.some(other=>other.id===d.id));
     }
 
     // Gender filter
-    if (selectedGender !== 'No preference') {
+    if (!catalog && selectedGender !== 'No preference') {
       if (selectedGender === 'Female') {
         list = list.filter((d) => d.name.includes('Dr. Ananya') || d.name.includes('Dr. Priya') || d.name.includes('Dr. Kavya') || d.name.includes('Dr. Meera'));
       } else if (selectedGender === 'Male') {
@@ -130,10 +139,13 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
       list.sort((a, b) => b.experienceYears - a.experienceYears);
     }
 
-    // Return exactly 7 providers to match 1-7 of 7 Providers in reference image
+    // Return exactly 7 providers to match 1-7 of {catalog ? matchedDoctors.length : 7} Providers in reference image
+    if(catalog)return list;
     const combined = [...list, ...doctors];
     return combined.slice(0, 7);
-  }, [searchQuery, specialtyId, selectedGender, sortBy]);
+  }, [searchQuery, specialtyId, selectedGender, sortBy,catalog,initialQuery]);
+
+  const availability=usePublicAvailability(catalog,matchedDoctors.map(d=>d.id),'in_person',fiveDays[0].formatted,fiveDays[4].formatted);
 
   useEffect(() => {
     trackSearchUsed('search_page', countToBucket(matchedDoctors.length));
@@ -197,13 +209,13 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
               <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-white min-w-0">
                 <MapPin className="size-4 text-[#154734] fill-[#154734] shrink-0 pointer-events-none" />
                 <select
-                  value={selectedLocation}
+                  value={catalog ? catalog.clinicName : selectedLocation}
                   onChange={(e) => setSelectedLocation(e.target.value)}
                   className="w-full bg-transparent text-sm text-neutral-900 font-medium focus:outline-none cursor-pointer truncate min-w-0"
                 >
                   <option value="Zip code, city or neighborhood">Zip code, city or neighborhood</option>
                   <option value="All Bengaluru branches">All Bengaluru branches</option>
-                  {CLINIC_LOCATIONS.map((loc) => (
+                  {(catalog ? [catalog.clinicName] : CLINIC_LOCATIONS).map((loc) => (
                     <option key={loc} value={loc}>
                       {loc}, Bengaluru
                     </option>
@@ -326,10 +338,10 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
       {/* ── RESULTS SUB-HEADER / CONTROL BAR (1:1 with media_1790069031583.png) ── */}
       <section className="bg-white border-b border-neutral-200 py-3 px-4 sm:px-6 lg:px-8 sticky top-[var(--site-header-offset)] z-30">
         <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-xs sm:text-sm">
-          {/* Left: 1-7 of 7 Providers & Sort By Pill Dropdown */}
+          {/* Left: 1-7 of {catalog ? matchedDoctors.length : 7} Providers & Sort By Pill Dropdown */}
           <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
             <span className="font-semibold text-neutral-800">
-              1–7 of <strong className="font-bold text-neutral-950">7 Providers</strong>
+              {catalog ? (matchedDoctors.length ? `1–${matchedDoctors.length} of ` : '0 of ') : '1–7 of '}<strong className="font-bold text-neutral-950">{catalog ? matchedDoctors.length : 7} Providers</strong>
             </span>
 
             <div className="h-4 w-px bg-neutral-200" />
@@ -367,6 +379,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                 <button
                   type="button"
                   onClick={() => setDateOffset((prev) => prev + 5)}
+                  disabled={!!catalog && fiveDays[4].formatted>=catalog.bookingUntil}
                   className="size-6 rounded-full bg-[#154734] hover:bg-[#0f3426] text-white flex items-center justify-center transition cursor-pointer shadow-xs"
                   title="Next 5 days"
                 >
@@ -431,12 +444,15 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
       {/* ── DOCTOR LISTINGS (Matching media_1790069042700.png 1:1) ── */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-10">
+          {(rosterLoading || availability.loading) && <p role="status">Loading hospital doctors and available times…</p>}
+          {(rosterError || availability.error) && <div role="alert"><p>{rosterError || availability.error}</p><button type="button" onClick={onRosterRetry} className="underline text-[#154734]">Try again</button></div>}
+          {catalog && !matchedDoctors.length && <p>No published doctors match this specialty. Try another search or contact reception.</p>}
           {matchedDoctors.map((doc, index) => {
-            const isFirst = index === 0;
-            const profile = DOCTOR_PROFILES.find((item) => item.id === doc.id) || DOCTOR_PROFILES[0];
+            const isFirst = !catalog && index === 0;
+            const profile = catalog ? scheduleProfile(catalog.doctors.find(d=>d.slug===doc.id)!,catalog,[...(availability.byDoctor[doc.id]??[]),...(availability.unpricedByDoctor[doc.id]??[])]) : DOCTOR_PROFILES.find((item) => item.id === doc.id) || DOCTOR_PROFILES[0];
             const docName = profile.name;
             const docSpecialty = profile.specialty;
-            const nextVisitText = profile.nextVisitText;
+            const nextVisitText = profile.nextVisitText ?? 'No published times in these five days';
             // Most doctors will have direct slots in the 5-day grid; doctor index 4 displays the "Check for availability" button
             const hasDirectSlots = Boolean(
               profile.availableSlots &&
@@ -461,8 +477,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                     src={profile.photo}
                     alt={profile.name}
                     onError={(e) => {
-                      e.currentTarget.src =
-                        'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=800';
+                      e.currentTarget.style.visibility='hidden';
                     }}
                     className="w-full h-full object-cover object-top group-hover/img:scale-105 transition-transform duration-300"
                   />
@@ -549,6 +564,8 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                             return (
                               <button
                                 key={slot}
+                                disabled={!!catalog && !(availability.byDoctor[doc.id]??[]).some(q=>new Intl.DateTimeFormat('en-CA',{timeZone:catalog.timezone}).format(new Date(q.startsAt))===col.formatted && new Intl.DateTimeFormat('en-US',{timeZone:catalog.timezone,hour:'2-digit',minute:'2-digit',hour12:true}).format(new Date(q.startsAt))===slot)}
+                                title={catalog ? 'Book a priced time; grey times need a consultation fee' : undefined}
                                 type="button"
                                 onClick={() => {
                                   if (onScheduleDoctor) {
@@ -557,7 +574,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                                     onBookDoctor(profile.id, 'New Patient Office Visit', col.formatted, slot);
                                   }
                                 }}
-                                className="h-8 w-full bg-[#154734] hover:bg-[#0f3426] active:scale-95 text-white font-semibold text-[11px] rounded-[3px] transition cursor-pointer flex items-center justify-center leading-none shadow-2xs"
+                                className="h-8 w-full disabled:bg-stone-200 disabled:text-stone-600 disabled:cursor-not-allowed bg-[#154734] hover:bg-[#0f3426] active:scale-95 text-white font-semibold text-[11px] rounded-[3px] transition cursor-pointer flex items-center justify-center leading-none shadow-2xs"
                               >
                                 {slot}
                               </button>
@@ -572,6 +589,8 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                   })}
                 </div>
 
+                {catalog && !!availability.unpricedByDoctor[doc.id]?.length && <p className="mt-3 text-xs text-amber-800">Grey times are scheduled. The hospital must set the consultation fee before online booking.</p>}
+                {catalog && !availability.loading && !(availability.byDoctor[doc.id]?.length || availability.unpricedByDoctor[doc.id]?.length) && <p className="mt-3 text-xs text-stone-600">No published times in these five days.</p>}
                 {/* View all availability link -> lands at Step 1 */}
                 <div className="pt-3">
                   <button
@@ -628,7 +647,7 @@ export const OriginalSearchResultsPage: React.FC<OriginalSearchResultsPageProps>
                       </div>
                     </div>
                   </div>
-                ) : hasDirectSlots ? (
+                ) : (catalog || hasDirectSlots) ? (
                   /* ══════════════════════════════════════════════════════════════
                      DOCTORS WITH AVAILABILITY: 2-COLUMN LAYOUT WITH 5-DAY MATRIX
                      ══════════════════════════════════════════════════════════════ */

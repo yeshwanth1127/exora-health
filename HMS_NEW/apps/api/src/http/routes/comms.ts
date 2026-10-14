@@ -32,8 +32,8 @@ function authorizeOwner(
 ) {
   authorize(p, owner.patientId ? 'patients.read' : 'appointments.read', owner.facilityId);
 }
-export function registerCommsRoutes(app: FastifyInstance, db: Kysely<DB>) {
-  registerWhatsAppRoutes(app,db);
+export function registerCommsRoutes(app: FastifyInstance, db: Kysely<DB>, options:{templateFetcher?:typeof fetch} = {}) {
+  registerWhatsAppRoutes(app,db,options);
   app.get('/v1/comms/capabilities', async (request) => {
     const { facilityId } = parse(z.object({ facilityId: uuid }), request.query);
     authorize(principalOf(request), 'comms.read', facilityId);

@@ -30,7 +30,8 @@ const ist = (time: string) => `${monday}T${time}:00+05:30`;
 async function call(method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS', url: string, opts: { as?: Who | null; body?: unknown; idem?: boolean; now?: string; headers?: Record<string, string> } = {}) {
   const headers: Record<string, string> = { ...opts.headers };
   if (opts.as !== null) headers.authorization = `Bearer ${tokens[opts.as ?? 'admin']}`;
-  if (opts.idem) headers['idempotency-key'] = `t-${randomUUID()}`;
+  const keyed = opts.idem ?? (method === 'POST' && /^\/v1\/(appointments\/[^/]+\/cancel|schedule-exceptions\/[^/]+\/revoke|facility-holidays\/[^/]+\/revoke|waitlist\/[^/]+\/withdraw|waitlist-offers\/[^/]+\/decline)$/.test(url));
+  if (keyed) headers['idempotency-key'] = `t-${randomUUID()}`;
   headers['x-test-now'] = opts.now ?? ist('09:00');
   const res = await app.inject({ method, url, headers, ...(opts.body !== undefined ? { payload: opts.body as object } : {}) });
   return { status: res.statusCode, body: res.body ? res.json() : null, headers: res.headers };

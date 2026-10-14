@@ -23,6 +23,7 @@ export interface PractitionerDetail {
     languages: string[];
     acceptsVirtual: boolean;
     publicSlug: string | null;
+    publicPhotoUrl: string | null;
     published: boolean;
     version: number;
   } | null;
@@ -53,7 +54,7 @@ export async function getPractitioner(db: Kysely<DB>, caller: Caller, staffId: s
         .leftJoin('catalog.specialty as sp', 'sp.id', 'pp.specialty_id')
         .select([
           'sp.code as specialty', 'sp.name as specialtyName', 'pp.qualifications', 'pp.bio', 'pp.experience_years as experienceYears', 'pp.languages',
-          'pp.accepts_virtual as acceptsVirtual', 'pp.public_slug as publicSlug', 'pp.published', 'pp.version',
+          'pp.accepts_virtual as acceptsVirtual', 'pp.public_slug as publicSlug', 'pp.public_photo_url as publicPhotoUrl', 'pp.published', 'pp.version',
         ])
         .where('pp.staff_id', '=', staffId)
         .executeTakeFirst(),
@@ -96,11 +97,12 @@ export interface ProfileInput {
   languages: string[];
   acceptsVirtual: boolean;
   publicSlug: string | null;
+  publicPhotoUrl?: string | null;
   published: boolean;
 }
 
-export async function savePractitionerProfile(db: Kysely<DB>, caller: Caller, input: ProfileInput) {
-  return runCommand(db, { ...caller, module: 'catalog', name: 'catalog.save_practitioner_profile' }, async (ctx) => {
+export async function savePractitionerProfile(db: Kysely<DB>, caller: Caller, input: ProfileInput, idempotencyKey?: string) {
+  return runCommand(db, { ...caller, module: 'catalog', name: 'catalog.save_practitioner_profile', idempotencyKey, request: input }, async (ctx) => {
     const staff = await ctx.tx.selectFrom('platform.staff').select(['is_system_account']).where('id', '=', input.staffId).executeTakeFirst();
     if (!staff || staff.is_system_account) throw notFound('staff member', { staffId: input.staffId });
     let specialtyId: string | null = null;
@@ -118,6 +120,7 @@ export async function savePractitionerProfile(db: Kysely<DB>, caller: Caller, in
       languages: input.languages,
       accepts_virtual: input.acceptsVirtual,
       public_slug: input.publicSlug,
+      ...(input.publicPhotoUrl!==undefined?{public_photo_url:input.publicPhotoUrl}:{}),
       published: input.published,
     };
     const before = await ctx.tx.selectFrom('catalog.practitioner_profile').selectAll().where('staff_id', '=', input.staffId).forUpdate().executeTakeFirst();
@@ -187,8 +190,8 @@ export async function affiliationFacility(db: Kysely<DB>, caller: Caller, affili
  * Refused while booked visits or weekly hours at that clinic remain from that day and no other current
  * affiliation keeps the doctor at the clinic, so patients are moved first.
  */
-export async function endAffiliation(db: Kysely<DB>, caller: Caller, input: { affiliationId: string; validTo: string; reason: string }) {
-  return runCommand(db, { ...caller, module: 'catalog', name: 'catalog.end_affiliation' }, async (ctx) => {
+export async function endAffiliation(db: Kysely<DB>, caller: Caller, input: { affiliationId: string; validTo: string; reason: string }, idempotencyKey?: string) {
+  return runCommand(db, { ...caller, module: 'catalog', name: 'catalog.end_affiliation', idempotencyKey, request: input }, async (ctx) => {
     const a = await ctx.tx.selectFrom('catalog.practitioner_affiliation').selectAll().where('id', '=', input.affiliationId).forUpdate().executeTakeFirst();
     if (!a) throw notFound('affiliation', { affiliationId: input.affiliationId });
     if (a.valid_to !== null && a.valid_to <= input.validTo) return { affiliationId: a.id, validTo: a.valid_to };
@@ -215,8 +218,8 @@ export async function endAffiliation(db: Kysely<DB>, caller: Caller, input: { af
 }
 
 /** Display name and work phone (staff records are platform-owned; email stays tied to the sign-in). */
-export async function updateStaffDetails(db: Kysely<DB>, caller: Caller, input: { staffId: string; version: number; displayName?: string | undefined; phone?: string | null | undefined }) {
-  return runCommand(db, { ...caller, module: 'platform', name: 'platform.update_staff' }, async (ctx) => {
+export async function updateStaffDetails(db: Kysely<DB>, caller: Caller, input: { staffId: string; version: number; displayName?: string | undefined; phone?: string | null | undefined }, idempotencyKey?: string) {
+  return runCommand(db, { ...caller, module: 'platform', name: 'platform.update_staff', idempotencyKey, request: input }, async (ctx) => {
     const before = await ctx.tx.selectFrom('platform.staff').selectAll().where('id', '=', input.staffId).forUpdate().executeTakeFirst();
     if (!before || before.is_system_account) throw notFound('staff member', { staffId: input.staffId });
     assertVersion(before.version, input.version, 'staff record');

@@ -1,4 +1,6 @@
 // Booking read models for the API.
+import { createHash } from 'node:crypto';
+import { z } from 'zod';
 import { sql, type DB, type Kysely } from '@hms/db';
 import { invalid, notFound, runQuery } from '@hms/platform';
 import { clock, type Caller } from '../../caller.ts';
@@ -84,6 +86,7 @@ export interface AppointmentFilter {
   from: string;
   to: string;
   status?: string | undefined;
+  visitMode?: 'in_person' | 'virtual' | undefined;
   /** Patient or booker name, phone digits, MRN or confirmation code. */
   q?: string | undefined;
   /** From a previous page's nextCursor. */
@@ -91,32 +94,40 @@ export interface AppointmentFilter {
   limit?: number | undefined;
 }
 
-type Cursor = [sessionOn: string, startsAt: string | null, id: string];
-const encodeCursor = (c: Cursor) => Buffer.from(JSON.stringify(c)).toString('base64url');
-function decodeCursor(raw: string): Cursor {
+type CursorPosition = [sessionOn: string, startsAt: string | null, id: string];
+/** A cursor belongs to one tenant, caller, and complete filter set; never reuse it after changing scope. */
+function cursorScope(caller: Caller, f: AppointmentFilter): string {
+  return createHash('sha256').update(JSON.stringify([
+    caller.tenantId, caller.actor, f.facilityId ?? null, f.staffId ?? null, f.patientId ?? null,
+    f.from, f.to, f.status ?? null, f.visitMode ?? null, f.q?.trim().toLowerCase() ?? null,
+    Math.min(f.limit ?? 200, 500),
+  ])).digest('hex');
+}
+const encodeCursor = (position: CursorPosition, scope: string) => Buffer.from(JSON.stringify({ v: 1, scope, position })).toString('base64url');
+const CursorSchema = z.strictObject({ v: z.literal(1), scope: z.string().regex(/^[a-f0-9]{64}$/),
+  position: z.tuple([z.iso.date(), z.iso.datetime({ offset: true }).nullable(), z.uuid()]),
+});
+function decodeCursor(raw: string, scope: string): CursorPosition {
   try {
-    const c = JSON.parse(Buffer.from(raw, 'base64url').toString()) as unknown;
-    if (
-      Array.isArray(c) && c.length === 3 &&
-      /^\d{4}-\d{2}-\d{2}$/.test(String(c[0])) &&
-      (c[1] === null || !Number.isNaN(Date.parse(String(c[1])))) &&
-      /^[0-9a-f-]{36}$/.test(String(c[2]))
-    ) return c as Cursor;
+    const result = CursorSchema.safeParse(JSON.parse(Buffer.from(raw, 'base64url').toString()));
+    if (result.success && result.data.scope === scope) return result.data.position;
   } catch { /* falls through */ }
-  throw invalid('cursor is not valid; start again from the first page');
+  throw invalid('cursor is not valid for these filters or access scope; start again from the first page');
 }
 const likeEscape = (v: string) => v.replace(/[\\%_]/g, '\\$&');
 
 /** Appointments in a date range, in visit order (date, start time, walk-ins last), one page at a time. */
 export async function listAppointments(db: Kysely<DB>, caller: Caller, f: AppointmentFilter): Promise<{ items: AppointmentView[]; nextCursor: string | null }> {
   const limit = Math.min(f.limit ?? 200, 500);
-  const after = f.cursor ? decodeCursor(f.cursor) : null;
+  const scope = cursorScope(caller, f);
+  const after = f.cursor ? decodeCursor(f.cursor, scope) : null;
   return runQuery(db, caller.tenantId, async (tx) => {
     let q = baseQuery(tx).where('a.session_on', '>=', f.from).where('a.session_on', '<=', f.to);
     if (f.facilityId) q = q.where('a.facility_id', '=', f.facilityId);
     if (f.staffId) q = q.where('a.practitioner_staff_id', '=', f.staffId);
     if (f.patientId) q = q.where('a.patient_id', '=', f.patientId);
     if (f.status) q = q.where('a.status', '=', f.status);
+    if (f.visitMode) q = q.where('a.visit_mode', '=', f.visitMode);
     const term = f.q?.trim().toLowerCase();
     if (term) {
       const like = `%${likeEscape(term)}%`;
@@ -136,7 +147,7 @@ export async function listAppointments(db: Kysely<DB>, caller: Caller, f: Appoin
     const last = items.at(-1);
     return {
       items,
-      nextCursor: rows.length > limit && last ? encodeCursor([String(last.sessionOn).slice(0, 10), last.startsAt ? new Date(last.startsAt).toISOString() : null, last.appointmentId]) : null,
+      nextCursor: rows.length > limit && last ? encodeCursor([String(last.sessionOn).slice(0, 10), last.startsAt ? new Date(last.startsAt).toISOString() : null, last.appointmentId], scope) : null,
     };
   });
 }

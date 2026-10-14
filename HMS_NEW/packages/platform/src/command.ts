@@ -85,23 +85,24 @@ export async function runCommand<T>(db: Kysely<DB>, options: CommandOptions, fn:
 
     let idempotencyId: string | undefined;
     if (options.idempotencyKey) {
-      const requestHash = createHash('sha256').update(stableStringify(options.request ?? null)).digest('hex');
+      const actorHash = createHash('sha256').update(stableStringify(options.actor)).digest('hex');
+      const requestHash = createHash('sha256').update(stableStringify({ actor: options.actor, request: options.request ?? null })).digest('hex');
       // ON CONFLICT DO NOTHING waits for a concurrent holder of the same key to finish first.
       const claimed = await tx
         .insertInto('platform.idempotency_record')
-        .values({ tenant_id: options.tenantId, scope: options.name, key: options.idempotencyKey, request_hash: requestHash })
+        .values({ tenant_id: options.tenantId, scope: options.name, key: options.idempotencyKey, request_hash: requestHash, actor_hash: actorHash })
         .onConflict((oc) => oc.columns(['tenant_id', 'scope', 'key']).doNothing())
         .returning('id')
         .executeTakeFirst();
       if (!claimed) {
         const existing = await tx
           .selectFrom('platform.idempotency_record')
-          .select(['request_hash', 'status', 'result_ref'])
+          .select(['request_hash', 'actor_hash', 'status', 'result_ref'])
           .where('scope', '=', options.name)
           .where('key', '=', options.idempotencyKey)
           .executeTakeFirstOrThrow();
-        if (existing.request_hash !== requestHash) {
-          throw new DomainError('idempotency_conflict', 'idempotency key was already used with a different request');
+        if (existing.actor_hash !== actorHash || existing.request_hash !== requestHash) {
+          throw new DomainError('idempotency_conflict', 'idempotency key was already used by a different actor or with a different request');
         }
         if (existing.status === 'completed') return existing.result_ref as T;
         throw new DomainError('idempotency_conflict', 'a request with this idempotency key is still in progress');

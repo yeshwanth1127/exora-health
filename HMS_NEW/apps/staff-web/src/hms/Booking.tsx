@@ -217,13 +217,11 @@ export function Booking({
               </Button>
             ))}
           </div>
-          <p className="text-sm text-muted-foreground">
-            {visitMode === "virtual"
-              ? "Choose a published teleconsultation slot. The saved appointment creates the video consultation."
-              : "The patient visits the clinic in person."}
-            {hold &&
-              " Release the selected slot before changing appointment type."}
-          </p>
+          {hold && (
+            <p className="text-sm text-muted-foreground">
+              Release the selected slot before changing appointment type.
+            </p>
+          )}
         </section>
         {existing.loading && (
           <p className="text-sm text-muted-foreground">
@@ -242,11 +240,21 @@ export function Booking({
         <ErrorMessage text={initialPatient.error} />
         {step === 1 && (
           <section className="space-y-5">
-            <h2 className="text-lg font-semibold">Choose the patient</h2>
-            <p className="text-sm text-muted-foreground">
-              Search for a returning patient, register a new patient, or record
-              a booking contact to link at arrival.
-            </p>
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="shrink-0 text-lg font-semibold">Choose the patient</h2>
+              {!move && !patient && !caller && (
+                <div className="flex items-center gap-2">
+                  {can("patients.register") && (
+                    <Button variant="outline" onClick={() => setRegister((v) => !v)}>
+                      {register ? "Back to search" : "Register a new patient"}
+                    </Button>
+                  )}
+                  <Button variant="outline" onClick={() => setCaller(true)}>
+                    Book for a caller who isn't registered
+                  </Button>
+                </div>
+              )}
+            </div>
             {move ? (
               <Hint>
                 Moving creates a new appointment and keeps the cancelled
@@ -297,10 +305,6 @@ export function Booking({
                     onChange={(e) => setCallerPhone(e.target.value.trim())}
                   />
                 </Field>
-                <p className="text-sm text-muted-foreground">
-                  The patient is registered and linked when they arrive, before
-                  check-in.
-                </p>
                 <Button
                   variant="ghost"
                   disabled={!!hold || cmd.busy}
@@ -312,19 +316,6 @@ export function Booking({
             ) : (
               <>
                 <PatientLookup onSelect={setPatient} />
-                <div className="flex flex-wrap gap-2">
-                  {can("patients.register") && (
-                    <Button
-                      variant="outline"
-                      onClick={() => setRegister((v) => !v)}
-                    >
-                      {register ? "Back to search" : "Register a new patient"}
-                    </Button>
-                  )}
-                  <Button variant="outline" onClick={() => setCaller(true)}>
-                    Book for a caller who isn't registered
-                  </Button>
-                </div>
                 {register && (
                   <RegisterPatient
                     onCreated={(p) => {
@@ -449,11 +440,6 @@ export function Booking({
                     {availableSlots.length === 0 && (
                       <WorkspaceEmpty
                         title={`No open ${appointmentModeLabel(visitMode).toLowerCase()} times on ${date}`}
-                        description={
-                          availability.get(date)?.published
-                            ? "Published times are booked, held or blocked. Choose another day marked with open times; this doctor does not need setup repeated."
-                            : "No upcoming bookable slots were returned for this date and visit type. Choose another day or review the doctor's published hours."
-                        }
                       />
                     )}
                   </LoadingState>

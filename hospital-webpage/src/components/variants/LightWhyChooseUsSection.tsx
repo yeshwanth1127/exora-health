@@ -1,11 +1,13 @@
+import type { HmsRosterDoctor } from '../doctor/hmsRoster';
 import { ArrowRight, Phone } from 'lucide-react';
 import { hospitalPhoto, reasons } from '../sections/WhyChooseUsSection';
 
 interface Props {
+  roster?: HmsRosterDoctor[];
   onBookInPerson?: () => void;
 }
 
-export function LightWhyChooseUsSection({ onBookInPerson }: Props) {
+export function LightWhyChooseUsSection({ roster, onBookInPerson }: Props) {
   return <section id="why-choose-us" className="border-b border-[#e0e9dc] bg-[#f2f6ee] py-20 sm:py-28">
     <div className="mx-auto grid max-w-[1360px] items-center gap-10 px-5 sm:px-8 lg:grid-cols-[5fr_7fr] lg:gap-16 lg:px-12">
       <img src={hospitalPhoto} alt="Nurse talking with a smiling senior patient in a hospital corridor" loading="lazy" className="aspect-[4/3] w-full rounded-[1.6rem] object-cover lg:aspect-square" />
@@ -13,7 +15,7 @@ export function LightWhyChooseUsSection({ onBookInPerson }: Props) {
         <p className="mb-4 text-xs font-bold tracking-[.2em] text-[#5f8065]">WHY SRI LAKSHMI</p>
         <h2 className="font-medium text-5xl sm:text-6xl tracking-[-.05em] leading-[1.04] text-[#17372b]">Care your family can count on.</h2>
         <dl className="mt-10 divide-y divide-[#cfdfce] border-y border-[#cfdfce]">
-          {reasons.map(reason => <div key={reason.title} className="grid gap-1 py-5 sm:grid-cols-[13rem_1fr] sm:items-baseline sm:gap-6">
+          {(roster === undefined ? reasons : [{value:String(roster.length),title:'Doctors in our current team',body:'Browse the hospital’s published doctors.'},{value:String(new Set(roster.flatMap(d=>d.departments)).size),title:'Departments represented',body:'Find a doctor by specialty and check available times.'}]).map(reason => <div key={reason.title} className="grid gap-1 py-5 sm:grid-cols-[13rem_1fr] sm:items-baseline sm:gap-6">
             <dt className="font-medium text-4xl sm:text-5xl tracking-[-.04em] leading-none text-[#2b6242]">{reason.value}</dt>
             <dd><p className="text-base sm:text-lg font-semibold text-[#17372b]">{reason.title}</p><p className="mt-1 text-sm leading-relaxed text-[#667b6b]">{reason.body}</p></dd>
           </div>)}

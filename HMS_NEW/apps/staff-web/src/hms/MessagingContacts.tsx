@@ -45,10 +45,6 @@ export function MessagingContacts(owner: Owner) {
       aria-label="Messaging preferences"
     >
       <h3 className="font-semibold">Messaging preferences</h3>
-      <p className="text-xs text-muted-foreground">
-        WhatsApp contacts and permission to message are separate from clinical
-        consent. Adding a phone does not opt anyone in.
-      </p>
       <LoadingState {...capability}>
         {capability.data && capability.data.moduleStatus !== "active" && (
           <Hint>
@@ -291,10 +287,6 @@ function ContactConsent({
               Record STOP for this phone
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            STOP blocks every messaging purpose for this phone across matching
-            contacts. Only a fresh opt-in can restore its stated purpose.
-          </p>
           {cmd.unknown && (
             <Hint>
               The outcome is unknown. Close and reopen this record to verify the

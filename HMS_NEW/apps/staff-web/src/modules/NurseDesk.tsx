@@ -500,7 +500,7 @@ export function NurseDesk({
       </Card>
       <div className="flex justify-between items-center">
         <span className="text-xs text-muted-foreground">
-          Page {offset / pageSize + 1} · Clinic timezone: Asia/Kolkata
+          Page {offset / pageSize + 1}
         </span>
         <div className="flex gap-2">
           <Button

@@ -27,7 +27,7 @@ const ist = (date: string, time: string) => `${date}T${time}:00+05:30`;
 interface CallOptions {
   token?: string | null;
   body?: unknown;
-  idem?: string | true;
+  idem?: string | boolean;
   now?: string;
   headers?: Record<string, string>;
 }
@@ -35,7 +35,8 @@ interface CallOptions {
 async function call(method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, opts: CallOptions = {}) {
   const headers: Record<string, string> = { ...opts.headers };
   if (opts.token !== null) headers.authorization = `Bearer ${opts.token ?? tokens.admin}`;
-  if (opts.idem) headers['idempotency-key'] = opts.idem === true ? `test-${randomUUID()}` : opts.idem;
+  const key = opts.idem ?? (method === 'POST' && /^\/v1\/(appointments\/[^/]+\/cancel|schedule-exceptions\/[^/]+\/revoke|facility-holidays\/[^/]+\/revoke|waitlist\/[^/]+\/withdraw|waitlist-offers\/[^/]+\/decline)$/.test(url));
+  if (key) headers['idempotency-key'] = key === true ? `test-${randomUUID()}` : key;
   if (opts.now) headers['x-test-now'] = opts.now;
   const res = await app.inject({ method, url, headers, ...(opts.body !== undefined ? { payload: opts.body as object } : {}) });
   return { status: res.statusCode, body: res.body ? res.json() : null, headers: res.headers };
@@ -351,8 +352,10 @@ describe('overbooking per clinic (phase 3)', () => {
       now: now(),
       body: { staffId: doctor, slotStart: ist(day(), time), bookingParty: party(), originChannel: 'front_desk', overbookReason: 'Urgent review', ...extra },
     });
-  const toggle = (enabled: boolean, token = tokens.branchAdmin, facilityId = t.facilityId) =>
-    call('PUT', `/v1/facilities/${facilityId}/overbooking`, { token, now: now(), body: { enabled } });
+  const toggle = async (enabled: boolean, token = tokens.branchAdmin, facilityId = t.facilityId) => {
+    const saved = await call('GET', `/v1/facilities/${facilityId}/overbooking`, { now: now() });
+    return call('PUT', `/v1/facilities/${facilityId}/overbooking`, { token, idem: true, now: now(), body: { enabled, version: saved.body.version } });
+  };
 
   it('is off by default; only a clinic administrator can turn it on for their clinic', async () => {
     await book('09:00');
@@ -397,9 +400,10 @@ describe('overbooking per clinic (phase 3)', () => {
   });
 
   it('turning it off stops new overbooks', async () => {
-    const off = await call('PUT', `/v1/facilities/${t.facilityId}/overbooking`, { token: tokens.branchAdmin, now: ist(monday, '07:05'), body: { enabled: false } });
+    const saved = await call('GET', `/v1/facilities/${t.facilityId}/overbooking`, { now: ist(monday, '07:05') });
+    const off = await call('PUT', `/v1/facilities/${t.facilityId}/overbooking`, { token: tokens.branchAdmin, idem: true, now: ist(monday, '07:05'), body: { enabled: false, version: saved.body.version } });
     expect(off).toMatchObject({ status: 200, body: { enabled: false } });
-    expect(await toggle(true)).toMatchObject({ status: 409, body: { error: { details: { reason: 'concurrent_change' } } } }); // same instant as the first change
+    expect(await call('PUT', `/v1/facilities/${t.facilityId}/overbooking`, { token: tokens.branchAdmin, idem: true, now: ist(monday, '07:05'), body: { enabled: true, version: saved.body.version } })).toMatchObject({ status: 409, body: { error: { details: { reason: 'stale_version' } } } }); // the previously captured version cannot overwrite the later administrator
     const late = await call('POST', '/v1/appointments/overbook', {
       token: tokens.frontDesk, idem: true, now: ist(monday, '07:10'),
       body: { staffId: doctor, slotStart: ist(day(), '09:30'), bookingParty: party(), originChannel: 'front_desk', overbookReason: 'Urgent review' },

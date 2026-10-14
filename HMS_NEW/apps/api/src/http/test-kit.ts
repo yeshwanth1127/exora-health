@@ -29,16 +29,16 @@ export interface Kit {
   /** Adds a staff member with a built-in role at a clinic (null: every clinic) and a dev sign-in. */
   person(name: string, role: string, facilityId: string | null, staffType?: string): Promise<Person>;
   /** `now` pins the server clock for this request (X-Test-Now). */
-  call(who: Person, method: Method, url: string, body?: unknown, idem?: string | true, now?: string): Promise<{ status: number; body: any }>;
+  call(who: Person, method: Method, url: string, body?: unknown, idem?: string | boolean, now?: string): Promise<{ status: number; body: any }>;
   /** Runs the worker's consumers until nothing is pending (check-in opens the encounter, and so on). */
   dispatch(): Promise<void>;
   close(): Promise<void>;
 }
 
-export async function startKit(label: string, channels?: ChannelSettings): Promise<Kit> {
+export async function startKit(label: string, channels?: ChannelSettings, whatsappTemplateFetcher?:typeof fetch): Promise<Kit> {
   const admin = adminPool();
   const db = createDb({ connectionString: config.testAppDatabaseUrl, maxConnections: 5 });
-  const app = buildServer({ db, verifier: createVerifier({ mode: 'dev', secret: DEV_SECRET_DEFAULT, issuer: DEV_ISSUER }), allowClockOverride: true, channels });
+  const app = buildServer({ db, verifier: createVerifier({ mode: 'dev', secret: DEV_SECRET_DEFAULT, issuer: DEV_ISSUER }), allowClockOverride: true, channels, whatsappTemplateFetcher });
   const tenant = await createTenant(admin, label);
   const run = randomUUID().slice(0, 8);
   let n = 0;
@@ -68,7 +68,10 @@ export async function startKit(label: string, channels?: ChannelSettings): Promi
     },
     async call(who, method, url, body, idem, now) {
       const headers: Record<string, string> = { authorization: `Bearer ${who.token}` };
-      if (idem) headers['idempotency-key'] = idem === true ? `test-${randomUUID()}` : idem;
+      // Test-only convenience for newly keyed existing routes; false explicitly tests a missing header.
+      // Production callers preserve one key for an unchanged intent through uncertainty.
+      const key = idem === undefined && method !== 'GET' ? true : idem;
+      if (key) headers['idempotency-key'] = key === true ? `test-${randomUUID()}` : key;
       if (now) headers['x-test-now'] = now;
       const res = await app.inject({ method, url, headers, ...(body !== undefined ? { payload: body as object } : {}) });
       return { status: res.statusCode, body: res.body ? res.json() : null };

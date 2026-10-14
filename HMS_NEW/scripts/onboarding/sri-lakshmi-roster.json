@@ -1,0 +1,160 @@
+{
+  "source": "https://slsshospitals.com/our-professional/",
+  "collectedOn": "2026-10-03",
+  "clinic": "Sri Lakshmi Super Speciality Hospital",
+  "doctors": [
+    {
+      "websiteId": "doc-1",
+      "name": "Dr. Ananditha",
+      "departmentSlug": "cardiology",
+      "departmentName": "Cardiology",
+      "bio": "Dr. Ananditha is listed as cardiologist at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/2dca35e4-Dr-Ananditha-Cardiologist.png",
+      "roleTitle": "Cardiologist"
+    },
+    {
+      "websiteId": "doc-2",
+      "name": "Dr. Sambashiva",
+      "departmentSlug": "general-medicine",
+      "departmentName": "General Medicine",
+      "bio": "Dr. Sambashiva is listed as physician & chairman at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/364a7d1e-Dr-Sambashiva-Chairman-Sri-Lakshmi-Hospitals.png",
+      "roleTitle": "Physician & Chairman"
+    },
+    {
+      "websiteId": "doc-3",
+      "name": "Dr. Krishna Naresh Goud",
+      "departmentSlug": "orthopedics",
+      "departmentName": "Orthopedics",
+      "bio": "Dr. Krishna Naresh Goud is listed as orthopedic surgeon at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/9c1a25db-Dr-Krishna-Naresh-Goud.png",
+      "roleTitle": "Orthopedic Surgeon"
+    },
+    {
+      "websiteId": "doc-4",
+      "name": "Dr. Ashitha A.V",
+      "departmentSlug": "gynecology",
+      "departmentName": "Gynecology & Obstetrics",
+      "bio": "Dr. Ashitha A.V is listed as obstetrician and gynecologist at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/2b51df4d-Dr.-Ashitha-A.V.png",
+      "roleTitle": "Obstetrician and Gynecologist"
+    },
+    {
+      "websiteId": "doc-5",
+      "name": "Dr. Akshatha",
+      "departmentSlug": "metabolic",
+      "departmentName": "Diabetology",
+      "bio": "Dr. Akshatha is listed as physician & diabetologist at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/466f25a1-Dr-Akshatha-Physician-Diabetologist.png",
+      "roleTitle": "Physician & Diabetologist"
+    },
+    {
+      "websiteId": "doc-6",
+      "name": "Dr. Deepak",
+      "departmentSlug": "plastic-surgery",
+      "departmentName": "Plastic Surgery",
+      "bio": "Dr. Deepak is listed as plastic surgeon at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/aaa795bf-Dr-Deepak-Plastic-Surgeon.png",
+      "roleTitle": "Plastic Surgeon"
+    },
+    {
+      "websiteId": "doc-7",
+      "name": "Dr. Raghuram G",
+      "departmentSlug": "neurology",
+      "departmentName": "Neurology",
+      "bio": "Dr. Raghuram G is listed as neurologist at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/e3a68515-Dr-Raghuram-G.png",
+      "roleTitle": "Neurologist"
+    },
+    {
+      "websiteId": "doc-8",
+      "name": "Dr. Jayasree",
+      "departmentSlug": "gynecology",
+      "departmentName": "Gynecology & Obstetrics",
+      "bio": "Dr. Jayasree is listed as obstetrician and gynecologist at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/c64e09c6-DR-JAYASREE.png",
+      "roleTitle": "Obstetrician and Gynecologist"
+    },
+    {
+      "websiteId": "doc-9",
+      "name": "Dr. Girish Vakrani",
+      "departmentSlug": "nephrology",
+      "departmentName": "Nephrology",
+      "bio": "Dr. Girish Vakrani is listed as nephrologist at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/248664a3-Dr.-Girish-Vakrani.png",
+      "roleTitle": "Nephrologist"
+    },
+    {
+      "websiteId": "doc-10",
+      "name": "Dr. Sai Kalyan Gupta",
+      "departmentSlug": "general-surgery",
+      "departmentName": "General & Laparoscopic Surgery",
+      "bio": "Dr. Sai Kalyan Gupta is listed as general and laparoscopic surgeon at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/9a8dc818-Dr-Sai-Kalyan-Gupta.png",
+      "roleTitle": "General and Laparoscopic Surgeon"
+    },
+    {
+      "websiteId": "doc-11",
+      "name": "Dr. Manjunath S",
+      "departmentSlug": "urology",
+      "departmentName": "Urology",
+      "bio": "Dr. Manjunath S is listed as urologist at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/af59cfe2-Dr-Manjunath-S-Urologist.png",
+      "roleTitle": "Urologist"
+    },
+    {
+      "websiteId": "doc-12",
+      "name": "Dr. Mrinalini",
+      "departmentSlug": "general-surgery",
+      "departmentName": "General & Laparoscopic Surgery",
+      "bio": "Dr. Mrinalini is listed as general & laparoscopic surgeon at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/0f165dc5-Dr-Mrinalini-General-Laparoscopic-Surgeon.png",
+      "roleTitle": "General & Laparoscopic Surgeon"
+    },
+    {
+      "websiteId": "doc-13",
+      "name": "Dr. Surendra Reddy",
+      "departmentSlug": "oncology",
+      "departmentName": "Oncology",
+      "bio": "Dr. Surendra Reddy is listed as oncologist at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/650bc547-Dr.-Surendra-reddy.png",
+      "roleTitle": "Oncologist"
+    },
+    {
+      "websiteId": "doc-14",
+      "name": "Dr. Bharadwaj GK",
+      "departmentSlug": "orthopedics",
+      "departmentName": "Orthopedics",
+      "bio": "Dr. Bharadwaj GK is listed as orthopedic surgeon at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/b4f21abc-Dr-Bharadwaj-GK.png",
+      "roleTitle": "Orthopedic Surgeon"
+    },
+    {
+      "websiteId": "doc-15",
+      "name": "Dr. Sandeep M C",
+      "departmentSlug": "cardiology",
+      "departmentName": "Cardiology",
+      "bio": "Dr. Sandeep M C is listed as cardiologist at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/9ce5c67b-Dr-Sandeep-M-C-Cardiologist.png",
+      "roleTitle": "Cardiologist"
+    },
+    {
+      "websiteId": "doc-16",
+      "name": "Dr. Sandhya Rani",
+      "departmentSlug": "gynecology",
+      "departmentName": "Gynecology & Obstetrics",
+      "bio": "Dr. Sandhya Rani is listed as obstetrician & gynecologist at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/bacdc007-Dr-Sandhya-Rani-Obstetricain-Gynecologist.png",
+      "roleTitle": "Obstetrician & Gynecologist"
+    },
+    {
+      "websiteId": "doc-17",
+      "name": "Dr. Manjunath U",
+      "departmentSlug": "metabolic",
+      "departmentName": "Diabetology",
+      "bio": "Dr. Manjunath U is listed as physician & diabetologist at Sri Lakshmi Super Speciality Hospital, KR Puram. Contact the hospital to confirm consultation hours and fees.",
+      "photoUrl": "/clients/sri-lakshmi/20ee0ebb-Dr-Manjunath-U-Physician-Diabetologist.png",
+      "roleTitle": "Physician & Diabetologist"
+    }
+  ]
+}

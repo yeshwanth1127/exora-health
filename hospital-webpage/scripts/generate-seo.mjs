@@ -34,7 +34,8 @@ const paths = [
     '/departments/',
     ...departments.map(({ id }) => `/departments/${encodeURIComponent(id)}/`),
     '/doctors/',
-    ...doctors.map(({ id }) => `/doctors/${encodeURIComponent(id)}/`),
+    // HMS profiles are published at runtime. Never prebuild stale archived doctor routes.
+    ...(['demo','live'].includes(process.env.VITE_BOOKING_MODE) ? doctors.map(({ id }) => `/doctors/${encodeURIComponent(id)}/`) : []),
     '/locations/',
     ...branches.map(({ id }) => `/locations/${encodeURIComponent(id)}/`),
     '/faq/',

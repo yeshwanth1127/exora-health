@@ -19,15 +19,16 @@ import {
 import type { Caller } from "../../caller.ts";
 import { clock } from "../../caller.ts";
 import { moduleState } from "./notifications.ts";
+import { parseVoiceProviderConfig } from './voice-provider-config.ts';
+
+export type VoiceRuntimeBinding = {
+  tenantId: string; facilityId: string; accountId: string; secret: string; agentVersion: number | null;
+};
 
 export interface ChannelSettings {
-  voice?: {
-    tenantId: string;
-    facilityId: string;
-    accountId: string;
-    secret: string;
-    agentVersion: number | null;
-  };
+  voice?: VoiceRuntimeBinding;
+  /** Explicit registry: even an empty list disables the legacy callback. Server-only secrets. */
+  voiceBindings?: VoiceRuntimeBinding[];
   recordingHosts: string[];
   bookingHosts?: string[];
   posthog?: {
@@ -73,29 +74,16 @@ export function loadChannelSettings(
   )
     throw Error("BOOKING_LINK_HOSTS must list exact approved public DNS hosts");
   const s: ChannelSettings = { recordingHosts, bookingHosts, fetcher: fetch };
-  if (env.VOICE_CALLBACK_SECRET) {
-    if (
-      env.VOICE_CALLBACK_SECRET.length < 32 ||
-      !uuid.test(env.VOICE_CALLBACK_TENANT_ID ?? "") ||
-      !uuid.test(env.VOICE_CALLBACK_FACILITY_ID ?? "") ||
-      !env.VOICE_CALLBACK_ACCOUNT_ID
-    )
-      throw Error(
-        "Voice callback needs a strong secret and explicit tenant/facility/account binding",
-      );
-    const version = env.SARVAM_APP_VERSION
-      ? Number(env.SARVAM_APP_VERSION)
-      : null;
-    if (version === null || !Number.isInteger(version) || version < 1)
-      throw Error("SARVAM_APP_VERSION must be a pinned positive integer");
-    s.voice = {
-      tenantId: env.VOICE_CALLBACK_TENANT_ID!,
-      facilityId: env.VOICE_CALLBACK_FACILITY_ID!,
-      accountId: env.VOICE_CALLBACK_ACCOUNT_ID,
-      secret: env.VOICE_CALLBACK_SECRET,
-      agentVersion: version,
-    };
-  }
+  const voiceConfig = parseVoiceProviderConfig(env);
+  const voiceBindings = voiceConfig.bindings.flatMap(binding => {
+    // These descriptors came from this exact validated environment snapshot; parse once
+    // rather than reparsing the full fleet for each runtime at startup.
+    const secret = binding.secretPresent ? env[binding.secretEnv]!.trim() : null;
+    return secret ? [{ tenantId: binding.tenantId, facilityId: binding.facilityId,
+      accountId: binding.accountId, agentVersion: binding.agentVersion, secret }] : [];
+  });
+  if (voiceConfig.mode === 'multi_clinic') s.voiceBindings = voiceBindings;
+  else if (voiceBindings[0]) s.voice = voiceBindings[0];
   if (env.POSTHOG_READ_KEY) {
     if (
       !["https://us.posthog.com", "https://eu.posthog.com"].includes(
@@ -126,6 +114,15 @@ export function validVoiceSecret(settings: ChannelSettings, value: unknown) {
     Buffer.byteLength(value) === Buffer.byteLength(expected) &&
     timingSafeEqual(Buffer.from(value), Buffer.from(expected))
   );
+}
+/** Account header selects a configured deployment; body fields cannot select tenant/clinic. */
+export function voiceRuntimeForRequest(settings: ChannelSettings, account: unknown): VoiceRuntimeBinding | undefined {
+  if (settings.voiceBindings !== undefined) {
+    if (typeof account !== 'string') return;
+    return settings.voiceBindings.find(binding => binding.accountId === account);
+  }
+  if (account !== undefined && account !== settings.voice?.accountId) return;
+  return settings.voice;
 }
 async function active(tx: Parameters<Parameters<typeof runQuery>[2]>[0]) {
   if ((await moduleState(tx)) !== "active")
@@ -435,6 +432,9 @@ export async function ingestVoice(
   settings: ChannelSettings,
 ) {
   const binding = settings.voice!;
+  // A stale sequence or idempotent replay must not bypass deployment identity validation.
+  if (binding.agentVersion !== null && input.agentVersion !== undefined && binding.agentVersion !== input.agentVersion)
+    throw invalid('runtime agent version does not match configured version');
   const caller: Caller = {
     tenantId: binding.tenantId,
     actor: { kind: "system" },
@@ -546,14 +546,6 @@ export async function ingestVoice(
           throw invalid("voice booking reference is not verified");
       }
       if (
-        binding.agentVersion !== null &&
-        input.agentVersion !== undefined &&
-        binding.agentVersion !== input.agentVersion
-      )
-        throw invalid(
-          "runtime agent version does not match configured version",
-        );
-      if (
         Date.parse(input.startedAt) > now ||
         (input.endedAt && Date.parse(input.endedAt) > now)
       )
@@ -663,9 +655,9 @@ export async function voiceHistory(
         availableUntil: c.available_until?.toISOString() ?? null,
       };
     });
-    const bound =
-      settings.voice?.tenantId === caller.tenantId &&
-      settings.voice.facilityId === facilityId;
+    const clinicBinding = (settings.voiceBindings ?? (settings.voice ? [settings.voice] : []))
+      .find(binding => binding.tenantId === caller.tenantId && binding.facilityId === facilityId);
+    const bound = !!clinicBinding;
     return VoiceHistorySchema.parse({
       items,
       total: summary!.calls,
@@ -676,7 +668,7 @@ export async function voiceHistory(
         recordingsReady: bound && settings.recordingHosts.length > 0,
         transcriptsReady: bound,
         accessDays: 30,
-        agentVersion: bound ? settings.voice!.agentVersion : null,
+        agentVersion: clinicBinding?.agentVersion ?? null,
       },
     });
   });

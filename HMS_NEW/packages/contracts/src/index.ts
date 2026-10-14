@@ -130,3 +130,9 @@ export type NotificationJob = z.infer<typeof NotificationJobSchema>;
 export * from './whatsapp.ts';
 
 export * from './voice-growth.ts';
+
+export * from './audit.ts';
+
+export * from './booking.ts';
+
+export * from './channel-onboarding.ts';

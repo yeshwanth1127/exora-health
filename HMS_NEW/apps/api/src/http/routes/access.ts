@@ -31,8 +31,8 @@ const AuditFilter = z
     actor: z.string().trim().max(100).optional(),
     record: z.string().trim().max(64).optional(),
     action: z.string().trim().max(100).optional(),
-    from: isoDate.optional(),
-    to: isoDate.optional(),
+    from: z.iso.date().optional(),
+    to: z.iso.date().optional(),
   })
   .refine((f) => !f.from || !f.to || f.from <= f.to, { message: 'from must be on or before to', path: ['to'] });
 
@@ -57,16 +57,16 @@ export function registerAccessRoutes(app: FastifyInstance, db: Kysely<DB>) {
 
   app.put('/v1/roles/:roleId/permissions/:permission', async (request) => {
     const params = parse(z.object({ roleId: uuid, permission: z.string().regex(/^[a-z_]+(\.[a-z_]+)+$/).max(64) }), request.params);
-    const { allowed } = parse(z.object({ allowed: z.boolean() }), request.body);
+    const { allowed, version } = parse(z.object({ allowed: z.boolean(), version: z.number().int().min(1) }), request.body);
     authorizeEvery(principalOf(request), 'access.manage', []);
-    return setRolePermission(db, callerOf(request), { ...params, allowed });
+    return setRolePermission(db, callerOf(request), { ...params, allowed, version }, idempotencyKey(request));
   });
 
   app.post('/v1/roles/:roleId/retire', async (request) => {
     const { roleId } = parse(z.object({ roleId: uuid }), request.params);
     const { reason } = parse(z.object({ reason: Reason }), request.body);
     authorizeEvery(principalOf(request), 'access.manage', []);
-    return retireRole(db, callerOf(request), { roleId, reason });
+    return retireRole(db, callerOf(request), { roleId, reason }, idempotencyKey(request));
   });
 
   app.get('/v1/staff-accounts', async (request) => {
@@ -107,7 +107,7 @@ export function registerAccessRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const { grantId } = parse(z.object({ grantId: uuid }), request.params);
     const { reason } = parse(z.object({ reason: Reason }), request.body);
     atScope(request, 'access.manage', await grantFacility(db, callerOf(request), grantId));
-    return revokeGrant(db, callerOf(request), { grantId, reason });
+    return revokeGrant(db, callerOf(request), { grantId, reason }, idempotencyKey(request));
   });
 
   // Status applies everywhere the person works, so staff.manage is needed at each of those clinics.
@@ -117,7 +117,7 @@ export function registerAccessRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const where = await staffFacilities(db, callerOf(request), staffId);
     if (where === undefined) throw new DomainError('not_found', 'staff member not found');
     authorizeEvery(principalOf(request), 'staff.manage', where ?? []);
-    return setStaffStatus(db, callerOf(request), { staffId, ...body });
+    return setStaffStatus(db, callerOf(request), { staffId, ...body }, idempotencyKey(request));
   });
 
   // The log spans every clinic and module and names patients by id: audit.read at every clinic.

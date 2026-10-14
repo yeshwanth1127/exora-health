@@ -1,3 +1,5 @@
+> Backend follow-up: UXA02 now exposes real zero-clinic/bootstrap evidence; UXA05 provides an exact selected-slot/doctor/service/effective-fee read-only quote. The original snapshot below remains historical. Provider, consent, signing and carrier activation are still unchecked. Catalogue recovery now uses attributable keyed receipts, not matching-state inference. See AUDIT_BACKEND_HARDENING.md.
+
 # Staff booking setup evidence map
 
 Implemented 13 October 2026. Frontend configuration reads only; no migrations, authorization changes, provider connections or live writes were made for this packet.

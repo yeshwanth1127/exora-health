@@ -39,7 +39,9 @@ const SHARED_WRITE = new Set([
   'platform.inbox_record',
 ]);
 /** Tables where DELETE is a legitimate (audited) admin action. */
-const DELETE_ALLOWED = new Set(['platform.role_permission']);
+const DELETE_ALLOWED = new Set([
+  // Expiring anonymous request counters contain no patient data or raw addresses.
+  'booking.public_request_budget','platform.role_permission']);
 
 interface TableRow {
   oid: number;

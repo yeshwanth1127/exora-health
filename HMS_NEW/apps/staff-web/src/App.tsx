@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ModePicker } from "@/components/ModePicker";
 import { Card, CardContent } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -50,8 +51,11 @@ import { devLoginEnabled, finishLogin, oidc } from "@/hms/auth";
 import { can, permittedFacilities, practitionersFor } from "@/hms/model";
 import { WorkspaceContext, useQuery } from "@/hms/hooks";
 import { hasUnsavedChanges, requestLeave, leaveState } from "@/hms/leave";
+import { useRecoverableCommand } from "@/hms/operational-command";
+import { RecoveryNotice } from "@/hms/OperationalRecovery";
+import { useUnsaved } from "@/hms/leave";
 import { LeaveDialog } from "@/hms/LeaveDialog";
-import { Choice, Empty, ErrorMessage, Hint, LoadingState } from "@/hms/ui";
+import { Choice, Empty, ErrorMessage, Field, Hint, LoadingState } from "@/hms/ui";
 import { Input } from "@/components/ui/input";
 import { Patients } from "@/hms/Patients";
 import {
@@ -63,6 +67,7 @@ import { PendingModule } from "@/hms/PendingModule";
 import { WhatsApp } from "@/hms/WhatsApp";
 import { Voice } from "@/hms/Voice";
 import { Growth } from "@/hms/Growth";
+import { GoogleBusiness } from "@/hms/GoogleBusiness";
 import { SettingsPage } from "@/hms/Settings";
 import { Schedules } from "@/hms/Schedules";
 import { Overview } from "@/hms/Overview";
@@ -144,9 +149,6 @@ function Brand() {
         <div className="font-semibold tracking-tight text-[15px]">
           Exora Health
         </div>
-        <div className="text-xs text-muted-foreground mt-0.5">
-          Clinic workspace
-        </div>
       </div>
     </div>
   );
@@ -201,6 +203,7 @@ function StaffApp() {
     phase: "restoring" | "accepting";
   } | null>(null);
   const [listedClinics, setListedClinics] = useState(0);
+  const [bootstrap, setBootstrap] = useState<{ state: string; canCreateClinic: boolean; organizationProvisioned: boolean } | null>(null);
   function go(next: string) {
     requestLeave(() => {
       const index = route.current.index + 1;
@@ -238,10 +241,12 @@ function StaffApp() {
       const identity = await request<Me>("/v1/me");
       if (identity.isSystemAccount)
         throw new Error("Integration accounts cannot use the staff workspace.");
-      const result = await request<{ items: Facility[] }>("/v1/facilities");
+      const context = await request<{ facilities: Facility[]; bootstrap: { state: string; canCreateClinic: boolean; organizationProvisioned: boolean } }>("/v1/session-context");
+      setBootstrap(context.bootstrap);
+      const result = { items: context.facilities };
       const allowed = permittedFacilities(identity, result.items);
       setTenantOptions([]);
-      setListedClinics(result.items.length);
+      setListedClinics(context.bootstrap.state === "inaccessible_clinics" ? 1 : result.items.length);
       setFacilities(allowed);
       setFacilityId(allowed[0]?.facilityId ?? "");
       setMe(identity);
@@ -389,9 +394,6 @@ function StaffApp() {
             <div className="login-form space-y-6">
               <div>
                 <h2 className="text-2xl font-semibold">Welcome back</h2>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Sign in to your clinic workspace.
-                </p>
               </div>
               <ErrorMessage text={error} />
               {tenantOptions.length > 0 ? (
@@ -482,6 +484,9 @@ function StaffApp() {
             ? "Ask your clinic administrator to assign access, then refresh your account."
             : "No clinic was returned for this account. First-clinic creation needs a verified organization setup permission; contact your organization administrator."}
         </Hint>
+        {bootstrap?.state === "zero_clinics" && bootstrap.canCreateClinic && (
+          <FirstClinic onCreated={() => accept(token, me.tenantId)} />
+        )}
         <Button onClick={() => void accept(token, me.tenantId)} disabled={busy}>
           Refresh access
         </Button>
@@ -617,7 +622,7 @@ function StaffApp() {
               </SidebarMenu>
             </SidebarGroup>
           </SidebarContent>
-          <SidebarFooter className="p-4">
+          <SidebarFooter className="p-4 border-t border-sidebar-border">
             <div className="flex items-center gap-3 px-2 mb-2">
               <div className="size-9 rounded-full bg-muted flex items-center justify-center text-xs font-semibold">
                 {me.displayName
@@ -669,6 +674,7 @@ function StaffApp() {
               </span>
             </div>
             <div className="flex items-center gap-3">
+              <ModePicker />
               <div className="w-52 max-w-[55vw]">
                 <Choice
                   label="Clinic"
@@ -715,16 +721,15 @@ function DevSignIn({
   busy: boolean;
   onLogin: (subject: string, email?: string) => Promise<void>;
 }) {
-  const [subject, setSubject] = useState("ravi"),
-    [email, setEmail] = useState("");
+  const configuredSubject = import.meta.env.VITE_HMS_DEV_SUBJECT?.trim() || "";
+  const [subject, setSubject] = useState(configuredSubject || "ravi"),
+    [email, setEmail] = useState(""),
+    [customIdentity,setCustomIdentity]=useState(Boolean(configuredSubject));
   return (
     <Card>
       <CardContent className="pt-5 space-y-4">
         <Badge variant="outline">Local development only</Badge>
-        <p className="text-sm text-muted-foreground">
-          Use a seeded staff identity in the isolated preview.
-        </p>
-        <Choice
+        {customIdentity ? <label htmlFor="dev-subject" className="block space-y-1.5 text-sm"><span className="font-medium">Registered staff identity</span><Input id="dev-subject" value={subject} onChange={e=>setSubject(e.target.value)} autoComplete="off" /></label> : <Choice
           label="Staff identity"
           value={subject}
           onChange={setSubject}
@@ -734,10 +739,11 @@ function DevSignIn({
             { value: "meena", label: "Meena · Nurse" },
             { value: "priya", label: "Priya · Administrator" },
           ]}
-        />
+        />}
+        {!configuredSubject && <Button variant="outline" size="sm" onClick={()=>{setCustomIdentity(!customIdentity);setSubject(customIdentity?'ravi':'');}}>{customIdentity?'Use the original development identities':'Use another registered identity'}</Button>}
         <Button
           className="w-full"
-          disabled={busy}
+          disabled={busy || !subject.trim()}
           onClick={() => void onLogin(subject)}
         >
           Open workspace
@@ -750,9 +756,6 @@ function DevSignIn({
             value={email}
             onChange={(e) => setEmail(e.target.value.trim())}
           />
-          <span className="block text-xs text-muted-foreground">
-            Signs in as a new identity whose email the provider has verified.
-          </span>
         </label>
         <Button
           variant="outline"
@@ -868,7 +871,9 @@ function DirectoryContent({
           <WhatsApp />
         ) : page === "voice" ? (
           <Voice />
-        ) : page === "google_business" || page === "growth_analytics" ? (
+        ) : page === "google_business" ? (
+          <GoogleBusiness />
+        ) : page === "growth_analytics" ? (
           <Growth key={page} module={page} />
         ) : page === "loyalty" ? (
           <PendingModule key={page} page={page} />
@@ -878,4 +883,24 @@ function DirectoryContent({
       </main>
     </WorkspaceContext.Provider>
   );
+}
+
+function FirstClinic({ onCreated }: { onCreated: () => Promise<void> }) {
+  const [name, setName] = useState(""), [code, setCode] = useState(""), [stateCode, setStateCode] = useState("29");
+  const command = useRecoverableCommand(request, "first-clinic");
+  useUnsaved(!!name || !!code || command.busy || command.unknown);
+  const create = async () => {
+    if (await command.run("/v1/facilities", { name: name.trim(), code: code.trim(), stateCode, facilityType: "clinic" }, true)) await onCreated();
+  };
+  return <Card className="max-w-xl"><CardContent className="space-y-4 pt-6">
+    <h2 className="text-lg font-semibold">Create your first clinic</h2>
+    <fieldset disabled={command.busy || command.unknown} className="space-y-4">
+      <Field label="Clinic name" id="bootstrap-name"><Input id="bootstrap-name" value={name} onChange={e => setName(e.target.value)} maxLength={120} /></Field>
+      <Field label="Clinic code" id="bootstrap-code"><Input id="bootstrap-code" value={code} onChange={e => setCode(e.target.value)} maxLength={30} /></Field>
+      <Field label="State code" id="bootstrap-state"><Input id="bootstrap-state" value={stateCode} onChange={e => setStateCode(e.target.value)} maxLength={2} /></Field>
+      <Button disabled={name.trim().length < 2 || !/^[A-Za-z0-9_-]{1,30}$/.test(code.trim()) || !/^[0-9]{2}$/.test(stateCode)} onClick={() => void create()}>Create clinic</Button>
+    </fieldset>
+    <ErrorMessage text={command.error} />
+    <RecoveryNotice command={command} onRecovered={() => void onCreated()} />
+  </CardContent></Card>;
 }

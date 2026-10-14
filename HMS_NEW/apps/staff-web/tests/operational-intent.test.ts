@@ -1,6 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { OperationalIntent } from "../src/hms/operational-intent.ts";
+import {
+  OperationalIntent,
+  legacyKeyed,
+} from "../src/hms/operational-intent.ts";
 import { HmsError } from "../src/hms/client.ts";
 test("unknown replay preserves the original body/key and refuses new intent", async () => {
   const sent: any[] = [];
@@ -89,14 +92,12 @@ test("only explicitly supported legacy commands are replayable", async () => {
   );
   assert.equal(
     legacyKeyed("/api/v1/admin/waitlist-offers/offer-id/decline"),
-    false,
+    true,
   );
-  assert.equal(
-    legacyKeyed("/api/v1/admin/waitlist/request-id/withdraw"),
-    false,
-  );
-  assert.equal(legacyKeyed("/api/v1/admin/booking-policy", "PUT"), false);
+  assert.equal(legacyKeyed("/api/v1/admin/waitlist/request-id/withdraw"), true);
+  assert.equal(legacyKeyed("/api/v1/admin/booking-policy", "PUT"), true);
   assert.equal(legacyKeyed("/api/v1/staff/users/person-id/grants"), true);
+  assert.equal(legacyKeyed("/api/v1/staff/grants/grant-id/revoke"), true);
 });
 test("settings section deep links respect permissions and reject invalid sections", async () => {
   const { settingsSection } = await import("../src/hms/settings-sections.ts");
@@ -138,6 +139,42 @@ test("schedule recovery allowlist preserves preview and cancellation boundaries"
       "/api/v1/admin/schedule-timeline/appointments/00000000-0000-0000-0000-000000000001",
       "DELETE",
     ),
+    true,
+  );
+});
+
+test("native recovery only keys supported mutation contracts", async () => {
+  const { nativeKeyed } = await import("../src/hms/operational-intent.ts");
+  const id = "00000000-0000-4000-8000-000000000001";
+  assert.equal(nativeKeyed(`/v1/appointments/${id}/cancel`), true);
+  assert.equal(nativeKeyed(`/v1/consent-documents/${id}`, "PATCH"), true);
+  assert.equal(nativeKeyed(`/v1/facilities/${id}/overbooking`, "PUT"), true);
+  assert.equal(nativeKeyed(`/v1/appointments/${id}/cancel`, "GET"), false);
+  assert.equal(nativeKeyed(`/v1/appointments/${id}/no-show`), false);
+  assert.equal(nativeKeyed(`/v1/unknown/${id}`, "PATCH"), false);
+});
+
+test("inbox replay is limited to native keyed conversation commands", () => {
+  const id = "00000000-0000-4000-8000-000000000002";
+  assert.equal(
+    legacyKeyed(`/api/v1/admin/whatsapp/reception/${id}`, "PATCH"),
+    true,
+  );
+  for (const action of ["reply", "handoff", "resume"])
+    assert.equal(
+      legacyKeyed(`/api/v1/admin/whatsapp/reception/${id}/${action}`, "POST"),
+      true,
+    );
+  assert.equal(
+    legacyKeyed(`/api/v1/admin/whatsapp/reception/${id}/unknown`, "POST"),
+    false,
+  );
+  assert.equal(
+    legacyKeyed(`/api/v1/admin/whatsapp/reception/${id}/resume`, "GET"),
+    false,
+  );
+  assert.equal(
+    legacyKeyed(`/api/v1/admin/whatsapp/reception/legacy-phone/resume`, "POST"),
     false,
   );
 });

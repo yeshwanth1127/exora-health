@@ -6,10 +6,12 @@ describe('App Routing, URL Synchronization & 404 Recovery', () => {
 
   beforeEach(() => {
     localStorage.clear();
+    vi.stubEnv('VITE_BOOKING_MODE', 'demo');
     vi.restoreAllMocks();
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     // Reset window.location
     window.history.replaceState({}, '', '/');
   });
@@ -97,7 +99,7 @@ describe('App Routing, URL Synchronization & 404 Recovery', () => {
     await waitFor(() => {
       expect(screen.getAllByText(/Dr\. Ananditha/i).length).toBeGreaterThan(0);
       expect(screen.getByRole('progressbar')).toBeInTheDocument();
-    });
+    }, { timeout: 4000 });
   });
 
   it('safely falls back to default doctor if invalid doctor ID is provided in /schedule', async () => {

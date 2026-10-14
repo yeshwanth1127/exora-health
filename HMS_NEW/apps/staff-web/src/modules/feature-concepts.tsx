@@ -149,7 +149,6 @@ function Teleconsultations() {
       <PreviewLabel />
       <PageTitle
         title="Teleconsultations"
-        description="Online appointments, ready for the next conversation."
         action={
           <Button variant="outline" onClick={() => setSetup(true)}>
             <Settings2 />
@@ -563,7 +562,6 @@ function LoyaltyProgram() {
       <PreviewLabel />
       <PageTitle
         title="Loyalty program"
-        description="Make every benefit easy to understand and easy to find."
         action={
           <Button
             variant="outline"

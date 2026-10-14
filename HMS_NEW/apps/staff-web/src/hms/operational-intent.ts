@@ -121,6 +121,12 @@ export class OperationalIntent {
 
 /** Only these retained adapter routes forward an idempotency key to a keyed /v1 command. */
 export function legacyKeyed(path: string, method = "POST") {
+  if ((method === "PATCH" && /^\/api\/v1\/admin\/whatsapp\/reception\/[0-9a-f-]{36}$/i.test(path)) || (method === "POST" && /^\/api\/v1\/admin\/whatsapp\/reception\/[0-9a-f-]{36}\/(reply|handoff|resume)$/i.test(path))) return true;
+  if (method === "PATCH" && /^\/api\/v1\/staff\/users\/[^/]+$/.test(path)) return true;
+  if (method === "PUT" && /^\/api\/v1\/staff\/roles\/[^/]+\/permissions\/[^/]+$/.test(path)) return true;
+  if (method === "POST" && (/^\/api\/v1\/staff\/users\/[^/]+\/(grants|status)$/.test(path) || /^\/api\/v1\/staff\/grants\/[^/]+\/revoke$/.test(path) || /^\/api\/v1\/staff\/roles\/[^/]+\/retire$/.test(path))) return true;
+  if (method === "PUT" && path === "/api/v1/admin/booking-policy") return true;
+  if (method === "DELETE" && (/^\/api\/v1\/admin\/schedule-exceptions\/[0-9a-f-]{36}$/.test(path) || /^\/api\/v1\/admin\/schedule-timeline\/appointments\/[0-9a-f-]{36}$/.test(path))) return true;
   if (method === "PUT" && path === "/api/v1/admin/schedule-timeline/weekly")
     return true;
   return (
@@ -136,6 +142,16 @@ export function legacyKeyed(path: string, method = "POST") {
       ) ||
       path === "/api/v1/admin/waitlist" ||
       /^\/api\/v1\/admin\/waitlist\/[^/]+\/offer$/.test(path) ||
-      /^\/api\/v1\/admin\/waitlist-offers\/[^/]+\/accept$/.test(path))
+      /^\/api\/v1\/admin\/waitlist-offers\/[^/]+\/(accept|decline)$/.test(path) ||
+      /^\/api\/v1\/admin\/waitlist\/[^/]+\/withdraw$/.test(path))
   );
+}
+
+/** Native routes whose backend verifies identity-bound idempotency receipts. */
+export function nativeKeyed(path: string, method = "POST") {
+  const id = "[0-9a-f-]{36}";
+  if (method === "PATCH") return new RegExp(`^/v1/(staff|staff-registrations|consent-documents|facilities|departments|consult-rooms|healthcare-services)/${id}$`, "i").test(path);
+  if (method === "PUT") return /^\/v1\/modules\/[^/]+$/.test(path) || new RegExp(`^/v1/(healthcare-services/${id}/fee|practitioners/${id}/(fees|profile)|facilities/${id}/overbooking|roles/${id}/permissions/[^/]+)$`, "i").test(path);
+  if (method === "POST") return new RegExp(`^/v1/(staff/${id}/(invite/renew|status)|role-grants/${id}/revoke|roles/${id}/retire|care-assignments/${id}/end|break-glass/${id}/review|consent-documents/${id}/(publish|retire)|practitioner-affiliations/${id}/end|appointments/${id}/cancel|schedule-exceptions/${id}/revoke|facility-holidays/${id}/revoke|waitlist/${id}/withdraw|waitlist-offers/${id}/decline)$`, "i").test(path);
+  return false;
 }

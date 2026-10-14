@@ -223,3 +223,27 @@ test("all configuration and open capacity cannot certify an exact session/servic
     /not proof every time can be booked/,
   );
 });
+
+test("exact session fee evidence remains configured when capacity is taken and rejects mismatched scope", () => {
+  const e = ready();
+  if (e.slots.state !== "known") throw new Error("expected slots");
+  const slot = e.slots.value[0];
+  slot.healthcareServiceId = "service";
+  e.readiness = known({
+    facilityId: "clinic", staffId: "doctor", visitMode: "in_person", healthcareServiceId: "service",
+    checkedAt: "2026-10-13T00:00:00Z", sessionOn: "2026-10-14", slotStart: slot.slotStart, slotEnd: slot.slotEnd,
+    session: { startsAt: slot.slotStart, endsAt: slot.slotEnd, source: "weekly" },
+    configuration: { complete: true, issues: [] }, fee: { priceListItemId: "fee", feeMinor: 0, pricedOn: "2026-10-14" },
+    occupancy: "taken", slotCanBeHeld: false, guarantee: "revalidated_on_write",
+    separateChecks: { videoProvider: "not_checked", videoConsent: "not_checked", signingEligibility: "not_checked", walkInCapacity: "not_applicable" },
+  });
+  assert.equal(state(e, "preview").state, "complete");
+  assert.match(state(e, "preview").detail, /Capacity: taken/);
+  assert.match(state(e, "preview").detail, /Saving rechecks/);
+  assert.equal(state(e, "service").state, "complete");
+  if (e.readiness.state !== "known") throw new Error("expected quote");
+  e.readiness.value.healthcareServiceId = "unrelated";
+  assert.equal(state(e, "preview").state, "optional_deferred");
+  e.readiness = { state: "unknown" };
+  assert.equal(state(e, "preview").state, "unknown");
+});

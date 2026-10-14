@@ -2,6 +2,8 @@ import { BLOG_POSTS } from './components/blog/blogData';
 import { branches } from './data/branches';
 import { departments } from './data/departments';
 import { doctors } from './data/doctors';
+import { hmsBookingEnabled } from './data/clientBrand';
+import type { PublicDoctor } from './lib/publicBookingApi';
 
 type SeoPage = {
   title: string;
@@ -25,9 +27,10 @@ const siteUrl = (() => {
 })();
 const launchApproved = import.meta.env.VITE_SEO_APPROVED === 'verified-content-and-clinic' && Boolean(siteUrl);
 
-function pageMetadata(view: string, ids: { post: string; department: string; doctor: string; branch: string; legal: string }): SeoPage {
+function pageMetadata(view: string, ids: { post: string; department: string; doctor: string; branch: string; legal: string }, roster?: PublicDoctor[]): SeoPage {
   const department = departments.find(item => item.id === ids.department);
-  const doctor = doctors.find(item => item.id === ids.doctor);
+  const published=roster?.find(item=>item.slug===ids.doctor || item.websiteIds.includes(ids.doctor));
+  const doctor = hmsBookingEnabled() ? (published ? {id:published.slug,name:published.name,title:published.specialty??published.departments.join(' · ')} : undefined) : doctors.find(item => item.id === ids.doctor);
   const branch = branches.find(item => item.id === ids.branch);
   const post = BLOG_POSTS.find(item => item.id === ids.post);
   switch (view) {
@@ -76,8 +79,8 @@ function setMeta(attribute: 'name' | 'property', key: string, content: string) {
   element.content = content;
 }
 
-export function updateSeo(view: string, ids: { post: string; department: string; doctor: string; branch: string; legal: string }) {
-  const page = pageMetadata(view, ids);
+export function updateSeo(view: string, ids: { post: string; department: string; doctor: string; branch: string; legal: string }, roster?: PublicDoctor[]) {
+  const page = pageMetadata(view, ids, roster);
   const indexable = launchApproved && !page.draft;
   document.title = page.title === 'Sri Lakshmi Hospital' ? page.title : `${page.title} | Sri Lakshmi Hospital`;
   setMeta('name', 'description', page.description);

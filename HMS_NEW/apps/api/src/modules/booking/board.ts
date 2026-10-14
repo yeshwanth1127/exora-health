@@ -1,7 +1,8 @@
 // The Schedules board in one read (G04), exact-time staff holds (G08), and outcome lookup for a request
 // whose response was lost (G26).
+import { createHash } from 'node:crypto';
 import { sql, type DB, type Kysely } from '@hms/db';
-import { conflict, invalid, pgCode, preconditionFailed, runCommand, runQuery } from '@hms/platform';
+import { conflict, forbidden, invalid, notFound, pgCode, preconditionFailed, runCommand, runQuery, stableStringify } from '@hms/platform';
 import { clock, type Caller } from '../../caller.ts';
 import type { HoldResult } from './appointments.ts';
 import { practitionerResourceId } from './calendar.ts';
@@ -159,15 +160,19 @@ export async function holdRange(
 
 // ---- unknown outcome --------------------------------------------------------------------------------------
 
-/**
- * What happened to a request sent with this Idempotency-Key: `completed` with its result, `in_progress`,
- * or `unknown` (never received; it is safe to send it again with the same key). Keys are random per
- * intent, so knowing one is knowing the request.
- */
-export async function requestOutcome(db: Kysely<DB>, caller: Caller, key: string) {
+/** Read an attributable receipt in this tenant. Keys are not bearer credentials. */
+export async function requestOutcome(db: Kysely<DB>, caller: Caller, key: string, scope?: string) {
   return runQuery(db, caller.tenantId, async (tx) => {
-    const r = await tx.selectFrom('platform.idempotency_record').select(['scope', 'status', 'result_ref', 'created_at']).where('key', '=', key).orderBy('created_at', 'desc').executeTakeFirst();
-    if (!r) return { key, status: 'unknown' as const };
+    let q = tx.selectFrom('platform.idempotency_record')
+      .select(['scope', 'status', 'result_ref', 'created_at', 'actor_hash']).where('key', '=', key);
+    if (scope) q = q.where('scope', '=', scope);
+    const records = await q.orderBy('created_at', 'desc').limit(2).execute();
+    if (!records.length) throw notFound('request receipt');
+    // Ambiguous keys need the caller to name the command; never choose another command's result.
+    if (records.length > 1) throw invalid('this key has multiple command receipts; provide scope');
+    const r = records[0]!;
+    const actorHash = createHash('sha256').update(stableStringify(caller.actor)).digest('hex');
+    if (!r.actor_hash || r.actor_hash !== actorHash) throw forbidden('request receipt belongs to a different or unverified actor');
     return { key, scope: r.scope, status: r.status, result: r.status === 'completed' ? r.result_ref : null, receivedAt: r.created_at };
   });
 }

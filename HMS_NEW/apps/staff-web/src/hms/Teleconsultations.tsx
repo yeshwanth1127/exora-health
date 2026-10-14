@@ -57,7 +57,6 @@ export function Teleconsultations() {
     <>
       <PageTitle
         title="Teleconsultations"
-        description="Patient waiting, consent and the assigned doctor's video consultation."
       />
       <Input
         aria-label="Teleconsultation date"
@@ -101,7 +100,6 @@ export function Teleconsultations() {
           {result.data?.items.length === 0 && (
             <WorkspaceEmpty
               title={`No video visits for ${date}`}
-              description="Scheduled video appointments appear here. Booking availability, consent and the video connection are separate checks."
               action={
                 can("appointments.book")
                   ? {

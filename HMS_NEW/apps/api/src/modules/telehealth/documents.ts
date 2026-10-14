@@ -2,6 +2,7 @@
 // retired by administrators. The newest published, unretired version per language is what patients
 // and staff read; publishing a new version supersedes the previous one without editing it.
 import type { DB, Kysely } from '@hms/db';
+import { sql } from '@hms/db';
 import { conflict, notFound, pgCode, preconditionFailed, runCommand, runQuery } from '@hms/platform';
 import { clock, type Caller } from '../../caller.ts';
 
@@ -39,8 +40,8 @@ export async function draftConsentDocument(db: Kysely<DB>, caller: Caller, input
   });
 }
 
-export async function updateConsentDraft(db: Kysely<DB>, caller: Caller, input: { documentId: string; version: number; title?: string | undefined; body?: string | undefined }) {
-  return runCommand(db, { ...caller, module: 'clinical', name: 'clinical.update_consent_document' }, async (ctx) => {
+export async function updateConsentDraft(db: Kysely<DB>, caller: Caller, input: { documentId: string; version: number; title?: string | undefined; body?: string | undefined }, idempotencyKey?: string) {
+  return runCommand(db, { ...caller, module: 'clinical', name: 'clinical.update_consent_document', idempotencyKey, request: input }, async (ctx) => {
     const d = await ctx.tx.selectFrom('clinical.tele_consent_document').selectAll().where('id', '=', input.documentId).forUpdate().executeTakeFirst();
     if (!d) throw notFound('consent document', { documentId: input.documentId });
     if (d.published_at) throw preconditionFailed('a published document is frozen; draft a new version instead', { reason: 'published' });
@@ -53,9 +54,12 @@ export async function updateConsentDraft(db: Kysely<DB>, caller: Caller, input: 
 }
 
 /** Publishing makes it the current document for its language and retires the one it replaces. */
-export async function publishConsentDocument(db: Kysely<DB>, caller: Caller, input: { documentId: string }) {
+export async function publishConsentDocument(db: Kysely<DB>, caller: Caller, input: { documentId: string }, idempotencyKey?: string) {
   const now = clock(caller);
-  return runCommand(db, { ...caller, module: 'clinical', name: 'clinical.publish_consent_document' }, async (ctx) => {
+  return runCommand(db, { ...caller, module: 'clinical', name: 'clinical.publish_consent_document', idempotencyKey, request: input }, async (ctx) => {
+    // Distinct drafts must not both become current when administrators publish concurrently.
+    // One tenant lock also serializes publication against retirement without lock-order inversion.
+    await sql`SELECT pg_advisory_xact_lock(hashtextextended(${ctx.tenantId + ':consent-documents'}, 0))`.execute(ctx.tx);
     const d = await ctx.tx.selectFrom('clinical.tele_consent_document').selectAll().where('id', '=', input.documentId).forUpdate().executeTakeFirst();
     if (!d) throw notFound('consent document', { documentId: input.documentId });
     if (d.published_at) throw conflict('this document is already published', { reason: 'already_published' });
@@ -74,9 +78,10 @@ export async function publishConsentDocument(db: Kysely<DB>, caller: Caller, inp
 }
 
 /** Retiring the current document switches teleconsultation consent off until another is published. */
-export async function retireConsentDocument(db: Kysely<DB>, caller: Caller, input: { documentId: string; reason: string }) {
+export async function retireConsentDocument(db: Kysely<DB>, caller: Caller, input: { documentId: string; reason: string }, idempotencyKey?: string) {
   const now = clock(caller);
-  return runCommand(db, { ...caller, module: 'clinical', name: 'clinical.retire_consent_document' }, async (ctx) => {
+  return runCommand(db, { ...caller, module: 'clinical', name: 'clinical.retire_consent_document', idempotencyKey, request: input }, async (ctx) => {
+    await sql`SELECT pg_advisory_xact_lock(hashtextextended(${ctx.tenantId + ':consent-documents'}, 0))`.execute(ctx.tx);
     const d = await ctx.tx.selectFrom('clinical.tele_consent_document').selectAll().where('id', '=', input.documentId).forUpdate().executeTakeFirst();
     if (!d) throw notFound('consent document', { documentId: input.documentId });
     if (!d.published_at) throw preconditionFailed('only a published document can be retired', { reason: 'draft' });

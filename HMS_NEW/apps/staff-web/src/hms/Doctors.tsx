@@ -29,6 +29,7 @@ import {
 import { PageTitle } from "@/components/workspace";
 import { useCommand, useQuery, useWorkspace } from "./hooks";
 import { query, request } from "./client";
+import { CommandReceiptRecovery } from "./CommandReceiptRecovery";
 import { can as canAt, label, money, today } from "./model";
 import { requestLeave, useUnsaved } from "./leave";
 import {
@@ -40,7 +41,7 @@ import {
   refusal,
   rupeesToMinor,
 } from "./forms";
-import { Choice, Empty, ErrorMessage, Field, Hint, LoadingState } from "./ui";
+import { Choice, Empty, ErrorMessage, Field, Hint, LoadingState, Status } from "./ui";
 import { WorkspaceEmpty } from "./WorkspaceEmpty";
 import type {
   ClinicDirectory,
@@ -65,15 +66,18 @@ const REASONS: Record<string, string> = {
   slug_required: "A published profile needs a web address.",
   duplicate_slug: "Another doctor already uses that web address.",
 };
-function Refused({ cmd }: { cmd: ReturnType<typeof useCommand> }) {
+function Refused({ cmd, onConfirmed }: { cmd: ReturnType<typeof useCommand>; onConfirmed?: () => void }) {
   const reason = refusal(cmd.failure);
   return (
+    <>
+    <CommandReceiptRecovery command={cmd} onConfirmed={onConfirmed} />
     <ErrorMessage
       text={
         (reason && REASONS[reason]) ||
         (isStale(cmd.failure) ? REASONS.stale_version : cmd.error)
       }
     />
+    </>
   );
 }
 
@@ -105,7 +109,6 @@ export function Doctors() {
     <>
       <PageTitle
         title="Doctors"
-        description="Booking profiles, clinics, fees and calendars of the doctors at this clinic."
         action={
           can("catalog.manage") ? (
             <Button onClick={() => setAdding(true)}>
@@ -150,7 +153,7 @@ export function Doctors() {
                   </TableCell>
                   <TableCell>
                     {p.calendarId ? (
-                      "Calendar ready"
+                      <Status value="active" text="Calendar ready" />
                     ) : can("schedules.manage") ? (
                       <SetUpCalendar staffId={p.staffId} onDone={refresh} />
                     ) : (
@@ -178,7 +181,6 @@ export function Doctors() {
                   ? "Add your first doctor"
                   : "This clinic has no doctors set up"
               }
-              description="Connect a doctor to this clinic, then set their consultation and hours."
               action={
                 can("catalog.manage")
                   ? { label: "Add doctor", onClick: () => setAdding(true) }
@@ -191,12 +193,6 @@ export function Doctors() {
           )}
         </Card>
       </LoadingState>
-      <p className="mt-4 text-xs text-muted-foreground">
-        Fees are quoted for the services each doctor holds weekly hours for in
-        the next two weeks, exactly as booking prices them. Booking also needs a
-        compatible consultation, an effective fee and available published hours.
-        Review the booking flow before confirming.
-      </p>
       <Sheet
         open={!!selected}
         onOpenChange={(open) => {
@@ -282,7 +278,7 @@ function SetUpCalendar({
         <CalendarPlus />
         Set up calendar
       </Button>
-      <ErrorMessage text={cmd.error} />
+      <ErrorMessage text={cmd.error} /><CommandReceiptRecovery command={cmd} />
     </div>
   );
 }
@@ -659,6 +655,7 @@ function ProfileForm({
     bio: p?.bio ?? "",
     acceptsVirtual: p?.acceptsVirtual ?? false,
     publicSlug: p?.publicSlug ?? "",
+    publicPhotoUrl: p?.publicPhotoUrl ?? "",
     published: p?.published ?? false,
   };
   const [f, setF] = useState(start);
@@ -677,6 +674,7 @@ function ProfileForm({
       !/^[a-z0-9][a-z0-9-]{1,80}$/.test(f.publicSlug) &&
       "A web address uses lower-case letters, digits and -.",
     f.published && !f.publicSlug && "A published profile needs a web address.",
+    f.publicPhotoUrl && !(/^\/clients\/[A-Za-z0-9_./-]+$/.test(f.publicPhotoUrl) && !f.publicPhotoUrl.includes('..') || /^https:\/\//.test(f.publicPhotoUrl)) && "Use a /clients/ asset path or HTTPS image URL.",
   ].filter(Boolean) as string[];
   return (
     <form
@@ -694,6 +692,7 @@ function ProfileForm({
             bio: f.bio.trim() || null,
             acceptsVirtual: f.acceptsVirtual,
             publicSlug: f.publicSlug.trim() || null,
+            publicPhotoUrl: f.publicPhotoUrl.trim() || null,
             published: f.published,
           },
           false,
@@ -771,6 +770,9 @@ function ProfileForm({
             placeholder="dr-asha-rao"
             onChange={(e) => set("publicSlug")(e.target.value.toLowerCase())}
           />
+        </Field>
+        <Field title="Photo for the hospital website" id="doc-photo">
+          <Input id="doc-photo" value={f.publicPhotoUrl} placeholder="https://… or /clients/…" onChange={e=>set("publicPhotoUrl")(e.target.value)} />
         </Field>
         <div className="flex justify-between gap-4">
           <Label htmlFor="doc-published">Show on the hospital website</Label>
@@ -866,8 +868,7 @@ function ContactForm({
         </Field>
       </div>
       <p className="text-xs text-muted-foreground">
-        Work email: {d.email ?? "not recorded"} (tied to their sign-in; change
-        it in Workspace settings by inviting the new address).
+        Work email: {d.email ?? "not recorded"}
       </p>
       {phone && !E164.test(phone) && (
         <p className="text-sm text-destructive">
@@ -1125,12 +1126,6 @@ function DoctorFees({ staffId }: { staffId: string }) {
               Enter the fee in rupees, e.g. 800 or 750.50.
             </p>
           )}
-          <p className="text-xs text-muted-foreground">
-            Visits already booked keep the fee they were booked at.{" "}
-            {feeMinor === null
-              ? "Saving with no amount returns them to the service fee from that date."
-              : ""}
-          </p>
           <Refused cmd={cmd} />
           <Button
             type="submit"

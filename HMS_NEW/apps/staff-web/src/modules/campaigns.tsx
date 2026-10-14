@@ -102,11 +102,6 @@ export function Campaigns({
       )}
       <SectionTitle
         title="Campaigns"
-        description={
-          localMode
-            ? "Choose local administrative content, review consented recipients and approve a simulation. No provider delivery occurs."
-            : "Choose a message, pick your audience, and check a phone test before scheduling."
-        }
         action={
           <Button
             disabled={!canManage || !active}
@@ -233,13 +228,6 @@ export function Campaigns({
               ? "No matching campaigns"
               : "Your first campaign starts with a draft"
           }
-          description={
-            r.data?.length
-              ? "Try another status or campaign name."
-              : localMode
-                ? "Create local content, review it and check a local test record. Saving sends nothing."
-                : "Choose an approved message, review it and check a test on your phone. Saving a draft sends nothing."
-          }
         />
       )}
       <div className="mt-5 border-t pt-4">
@@ -256,11 +244,6 @@ export function Campaigns({
           <div className="mt-4">
             <SectionTitle
               title="Message templates"
-              description={
-                localMode
-                  ? "These are saved local content templates. They have no provider approval and cannot deliver messages."
-                  : "Only supported templates approved by Meta and synced within two hours can be selected."
-              }
               action={
                 <Button variant="outline" onClick={templates.refresh}>
                   <RefreshCw />
@@ -325,11 +308,6 @@ export function Campaigns({
                     localMode
                       ? "No local templates yet"
                       : "No templates synced yet"
-                  }
-                  description={
-                    localMode
-                      ? "Create local content above. It is never marked as Meta approved."
-                      : "Ask your administrator to connect the WhatsApp business account and sync Meta-approved templates."
                   }
                 />
               )}
@@ -551,11 +529,6 @@ function Composer({
             ? "Create local content first"
             : "An approved marketing template is needed first"
         }
-        description={
-          localMode
-            ? "Use Create local message template on the campaign page. Local templates do not claim Meta approval."
-            : "Templates must be approved, supported and freshly synced from Meta. You can still manage doctor content and reception."
-        }
       />
     );
   const templateOptions =
@@ -608,11 +581,6 @@ function Composer({
             <>
               <SectionTitle
                 title="Choose your message"
-                description={
-                  localMode
-                    ? "Use reviewed local wording. Fill only the declared editable fields. No provider approval is implied."
-                    : "Use the exact wording Meta approved. Fill only the template’s editable fields."
-                }
               />
               <Field
                 label="Campaign name"
@@ -764,11 +732,6 @@ function Composer({
             <>
               <SectionTitle
                 title="Audience & timing"
-                description={
-                  localMode
-                    ? "Only contacts with explicit marketing opt-in are included. Specialty interests must be voluntarily declared."
-                    : "Only patients who opted in to offers and match the template language are included."
-                }
               />
               <Choice
                 label="Clinic"
@@ -871,10 +834,6 @@ function Composer({
                     />
                   </Field>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  These are staff estimates, not a Meta billing cap. Actual
-                  provider charges can differ.
-                </p>
               </details>
               <div className="flex justify-between gap-3">
                 <Button variant="outline" onClick={() => setStep(0)}>
@@ -937,13 +896,6 @@ function Composer({
                       ? "Review a local test record"
                       : "Check a test on your phone"
                     : "Campaign summary"
-                }
-                description={
-                  draft?.status === "draft"
-                    ? localMode
-                      ? "Saving created a draft only. A configured test alias creates a local test record without delivery."
-                      : "Saving created a draft only. Send one test to a configured phone before approving patients."
-                    : "This campaign has already been reviewed or paused."
                 }
               />
               {draft?.status === "draft" ? (
@@ -1058,11 +1010,6 @@ function Composer({
             <>
               <SectionTitle
                 title="Review before approval"
-                description={
-                  localMode
-                    ? "This approval creates local queued records for the exact consented audience shown. It does not send messages."
-                    : "This approval creates queued messages for the exact audience shown here."
-                }
               />
               {preview && (
                 <Card className="bg-muted/30">
@@ -1204,16 +1151,6 @@ function Composer({
                 ))}
             </div>
           </div>
-          <p className="text-[11px] text-muted-foreground leading-relaxed mt-3">
-            Approximate layout; WhatsApp controls the final look. Saving or
-            viewing this draft does not send a message.
-          </p>
-          {readonly && (
-            <p className="text-xs text-muted-foreground mt-4">
-              Saved drafts are fixed for review. To change the message or
-              audience, create a new draft.
-            </p>
-          )}
         </aside>
       </div>
     </>

@@ -1,3 +1,4 @@
+import { lockCalendar } from './calendar-lock.ts';
 // Doctor calendars: the practitioner's bookable calendar, weekly sessions, leave/blocks/extra hours,
 // facility holidays and one-day plans.
 import { sql, type DB, type Kysely, type Transaction } from '@hms/db';
@@ -80,6 +81,7 @@ export async function previewClosure(db: Kysely<DB>, caller: Caller, input: Clos
 
 export async function createPractitionerCalendar(db: Kysely<DB>, caller: Caller, input: { staffId: string }) {
   return runCommand(db, { ...caller, module: 'booking', name: 'booking.create_practitioner_calendar', request: input }, async (ctx) => {
+    await lockCalendar(ctx.tx,ctx.tenantId);
     const staff = await ctx.tx
       .selectFrom('platform.staff')
       .select(['id', 'display_name', 'status'])
@@ -118,6 +120,7 @@ export async function addWeeklySession(db: Kysely<DB>, caller: Caller, input: We
   if (!Number.isInteger(input.weekday) || input.weekday < 1 || input.weekday > 7) throw invalid('weekday must be 1 (Mon) … 7 (Sun)');
   if (!TIME.test(input.start) || !TIME.test(input.end) || input.end <= input.start) throw invalid('start/end must be HH:MM with end after start');
   return runCommand(db, { ...caller, module: 'booking', name: 'booking.add_weekly_session', request: input, idempotencyKey }, async (ctx) => {
+    await lockCalendar(ctx.tx,ctx.tenantId);
     const resourceId = await practitionerResourceId(ctx.tx, input.staffId);
     // A doctor can only hold sessions where they are affiliated.
     const affiliated = await ctx.tx
@@ -160,6 +163,7 @@ export async function addWeeklySession(db: Kysely<DB>, caller: Caller, input: We
 
 export async function endWeeklySession(db: Kysely<DB>, caller: Caller, input: { scheduleRuleId: string; effectiveTo: string }) {
   return runCommand(db, { ...caller, module: 'booking', name: 'booking.end_weekly_session', request: input }, async (ctx) => {
+    await lockCalendar(ctx.tx,ctx.tenantId);
     const row = await ctx.tx
       .updateTable('booking.schedule_rule')
       .set({ effective_to: input.effectiveTo })
@@ -194,6 +198,7 @@ export async function addScheduleException(db: Kysely<DB>, caller: Caller, input
   if (input.kind === 'extra_hours' && (!input.facilityId || !input.start || !Number.isInteger(input.slotMinutes) || input.slotMinutes! < 5 || input.slotMinutes! > 240)) throw invalid('extra hours require a clinic, time window and slot length of 5–240 minutes');
   if (input.visitMode !== undefined && (input.kind !== 'extra_hours' || !['in_person', 'virtual'].includes(input.visitMode))) throw invalid('visitMode applies only to extra hours and must be in_person or virtual');
   return runCommand(db, { ...caller, module: 'booking', name: 'booking.add_schedule_exception', request: input, idempotencyKey }, async (ctx) => {
+    await lockCalendar(ctx.tx,ctx.tenantId);
     const resourceId = await practitionerResourceId(ctx.tx, input.staffId);
     if (input.facilityId) {
       const affiliated = await ctx.tx
@@ -235,6 +240,7 @@ export async function addScheduleException(db: Kysely<DB>, caller: Caller, input
 
 export async function addFacilityHoliday(db: Kysely<DB>, caller: Caller, input: { facilityId: string; date: string; name: string }, idempotencyKey?: string) {
   return runCommand(db, { ...caller, module: 'booking', name: 'booking.add_facility_holiday', request: input, idempotencyKey }, async (ctx) => {
+    await lockCalendar(ctx.tx,ctx.tenantId);
     try {
       const { id } = await ctx.tx
         .insertInto('booking.facility_holiday')
@@ -284,6 +290,7 @@ export async function saveDayPlan(db: Kysely<DB>, caller: Caller, input: DayPlan
   const sorted = [...input.blocks].sort((x, y) => (x.start < y.start ? -1 : 1));
   for (let i = 1; i < sorted.length; i++) if (sorted[i]!.start < sorted[i - 1]!.end) throw invalid('day plan blocks overlap');
   return runCommand(db, { ...caller, module: 'booking', name: 'booking.save_day_plan', request: input, idempotencyKey }, async (ctx) => {
+    await lockCalendar(ctx.tx,ctx.tenantId);
     const resourceId = await practitionerResourceId(ctx.tx, input.staffId);
     // Lock the calendar so two editors can't both save "revision N+1".
     await ctx.tx.selectFrom('booking.schedulable_resource').select('id').where('id', '=', resourceId).forUpdate().execute();
@@ -367,20 +374,21 @@ export async function scheduleExceptionScope(db: Kysely<DB>, caller: Caller, sch
   );
 }
 
-export async function revokeScheduleException(db: Kysely<DB>, caller: Caller, input: { scheduleExceptionId: string; reason: string }) {
+export async function revokeScheduleException(db: Kysely<DB>, caller: Caller, input: { scheduleExceptionId: string; reason: string }, idempotencyKey?: string) {
   if (input.reason.trim().length < 3) throw invalid('a reason is required');
   const now = clock(caller);
-  return runCommand(db, { ...caller, module: 'booking', name: 'booking.revoke_schedule_exception', request: input }, async (ctx) => {
-    const row = await ctx.tx.selectFrom('booking.schedule_exception').select(['id', 'revoked_at']).where('id', '=', input.scheduleExceptionId).forUpdate().executeTakeFirst();
+  return runCommand(db, { ...caller, module: 'booking', name: 'booking.revoke_schedule_exception', idempotencyKey, request: input }, async (ctx) => {
+    await lockCalendar(ctx.tx,ctx.tenantId);
+    const row = await ctx.tx.selectFrom('booking.schedule_exception').select(['id', 'revoked_at', 'revoked_by']).where('id', '=', input.scheduleExceptionId).forUpdate().executeTakeFirst();
     if (!row) throw notFound('schedule exception', input);
-    if (row.revoked_at) return { scheduleExceptionId: row.id, revokedAt: row.revoked_at };
+    if (row.revoked_at) return { scheduleExceptionId: row.id, revokedAt: row.revoked_at, revokedByStaffId: row.revoked_by };
     await ctx.tx
       .updateTable('booking.schedule_exception')
       .set({ revoked_at: now, revoked_by: ctx.actor.staffId ?? null, revoke_reason: input.reason.trim() })
       .where('id', '=', row.id)
       .execute();
     ctx.audit({ action: 'status_change', subjectType: 'booking.schedule_exception', subjectId: row.id, reason: input.reason.trim() });
-    return { scheduleExceptionId: row.id, revokedAt: now };
+    return { scheduleExceptionId: row.id, revokedAt: now, revokedByStaffId: ctx.actor.staffId ?? null };
   });
 }
 
@@ -401,20 +409,21 @@ export async function holidayFacility(db: Kysely<DB>, caller: Caller, facilityHo
   return runQuery(db, caller.tenantId, async (tx) => (await tx.selectFrom('booking.facility_holiday').select('facility_id').where('id', '=', facilityHolidayId).executeTakeFirst())?.facility_id);
 }
 
-export async function revokeFacilityHoliday(db: Kysely<DB>, caller: Caller, input: { facilityHolidayId: string; reason: string }) {
+export async function revokeFacilityHoliday(db: Kysely<DB>, caller: Caller, input: { facilityHolidayId: string; reason: string }, idempotencyKey?: string) {
   if (input.reason.trim().length < 3) throw invalid('a reason is required');
   const now = clock(caller);
-  return runCommand(db, { ...caller, module: 'booking', name: 'booking.revoke_facility_holiday', request: input }, async (ctx) => {
-    const row = await ctx.tx.selectFrom('booking.facility_holiday').select(['id', 'revoked_at']).where('id', '=', input.facilityHolidayId).forUpdate().executeTakeFirst();
+  return runCommand(db, { ...caller, module: 'booking', name: 'booking.revoke_facility_holiday', idempotencyKey, request: input }, async (ctx) => {
+    await lockCalendar(ctx.tx,ctx.tenantId);
+    const row = await ctx.tx.selectFrom('booking.facility_holiday').select(['id', 'revoked_at', 'revoked_by']).where('id', '=', input.facilityHolidayId).forUpdate().executeTakeFirst();
     if (!row) throw notFound('facility holiday', input);
-    if (row.revoked_at) return { facilityHolidayId: row.id, revokedAt: row.revoked_at };
+    if (row.revoked_at) return { facilityHolidayId: row.id, revokedAt: row.revoked_at, revokedByStaffId: row.revoked_by };
     await ctx.tx
       .updateTable('booking.facility_holiday')
       .set({ revoked_at: now, revoked_by: ctx.actor.staffId ?? null, revoke_reason: input.reason.trim() })
       .where('id', '=', row.id)
       .execute();
     ctx.audit({ action: 'status_change', subjectType: 'booking.facility_holiday', subjectId: row.id, reason: input.reason.trim() });
-    return { facilityHolidayId: row.id, revokedAt: now };
+    return { facilityHolidayId: row.id, revokedAt: now, revokedByStaffId: ctx.actor.staffId ?? null };
   });
 }
 
@@ -540,6 +549,7 @@ export async function replaceWeeklyPlan(db: Kysely<DB>, caller: Caller, input: W
   const now = clock(caller);
   try {
     return await runCommand(db, { ...caller, module: 'booking', name: 'booking.replace_weekly_plan', request: input, idempotencyKey: opts.dryRun ? undefined : opts.idempotencyKey }, async (ctx) => {
+    await lockCalendar(ctx.tx,ctx.tenantId);
       const tx = ctx.tx;
       const resourceId = await practitionerResourceId(tx, input.staffId);
       await tx.selectFrom('booking.schedulable_resource').select('id').where('id', '=', resourceId).forUpdate().execute();

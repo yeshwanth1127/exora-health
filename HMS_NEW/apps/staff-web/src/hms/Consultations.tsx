@@ -64,7 +64,6 @@ export function Consultations() {
     return (
       <FullPage
         title="Create unbooked visit"
-        description="For care without an appointment. Existing bookings are managed separately."
         back="Back to consultations"
         onBack={close}
       >
@@ -90,7 +89,6 @@ export function Consultations() {
             ? "Visit summary"
             : "Consultation"
         }
-        description={`${selected.encounterNo} · ${selected.attendingName} · Consultation`}
         back="Back to consultations"
         onBack={close}
       >
@@ -109,7 +107,6 @@ export function Consultations() {
             ? "Visit summary"
             : "Consultation"
         }
-        description="One visit: clinical notes, findings and outcome."
         back="Back to consultations"
         onBack={close}
       >
@@ -150,7 +147,6 @@ export function Consultations() {
     <>
       <PageTitle
         title="Consultations"
-        description="Treat patients who are here now. Open a visit, save and sign notes, then complete it."
         action={
           can("encounters.manage") &&
           can("clinical.read") &&
@@ -162,14 +158,16 @@ export function Consultations() {
           ) : undefined
         }
       />
-      <div className="flex gap-3 mb-5">
-        <Input
-          aria-label="Consultation date"
-          type="date"
-          className="w-44"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
+      <div className="flex items-end gap-3 mb-5">
+        <label className="space-y-2 text-sm font-medium">
+          <span className="block">Date</span>
+          <Input
+            type="date"
+            className="w-44"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+        </label>
         <div className="w-48">
           <Choice
             label="Visit status"
@@ -247,11 +245,6 @@ export function Consultations() {
                 patientId || status !== "all"
                   ? "No visits match this patient, status and date"
                   : "No visits to work on"
-              }
-              description={
-                patientId || status !== "all"
-                  ? "Choose another patient, status or date. A filtered list does not show every visit at this clinic."
-                  : "Check in a booked patient or record a walk-in arrival first. Newly checked-in visits may take a moment to appear."
               }
               action={
                 can("appointments.read")
@@ -476,11 +469,11 @@ function Encounter({
                   <h2 className="text-lg font-semibold">
                     {active ? "Visit note" : "Saved visit notes"}
                   </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {active
-                      ? "Write the visit note, save it as a draft, then sign it. Complete the visit after all drafts are resolved."
-                      : "This visit is closed. Saved notes can be reviewed here; start a new visit to record today’s care."}
-                  </p>
+                  {!active && (
+                    <p className="text-sm text-muted-foreground">
+                      This visit is closed.
+                    </p>
+                  )}
                   {assignedDoctor &&
                     can("encounters.manage") &&
                     result.data.encounter.status === "arrived" && (
@@ -692,9 +685,6 @@ function Encounter({
                 className="max-w-3xl rounded-lg border p-5 space-y-5"
               >
                 <h2 className="text-lg font-semibold">Complete visit</h2>
-                <p className="text-sm text-muted-foreground">
-                  Review what has been saved before closing the consultation.
-                </p>
                 <dl className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <dt>Signed notes</dt>
@@ -797,10 +787,6 @@ function Encounter({
                               />
                             </Field>
                           )}
-                          <p className="text-xs text-muted-foreground">
-                            Completing this visit closes the consultation and
-                            updates any linked appointment and queue entry.
-                          </p>
                           <Button
                             type="submit"
                             disabled={cmd.busy || cmd.unknown}
@@ -1052,10 +1038,6 @@ function NoteEditor({
               <summary className="cursor-pointer py-2 text-muted-foreground">
                 Correct a saved note
               </summary>
-              <p className="text-xs text-muted-foreground py-2">
-                Mark a note entered in error with a reason. The original stays
-                in the record.
-              </p>
               <Button variant="outline" onClick={() => setVoiding(true)}>
                 Mark entered in error
               </Button>
@@ -1128,10 +1110,6 @@ function Vitals({
       >
         Save vitals
       </Button>
-      <p className="text-xs text-muted-foreground">
-        Using the seeded pilot definitions. Clinic-specific vital definitions
-        are pending.
-      </p>
     </form>
   );
 }

@@ -12,11 +12,14 @@ import {
   SupportCaseStatusSchema,
   WhatsAppUploadSchema,
   MessageTemplateCreateSchema,
+  MessageTemplateEditSchema,
   CampaignCreateSchema,
   CampaignApproveSchema,
   CampaignTestSchema,
   ContactInterestSchema,
   WhatsAppSettingsUpsertSchema,
+  TemplateProviderStatusInputSchema,
+  TemplateSubmissionInputSchema,
 } from '@hms/contracts';
 import { authorize, grantedFacilities } from '../../auth/principal.ts';
 import { contactOwner } from '../../modules/comms/notifications.ts';
@@ -38,6 +41,8 @@ import {
   uploadAsset,
   templates,
   createTemplate,
+  editTemplate,
+  templateFacility,
   campaigns,
   campaignFacility,
   createCampaign,
@@ -46,9 +51,13 @@ import {
   declareInterest,
   deliveryHistory,
   storeWhatsAppCallback,
+  validateWhatsAppAccountBinding,
 } from '../../modules/comms/whatsapp.ts';
+import { decodeWhatsAppWebhook } from '../../modules/comms/whatsapp-webhook.ts';
+import { checkTemplateProviderStatus } from '../../modules/comms/template-provider-status.ts';
+import { submitTemplate, listTemplateSubmissions } from '../../modules/comms/template-submissions.ts';
 import { callerOf, idempotencyKey, parse, principalOf, uuid } from '../support.ts';
-export function registerWhatsAppRoutes(app: FastifyInstance, db: Kysely<DB>) {
+export function registerWhatsAppRoutes(app: FastifyInstance, db: Kysely<DB>, options:{templateFetcher?:typeof fetch} = {}) {
   const scoped = (request: any, permission: string, facilityId: string) =>
     authorize(principalOf(request), permission, facilityId);
   const reveal = (request: any, facilityId: string) => {
@@ -101,7 +110,7 @@ export function registerWhatsAppRoutes(app: FastifyInstance, db: Kysely<DB>) {
     scoped(request, 'comms.read', facility);
     return thread(db, callerOf(request), id, reveal(request, facility));
   });
-  for (const action of ['assign', 'close', 'reply'] as const)
+  for (const action of ['assign', 'close', 'reply', 'handoff', 'resume'] as const)
     app.post(`/v1/conversations/:id/${action}`, async (request) => {
       const { id } = parse(z.object({ id: uuid }), request.params);
       const input =
@@ -163,6 +172,36 @@ export function registerWhatsAppRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const input = parse(MessageTemplateCreateSchema, request.body);
     scoped(request, 'comms.manage', input.facilityId);
     return createTemplate(db, callerOf(request), input, idempotencyKey(request));
+  });
+  app.patch('/v1/message-templates/:templateId', async request => {
+    const { templateId } = parse(z.object({ templateId: uuid }), request.params);
+    const input = parse(MessageTemplateEditSchema, request.body);
+    const actualFacility = await templateFacility(db, callerOf(request), templateId);
+    scoped(request, 'comms.manage', actualFacility);
+    if (actualFacility !== input.facilityId) throw invalid('Template belongs to another clinic');
+    return editTemplate(db, callerOf(request), templateId, input, idempotencyKey(request));
+  });
+  app.post('/v1/message-templates/:templateId/provider-status',async request => {
+    const {templateId}=parse(z.object({templateId:uuid}),request.params);
+    const input=parse(TemplateProviderStatusInputSchema,request.body);
+    const actual=await templateFacility(db,callerOf(request),templateId);
+    scoped(request,'comms.manage',actual);
+    if(actual!==input.facilityId)throw invalid('Template belongs to another clinic');
+    return checkTemplateProviderStatus(db,callerOf(request),templateId,input,idempotencyKey(request),{fetcher:options.templateFetcher});
+  });
+  app.post('/v1/message-templates/:templateId/submissions',async request=>{
+    const {templateId}=parse(z.object({templateId:uuid}),request.params);
+    const input=parse(TemplateSubmissionInputSchema,request.body);
+    const actual=await templateFacility(db,callerOf(request),templateId);
+    scoped(request,'comms.manage',actual);
+    if(actual!==input.facilityId)throw invalid('Template belongs to another clinic');
+    return submitTemplate(db,callerOf(request),templateId,input,idempotencyKey(request));
+  });
+  app.get('/v1/message-templates/:templateId/submissions',async request=>{
+    const {templateId}=parse(z.object({templateId:uuid}),request.params);
+    const actual=await templateFacility(db,callerOf(request),templateId);
+    scoped(request,'comms.read',actual);
+    return listTemplateSubmissions(db,callerOf(request),templateId);
   });
   app.post('/v1/message-templates/sync', async (request) => {
     const { facilityId } = parse(z.object({ facilityId: uuid }), request.body);
@@ -241,9 +280,8 @@ export function registerWhatsAppRoutes(app: FastifyInstance, db: Kysely<DB>) {
     });
     webhook.post('/v1/integrations/whatsapp/webhook', async (request) => {
       const secret = process.env.WA_APP_SECRET,
-        phone = process.env.WA_PHONE_NUMBER_ID,
         raw = request.body;
-      if (!secret || !phone || !Buffer.isBuffer(raw)) throw forbidden('WhatsApp webhook is not configured');
+      if (!secret || !Buffer.isBuffer(raw)) throw forbidden('WhatsApp webhook is not configured');
       const sig = request.headers['x-hub-signature-256'];
       if (typeof sig !== 'string' || !/^sha256=[a-f0-9]{64}$/.test(sig)) throw forbidden('invalid webhook signature');
       const expected = createHmac('sha256', secret).update(raw).digest(),
@@ -255,13 +293,11 @@ export function registerWhatsAppRoutes(app: FastifyInstance, db: Kysely<DB>) {
       } catch {
         throw invalid('invalid JSON');
       }
-      const values = (body.entry ?? []).flatMap((entry: any) =>
-        (entry.changes ?? []).map((change: any) => change.value),
-      );
-      if (!values.length) throw invalid('missing provider event');
-      if (values.some((value: any) => value?.metadata?.phone_number_id !== phone))
-        throw forbidden('unknown phone number account');
-      for (const value of values) await storeWhatsAppCallback(db, phone, value);
+      const values = decodeWhatsAppWebhook(body);
+      // Reject unknown/staff-reassigned accounts before storing any part of a batch.
+      for (const { binding } of values) await validateWhatsAppAccountBinding(db, binding);
+      for (const { binding, value } of values)
+        await storeWhatsAppCallback(db, binding.phoneNumberId, value, binding);
       return { accepted: true };
     });
   });

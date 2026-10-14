@@ -254,9 +254,6 @@ export function ScheduleRangeActions({
                 />
               </Field>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Use any minute. 10:00 = 10 AM · 14:00 = 2 PM · 19:00 = 7 PM.
-            </p>
             <Choice
               label="Visit type"
               value={mode}
@@ -508,11 +505,6 @@ function OpenRange({ range, branch, mode, start, end, saved, valid }: Context) {
         disabled={command.busy || command.unknown}
         className="space-y-4 min-w-0"
       >
-        <p className="text-sm text-muted-foreground">
-          Open or extend hours for this date only. Already-open hours are kept;
-          only missing ranges are added. Use Unblock to reopen an existing
-          block.
-        </p>
         <Choice
           label="Standard patient slot length"
           value={String(minutes)}

@@ -1,5 +1,5 @@
 import { LiveBookingEntry } from "./components/booking/LiveBookingEntry";
-import { demoBookingEnabled } from './data/clientBrand';
+import { demoBookingEnabled, hmsBookingEnabled } from './data/clientBrand';
 import { lazy, Suspense, useState, useEffect, useLayoutEffect } from 'react';
 import { Settings } from 'lucide-react';
 import { TiaInspiredHeader } from './components/variants/TiaInspiredHeader';
@@ -39,6 +39,10 @@ import { Doctor } from './types';
 import { DOCTOR_PROFILES } from './data/doctorProfiles';
 import { VoiceAgentLauncher } from './components/voice/VoiceAgentLauncher';
 import { authApi } from './lib/auth';
+import { createPublicBookingApi, exactWebsiteDoctor, type PublicCatalog } from './lib/publicBookingApi';
+import { HmsDoctorDirectory } from './components/doctor/HmsDoctorDirectory';
+import { HmsDoctorProfile } from './components/doctor/HmsDoctorProfile';
+import { scheduleProfile } from './lib/hmsAvailability';
 
 import { lockActiveSection } from './components/common/navigation';
 import { updateSeo } from './seo';
@@ -110,6 +114,15 @@ function scrollToPageTop() {
 }
 
 export function App() {
+  const [publicCatalog, setPublicCatalog] = useState<PublicCatalog | null>(null), [rosterLoading, setRosterLoading] = useState(hmsBookingEnabled()), [rosterError, setRosterError] = useState(''), [rosterReload, setRosterReload] = useState(0);
+  useEffect(() => {
+    if (!hmsBookingEnabled()) return;
+    const controller = new AbortController();
+    setRosterLoading(true); setRosterError(''); setPublicCatalog(null);
+    createPublicBookingApi().catalog(controller.signal).then((catalog) => { if (!controller.signal.aborted) setPublicCatalog(catalog); }).catch((error) => { if (!controller.signal.aborted) setRosterError(error instanceof Error ? error.message : 'Could not load hospital doctors.'); }).finally(() => { if (!controller.signal.aborted) setRosterLoading(false); });
+    return () => controller.abort();
+  }, [rosterReload]);
+  const rosterProps = { roster: publicCatalog?.doctors ?? [], clinicName: publicCatalog?.clinicName ?? 'Sri Lakshmi Hospital', loading: rosterLoading, error: rosterError, onRetry: () => setRosterReload((value) => value + 1) };
   const [currentView, setCurrentView] = useState<Page>('home');
   const [selectedDoctorDetailId, setSelectedDoctorDetailId] = useState<string>('doc-1');
   const [doctorReturnView, setDoctorReturnView] = useState<'home' | 'doctors' | 'department' | 'search-results' | 'location'>('doctors');
@@ -135,6 +148,7 @@ export function App() {
   } | null>(null);
   const [user, setUser] = useState<{ name: string; identifier: string } | null>(null);
   useEffect(() => {
+    if (hmsBookingEnabled()) return;
     authApi.me().then((actor) => {
       if (actor.role === 'patient') setUser({ name: actor.display_name, identifier: actor.user_id });
     }).catch(() => undefined);
@@ -194,8 +208,8 @@ export function App() {
       doctor: selectedDoctorDetailId,
       branch: selectedBranchId,
       legal: selectedLegalDocId,
-    });
-  }, [currentView, selectedPostId, selectedDepartmentId, selectedDoctorDetailId, selectedBranchId, selectedLegalDocId]);
+    }, publicCatalog?.doctors);
+  }, [currentView, selectedPostId, selectedDepartmentId, selectedDoctorDetailId, selectedBranchId, selectedLegalDocId, publicCatalog]);
 
   const routeDetailId = currentView === 'department' ? selectedDepartmentId
     : currentView === 'doctor-detail' ? selectedDoctorDetailId
@@ -402,7 +416,7 @@ export function App() {
         const nameMatches = requestedName ? DOCTOR_PROFILES.filter(doctor => doctor.name.toLowerCase() === requestedName) : [];
         const rawDoctor = params.get('doctor') || params.get('id') || pathEntityId || (nameMatches.length === 1 ? nameMatches[0].id : undefined);
         const validDoctor = DOCTOR_PROFILES.some(d => d.id === rawDoctor) ? rawDoctor : (DOCTOR_PROFILES[0]?.id || 'doc-1');
-        setScheduleDoctorId(validDoctor!);
+        setScheduleDoctorId(hmsBookingEnabled() ? (params.get('doctor') || params.get('id') || pathEntityId || '') : validDoctor!);
         const stepParam = params.get('step');
         if (stepParam === '2') {
           setScheduleInitialStep(2);
@@ -440,6 +454,7 @@ export function App() {
     extraDate?: string,
     extraSlot?: string
   ) => {
+    if (hmsBookingEnabled() && !window.dispatchEvent(new Event('hms-booking-leave', { cancelable: true }))) return;
     setCurrentView(page);
     if (page === 'blog-post' && extraId) setSelectedPostId(extraId);
     if (page === 'legal-doc' && extraId) setSelectedLegalDocId(extraId);
@@ -449,7 +464,7 @@ export function App() {
       if (extraId) setSelectedDoctorDetailId(extraId);
     }
     if (page === 'schedule-appointment') {
-      if (extraId) setScheduleDoctorId(extraId);
+      if (extraId || hmsBookingEnabled()) setScheduleDoctorId(extraId ?? '');
       if (extraStep) setScheduleInitialStep(extraStep);
       setSchedulePrefillDate(extraDate);
       setSchedulePrefillSlot(extraSlot);
@@ -520,7 +535,10 @@ export function App() {
   ) => {
     const currentFamily = pageFamilyMap[currentView] || 'home';
     trackBookingIntent(currentFamily, ctaPlacement);
-    if (!doctorId || !DOCTOR_PROFILES.some(profile => profile.id === doctorId)) {
+    if (hmsBookingEnabled() && !doctorId) {
+      setSearchResultsFilter({careType:'In-person'});setAiQuery('');navigateToPage('search-results');return;
+    }
+    if (!hmsBookingEnabled() && (!doctorId || !DOCTOR_PROFILES.some(profile => profile.id === doctorId))) {
       navigateToPage('doctors');
       return;
     }
@@ -646,7 +664,7 @@ export function App() {
     let detectedDept = 'general-medicine';
 
     if (
-      lower.includes('ear') ||
+      /\bear\b/.test(lower) ||
       lower.includes('hearing') ||
       lower.includes('nose') ||
       lower.includes('sinus') ||
@@ -716,14 +734,15 @@ export function App() {
       detectedDept = 'neurology';
     }
 
-    const matchedDoctor = doctors.find(doctor => doctor.departmentId === detectedDept);
+    const matchedDoctor = hmsBookingEnabled() ? undefined : doctors.find(doctor => doctor.departmentId === detectedDept);
     setAiRecommendation(matchedDoctor ? {
       query: queryText,
       matchedDoctor,
       clinicalReasoning: `${matchedDoctor.name} is listed by the hospital under ${matchedDoctor.departmentName}. Contact reception to confirm the right specialist and availability.`,
     } : null);
     setSelectedDepartmentId(detectedDept);
-    navigateToPage('department', detectedDept);
+    if(hmsBookingEnabled()){setAiQuery(queryText);setSearchResultsFilter({careType:'In-person',specialtyId:detectedDept});navigateToPage('search-results',detectedDept);}
+    else navigateToPage('department', detectedDept);
   };
 
   // Non-home views share the site header, footer and modals below; this picks the page body.
@@ -731,8 +750,8 @@ export function App() {
     const missingDetail = (currentView === 'blog-post' && !BLOG_POSTS.some(post => post.id === selectedPostId))
       || (currentView === 'legal-doc' && !ALL_LEGAL_DOCS[selectedLegalDocId])
       || (currentView === 'department' && !departments.some(department => department.id === selectedDepartmentId))
-      || (currentView === 'doctor-detail' && !DOCTOR_PROFILES.some(doctor => doctor.id === selectedDoctorDetailId))
-      || (currentView === 'schedule-appointment' && !DOCTOR_PROFILES.some(doctor => doctor.id === scheduleDoctorId))
+      || (!hmsBookingEnabled() && currentView === 'doctor-detail' && !DOCTOR_PROFILES.some(doctor => doctor.id === selectedDoctorDetailId))
+      || (!hmsBookingEnabled() && currentView === 'schedule-appointment' && !DOCTOR_PROFILES.some(doctor => doctor.id === scheduleDoctorId))
       || (currentView === 'location' && !branches.some(branch => branch.id === selectedBranchId));
     if (missingDetail || currentView === 'not-found') {
       return <PageNotFound onGoHome={() => navigateToPage('home')} />;
@@ -796,7 +815,9 @@ export function App() {
         return (
           <DepartmentPage
             departmentId={selectedDepartmentId}
-            aiRecommendation={aiRecommendation}
+            aiRecommendation={hmsBookingEnabled() ? null : aiRecommendation}
+            roster={hmsBookingEnabled() ? rosterProps.roster : undefined}
+            rosterClinicName={publicCatalog?.clinicName}
             onBackToHome={() => navigateToPage('home')}
             onBackToDepartments={() => navigateToPage('departments')}
             onViewDoctor={(id) => {
@@ -810,11 +831,12 @@ export function App() {
               navigateToPage('department', deptId);
             }}
             onBookDoctor={(doctorId) => startBooking(doctorId, undefined, undefined, 'department_doctor_card')}
-            onOpenBooking={(placement) => startBooking(doctors.find(doctor => doctor.departmentId === selectedDepartmentId)?.id, undefined, undefined, placement || 'department_hero')}
+            onOpenBooking={(placement) => startBooking(hmsBookingEnabled() ? undefined : doctors.find(doctor => doctor.departmentId === selectedDepartmentId)?.id, undefined, undefined, placement || 'department_hero')}
           />
         );
       }
       case 'doctors': {
+        if (hmsBookingEnabled()) return <HmsDoctorDirectory {...rosterProps} onBackToHome={() => navigateToPage('home')} onSelectDoctor={(id) => { setDoctorReturnView('doctors'); navigateToPage('doctor-detail', id); }} onBookDoctor={(id) => startBooking(id)} onExploreDepartments={() => navigateToPage('departments')} />;
         return <DoctorsDirectoryPage
           onBackToHome={() => navigateToPage('home')}
           onSelectDoctor={(id) => {
@@ -829,6 +851,9 @@ export function App() {
       case 'locations':
       case 'location': {
         return <LocationsPage
+          roster={hmsBookingEnabled() ? rosterProps.roster : undefined}
+          rosterClinicName={publicCatalog?.clinicName}
+          rosterBranchId={publicCatalog?.websiteBranchId ?? undefined}
           selectedBranchId={currentView === 'location' ? selectedBranchId : undefined}
           onBackToHome={() => navigateToPage('home')}
           onBackToLocations={() => navigateToPage('locations')}
@@ -872,9 +897,14 @@ export function App() {
         return <InsuranceAccessPage user={user} onBackToHome={() => navigateToPage('home')} onOpenLogin={openLogin} onViewPricing={() => navigateToPage('insurance-pricing')} />;
       // Render dedicated Doctor Search Results Page
       case 'search-results': {
+        if(hmsBookingEnabled() && !publicCatalog)return <div className="max-w-7xl mx-auto px-8 py-12" role={rosterError?'alert':'status'}>{rosterError || 'Loading hospital doctors…'}{rosterError && <button type="button" className="ml-4 underline" onClick={rosterProps.onRetry}>Try again</button>}</div>;
         const ResultsPage = designMode === 'original' ? OriginalSearchResultsPage : SearchResultsPage;
         return (
           <ResultsPage
+            catalog={hmsBookingEnabled() ? publicCatalog ?? undefined : undefined}
+            rosterLoading={rosterLoading}
+            rosterError={rosterError}
+            onRosterRetry={rosterProps.onRetry}
             careType={searchResultsFilter.careType}
             specialtyId={searchResultsFilter.specialtyId}
             dateTime={searchResultsFilter.dateTime}
@@ -903,6 +933,7 @@ export function App() {
       }
       // Render dedicated Doctor Profile Page (matching reference screenshots media_1790073472687.png etc)
       case 'doctor-detail': {
+        if (hmsBookingEnabled()) return <HmsDoctorProfile {...rosterProps} doctor={exactWebsiteDoctor(rosterProps.roster, selectedDoctorDetailId)} onBackToSearch={() => navigateToPage('doctors')} onBackToHome={() => navigateToPage('home')} onScheduleAppointment={(id) => startBooking(id)} />;
         return (
           <DoctorDetailPage
             doctorId={selectedDoctorDetailId}
@@ -918,14 +949,19 @@ export function App() {
       }
       // Render dedicated 1:1 Schedule Appointment Flow (Steps 1, 2, 3 matching reference screenshots)
       case 'schedule-appointment': {
-        const matchedProfile = DOCTOR_PROFILES.find((p) => p.id === scheduleDoctorId) || DOCTOR_PROFILES[0];
-        if (!demoBookingEnabled() && new URLSearchParams(window.location.search).get('booking_preview') !== 'true') {
+        if(hmsBookingEnabled() && !publicCatalog)return <div className="max-w-7xl mx-auto px-8 py-12" role={rosterError?'alert':'status'}>{rosterError || 'Loading hospital booking…'}{rosterError && <button type="button" onClick={rosterProps.onRetry}>Try again</button>}</div>;
+        const publishedDoctor=publicCatalog ? exactWebsiteDoctor(publicCatalog.doctors,scheduleDoctorId) : undefined;
+        if(hmsBookingEnabled() && !publishedDoctor)return <div className="max-w-7xl mx-auto px-8 py-12"><p>This doctor is not currently published for online booking.</p><button type="button" onClick={()=>startBooking()}>Choose a doctor</button></div>;
+        const matchedProfile = hmsBookingEnabled() ? scheduleProfile(publishedDoctor!,publicCatalog!) : DOCTOR_PROFILES.find((p) => p.id === scheduleDoctorId) || DOCTOR_PROFILES[0];
+        if (!hmsBookingEnabled() && !demoBookingEnabled() && new URLSearchParams(window.location.search).get('booking_preview') !== 'true') {
           const requestedDoctor = new URLSearchParams(window.location.search).get('doctor') ?? window.location.pathname.split('/')[2];
           return <LiveBookingEntry doctorName={DOCTOR_PROFILES.find(p => p.id === requestedDoctor)?.name} />;
         }
         const AppointmentPage = designMode === 'original' ? OriginalScheduleAppointmentPage : ScheduleAppointmentPage;
         return (
           <AppointmentPage
+            key={matchedProfile.id}
+            catalog={hmsBookingEnabled() ? publicCatalog ?? undefined : undefined}
             doctor={matchedProfile}
             initialStep={scheduleInitialStep}
             initialDate={schedulePrefillDate}
@@ -961,7 +997,7 @@ export function App() {
         onOpenSettings={() => setIsSettingsOpen(true)}
         onNavigate={handleNavigate}
         onOpenBooking={() => startBooking(currentView === 'doctor-detail' ? selectedDoctorDetailId : currentView === 'schedule-appointment' ? scheduleDoctorId : undefined, undefined, undefined, 'header_nav')}
-        onOpenLogin={openLogin}
+        onOpenLogin={hmsBookingEnabled() ? undefined : openLogin}
         user={user}
       />
 
@@ -991,6 +1027,7 @@ export function App() {
 
         {/* Why Choose Us Section (Dual Care Cards + Big Bold Numbers) */}
         <WhySection
+          roster={hmsBookingEnabled() ? rosterProps.roster : undefined}
           onBookInPerson={() => startBooking(undefined, undefined, undefined, 'why_choose_us_in_person')}
         />
 
@@ -1003,6 +1040,10 @@ export function App() {
 
         {/* 2. Top Specialists Doctor Showcase (media_1789993820491.png) */}
         <DoctorSection
+          loading={hmsBookingEnabled() ? rosterLoading : undefined}
+          error={hmsBookingEnabled() ? rosterError : undefined}
+          onRetry={rosterProps.onRetry}
+          roster={hmsBookingEnabled() ? rosterProps.roster : undefined}
           onBookDoctor={(doctorId) => startBooking(doctorId, undefined, undefined, 'home_doctor_card')}
           onViewDoctor={(id) => {
             trackDoctorProfileOpened('home');
@@ -1076,7 +1117,7 @@ export function App() {
 
       {/* WhatsApp Bot & Emergency Calls Floating Widget */}
       <WhatsAppFloatingWidget onOpenBooking={() => startBooking(undefined, undefined, undefined, 'whatsapp_widget')} />
-      <VoiceAgentLauncher user={user} />
+      {!hmsBookingEnabled() && <VoiceAgentLauncher user={user} />}
 
       {/* Discreet Display Settings Floating Button */}
       {(

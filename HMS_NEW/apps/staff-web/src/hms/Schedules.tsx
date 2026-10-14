@@ -30,7 +30,6 @@ export function Schedules() {
       <>
         <PageTitle
           title="Schedules"
-          description="Doctor schedules and weekly hours."
         />
         <Hint>
           This scheduling editor currently supports clinics using Asia/Kolkata.
@@ -45,7 +44,6 @@ export function Schedules() {
         pageHeader={
           <PageTitle
             title="Schedules"
-            description="Doctor schedules and weekly hours."
           />
         }
         facilityId={facility.facilityId}

@@ -66,7 +66,7 @@ export function registerAdminRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const staffId = await registrationStaff(db, callerOf(request), registrationId);
     if (!staffId) throw missing('registration');
     await manageStaff(request, staffId);
-    return updateRegistration(db, callerOf(request), { registrationId, ...body });
+    return updateRegistration(db, callerOf(request), { registrationId, ...body }, idempotencyKey(request));
   });
 
   // ---- care assignments ---------------------------------------------------------------------------------
@@ -89,7 +89,7 @@ export function registerAdminRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const { careAssignmentId } = parse(z.object({ careAssignmentId: uuid }), request.params);
     const { reason } = parse(z.object({ reason: Reason }), request.body);
     authorize(principalOf(request), 'care_assignment.manage');
-    return endCareAssignment(db, callerOf(request), { careAssignmentId, reason });
+    return endCareAssignment(db, callerOf(request), { careAssignmentId, reason }, idempotencyKey(request));
   });
 
   // ---- break-glass review (G18) ---------------------------------------------------------------------------
@@ -104,7 +104,7 @@ export function registerAdminRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const { grantId } = parse(z.object({ grantId: uuid }), request.params);
     const body = parse(z.object({ outcome: z.enum(['appropriate', 'inappropriate']), note: Reason }), request.body);
     authorizeEvery(principalOf(request), 'break_glass.review', []);
-    return reviewBreakGlass(db, callerOf(request), { grantId, ...body });
+    return reviewBreakGlass(db, callerOf(request), { grantId, ...body }, idempotencyKey(request));
   });
 
   // ---- module switches (G17) ------------------------------------------------------------------------------
@@ -120,14 +120,14 @@ export function registerAdminRoutes(app: FastifyInstance, db: Kysely<DB>) {
       request.body,
     );
     authorizeEvery(principalOf(request), 'tenant.manage', []);
-    return setModuleState(db, callerOf(request), { module, ...body });
+    return setModuleState(db, callerOf(request), { module, ...body }, idempotencyKey(request));
   });
 
   // ---- invites -----------------------------------------------------------------------------------------
   app.post('/v1/staff/:staffId/invite/renew', async (request) => {
     const { staffId } = parse(z.object({ staffId: uuid }), request.params);
     await manageStaff(request, staffId, 'access.manage');
-    return renewInvite(db, callerOf(request), { staffId });
+    return renewInvite(db, callerOf(request), { staffId }, idempotencyKey(request));
   });
 
   // ---- teleconsultation consent documents (G34) ----------------------------------------------------------
@@ -149,19 +149,19 @@ export function registerAdminRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const { documentId } = parse(z.object({ documentId: uuid }), request.params);
     const body = parse(z.object({ version: z.number().int().min(1), title: z.string().trim().min(3).max(200).optional(), body: z.string().trim().min(20).max(50_000).optional() }), request.body);
     authorizeEvery(principalOf(request), 'consent_documents.manage', []);
-    return updateConsentDraft(db, callerOf(request), { documentId, ...body });
+    return updateConsentDraft(db, callerOf(request), { documentId, ...body }, idempotencyKey(request));
   });
 
   app.post('/v1/consent-documents/:documentId/publish', async (request) => {
     const { documentId } = parse(z.object({ documentId: uuid }), request.params);
     authorizeEvery(principalOf(request), 'consent_documents.manage', []);
-    return publishConsentDocument(db, callerOf(request), { documentId });
+    return publishConsentDocument(db, callerOf(request), { documentId }, idempotencyKey(request));
   });
 
   app.post('/v1/consent-documents/:documentId/retire', async (request) => {
     const { documentId } = parse(z.object({ documentId: uuid }), request.params);
     const { reason } = parse(z.object({ reason: Reason }), request.body);
     authorizeEvery(principalOf(request), 'consent_documents.manage', []);
-    return retireConsentDocument(db, callerOf(request), { documentId, reason });
+    return retireConsentDocument(db, callerOf(request), { documentId, reason }, idempotencyKey(request));
   });
 }

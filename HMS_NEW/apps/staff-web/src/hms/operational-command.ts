@@ -7,6 +7,7 @@ import { request, identityRevision, HmsError } from "./client";
 import {
   OperationalIntent,
   legacyKeyed,
+  nativeKeyed,
   type MutationIntent,
   type MutationOptions,
   type MutationTransport,
@@ -62,7 +63,7 @@ export function useRecoverableCommand(
   return {
     ...snapshot,
     execute: <T>(path: string, options: MutationOptions = {}, keyed = false) =>
-      invoke<T>(() => getMachine().execute(path, options, keyed)),
+      invoke<T>(() => getMachine().execute(path, options, keyed || nativeKeyed(path, options.method))),
     run: async <T>(
       path: string,
       body?: unknown,
@@ -72,7 +73,7 @@ export function useRecoverableCommand(
       try {
         return (
           (await invoke<T>(() =>
-            getMachine().execute(path, { body, method }, keyed),
+            getMachine().execute(path, { body, method }, keyed || nativeKeyed(path, method)),
           )) ?? (true as T)
         );
       } catch {

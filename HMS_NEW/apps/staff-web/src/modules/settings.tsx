@@ -5,7 +5,7 @@ import type { MutationIntent } from "@/hms/operational-intent";
 import { DemoControls } from "./DemoControls";
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { api, dateTime, type StaffUser } from "@/lib/api";
+import { api, type StaffUser } from "@/lib/api";
 import { toCsv } from "@/lib/csv";
 import {
   Action,
@@ -21,6 +21,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Status } from "@/hms/ui";
 import { Input } from "@/components/ui/input";
 import { DayNavigator, DateRangeField } from "@/components/date-controls";
 import { dateRangeError } from "@/components/date-controls-model";
@@ -80,7 +81,6 @@ export function SettingsModule({
       <>
         <PageTitle
           title="Demo workspace"
-          description="Sample records and demo controls are kept here, away from daily clinic work."
         />
         {demo ? (
           <DemoControls canManage={user.role === "admin"} />
@@ -97,7 +97,6 @@ export function SettingsModule({
     <>
       <PageTitle
         title="Workspace settings"
-        description="Staff accounts and optional modules are managed in one place."
       />
       <div className="grid md:grid-cols-2 gap-5 mb-7">
         <Card>
@@ -116,10 +115,6 @@ export function SettingsModule({
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Optional modules</CardTitle>
-            <CardDescription>
-              Choose which tools your clinic uses. Saved data is retained when a
-              module is disabled.
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <Button
@@ -138,9 +133,6 @@ export function SettingsModule({
         <Card className="mb-7">
           <CardHeader>
             <CardTitle>Demo workspace</CardTitle>
-            <CardDescription>
-              Sample data, reload controls, and environment information.
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <Button
@@ -160,7 +152,6 @@ export function SettingsModule({
         <>
           <SectionTitle
             title="Staff accounts"
-            description="Each staff member uses their own username and password."
             action={
               <Button onClick={() => setOpen(true)}>
                 <Plus />
@@ -275,11 +266,6 @@ export function SettingsModule({
                     : "Growth manager",
               ])}
             />
-            <p className="text-xs text-muted-foreground">
-              Clinic staff manage appointments and WhatsApp. Growth managers
-              access enabled growth tools only. Administrators also manage staff
-              and module settings.
-            </p>
             <Action
               disabled={
                 name.trim().length < 2 ||
@@ -399,10 +385,6 @@ function StaffPermissions() {
           <CardTitle className="text-base">
             Appointment booking policy
           </CardTitle>
-          <CardDescription>
-            Administrator setting. Staff follow this policy automatically when
-            booking or moving appointments.
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <Resource {...permissions}>
@@ -411,11 +393,6 @@ function StaffPermissions() {
                 <Label htmlFor="perm-appointments.overbook">
                   Allow overlapping appointments
                 </Label>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Allow up to three simultaneous visits at the same clinic.
-                  Reception coordinates arrivals. Blocked time, active holds and
-                  other-clinic conflicts remain protected.
-                </p>
               </div>
               <Switch
                 id="perm-appointments.overbook"
@@ -440,11 +417,6 @@ function StaffPermissions() {
           <CardTitle className="text-base">
             What clinic staff can change
           </CardTitle>
-          <CardDescription>
-            Only administrators can change these permissions. Consultation fees
-            remain administrator-only. Every change is recorded in the activity
-            log.
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Resource {...permissions}>
@@ -507,7 +479,7 @@ export function ActivityLog() {
   const query = new URLSearchParams(
     Object.entries(filters).filter(([, v]) => v),
   ).toString();
-  const log = useResource<{ items: AuditItem[]; more: boolean }>(
+  const log = useResource<{ items: AuditItem[]; more: boolean; dateBoundary?: { timezone: string } }>(
     dateRangeError(filters.start, filters.end)
       ? null
       : `/api/v1/staff/audit?${query}&limit=${limit}`,
@@ -520,7 +492,6 @@ export function ActivityLog() {
     <>
       <PageTitle
         title="Activity log"
-        description="Every completed change in the clinic system: who, what, which record, and when."
         action={
           <Action
             variant="outline"
@@ -603,7 +574,7 @@ export function ActivityLog() {
           <div className="lg:col-span-3 space-y-3">
             <DayNavigator
               label="Single day"
-              boundaryLabel="Organisation date boundary"
+              boundaryLabel={log.data?.dateBoundary ? `Organisation dates · ${log.data.dateBoundary.timezone}` : "Organisation timezone unavailable"}
               allowClear
               value={filters.start === filters.end ? filters.start : ""}
               onChange={(day) => {
@@ -614,7 +585,7 @@ export function ActivityLog() {
             <DateRangeField
               from={filters.start}
               to={filters.end}
-              boundaryLabel="Organisation date boundary"
+              boundaryLabel={log.data?.dateBoundary ? `Organisation dates · ${log.data.dateBoundary.timezone}` : "Organisation timezone unavailable"}
               onChange={({ from, to }) => {
                 setFilters({ ...filters, start: from, end: to });
                 setLimit(50);
@@ -639,7 +610,7 @@ export function ActivityLog() {
               {log.data?.items.map((e) => (
                 <TableRow key={e.id}>
                   <TableCell className="whitespace-nowrap">
-                    {dateTime(e.created_at)}
+                    {log.data?.dateBoundary ? new Intl.DateTimeFormat("en-IN", { timeZone: log.data.dateBoundary.timezone, dateStyle: "medium", timeStyle: "short" }).format(new Date(e.created_at)) : e.created_at}
                   </TableCell>
                   <TableCell className="whitespace-normal">{e.actor}</TableCell>
                   <TableCell className="font-mono text-xs">
@@ -662,11 +633,6 @@ export function ActivityLog() {
           {log.data?.items.length === 0 && (
             <WorkspaceEmpty
               title="No matching activity"
-              description={
-                Object.values(filters).some(Boolean)
-                  ? "No completed changes match these filters. Clear the filters or select a wider date range."
-                  : "Completed changes will appear here with the person, record and time. Refresh after an action to see its entry."
-              }
               action={
                 Object.values(filters).some(Boolean)
                   ? {
@@ -717,6 +683,7 @@ type StaffRow = {
   version?: number;
 };
 type RoleRow = {
+  version: number;
   id: string;
   name: string;
   built_in: boolean;
@@ -793,6 +760,7 @@ export function WorkspaceSettings({
     [permissionReview, setPermissionReview] = useState<{
       roleId: string;
       roleName: string;
+      version: number;
       key: string;
       label: string;
       allowed: boolean;
@@ -929,7 +897,6 @@ export function WorkspaceSettings({
             <>
               <SectionTitle
                 title="Staff accounts"
-                description="Each person signs in with their own work email. Access is given per clinic."
                 action={
                   canCreate && (
                     <Button
@@ -980,14 +947,17 @@ export function WorkspaceSettings({
                               .join(", ") || "No access"}
                           </TableCell>
                           <TableCell>
-                            {
-                              {
-                                active: "Active",
-                                invited: "Invited (not signed in yet)",
-                                disabled: "Disabled",
-                                no_login: "No sign-in",
-                              }[u.status]
-                            }
+                            <Status
+                              value={u.status === "invited" ? "invited" : u.status === "active" ? "active" : "inactive"}
+                              text={
+                                {
+                                  active: "Active",
+                                  invited: "Invited (not signed in yet)",
+                                  disabled: "Disabled",
+                                  no_login: "No sign-in",
+                                }[u.status]
+                              }
+                            />
                           </TableCell>
                           <TableCell>
                             <Button
@@ -1023,11 +993,6 @@ export function WorkspaceSettings({
                 <CardTitle className="text-base">
                   What each role can do
                 </CardTitle>
-                <CardDescription>
-                  Built-in roles are shared and read-only. Make a copy to
-                  customise it, then grant the copy. Every change is recorded in
-                  the activity log and applies on each holder's next action.
-                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Resource {...roles}>
@@ -1119,6 +1084,7 @@ export function WorkspaceSettings({
                             setPermissionReview({
                               roleId: role!.id,
                               roleName: role!.name,
+                              version: role!.version,
                               key: p.key,
                               label: p.label,
                               allowed,
@@ -1161,7 +1127,7 @@ export function WorkspaceSettings({
               const review = permissionReview!;
               await call(
                 `/api/v1/staff/roles/${review.roleId}/permissions/${review.key}`,
-                { method: "PUT", body: { allowed: review.allowed } },
+                { method: "PUT", body: { allowed: review.allowed, version: review.version } },
               );
               setPermissionReview(null);
               roles.refresh();
@@ -1294,10 +1260,6 @@ export function WorkspaceSettings({
                   <p>
                     {roles.data?.roles.find((r) => r.id === form.role)?.name} ·{" "}
                     {form.scope === "every" ? "Every clinic" : clinicName}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Creates the staff account and pending sign-in invitation.
-                    Email delivery is not confirmed by this operation.
                   </p>
                 </section>
               )}
@@ -1688,10 +1650,11 @@ export function WorkspaceSettings({
 
 function BookingPolicy({ clinicName }: { clinicName: string }) {
   const command = useLegacyCommand(),
-    policy = useResource<{ overbooking: boolean }>(
+    policy = useResource<{ overbooking: boolean; version: string | null }>(
       "/api/v1/admin/booking-policy",
     ),
-    [proposal, setProposal] = useState<boolean | null>(null);
+    [proposal, setProposal] = useState<boolean | null>(null),
+    [proposalVersion, setProposalVersion] = useState<string | null | undefined>(undefined);
   useUnsaved(proposal !== null || command.busy || command.unknown);
   const verify = async (intent: MutationIntent) => {
     const saved = await command.read<{ overbooking: boolean }>(
@@ -1711,7 +1674,7 @@ function BookingPolicy({ clinicName }: { clinicName: string }) {
       <CardHeader>
         <CardTitle>Appointment booking policy</CardTitle>
         <CardDescription>
-          {clinicName} · Applies when staff book or move appointments.
+          {clinicName}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -1722,15 +1685,11 @@ function BookingPolicy({ clinicName }: { clinicName: string }) {
                 Overlapping appointments:{" "}
                 {policy.data?.overbooking ? "Allowed" : "Disabled"}
               </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Enabled policy allows staff to book overlapping visits. Existing
-                appointments remain booked when this policy changes.
-              </p>
             </div>
             <Button
               variant="outline"
               disabled={command.busy || command.unknown || !policy.fresh}
-              onClick={() => setProposal(!policy.data!.overbooking)}
+              onClick={() => { setProposalVersion(policy.data!.version); setProposal(!policy.data!.overbooking); }}
             >
               Change policy
             </Button>
@@ -1767,10 +1726,6 @@ function BookingPolicy({ clinicName }: { clinicName: string }) {
                 ? "Reception can book overlapping visits with this doctor. Review clinic staffing and capacity before enabling this."
                 : "New overlapping bookings will be blocked. Existing visits are retained and need a separate review if they overlap."}
             </p>
-            <p className="text-sm text-muted-foreground">
-              This endpoint exposes an enabled/disabled policy, without a
-              configurable overlap limit.
-            </p>
             <RecoveryNotice
               command={command}
               verify={verify}
@@ -1781,7 +1736,7 @@ function BookingPolicy({ clinicName }: { clinicName: string }) {
               run={async () => {
                 await command.write("/api/v1/admin/booking-policy", {
                   method: "PUT",
-                  body: { overbooking: proposal },
+                  body: { overbooking: proposal, version: proposalVersion },
                 });
                 recovered();
               }}

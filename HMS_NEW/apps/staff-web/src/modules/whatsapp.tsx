@@ -116,7 +116,6 @@ export function WhatsAppModule({
     <>
       <PageTitle
         title="WhatsApp"
-        description="Patient conversations and clinic outreach, in one place."
         action={
           <Button variant="outline" onClick={() => onNavigate("conversations")}>
             <MessageCircle />
@@ -238,7 +237,6 @@ export function WhatsAppModule({
             ) : (
               <Empty
                 title="This page isn’t available"
-                description="Choose a WhatsApp section above."
               />
             )}
           </>
@@ -280,7 +278,6 @@ function Overview({
       [reception, campaigns, inventory, templates].find((r) => r.error)
         ?.error ?? "";
   const guides = inventory.data?.departments.filter((d) => d.guide).length ?? 0,
-    photos = inventory.data?.doctors.filter((d) => d.photo).length ?? 0,
     drafts = campaigns.data?.filter((c) => c.status === "draft") ?? [],
     approved =
       templates.data?.filter((t) =>
@@ -305,9 +302,6 @@ function Overview({
           <h2 className="text-xl font-semibold tracking-tight">
             Today at your clinic
           </h2>
-          <p className="text-sm text-muted-foreground mt-2">
-            Start with reception, then keep your booking content up to date.
-          </p>
         </div>
         <Badge
           variant="outline"
@@ -399,9 +393,6 @@ function Overview({
           <Card className="gap-0 p-0">
             <CardHeader className="p-5 border-b">
               <CardTitle className="text-base">Your next steps</CardTitle>
-              <CardDescription>
-                Small tasks that keep the patient experience working.
-              </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <TaskLink
@@ -414,22 +405,10 @@ function Overview({
                     ? `${localMode ? localMetrics?.openConversations : reception.data?.length} conversations need reception`
                     : "Reception is up to date"
                 }
-                description={
-                  (
-                    localMode
-                      ? localMetrics?.openConversations
-                      : reception.data?.length
-                  )
-                    ? "Read the latest message, take ownership and reply."
-                    : localMode
-                      ? "Open a local support case for an existing contact, or review authenticated inbound events."
-                      : "New handoffs will appear here when a patient asks for your team."
-                }
                 onClick={() => go("conversations")}
               />
               <TaskLink
                 title="Complete doctor introductions"
-                description={`${guides} specialty PDFs and ${photos} doctor portraits saved. Add or replace files in Doctor content.`}
                 onClick={() => go("content")}
               />
               <TaskLink
@@ -437,13 +416,6 @@ function Overview({
                   approved.length
                     ? "Prepare your next campaign"
                     : "Set up approved messages"
-                }
-                description={
-                  approved.length
-                    ? `${approved.length} ${localMode ? "local content" : "current, supported"} templates available. Create a draft and test it before approval.`
-                    : localMode
-                      ? "Create local content before drafting a simulation. Provider approval is unavailable."
-                      : "Approved templates must sync from Meta before you can create a campaign."
                 }
                 onClick={() => go("campaigns")}
               />
@@ -454,9 +426,6 @@ function Overview({
               <CardTitle className="text-base">
                 Recent campaign drafts
               </CardTitle>
-              <CardDescription>
-                Preparation only. Nothing sends when you save a draft.
-              </CardDescription>
             </CardHeader>
             <CardContent>
               {drafts.length ? (
@@ -537,10 +506,6 @@ function Overview({
               <CardTitle className="text-base">
                 Appointments stay together
               </CardTitle>
-              <CardDescription>
-                WhatsApp bookings use the same appointment records as the rest
-                of your clinic.
-              </CardDescription>
             </CardHeader>
             <CardContent>
               <Button
@@ -666,11 +631,6 @@ function DoctorContent({
     <Resource {...resource}>
       <SectionTitle
         title="Doctor content"
-        description={
-          localMode
-            ? "Maintain private specialty PDFs and doctor portraits for approved clinic content. The booking bot is not enabled."
-            : "The bot sends a specialty PDF before the doctor list, then shows the selected doctor’s portrait."
-        }
       />
       <div className="flex flex-wrap gap-4 justify-between mb-5">
         <Tabs value={tab} onValueChange={(v) => setTab(String(v))}>
@@ -847,14 +807,8 @@ function DoctorContent({
         .length === 0 && (
         <Empty
           title="No matches"
-          description="Try a different doctor or specialty name."
         />
       )}
-      <p className="text-xs text-muted-foreground mt-4">
-        {localMode
-          ? "Only use clinic-approved content. Files stay private; local validation does not prove production scanning or provider distribution."
-          : "Only use clinic-approved content. Uploading a replacement affects future bot messages."}
-      </p>
     </Resource>
   );
 }
@@ -975,20 +929,8 @@ function Followups({
     <Resource {...rules}>
       <SectionTitle
         title="Visit follow-ups"
-        description={
-          localNotifications
-            ? "Local reminder and requested follow-up records. No messages are delivered."
-            : "Care messages follow recorded visit events. Patient consent is checked again before delivery."
-        }
       />
       {notice && <Notice title="Follow-up recorded" text={notice} />}
-      {localNotifications && (
-        <p className="mb-4 text-xs text-muted-foreground">
-          These controls save consented local reminder rules. Feedback and
-          missed-visit records follow authoritative visit events; no provider
-          templates are approved or sent.
-        </p>
-      )}
       <Card className="p-0 mb-6">
         <Table>
           <TableHeader>
@@ -1041,11 +983,6 @@ function Followups({
             <CardTitle className="text-base">
               Schedule a doctor-requested follow-up
             </CardTitle>
-            <CardDescription>
-              {localNotifications
-                ? "Choose a completed visit from the last 180 clinic days and the requested contact date. Up to 500 visits are listed; older visits are not shown."
-                : "Choose a completed visit and the requested contact date."}
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <Resource {...visits}>
@@ -1269,11 +1206,6 @@ function Followups({
                 : ""}
             </DialogDescription>
           </DialogHeader>
-          <p className="text-xs text-muted-foreground">
-            {localNotifications
-              ? "This records a follow-up after checking visit status and consent. It does not deliver a message."
-              : "This queues the approved template. It sends only if patient permission and delivery settings allow it."}
-          </p>
           <Action
             disabled={
               !canSchedule ||
@@ -1329,7 +1261,6 @@ function Delivery() {
     <Resource {...r}>
       <SectionTitle
         title="Delivery history"
-        description="Accepted means Meta accepted the request. Delivered and read require provider updates."
         action={
           <Button
             variant="outline"
@@ -1403,7 +1334,6 @@ function Delivery() {
       ) : (
         <Empty
           title="No matching messages"
-          description="Queued reception replies, campaigns and follow-ups will appear here."
         />
       )}
       <Resource {...issues}>
@@ -1411,7 +1341,6 @@ function Delivery() {
           <div className="mt-6">
             <SectionTitle
               title="Booking replies & reminder issues"
-              description="These use separate queues. Check the provider before resending an uncertain message."
             />
             <Card className="p-0">
               <Table>
@@ -1459,7 +1388,6 @@ function ClinicDetails({ localMode = false }: { localMode?: boolean }) {
       {localMode && <LocalWhatsAppSettings />}
       <SectionTitle
         title="Clinic details"
-        description="Administrator setting · booking confirmations use these addresses, directions and arrival instructions."
       />
       <div className="grid md:grid-cols-2 gap-5">
         {catalogue.data?.branches.map((b) => (
@@ -1593,10 +1521,6 @@ function LocalWhatsAppSettings() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-base">WhatsApp callback account</CardTitle>
-          <CardDescription>
-            Server-scoped routing for verified inbound events. This does not
-            activate provider delivery or a booking bot.
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {settings.data && (

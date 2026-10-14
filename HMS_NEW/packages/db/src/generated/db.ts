@@ -141,6 +141,15 @@ export interface BookingFacilityHoliday {
   version: Generated<number>;
 }
 
+export interface BookingPublicRequestBudget {
+  bucket_start: Timestamp;
+  id: Generated<string>;
+  requests: number;
+  site_slug: string;
+  subject_hash: string;
+  tenant_id: string;
+}
+
 export interface BookingQueueToken {
   appointment_id: string | null;
   called_at: Timestamp | null;
@@ -469,6 +478,7 @@ export interface CatalogPractitionerProfile {
   id: Generated<string>;
   languages: Generated<string[]>;
   photo_document_id: string | null;
+  public_photo_url: string | null;
   public_slug: string | null;
   published: Generated<boolean>;
   qualifications: Generated<string[]>;
@@ -1178,6 +1188,21 @@ export interface CommsChannelAccount {
   version: Generated<number>;
 }
 
+export interface CommsChannelOnboarding {
+  channel: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  draft: Json;
+  facility_id: string;
+  id: Generated<string>;
+  requested_at: Timestamp | null;
+  state: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
 export interface CommsContactInterest {
   contact_point_id: string;
   created_at: Generated<Timestamp>;
@@ -1205,6 +1230,7 @@ export interface CommsContactPoint {
 
 export interface CommsConversation {
   assigned_staff_id: string | null;
+  automation_state: Generated<string>;
   contact_point_id: string;
   created_at: Generated<Timestamp>;
   created_by: string | null;
@@ -1300,9 +1326,12 @@ export interface CommsOutboundMessage {
 
 export interface CommsProviderEvent {
   account_id: string;
+  business_account_id: string | null;
   event_key: string;
+  facility_id: string | null;
   id: Generated<string>;
   payload: Json;
+  phone_number_id: string | null;
   received_at: Generated<Timestamp>;
   tenant_id: string;
 }
@@ -1335,6 +1364,54 @@ export interface CommsSupportCase {
   kind: string;
   rating: number | null;
   status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsTemplateProviderCheck {
+  account_id: string;
+  body_sha256: string;
+  business_account_id: string;
+  checked_at: Timestamp;
+  checked_by: string;
+  content_match: string;
+  facility_id: string;
+  id: Generated<string>;
+  phone_number_id: string;
+  provider_status: string | null;
+  provider_template_id: string | null;
+  template_id: string;
+  template_version: number;
+  tenant_id: string;
+}
+
+export interface CommsTemplateSubmission {
+  access_token_env: string;
+  account_id: string;
+  attempt_id: string | null;
+  attempted_at: Timestamp | null;
+  body: string;
+  business_account_id: string;
+  category: string;
+  content_sha256: string;
+  created_at: Generated<Timestamp>;
+  facility_id: string;
+  id: string;
+  language: string;
+  next_check_at: Generated<Timestamp>;
+  parameter_count: number;
+  phone_number_id: string;
+  provider_name: string;
+  provider_status: string | null;
+  provider_template_id: string | null;
+  reason: string | null;
+  requested_by: string;
+  requested_user_id: string;
+  samples: Json;
+  state: Generated<string>;
+  template_id: string;
+  template_version: number;
   tenant_id: string;
   updated_at: Generated<Timestamp>;
   version: Generated<number>;
@@ -1690,6 +1767,7 @@ export interface PlatformFacility {
 }
 
 export interface PlatformIdempotencyRecord {
+  actor_hash: string | null;
   created_at: Generated<Timestamp>;
   created_by: string | null;
   expires_at: Generated<Timestamp>;
@@ -1940,6 +2018,7 @@ export interface DB {
   "booking.day_plan": BookingDayPlan;
   "booking.day_plan_block": BookingDayPlanBlock;
   "booking.facility_holiday": BookingFacilityHoliday;
+  "booking.public_request_budget": BookingPublicRequestBudget;
   "booking.queue_token": BookingQueueToken;
   "booking.reservation": BookingReservation;
   "booking.schedulable_resource": BookingSchedulableResource;
@@ -1997,6 +2076,7 @@ export interface DB {
   "comms.campaign": CommsCampaign;
   "comms.campaign_recipient": CommsCampaignRecipient;
   "comms.channel_account": CommsChannelAccount;
+  "comms.channel_onboarding": CommsChannelOnboarding;
   "comms.contact_interest": CommsContactInterest;
   "comms.contact_point": CommsContactPoint;
   "comms.conversation": CommsConversation;
@@ -2009,6 +2089,8 @@ export interface DB {
   "comms.provider_event": CommsProviderEvent;
   "comms.reminder_job": CommsReminderJob;
   "comms.support_case": CommsSupportCase;
+  "comms.template_provider_check": CommsTemplateProviderCheck;
+  "comms.template_submission": CommsTemplateSubmission;
   "comms.voice_call": CommsVoiceCall;
   "comms.voice_consent_event": CommsVoiceConsentEvent;
   "comms.voice_recording_access": CommsVoiceRecordingAccess;

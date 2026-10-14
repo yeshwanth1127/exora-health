@@ -5,14 +5,12 @@ import { requestLeave } from "./leave";
 
 export function FullPage({
   title,
-  description,
   back,
   onBack,
   summary,
   children,
 }: {
   title: string;
-  description: string;
   back: string;
   onBack: () => void;
   summary?: ReactNode;
@@ -31,10 +29,7 @@ export function FullPage({
         {back}
       </Button>
       <header className="flex items-start justify-between gap-8 border-b pb-5">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{description}</p>
-        </div>
+        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         {summary}
       </header>
       {children}

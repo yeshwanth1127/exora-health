@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { sql, type DB, type Kysely } from '@hms/db';
 import { conflict, DomainError, notFound, runCommand, runQuery } from '@hms/platform';
 import type { Caller } from '../../caller.ts';
-import { assertAdministratorRemains, assertCanGrant, lockAccess } from './staff.ts';
+import { assertAdministratorRemains, assertCanGrant, assertLiveAccessManager, lockAccess } from './staff.ts';
 
 export interface RoleView {
   roleId: string;
@@ -12,13 +12,14 @@ export interface RoleView {
   builtIn: boolean;
   copiedFromRoleId: string | null;
   permissions: string[];
+  version: number;
 }
 
 /** Active roles that can be granted from the workspace, and the permission list with descriptions. */
 export async function listRoles(db: Kysely<DB>, caller: Caller) {
   return runQuery(db, caller.tenantId, async (tx) => {
     const { rows: roles } = await sql<RoleView>`
-      SELECT r.id AS "roleId", r.code, r.name, r.is_system AS "builtIn", r.cloned_from_id AS "copiedFromRoleId",
+      SELECT r.id AS "roleId", r.code, r.name, r.is_system AS "builtIn", r.version, r.cloned_from_id AS "copiedFromRoleId",
              coalesce(array_agg(p.code ORDER BY p.code) FILTER (WHERE p.code IS NOT NULL), '{}') AS permissions
       FROM platform.role r
       LEFT JOIN platform.role_permission rp ON rp.role_id = r.id
@@ -40,6 +41,7 @@ export async function listRoles(db: Kysely<DB>, caller: Caller) {
 export async function copyRole(db: Kysely<DB>, caller: Caller, input: { name: string; copyOfRoleId: string }, idempotencyKey: string) {
   return runCommand(db, { ...caller, module: 'platform', name: 'platform.copy_role', idempotencyKey, request: input }, async (ctx) => {
     await lockAccess(ctx);
+    await assertLiveAccessManager(ctx);
     await assertCanGrant(ctx, input.copyOfRoleId, null);
     const slug = input.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40) || 'role';
     const role = await ctx.tx
@@ -59,12 +61,14 @@ export async function copyRole(db: Kysely<DB>, caller: Caller, input: { name: st
  * at every clinic (the role may be granted anywhere); switching off can't leave the tenant without an
  * every-clinic access manager.
  */
-export async function setRolePermission(db: Kysely<DB>, caller: Caller, input: { roleId: string; permission: string; allowed: boolean }) {
-  return runCommand(db, { ...caller, module: 'platform', name: 'platform.set_role_permission' }, async (ctx) => {
+export async function setRolePermission(db: Kysely<DB>, caller: Caller, input: { roleId: string; permission: string; allowed: boolean; version: number }, idempotencyKey?: string) {
+  return runCommand(db, { ...caller, module: 'platform', name: 'platform.set_role_permission', idempotencyKey, request: input }, async (ctx) => {
     await lockAccess(ctx);
-    const role = await ctx.tx.selectFrom('platform.role').select(['tenant_id', 'status']).where('id', '=', input.roleId).forUpdate().executeTakeFirst();
+    await assertLiveAccessManager(ctx);
+    const role = await ctx.tx.selectFrom('platform.role').select(['tenant_id', 'status', 'version']).where('id', '=', input.roleId).forUpdate().executeTakeFirst();
     if (!role || role.status !== 'active') throw notFound('role not found');
     if (role.tenant_id === null) throw conflict('built-in roles can\'t be changed; make a copy to customise', { reason: 'built_in' });
+    if (role.version !== input.version) throw conflict('this role was changed by someone else; reload and review again', { reason: 'stale_version', currentVersion: role.version });
     const permission = await ctx.tx.selectFrom('platform.permission').select('id').where('code', '=', input.permission).executeTakeFirst();
     if (!permission) throw notFound('permission not found');
     if (input.allowed) {
@@ -83,15 +87,17 @@ export async function setRolePermission(db: Kysely<DB>, caller: Caller, input: {
       await ctx.tx.deleteFrom('platform.role_permission').where('role_id', '=', input.roleId).where('permission_id', '=', permission.id).execute();
       await assertAdministratorRemains(ctx);
     }
+    const saved = await ctx.tx.updateTable('platform.role').set({ updated_by: ctx.actor.staffId ?? null }).where('id', '=', input.roleId).returning('version').executeTakeFirstOrThrow();
     ctx.audit({ action: 'update', subjectType: 'platform.role', subjectId: input.roleId, diff: { permission: input.permission, allowed: input.allowed } });
-    return { roleId: input.roleId, permission: input.permission, allowed: input.allowed };
+    return { roleId: input.roleId, permission: input.permission, allowed: input.allowed, version: saved.version };
   });
 }
 
 /** Retires a clinic-owned role nobody holds any more. Built-in roles and roles still granted stay. */
-export async function retireRole(db: Kysely<DB>, caller: Caller, input: { roleId: string; reason: string }) {
-  return runCommand(db, { ...caller, module: 'platform', name: 'platform.retire_role' }, async (ctx) => {
+export async function retireRole(db: Kysely<DB>, caller: Caller, input: { roleId: string; reason: string }, idempotencyKey?: string) {
+  return runCommand(db, { ...caller, module: 'platform', name: 'platform.retire_role', idempotencyKey, request: input }, async (ctx) => {
     await lockAccess(ctx);
+    await assertLiveAccessManager(ctx);
     const role = await ctx.tx.selectFrom('platform.role').select(['tenant_id', 'status', 'name']).where('id', '=', input.roleId).forUpdate().executeTakeFirst();
     if (!role || role.status !== 'active') throw notFound('role not found');
     if (role.tenant_id === null) throw conflict("built-in roles can't be retired", { reason: 'built_in' });

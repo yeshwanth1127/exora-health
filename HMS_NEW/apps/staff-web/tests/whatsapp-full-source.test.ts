@@ -22,6 +22,9 @@ const convo = {
   facilityId: at,
   contactPointId: contact,
   status: "open",
+  automationState: "handoff_requested",
+  automationAllowed: false,
+  automationBlockedReasons: ["human_handoff", "reply_window_expired"],
   assignedStaffId: null,
   assignedStaffName: null,
   version: 4,
@@ -154,6 +157,8 @@ test("local template never pretends to be Meta approved or freshly synced", asyn
           parameterCount: 0,
           header: "none",
           providerApproval: "not_synced",
+          editable: true,
+          editBlockedReason: null,
           simulationOnly: true,
           version: 1,
         },
@@ -376,4 +381,148 @@ test("original inbox preserves server case categories and admits capped history"
   );
   assert.equal(thread.has_older_messages, true);
   assert.match(thread.history_note, /Earlier history is not loaded/);
+});
+
+test("inbox preserves explicit human request, assignment and consent barrier", async () => {
+  const assigned = {
+    ...convo,
+    automationState: "human",
+    assignedStaffId: contact,
+    assignedStaffName: "Assigned clinician",
+    automationBlockedReasons: ["human_handoff", "consent_missing_or_withdrawn"],
+  };
+  globalThis.fetch = async (url) =>
+    Response.json(
+      String(url).endsWith(`/${id}`)
+        ? { conversation: assigned, messages: [], cases: [] }
+        : { items: [convo], total: 1, offset: 0, limit: 30 },
+    );
+  const source = fullWhatsAppSource(facility, [], new IntentKeys());
+  const inbox: any = await source.read(
+    "/api/v1/admin/whatsapp/conversations",
+    new AbortController().signal,
+  );
+  assert.equal(inbox.items[0].automation_state, "handoff_requested");
+  assert.equal(inbox.items[0].version, 4);
+  const thread: any = await source.read(
+    `/api/v1/admin/whatsapp/conversations/${id}`,
+    new AbortController().signal,
+  );
+  assert.equal(thread.active_handoff, true);
+  assert.equal(thread.assigned_to, "Assigned clinician");
+  assert.equal(thread.assigned_staff_id, contact);
+  assert.equal(thread.automation_allowed, false);
+  assert.deepEqual(
+    thread.automation_blocked_reasons,
+    assigned.automationBlockedReasons,
+  );
+});
+
+test("open automation conversation is not inferred to be a human handoff", async () => {
+  globalThis.fetch = async () =>
+    Response.json({
+      conversation: {
+        ...convo,
+        automationState: "automation",
+        automationAllowed: true,
+        automationBlockedReasons: [],
+      },
+      messages: [],
+      cases: [],
+    });
+  const source = fullWhatsAppSource(facility, [], new IntentKeys());
+  const thread: any = await source.read(
+    `/api/v1/admin/whatsapp/conversations/${id}`,
+    new AbortController().signal,
+  );
+  assert.equal(thread.open, true);
+  assert.equal(thread.active_handoff, false);
+  assert.equal(thread.automation_allowed, true);
+});
+
+test("handoff and resume carry captured version/key; closing is a separate command", async () => {
+  const calls: any[] = [];
+  globalThis.fetch = async (url, init) => {
+    calls.push({
+      path: String(url),
+      body: JSON.parse(String(init?.body)),
+      key: new Headers(init?.headers).get("Idempotency-Key"),
+    });
+    return Response.json({ conversation: convo, messages: [], cases: [] });
+  };
+  const source = fullWhatsAppSource(facility, [], new IntentKeys());
+  for (const action of ["handoff", "resume"])
+    await source.write(`/api/v1/admin/whatsapp/reception/${id}/${action}`, {
+      method: "POST",
+      body: {
+        version: 4,
+        idempotency_key: `original-${action}`,
+        assigned_to: "Spoofed actor",
+      },
+    });
+  await source.write(`/api/v1/admin/whatsapp/reception/${id}`, {
+    method: "PATCH",
+    body: { version: 4, status: "closed", idempotency_key: "original-close" },
+  });
+  assert.deepEqual(calls, [
+    {
+      path: `/v1/conversations/${id}/handoff`,
+      body: { version: 4 },
+      key: "original-handoff",
+    },
+    {
+      path: `/v1/conversations/${id}/resume`,
+      body: { version: 4 },
+      key: "original-resume",
+    },
+    {
+      path: `/v1/conversations/${id}/close`,
+      body: { version: 4 },
+      key: "original-close",
+    },
+  ]);
+});
+
+test("unknown reply recovery keeps original version/key after refreshed conversation changes", async () => {
+  const calls: any[] = [];
+  let failed = false;
+  globalThis.fetch = async (url, init) => {
+    if (init?.method === "POST") {
+      calls.push({
+        path: String(url),
+        body: JSON.parse(String(init.body)),
+        key: new Headers(init.headers).get("Idempotency-Key"),
+      });
+      if (!failed) {
+        failed = true;
+        throw Error("response lost");
+      }
+    }
+    return Response.json({
+      conversation: { ...convo, version: 9 },
+      messages: [],
+      cases: [],
+    });
+  };
+  const source = fullWhatsAppSource(facility, [], new IntentKeys());
+  const intent = {
+    method: "POST",
+    body: {
+      version: 4,
+      text: "Reception response",
+      idempotency_key: "original-reply",
+      actor: "Spoofed",
+    },
+  };
+  await assert.rejects(
+    source.write(`/api/v1/admin/whatsapp/reception/${id}/reply`, intent),
+  );
+  await source.read(
+    `/api/v1/admin/whatsapp/conversations/${id}`,
+    new AbortController().signal,
+  );
+  await source.write(`/api/v1/admin/whatsapp/reception/${id}/reply`, intent);
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[0], calls[1]);
+  assert.deepEqual(calls[1].body, { version: 4, text: "Reception response" });
 });

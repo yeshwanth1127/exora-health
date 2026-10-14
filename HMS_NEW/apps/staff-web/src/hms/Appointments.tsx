@@ -26,7 +26,7 @@ import {
 import { PageTitle } from "@/components/workspace";
 import { useCommand, useQuery, useWorkspace } from "./hooks";
 import { query } from "./client";
-import { today, time, money, label, filterLoadedAppointments } from "./model";
+import { today, time, money, label } from "./model";
 import { Choice, ErrorMessage, Field, LoadingState, Status } from "./ui";
 import { PatientLookup, RegisterPatient, TestPatientBadge } from "./Patients";
 import { WorkspaceEmpty } from "./WorkspaceEmpty";
@@ -63,19 +63,14 @@ export function Appointments() {
     setPages([]);
   }
   const result = useQuery<{ items: Appointment[]; nextCursor: string | null }>(
-    `/v1/appointments?${query({ facilityId: facility.facilityId, from: date, to: date, staffId: staffId === "all" ? undefined : staffId, status: status === "all" ? undefined : status, q: search.length >= 2 ? search : undefined, cursor: pages.at(-1), limit: 100 })}`,
+    `/v1/appointments?${query({ facilityId: facility.facilityId, from: date, to: date, staffId: staffId === "all" ? undefined : staffId, status: status === "all" ? undefined : status, q: search.length >= 2 ? search : undefined, visitMode: mode === "all" ? undefined : mode, cursor: pages.at(-1), limit: 100 })}`,
     10000,
   );
-  const items = filterLoadedAppointments(
-    result.data?.items ?? [],
-    "",
-    mode === "all" ? "" : mode,
-  );
+  const items = result.data?.items ?? [];
   if (book)
     return (
       <FullPage
         title="Book appointment"
-        description="Choose the patient, select a time, then review and confirm."
         back="Back to appointments"
         onBack={() => setBook(false)}
       >
@@ -92,7 +87,6 @@ export function Appointments() {
     return (
       <FullPage
         title="Appointment"
-        description="Booking details and patient arrival."
         back="Back to appointments"
         onBack={() => setSelected(null)}
       >
@@ -111,7 +105,6 @@ export function Appointments() {
     <>
       <PageTitle
         title="Appointments"
-        description="Bookings, arrivals and follow-up for your clinic."
         action={
           can("appointments.book") ? (
             <Button onClick={() => setBook(true)}>
@@ -164,7 +157,7 @@ export function Appointments() {
             </div>
             <div className="w-44 space-y-2">
               <Choice
-                label="Visit type on this page"
+                label="Appointment type"
                 value={mode}
                 onChange={setMode}
                 options={[
@@ -193,11 +186,6 @@ export function Appointments() {
               onChange={(e) => setText(e.target.value)}
             />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Searches this day on the server (at least 2 characters). 100
-            appointments per page. Visit type filters only the loaded page; use
-            Next page to inspect further results.
-          </p>
         </CardContent>
         <LoadingState {...result}>
           <Table>
@@ -255,17 +243,10 @@ export function Appointments() {
             <WorkspaceEmpty
               title={
                 mode !== "all"
-                  ? "No matching visit types on this page"
+                  ? "No appointments match these filters"
                   : staffId !== "all" || status !== "all" || search
                     ? "No appointments match these filters"
                     : `No appointments for ${date}`
-              }
-              description={
-                mode !== "all"
-                  ? "Other pages may contain matches. Use Next page or select All visits."
-                  : staffId !== "all" || status !== "all" || search
-                    ? "Try another doctor, status or search. Clearing filters keeps your selected date."
-                    : "New bookings for this clinic will appear here."
               }
               action={
                 staffId !== "all" ||
@@ -541,6 +522,7 @@ function AppointmentDetails({
                   const value = await cmd.run<Record<string, unknown>>(
                     `/v1/appointments/${id}/${action}`,
                     action === "cancel" ? { reason: reason.trim() } : undefined,
+                    action === "cancel",
                   );
                   if (value) await changed();
                 }}
@@ -713,16 +695,14 @@ function AppointmentDetails({
             )}
             <ErrorMessage text={cmd.error} />
             {cmd.unknown && (
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  if (await result.refresh()) {
-                    cmd.reconciled();
-                    onChanged();
-                  }
-                }}
-              >
-                Refresh saved appointment
+              <Button variant="outline" disabled={cmd.busy} onClick={async () => {
+                if (cmd.canReplay) {
+                  if (await cmd.replay()) await changed();
+                } else {
+                  await result.refresh();
+                }
+              }}>
+                {cmd.canReplay ? "Check original request" : "Refresh appointment (outcome still unconfirmed)"}
               </Button>
             )}
           </>

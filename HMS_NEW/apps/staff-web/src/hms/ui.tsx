@@ -38,7 +38,7 @@ export function Hint({ children }: { children: ReactNode }) {
     </Alert>
   );
 }
-export function Status({ value }: { value: string }) {
+export function Status({ value, text }: { value: string; text?: string }) {
   return (
     <Badge
       className={
@@ -54,7 +54,9 @@ export function Status({ value }: { value: string }) {
             ? "border-blue-200 bg-blue-50 text-blue-800"
             : ["no_show", "cancelled", "entered_in_error"].includes(value)
               ? "border-red-200 bg-red-50 text-red-800"
-              : "border-slate-200 bg-slate-100 text-slate-700"
+              : ["attention", "invited"].includes(value)
+                ? "border-amber-200 bg-amber-50 text-amber-800"
+                : "border-slate-200 bg-slate-100 text-slate-700"
       }
       variant={
         ["in_progress", "checked_in", "called", "in_service"].includes(value)
@@ -62,7 +64,7 @@ export function Status({ value }: { value: string }) {
           : "secondary"
       }
     >
-      {label(value)}
+      {text ?? label(value)}
     </Badge>
   );
 }
@@ -191,7 +193,7 @@ export function Choice({
                 />
                 <p
                   id={`${control}-search-help`}
-                  className="text-xs text-muted-foreground"
+                  className="sr-only"
                 >
                   Arrow down to options; Enter to select.
                 </p>

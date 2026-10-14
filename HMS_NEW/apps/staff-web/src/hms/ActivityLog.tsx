@@ -8,6 +8,7 @@ import {
 import { request } from "./client";
 import { useWorkspace } from "./hooks";
 import { BreakGlassReview } from "./AdminPanels";
+import { AuditEventsResponseSchema, AuditExportResponseSchema } from "@hms/contracts";
 
 type AuditEvent = {
   auditEventId: string;
@@ -68,17 +69,17 @@ export function ActivityLogPage() {
         const url = new URL(path, location.origin);
         if (url.pathname !== "/api/v1/staff/audit") throw new Error("Not available on this page.");
         const q = new URLSearchParams({ ...filters(url.searchParams), limit: url.searchParams.get("limit") ?? "50" });
-        const page = await request<{ items: AuditEvent[]; more: boolean }>(`/v1/audit-events?${q}`, { signal });
-        return { items: page.items.map(item), more: page.more } as T;
+        const page = AuditEventsResponseSchema.parse(await request(`/v1/audit-events?${q}`, { signal }));
+        return { items: page.items.map(item), more: page.more, dateBoundary: page.dateBoundary } as T;
       },
       async write<T>(path: string, options: { method?: string } = {}): Promise<T> {
         const url = new URL(path, location.origin);
         if (url.pathname !== "/api/v1/staff/audit/export" || options.method !== "POST") throw new Error("Not available on this page.");
-        const out = await request<{ items: AuditEvent[]; truncated: boolean }>("/v1/audit-events/export", {
+        const out = AuditExportResponseSchema.parse(await request("/v1/audit-events/export", {
           method: "POST",
           body: filters(url.searchParams),
-        });
-        return { items: out.items.map(item), truncated: out.truncated } as T;
+        }));
+        return { items: out.items.map(item), truncated: out.truncated, dateBoundary: out.dateBoundary } as T;
       },
     }),
     [me],

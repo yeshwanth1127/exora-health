@@ -9,8 +9,8 @@ import { useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   RefreshCw,
   CalendarDays,
-  Clock3,
   CalendarPlus,
+  ChevronDown,
   LockKeyhole,
   Video,
 } from "lucide-react";
@@ -92,7 +92,7 @@ const classes = {
   available:
     "bg-background border-foreground/30 text-foreground hover:bg-muted",
   booked:
-    "bg-foreground border-foreground text-background hover:bg-foreground/85",
+    "bg-primary border-primary text-primary-foreground hover:bg-primary/85",
   blocked:
     "schedule-blocked border-border text-muted-foreground hover:bg-muted",
   held: "bg-muted border-foreground/50 border-dashed text-foreground hover:bg-secondary",
@@ -409,7 +409,6 @@ export function ScheduleTimeline({
     return (
       <FullPage
         title="Configure weekly hours"
-        description="Choose the doctor whose recurring hours you want to publish."
         back="Back to schedules"
         onBack={closeWeekly}
       >
@@ -449,34 +448,21 @@ export function ScheduleTimeline({
           timezone="Asia/Kolkata"
           label="Schedule date"
         />
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="w-40">
-            <Choice
-              label="Time scale"
-              value={scale}
-              onChange={setScale}
-              options={[
-                ["180", "Compact"],
-                ["320", "Detailed"],
-                ["480", "Extra space"],
-              ]}
-            />
-          </div>
-          {permissions.can("schedules.manage") && (
-            <Button
-              variant="outline"
-              className="border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100"
-              onClick={() => {
-                setWeeklyMode("in_person");
-                const active = rows.filter((r) => r.doctor.is_active);
-                if (active.length === 1) setWeekly(active[0].doctor);
-                else setWeeklyPicker(true);
-              }}
-            >
-              <CalendarDays />
-              Configure weekly hours
-            </Button>
-          )}
+        <div className="flex flex-wrap items-center gap-2 sm:mt-7">
+          <Button variant="ghost" size="icon" aria-label="Refresh" title="Refresh" onClick={refresh}>
+            <RefreshCw />
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() =>
+              timelineViewport.current?.scrollTo({
+                left: 0,
+                behavior: "smooth",
+              })
+            }
+          >
+            Show working hours
+          </Button>
           {canEditWeekly && (
             <Button
               variant="outline"
@@ -491,21 +477,19 @@ export function ScheduleTimeline({
               Teleconsultation hours
             </Button>
           )}
-          <Button
-            variant="outline"
-            onClick={() =>
-              timelineViewport.current?.scrollTo({
-                left: 0,
-                behavior: "smooth",
-              })
-            }
-          >
-            Show working hours
-          </Button>
-          <Button variant="outline" onClick={refresh}>
-            <RefreshCw />
-            Refresh
-          </Button>
+          {permissions.can("schedules.manage") && (
+            <Button
+              onClick={() => {
+                setWeeklyMode("in_person");
+                const active = rows.filter((r) => r.doctor.is_active);
+                if (active.length === 1) setWeekly(active[0].doctor);
+                else setWeeklyPicker(true);
+              }}
+            >
+              <CalendarDays />
+              Configure weekly hours
+            </Button>
+          )}
         </div>
       </div>
       {initialDoctorId && !canEditWeekly && (
@@ -514,7 +498,17 @@ export function ScheduleTimeline({
           Your current role can view the timeline.
         </p>
       )}
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="grid gap-3 mb-6 sm:grid-cols-[10rem_1fr_1fr]">
+        <Choice
+          label="Time scale"
+          value={scale}
+          onChange={setScale}
+          options={[
+            ["180", "Compact"],
+            ["320", "Detailed"],
+            ["480", "Extra space"],
+          ]}
+        />
         <Choice
           label="Department"
           value={department}
@@ -527,7 +521,7 @@ export function ScheduleTimeline({
           ]}
         />
         <div className="space-y-2">
-          <label htmlFor="timeline-search" className="text-sm font-medium">
+          <label htmlFor="timeline-search" className="block text-sm leading-none font-medium">
             Doctor
           </label>
           <Input
@@ -559,13 +553,6 @@ export function ScheduleTimeline({
                 {openSlots} open {openSlots === 1 ? "slot" : "slots"} ·{" "}
                 {bookingCount} {bookingCount === 1 ? "booking" : "bookings"}
               </p>
-              <p className="text-xs text-muted-foreground mt-2">
-                {canManage
-                  ? "Drag across a doctor's row to plan time. Click an appointment or block to inspect it."
-                  : ownDoctorId
-                    ? "Your schedule is marked below. Your account needs permission to book appointments or block time."
-                    : "Click an appointment or block to inspect it."}
-              </p>
             </div>
             <div
               className="flex flex-wrap gap-x-4 gap-y-2 text-xs"
@@ -574,10 +561,10 @@ export function ScheduleTimeline({
               <Button
                 variant="outline"
                 size="sm"
-                className="border-red-200 text-red-700 tabular-nums"
+                className="tabular-nums"
                 onClick={jumpToNow}
               >
-                <Clock3 />
+                <span aria-hidden className="size-2 rounded-full bg-red-500" />
                 Now · {nowLabel} IST
               </Button>
               {Object.entries(states).map(([key, label]) => (
@@ -710,11 +697,12 @@ export function ScheduleTimeline({
                           Date-specific hours
                         </span>
                       )}
+                      <div className="flex gap-1.5">
                       {(ownRow || permissions.can("appointments.create")) && (
                         <Button
                           variant="outline"
                           size="sm"
-                          className="justify-start h-8 text-xs"
+                          className="flex-1 text-xs"
                           disabled={
                             !permissions.can("appointments.create") ||
                             !row.doctor.is_active ||
@@ -724,7 +712,7 @@ export function ScheduleTimeline({
                           onClick={() => planRange("book")}
                         >
                           <CalendarPlus className="size-3.5" />
-                          Book appointment
+                          Book
                         </Button>
                       )}
                       {(ownRow ||
@@ -734,13 +722,14 @@ export function ScheduleTimeline({
                           <DropdownMenuTrigger
                             render={
                               <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
-                                className="justify-start h-8 text-xs"
+                                className="text-xs"
                               />
                             }
                           >
-                            Manage time
+                            Manage
+                            <ChevronDown className="size-3.5" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent className="min-w-52">
                             {canEditWeekly && (
@@ -785,6 +774,7 @@ export function ScheduleTimeline({
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
+                      </div>
                       {ownRow &&
                         (!permissions.can("appointments.create") ||
                           !permissions.can("schedule.block")) && (
@@ -1016,8 +1006,7 @@ export function ScheduleTimeline({
               <div className="px-6 py-16 text-center">
                 <p className="font-medium">No doctors match these filters</p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Try another department or doctor name. The clinic is selected
-                  in the workspace header.
+                  Try another department or doctor name.
                 </p>
                 <Button
                   variant="outline"
@@ -1157,11 +1146,6 @@ export function ScheduleTimeline({
                   )}
                 </dl>
                 <Separator />
-                <p className="text-xs text-muted-foreground">
-                  {draft
-                    ? "This partial timeline refreshes every minute while visible. Saved administrative notes and exact-time changes await integration."
-                    : "Availability refreshes every minute. Booking checks the selected slot again before confirming."}
-                </p>
                 {selected.span.appointment && (
                   <>
                     {selected.span.appointment.overbooking_reason && (

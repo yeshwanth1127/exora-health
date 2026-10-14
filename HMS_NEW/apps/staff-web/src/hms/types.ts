@@ -97,6 +97,7 @@ export type PractitionerDetail = {
     languages: string[];
     acceptsVirtual: boolean;
     publicSlug: string | null;
+    publicPhotoUrl?: string | null;
     published: boolean;
     version: number;
   } | null;
@@ -190,6 +191,7 @@ export type Slot = {
   facilityId: string;
   visitMode: string;
   status: "free" | "taken" | "blocked";
+  healthcareServiceId?: string | null;
 };
 export type Session = {
   sessionOn: string;

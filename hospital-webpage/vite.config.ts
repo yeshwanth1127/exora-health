@@ -12,7 +12,10 @@ export default defineConfig(({ mode }) => {
   server: {
     port: 5173,
     open: true,
-    proxy: Object.fromEntries(["/staff", "/api", "/talk", ...(env.VITE_BOOKING_MODE === 'live' ? ["/book"] : [])].map(path => [path, { target: backend, changeOrigin: false }]))
+    proxy: {
+      ...Object.fromEntries(["/staff", "/api", "/talk", ...(env.VITE_BOOKING_MODE === 'live' ? ["/book"] : [])].map(path => [path, { target: backend, changeOrigin: false }])),
+      '/public/v1': { target: env.HMS_PUBLIC_BOOKING_PROXY || 'http://127.0.0.1:3059', changeOrigin: false },
+    }
   },
   test: {
     globals: true,

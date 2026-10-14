@@ -365,7 +365,7 @@ describe('WhatsApp local staff operations', () => {
       ).status,
     ).toBe(409);
   });
-  it('a new verified message reopens a closed thread, while replaying an old message does not', async () => {
+  it('verified inbound and replayed messages preserve explicit closure until staff reopen', async () => {
     const row = (
       await k.admin.query(
         `SELECT c.id FROM comms.conversation c JOIN comms.contact_point p ON p.id=c.contact_point_id WHERE c.tenant_id=$1 AND p.booking_party_id IS NOT NULL AND p.address=$2`,
@@ -379,7 +379,7 @@ describe('WhatsApp local staff operations', () => {
     expect(ok(await k.call(desk, 'GET', `/v1/conversations/${row.id}`)).conversation.status).toBe('closed');
     ok(await inbound('inbound-new', 'A new question'));
     await k.dispatch();
-    expect(ok(await k.call(desk, 'GET', `/v1/conversations/${row.id}`)).conversation.status).toBe('open');
+    expect(ok(await k.call(desk, 'GET', `/v1/conversations/${row.id}`)).conversation.status).toBe('closed');
   });
   it('STOP persists while suspended and cancels shared-address work before acknowledging the callback', async () => {
     await consent(contact.id);

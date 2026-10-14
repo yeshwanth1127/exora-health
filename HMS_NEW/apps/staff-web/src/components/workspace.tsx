@@ -191,40 +191,28 @@ export function Resource({
 }
 export function PageTitle({
   title,
-  description,
   action,
 }: {
   title: string;
-  description: string;
   action?: ReactNode;
 }) {
   return (
     <div className="page-title">
-      <div>
-        <h1>{title}</h1>
-        <p>{description}</p>
-      </div>
+      <h1>{title}</h1>
       {action}
     </div>
   );
 }
 export function SectionTitle({
   title,
-  description,
   action,
 }: {
   title: string;
-  description?: string;
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
-      <div>
-        <h2 className="text-base font-semibold">{title}</h2>
-        {description && (
-          <p className="text-sm text-muted-foreground mt-1">{description}</p>
-        )}
-      </div>
+    <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+      <h2 className="text-base font-semibold">{title}</h2>
       {action}
     </div>
   );
@@ -364,11 +352,9 @@ export function Notice({
 }
 export function Empty({
   title,
-  description,
   action,
 }: {
   title: string;
-  description: string;
   action?: ReactNode;
 }) {
   return (
@@ -378,7 +364,6 @@ export function Empty({
           <Check className="size-5 text-muted-foreground" />
         </div>
         <h3 className="font-semibold">{title}</h3>
-        <p className="max-w-md text-sm text-muted-foreground">{description}</p>
         {action}
       </CardContent>
     </Card>
@@ -431,21 +416,14 @@ export function Action({
 }
 export function TaskLink({
   title,
-  description,
   onClick,
 }: {
   title: string;
-  description: string;
   onClick: () => void;
 }) {
   return (
     <Button variant="ghost" className="task-link" onClick={onClick}>
-      <span className="min-w-0 text-left">
-        <span className="block text-sm font-medium">{title}</span>
-        <span className="block text-xs text-muted-foreground mt-1 whitespace-normal">
-          {description}
-        </span>
-      </span>
+      <span className="min-w-0 text-left text-sm font-medium">{title}</span>
       <ArrowRight className="ml-auto shrink-0" />
     </Button>
   );

@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/sheet";
 import { PageTitle } from "@/components/workspace";
 import { request } from "./client";
+import { CommandReceiptRecovery } from "./CommandReceiptRecovery";
 import { useCommand, useQuery, useWorkspace } from "./hooks";
 import { label, money, today } from "./model";
 import { requestLeave, useUnsaved } from "./leave";
@@ -133,7 +134,6 @@ export function Catalogue() {
     <>
       <PageTitle
         title="Hospital catalogue"
-        description="Clinic locations, departments, services and rooms available to patients and agents."
         action={
           <div className="flex gap-2">
             <Button variant="outline" onClick={refresh}>
@@ -156,8 +156,7 @@ export function Catalogue() {
           <CardHeader>
             <CardTitle>Clinic branches</CardTitle>
             <CardDescription>
-              {facilities.data?.items.length ?? 0} locations. Switch clinic at
-              the top to manage another.
+              {facilities.data?.items.length ?? 0} locations
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -207,9 +206,6 @@ export function Catalogue() {
           <CardHeader className="flex flex-row items-start justify-between gap-3">
             <div>
               <CardTitle>{facility.name}</CardTitle>
-              <CardDescription>
-                What patients and booking channels are told about this clinic.
-              </CardDescription>
             </div>
             {manageClinic && detail.data && (
               <Button
@@ -234,7 +230,6 @@ export function Catalogue() {
       <LoadingState {...directory}>
         <Section
           title="Departments"
-          description={`${departments.length} departments with their doctors at this clinic.`}
           add={
             manageClinic
               ? () => setEditing({ kind: "department", row: null })
@@ -286,7 +281,6 @@ export function Catalogue() {
           {!departments.length && (
             <WorkspaceEmpty
               title="Add a department"
-              description="Departments group your doctors and services."
               action={
                 manageClinic
                   ? {
@@ -301,7 +295,6 @@ export function Catalogue() {
         </Section>
         <Section
           title="Bookable services"
-          description="What patients book, by visit type, with the default consultation fee. Doctors can have their own fee (Doctors page)."
           add={
             manageServices && departments.some((d) => d.status === "active")
               ? () => setEditing({ kind: "service", row: null })
@@ -374,10 +367,6 @@ export function Catalogue() {
                       ) : (
                         <div className="space-y-2">
                           <p>No default consultation fee</p>
-                          <p className="text-xs text-muted-foreground">
-                            Confirm an applicable fee before booking;
-                            doctor-specific fees may apply.
-                          </p>
                           {pricing && (
                             <Button
                               variant="outline"
@@ -416,11 +405,6 @@ export function Catalogue() {
           {!directory.data?.services.length && (
             <WorkspaceEmpty
               title="Create a consultation patients can book"
-              description={
-                departments.length
-                  ? "Choose a department, visit type, duration and fee."
-                  : "Add a department first, then create its consultation and fee."
-              }
               action={
                 departments.length && manageServices
                   ? {
@@ -440,7 +424,6 @@ export function Catalogue() {
         </Section>
         <Section
           title="Consult rooms"
-          description="Rooms doctors see patients in."
           add={
             manageClinic
               ? () => setEditing({ kind: "room", row: null })
@@ -559,13 +542,11 @@ export function Catalogue() {
 
 function Section({
   title,
-  description,
   add,
   addLabel,
   children,
 }: {
   title: string;
-  description: string;
   add?: () => void;
   addLabel: string;
   children: ReactNode;
@@ -573,10 +554,7 @@ function Section({
   return (
     <Card className="mt-6">
       <CardHeader className="flex flex-row items-start justify-between gap-3">
-        <div>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </div>
+        <CardTitle>{title}</CardTitle>
         {add && (
           <Button variant="outline" size="sm" onClick={add}>
             <Plus />
@@ -667,21 +645,24 @@ function Reactivate({
       >
         Switch on
       </Button>
-      <ErrorMessage text={cmd.error} />
+      <ErrorMessage text={cmd.error} /><CommandReceiptRecovery command={cmd} />
     </>
   );
 }
 
 /** Explains a refusal by its reason code, else shows the server's message. */
-function Refused({ cmd }: { cmd: ReturnType<typeof useCommand> }) {
+function Refused({ cmd, onConfirmed, hideRecovery = false }: { cmd: ReturnType<typeof useCommand>; onConfirmed?: () => void; hideRecovery?: boolean }) {
   const reason = refusal(cmd.failure);
   return (
+    <>
+    {!hideRecovery && <CommandReceiptRecovery command={cmd} onConfirmed={onConfirmed} />}
     <ErrorMessage
       text={
         (reason && REASONS[reason]) ||
         (isStale(cmd.failure) ? REASONS.stale_version : cmd.error)
       }
     />
+    </>
   );
 }
 
@@ -924,10 +905,6 @@ function ClinicForm({
                 : value,
           }))}
         />
-        <p className="text-xs text-muted-foreground">
-          Appointment dates and schedule times follow this clinic’s time zone.
-          Review it before saving.
-        </p>
       </Field>
       {text("directionsUrl", "Directions link (https)", {
         type: "url",
@@ -1334,11 +1311,6 @@ function ServiceForm({
             />
           </Field>
         )}
-        <p className="text-xs text-muted-foreground">
-          {pricing
-            ? "Bookings already made keep the fee they were booked at. Clearing the fee leaves the service unpriced from that date."
-            : "Only someone who manages prices can change fees."}
-        </p>
       </fieldset>
       {detailsSaved && (
         <Hint>
@@ -1346,12 +1318,12 @@ function ServiceForm({
           resuming will not save the details again.
         </Hint>
       )}
-      <Refused cmd={cmd} />
-      <Refused cmd={feeCmd} />
+      <Refused cmd={cmd} hideRecovery={!!row} onConfirmed={onSaved} />
+      <Refused cmd={feeCmd} hideRecovery={!!row} onConfirmed={onSaved} />
       {(cmd.unknown || feeCmd.unknown) && row && (
         <div className="space-y-3">
           <Hint>
-            The save outcome is uncertain. Check the current record before
+            The save outcome is uncertain. Recover the original request before
             attempting another change.
           </Hint>
           <Button
@@ -1363,50 +1335,17 @@ function ServiceForm({
               setRecoveryNote("");
               try {
                 if (cmd.unknown) {
-                  const d = await request<ClinicDirectory>(
-                    `/v1/facilities/${facility.facilityId}/directory?includeInactive=true`,
-                  );
-                  const current = d.services.find(
-                    (s) => s.healthcareServiceId === row.healthcareServiceId,
-                  );
-                  if (
-                    current &&
-                    Object.entries(changes!).every(
-                      ([k, v]) =>
-                        (current as unknown as Record<string, unknown>)[k] ===
-                        v,
-                    )
-                  ) {
-                    cmd.reconciled();
+                  const receipt = await cmd.replay();
+                  if (receipt !== undefined) {
                     setDetailsSaved(true);
-                    setRecoveryNote(
-                      "Current service details match your requested change. Continue with the remaining fee, if needed.",
-                    );
-                  } else
-                    setRecoveryNote(
-                      "The current service details do not confirm your original change. Keep this form open and ask the administrator to review the request before retrying.",
-                    );
+                    setRecoveryNote("The original service save is confirmed. Continue with the remaining fee, if needed.");
+                  } else {
+                    setRecoveryNote("The original service save is still unconfirmed. Keep this form open and ask the administrator to review it.");
+                  }
                 } else {
-                  const d = await request<{ items: PriceBookItem[] }>(
-                    `/v1/facilities/${facility.facilityId}/price-book?on=${feeFrom}`,
-                  );
-                  const effective = d.items
-                    .filter(
-                      (p) =>
-                        p.healthcareServiceId === row.healthcareServiceId &&
-                        p.staffId === null &&
-                        p.mode === "any" &&
-                        p.validFrom <= feeFrom &&
-                        (!p.validTo || p.validTo > feeFrom),
-                    )
-                    .sort((a, b) => b.validFrom.localeCompare(a.validFrom))[0];
-                  if ((effective?.feeMinor ?? null) === feeMinor) {
-                    feeCmd.reconciled();
-                    onSaved();
-                  } else
-                    setRecoveryNote(
-                      "The current fee does not confirm your original request. Ask the administrator to review that request before another fee change.",
-                    );
+                  const receipt = await feeCmd.replay();
+                  if (receipt !== undefined) onSaved();
+                  else setRecoveryNote("The original fee save is still unconfirmed. Keep this form open and ask the administrator to review it.");
                 }
               } catch (e) {
                 setRecoveryNote(
@@ -1419,7 +1358,7 @@ function ServiceForm({
               }
             }}
           >
-            {rechecking ? "Checking…" : "Check current saved record"}
+            {rechecking ? "Recovering…" : "Recover original save"}
           </Button>
         </div>
       )}

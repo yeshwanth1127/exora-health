@@ -154,7 +154,7 @@ export function registerDirectoryRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const { facilityId } = parse(z.object({ facilityId: uuid }), request.params);
     const body = parse(FacilityFields.extend({ version: Version, status: Status.optional() }), request.body);
     authorize(principalOf(request), 'facility.manage', facilityId);
-    return updateFacility(db, callerOf(request), { facilityId, ...body });
+    return updateFacility(db, callerOf(request), { facilityId, ...body }, idempotencyKey(request));
   });
 
   // ---- departments and consult rooms (facility.manage at their clinic) --------------------------------------
@@ -171,7 +171,7 @@ export function registerDirectoryRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const facilityId = await departmentFacility(db, callerOf(request), departmentId);
     if (!facilityId) throw missing('department');
     authorize(principalOf(request), 'facility.manage', facilityId);
-    return updateDepartment(db, callerOf(request), { departmentId, ...body });
+    return updateDepartment(db, callerOf(request), { departmentId, ...body }, idempotencyKey(request));
   });
 
   app.post('/v1/facilities/:facilityId/consult-rooms', async (request, reply) => {
@@ -187,7 +187,7 @@ export function registerDirectoryRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const facilityId = await roomFacility(db, callerOf(request), locationId);
     if (!facilityId) throw missing('consult room');
     authorize(principalOf(request), 'facility.manage', facilityId);
-    return updateConsultRoom(db, callerOf(request), { locationId, ...body });
+    return updateConsultRoom(db, callerOf(request), { locationId, ...body }, idempotencyKey(request));
   });
 
   // ---- services (catalog.manage) and fees (pricing.manage) at the service's clinic ------------------------------
@@ -210,7 +210,7 @@ export function registerDirectoryRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const facilityId = await serviceFacility(db, callerOf(request), healthcareServiceId);
     if (!facilityId) throw missing('service');
     authorize(principalOf(request), 'catalog.manage', facilityId);
-    return updateService(db, callerOf(request), { healthcareServiceId, ...body });
+    return updateService(db, callerOf(request), { healthcareServiceId, ...body }, idempotencyKey(request));
   });
 
   const FeeBody = z.object({ mode: PriceMode, feeMinor: Fee.nullable(), effectiveFrom: isoDate });
@@ -221,7 +221,7 @@ export function registerDirectoryRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const facilityId = await serviceFacility(db, callerOf(request), healthcareServiceId);
     if (!facilityId) throw missing('service');
     authorize(principalOf(request), 'pricing.manage', facilityId);
-    return setServiceFee(db, callerOf(request), { healthcareServiceId, ...body });
+    return setServiceFee(db, callerOf(request), { healthcareServiceId, ...body }, idempotencyKey(request));
   });
 
   app.put('/v1/practitioners/:staffId/fees', async (request) => {
@@ -230,7 +230,7 @@ export function registerDirectoryRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const facilityId = await serviceFacility(db, callerOf(request), body.healthcareServiceId);
     if (!facilityId) throw missing('service');
     authorize(principalOf(request), 'pricing.manage', facilityId);
-    return setServiceFee(db, callerOf(request), { ...body, staffId });
+    return setServiceFee(db, callerOf(request), { ...body, staffId }, idempotencyKey(request));
   });
 
   // ---- doctors ------------------------------------------------------------------------------------------
@@ -247,6 +247,7 @@ export function registerDirectoryRoutes(app: FastifyInstance, db: Kysely<DB>) {
         languages: z.array(z.string().trim().min(2).max(40)).max(20),
         acceptsVirtual: z.boolean(),
         publicSlug: z.string().regex(/^[a-z0-9][a-z0-9-]{1,80}$/, 'lower-case letters, digits and -').nullable(),
+        publicPhotoUrl: z.string().trim().max(1000).refine(v=>/^\/clients\/[A-Za-z0-9_./-]+$/.test(v)&&!v.includes('..') || (()=>{try{return new URL(v).protocol==='https:';}catch{return false;}})(), 'Use a /clients/ asset path or HTTPS image URL').nullable().optional(),
         published: z.boolean(),
       }),
       request.body,
@@ -254,7 +255,7 @@ export function registerDirectoryRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const reach = await practitionerReach(db, callerOf(request), staffId);
     if (reach === undefined) throw missing('staff member');
     authorizeEvery(principalOf(request), 'catalog.manage', reach);
-    return savePractitionerProfile(db, callerOf(request), { staffId, ...body });
+    return savePractitionerProfile(db, callerOf(request), { staffId, ...body }, idempotencyKey(request));
   });
 
   app.post('/v1/practitioners/:staffId/affiliations', async (request, reply) => {
@@ -270,7 +271,7 @@ export function registerDirectoryRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const facilityId = await affiliationFacility(db, callerOf(request), affiliationId);
     if (!facilityId) throw missing('affiliation');
     authorize(principalOf(request), 'catalog.manage', facilityId);
-    return endAffiliation(db, callerOf(request), { affiliationId, ...body });
+    return endAffiliation(db, callerOf(request), { affiliationId, ...body }, idempotencyKey(request));
   });
 
   // Name and phone apply everywhere the person works: staff.manage at each clinic they hold a grant at.
@@ -280,6 +281,6 @@ export function registerDirectoryRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const where = await staffFacilities(db, callerOf(request), staffId);
     if (where === undefined) throw missing('staff member');
     authorizeEvery(principalOf(request), 'staff.manage', where ?? []);
-    return updateStaffDetails(db, callerOf(request), { staffId, ...body });
+    return updateStaffDetails(db, callerOf(request), { staffId, ...body }, idempotencyKey(request));
   });
 }

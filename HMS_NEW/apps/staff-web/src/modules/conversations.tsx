@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { useLegacyCommand } from "@/hms/operational-command";
+import { RecoveryNotice } from "@/hms/OperationalRecovery";
+import { requestLeave, useUnsaved } from "@/hms/leave";
 import {
   ArrowLeft,
   ArrowRight,
@@ -53,7 +56,39 @@ type Content = {
   }[];
   messages?: Content[];
 };
-type ThreadSummary = {
+type Automation = {
+  version?: number;
+  open?: boolean;
+  automation_state?: "automation" | "handoff_requested" | "human";
+  automation_allowed?: boolean;
+  automation_blocked_reasons?: string[];
+  assigned_staff_id?: string | null;
+};
+const blockedNames: Record<string, string> = {
+  closed: "Conversation closed",
+  module_inactive: "WhatsApp is disabled for this clinic",
+  consent_missing_or_withdrawn: "Messaging permission is missing or withdrawn",
+  reply_window_expired:
+    "The patient must message again to reopen the reply window",
+  contact_inactive: "Messaging contact is inactive",
+};
+function AutomationBadge({
+  state,
+}: {
+  state?: Automation["automation_state"];
+}) {
+  if (!state) return null;
+  return (
+    <Badge variant={state === "handoff_requested" ? "default" : "outline"}>
+      {state === "handoff_requested"
+        ? "Human requested"
+        : state === "human"
+          ? "Human handling"
+          : "Automation"}
+    </Badge>
+  );
+}
+type ThreadSummary = Automation & {
   sender_id: string;
   display_address?: string;
   name?: string;
@@ -69,7 +104,7 @@ type Inbox = {
   offset: number;
   limit: number;
 };
-type Thread = {
+type Thread = Automation & {
   sender_id: string;
   display_address?: string;
   active_handoff: boolean;
@@ -268,6 +303,8 @@ export function Conversations({
   localMode?: boolean;
 }) {
   const api = useApi();
+  const command = useLegacyCommand();
+  const paused = command.busy || command.unknown;
   const canReply = usePermissions().can("comms.reply");
   const [kind, setKind] = useState("all"),
     [status, setStatus] = useState("all"),
@@ -276,7 +313,12 @@ export function Conversations({
     [offset, setOffset] = useState(0),
     [selected, setSelected] = useState(""),
     [reply, setReply] = useState({ sender: "", text: "" }),
-    [closeSender, setCloseSender] = useState("");
+    [closeSender, setCloseSender] = useState(""),
+    [resumeTarget, setResumeTarget] = useState<{
+      id: string;
+      version: number;
+    } | null>(null);
+  useUnsaved(!!reply.text.trim());
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(query);
@@ -305,18 +347,37 @@ export function Conversations({
   };
   const thread =
     detail.data?.sender_id === current?.sender_id ? detail.data : null;
+  const resumeBlocks =
+    thread?.automation_blocked_reasons?.filter(
+      (reason) => reason !== "human_handoff",
+    ) ?? [];
+  const mutate = (
+    path: string,
+    method: string,
+    body: Record<string, unknown>,
+  ) =>
+    localMode
+      ? command.write(path, {
+          method,
+          body: { ...body, version: thread?.version },
+        })
+      : api(path, { method, body });
   return (
     <>
+      <RecoveryNotice
+        command={command}
+        onRecovered={() => {
+          setReply({ sender: "", text: "" });
+          setCloseSender("");
+          setResumeTarget(null);
+          refresh();
+        }}
+      />
       {localMode && canReply && <LocalConversationCreate onSaved={refresh} />}
       <SectionTitle
         title="Conversations"
-        description={
-          localMode
-            ? "Read saved conversations, cases and local replies. The patient bot and automatic delivery are unavailable."
-            : "Read patient messages, bot options and reception replies in one thread."
-        }
         action={
-          <Button variant="outline" onClick={refresh}>
+          <Button variant="outline" disabled={paused} onClick={refresh}>
             <RefreshCw />
             Refresh
           </Button>
@@ -326,6 +387,7 @@ export function Conversations({
         <div className="relative">
           <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
           <Input
+            disabled={paused}
             aria-label="Search conversations"
             placeholder="Search phone or patient request"
             value={query}
@@ -334,14 +396,17 @@ export function Conversations({
           />
         </div>
         <Choice
+          disabled={paused}
           label="Conversation type"
           value={kind}
-          onChange={(v) => {
-            setKind(v);
-            setOffset(0);
-            setSelected("");
-            setText("");
-          }}
+          onChange={(v) =>
+            requestLeave(() => {
+              setKind(v);
+              setOffset(0);
+              setSelected("");
+              setReply({ sender: "", text: "" });
+            })
+          }
           options={[
             ["all", "All conversations"],
             ["reception", "Reception"],
@@ -350,14 +415,17 @@ export function Conversations({
           ]}
         />
         <Choice
+          disabled={paused}
           label="Conversation status"
           value={status}
-          onChange={(v) => {
-            setStatus(v);
-            setOffset(0);
-            setSelected("");
-            setText("");
-          }}
+          onChange={(v) =>
+            requestLeave(() => {
+              setStatus(v);
+              setOffset(0);
+              setSelected("");
+              setReply({ sender: "", text: "" });
+            })
+          }
           options={[
             ["all", "Any status"],
             ["open", "Open"],
@@ -369,7 +437,6 @@ export function Conversations({
         {!current ? (
           <Empty
             title="No matching conversations"
-            description="Try another type, status or search."
           />
         ) : (
           <Card className="grid lg:grid-cols-[280px_minmax(0,1fr)] p-0 gap-0 overflow-hidden">
@@ -381,14 +448,17 @@ export function Conversations({
               <div className="p-2 max-h-[250px] lg:max-h-[680px] overflow-y-auto">
                 {inbox.data?.items.map((c) => (
                   <Button
+                    disabled={paused}
                     key={c.sender_id}
                     variant="ghost"
                     aria-pressed={c.sender_id === current.sender_id}
                     className={`w-full h-auto min-h-24 justify-start text-left p-3 mb-1 whitespace-normal ${c.sender_id === current.sender_id ? "bg-background ring-1 ring-border" : ""}`}
-                    onClick={() => {
-                      setSelected(c.sender_id);
-                      setText("");
-                    }}
+                    onClick={() =>
+                      requestLeave(() => {
+                        setSelected(c.sender_id);
+                        setReply({ sender: c.sender_id, text: "" });
+                      })
+                    }
                   >
                     <span className="min-w-0 w-full">
                       <span className="flex justify-between gap-2 text-xs font-medium">
@@ -414,6 +484,9 @@ export function Conversations({
                               : `+${c.sender_id}`)}
                         </span>
                       )}
+                      <span className="block mt-2">
+                        <AutomationBadge state={c.automation_state} />
+                      </span>
                       <span className="block text-xs text-muted-foreground mt-1.5 truncate">
                         {c.preview}
                       </span>
@@ -432,8 +505,13 @@ export function Conversations({
                   <Button
                     variant="ghost"
                     size="sm"
-                    disabled={!offset}
-                    onClick={() => setOffset(offset - 30)}
+                    disabled={paused || !offset}
+                    onClick={() =>
+                      requestLeave(() => {
+                        setOffset(offset - 30);
+                        setReply({ sender: "", text: "" });
+                      })
+                    }
                   >
                     <ArrowLeft />
                     Previous
@@ -441,8 +519,13 @@ export function Conversations({
                   <Button
                     variant="ghost"
                     size="sm"
-                    disabled={offset + 30 >= (inbox.data?.total ?? 0)}
-                    onClick={() => setOffset(offset + 30)}
+                    disabled={paused || offset + 30 >= (inbox.data?.total ?? 0)}
+                    onClick={() =>
+                      requestLeave(() => {
+                        setOffset(offset + 30);
+                        setReply({ sender: "", text: "" });
+                      })
+                    }
                   >
                     Next
                     <ArrowRight />
@@ -463,27 +546,31 @@ export function Conversations({
                               ? "Messaging contact"
                               : `+${current.sender_id}`)}
                         </h3>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {thread.active_handoff
-                            ? `${localMode ? "Reception" : "Bot paused"} · ${thread.assigned_to || "Unassigned"}`
-                            : "Conversation history"}
+                        <div className="mt-2">
+                          <AutomationBadge state={thread.automation_state} />
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {thread.automation_state
+                            ? `${thread.open ? "Open" : "Closed"} · ${thread.assigned_to ? `Assigned to ${thread.assigned_to}` : "Unassigned"}`
+                            : thread.active_handoff
+                              ? `${localMode ? "Reception" : "Bot paused"} · ${thread.assigned_to || "Unassigned"}`
+                              : "Conversation history"}
                         </p>
                       </div>
-                      {thread.active_handoff && (
+                      {(thread.automation_state
+                        ? thread.open
+                        : thread.active_handoff) && (
                         <div className="flex flex-wrap gap-2">
                           <Action
                             variant="outline"
-                            disabled={localMode && (!canReply || !enabled)}
+                            disabled={
+                              paused || (localMode && (!canReply || !enabled))
+                            }
                             run={async () => {
-                              await api(
+                              await mutate(
                                 `${wa}/reception/${current.sender_id}`,
-                                {
-                                  method: "PATCH",
-                                  body: {
-                                    status: "active",
-                                    assigned_to: user.name,
-                                  },
-                                },
+                                "PATCH",
+                                { status: "active", assigned_to: user.name },
                               );
                               refresh();
                             }}
@@ -491,9 +578,50 @@ export function Conversations({
                           >
                             Take conversation
                           </Action>
+                          {localMode &&
+                            thread.automation_state === "automation" && (
+                              <Action
+                                variant="outline"
+                                disabled={paused || !canReply || !enabled}
+                                run={async () => {
+                                  await mutate(
+                                    `${wa}/reception/${current.sender_id}/handoff`,
+                                    "POST",
+                                    {},
+                                  );
+                                  refresh();
+                                }}
+                                success="Human handling requested; automation paused"
+                              >
+                                Request human handling
+                              </Action>
+                            )}
+                          {localMode &&
+                            thread.automation_state !== "automation" &&
+                            thread.version !== undefined && (
+                              <Button
+                                variant="outline"
+                                disabled={
+                                  paused ||
+                                  !canReply ||
+                                  !enabled ||
+                                  resumeBlocks.length > 0
+                                }
+                                onClick={() =>
+                                  setResumeTarget({
+                                    id: current.sender_id,
+                                    version: thread.version!,
+                                  })
+                                }
+                              >
+                                Resume automation
+                              </Button>
+                            )}
                           <Button
                             variant="outline"
-                            disabled={localMode && (!canReply || !enabled)}
+                            disabled={
+                              paused || (localMode && (!canReply || !enabled))
+                            }
                             onClick={() => setClose(true)}
                           >
                             {localMode
@@ -503,6 +631,14 @@ export function Conversations({
                         </div>
                       )}
                     </div>
+                    {localMode && resumeBlocks.length > 0 && (
+                      <p className="border-b px-5 py-3 text-sm text-muted-foreground">
+                        Automation unavailable:{" "}
+                        {resumeBlocks
+                          .map((reason) => blockedNames[reason] ?? reason)
+                          .join(" · ")}
+                      </p>
+                    )}
                     {thread.cases
                       .filter((c) => c.kind !== "reception")
                       .map((c) => (
@@ -521,7 +657,9 @@ export function Conversations({
                           {c.status !== "resolved" && (
                             <Action
                               variant="ghost"
-                              disabled={localMode && (!canReply || !enabled)}
+                              disabled={
+                                paused || (localMode && (!canReply || !enabled))
+                              }
                               run={async () => {
                                 await api(
                                   `/api/v1/admin/whatsapp-cases/${c.id}`,
@@ -596,9 +734,7 @@ export function Conversations({
                               ? "Reception replies are disabled in Settings."
                               : !thread.can_reply
                                 ? "The reply window has closed. The patient must message again before you can reply."
-                                : !text.trim()
-                                  ? "Write a reply before sending."
-                                  : undefined
+                                : undefined
                           }
                         >
                           <Textarea
@@ -608,6 +744,7 @@ export function Conversations({
                             maxLength={2000}
                             onChange={(e) => setText(e.target.value)}
                             disabled={
+                              paused ||
                               !thread.can_reply ||
                               !enabled ||
                               (localMode && !canReply)
@@ -615,30 +752,19 @@ export function Conversations({
                           />
                         </Field>
                         <div className="flex flex-wrap justify-between items-center gap-3">
-                          <p className="text-xs text-muted-foreground">
-                            {localMode
-                              ? "Replies are recorded under your authenticated staff account."
-                              : `Replies are sent as ${user.name}.`}
-                          </p>
                           <Action
                             disabled={
+                              paused ||
                               !enabled ||
                               !thread.can_reply ||
                               !text.trim() ||
                               (localMode && !canReply)
                             }
                             run={async () => {
-                              await api(
+                              await mutate(
                                 `${wa}/reception/${current.sender_id}/reply`,
-                                {
-                                  method: "POST",
-                                  body: {
-                                    actor: user.name,
-                                    text: text.trim(),
-                                    idempotency_key:
-                                      "staff-ui:" + crypto.randomUUID(),
-                                  },
-                                },
+                                "POST",
+                                { actor: user.name, text: text.trim() },
                               );
                               setText("");
                               refresh();
@@ -668,7 +794,52 @@ export function Conversations({
           </Card>
         )}
       </Resource>
-      <Dialog open={close} onOpenChange={setClose}>
+      <Dialog
+        open={!!resumeTarget}
+        onOpenChange={(open) => {
+          if (!paused && !open) setResumeTarget(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Return this conversation to automation?</DialogTitle>
+            <DialogDescription>
+              This clears the staff assignment and ends human handling.
+              Automation can respond only when messaging permission and the
+              reply window allow it. Live bot delivery is not connected.
+            </DialogDescription>
+          </DialogHeader>
+          <RecoveryNotice
+            command={command}
+            onRecovered={() => {
+              setResumeTarget(null);
+              refresh();
+            }}
+          />
+          <Action
+            variant="destructive"
+            disabled={paused || !canReply || !enabled}
+            run={async () => {
+              if (!resumeTarget) return;
+              await command.write(`${wa}/reception/${resumeTarget.id}/resume`, {
+                method: "POST",
+                body: { version: resumeTarget.version },
+              });
+              setResumeTarget(null);
+              refresh();
+            }}
+            success="Conversation returned to automation"
+          >
+            Resume automation
+          </Action>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={close}
+        onOpenChange={(open) => {
+          if (!paused) setClose(open);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Close this conversation?</DialogTitle>
@@ -678,11 +849,19 @@ export function Conversations({
                 : `Reception will stop handling +${current?.sender_id}. The patient can use the booking bot again.`}
             </DialogDescription>
           </DialogHeader>
+          <RecoveryNotice
+            command={command}
+            onRecovered={() => {
+              setClose(false);
+              refresh();
+            }}
+          />
           <Action
+            disabled={paused || (localMode && (!canReply || !enabled))}
             run={async () => {
-              await api(`${wa}/reception/${current!.sender_id}`, {
-                method: "PATCH",
-                body: { status: "closed", assigned_to: user.name },
+              await mutate(`${wa}/reception/${current!.sender_id}`, "PATCH", {
+                status: "closed",
+                assigned_to: user.name,
               });
               setClose(false);
               refresh();

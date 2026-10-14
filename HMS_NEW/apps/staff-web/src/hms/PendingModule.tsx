@@ -4,7 +4,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -42,7 +41,6 @@ export function PendingModule({ page }: { page: string }) {
     <div className="space-y-6">
       <PageTitle
         title={String(title)}
-        description="Original workspace features retained for integration."
       />
       <Hint>
         {page === "loyalty"
@@ -66,11 +64,6 @@ export function PendingModule({ page }: { page: string }) {
             <CardTitle>{tabs[page] ? selected : String(title)}</CardTitle>
             <Badge variant="outline">Awaiting integration</Badge>
           </div>
-          <CardDescription>
-            The original module's full forms and layouts remain in the selected
-            source. This page restores its place in the workspace; connecting
-            that full interface is still pending.
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {(features as string[]).map((feature) => (

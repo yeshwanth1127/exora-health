@@ -4,6 +4,7 @@ import path from 'node:path';
 import { sql, type DB, type Kysely, type Transaction } from '@hms/db';
 import {
   conflict,
+  pgCode,
   forbidden,
   invalid,
   notFound,
@@ -28,6 +29,8 @@ import {
 import { clock, type Caller } from '../../caller.ts';
 import { addressLock, moduleState } from './notifications.ts';
 import type { OutboxEvent } from '../../../../worker/src/dispatcher.ts';
+import { parseWhatsAppProviderConfig, resolveWhatsAppBinding, type WhatsAppBinding } from './whatsapp-provider-config.ts';
+import { templateSubmissionDto } from './template-submission-shape.ts';
 type Tx = Transaction<DB>;
 export async function assertWhatsAppActive(tx: Tx) {
   if ((await moduleState(tx)) !== 'active')
@@ -46,11 +49,10 @@ export async function settings(db: Kysely<DB>, caller: Caller, facilityId: strin
       phone_number_id: string;
       version: number;
     }>`SELECT * FROM comms.channel_account WHERE facility_id=${facilityId}`.execute(tx);
-    const configured =
-      !!a &&
-      a.phone_number_id === process.env.WA_PHONE_NUMBER_ID &&
-      !!process.env.WA_APP_SECRET &&
-      !!process.env.WA_VERIFY_TOKEN;
+    const binding = a ? resolveWhatsAppBinding(a.phone_number_id) : null;
+    const matches = !!binding && (binding.mode === 'legacy' ||
+      (binding.tenantId === caller.tenantId && binding.facilityId === facilityId));
+    const configured = matches && !!binding?.inboundConfigured;
     const {
       rows: [counts],
     } = await sql<{
@@ -65,11 +67,9 @@ export async function settings(db: Kysely<DB>, caller: Caller, facilityId: strin
       accountId: a?.id ?? null,
       phoneNumberId: a?.phone_number_id ?? null,
       version: a?.version ?? 0,
-      providerConfigured:
-        configured &&
-        !!process.env.WA_ACCESS_TOKEN &&
-        !!process.env.WA_BUSINESS_ACCOUNT_ID &&
-        !!process.env.WA_GRAPH_VERSION,
+      providerConfigured: configured && !!binding?.outboundCredentialsReady,
+      templateStatusAvailable: matches && binding?.mode === 'multi_clinic' && !!binding?.outboundCredentialsReady,
+      templateSubmissionAvailable: process.env.WA_TEMPLATE_SUBMISSIONS_ENABLED === 'true' && matches && binding?.mode === 'multi_clinic' && !!binding?.outboundCredentialsReady,
       webhookReady: configured,
       operationalCounts: counts,
       liveSending: false,
@@ -95,15 +95,24 @@ export async function saveSettings(
     { ...caller, module: 'comms', name: 'comms.channel_account', request: input, idempotencyKey: key },
     async (ctx) => {
       await assertWhatsAppActive(ctx.tx);
+      const provider = parseWhatsAppProviderConfig();
+      if (provider.mode === 'multi_clinic' && !provider.bindings.some(b =>
+        b.phoneNumberId === input.phoneNumberId && b.tenantId === ctx.tenantId && b.facilityId === input.facilityId
+      )) throw forbidden('The company must provision this clinic provider binding first');
       await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${ctx.tenantId}:account:${input.facilityId}`},0))`.execute(
         ctx.tx,
       );
       const {
         rows: [a],
       } = await sql<{
-        version: number;
-      }>`SELECT version FROM comms.channel_account WHERE facility_id=${input.facilityId}`.execute(ctx.tx);
+        version: number; id: string; phone_number_id: string;
+      }>`SELECT id,version,phone_number_id FROM comms.channel_account WHERE facility_id=${input.facilityId} FOR UPDATE`.execute(ctx.tx);
       if ((a?.version ?? 0) !== input.version) throw conflict('account changed', { reason: 'stale_version' });
+      if (a && a.phone_number_id !== input.phoneNumberId && (
+        await sql<{ used: boolean }>`SELECT (EXISTS(SELECT 1 FROM comms.provider_event WHERE account_id=${a.id}) OR
+          EXISTS(SELECT 1 FROM comms.template_provider_check WHERE account_id=${a.id}) OR
+          EXISTS(SELECT 1 FROM comms.template_submission WHERE account_id=${a.id})) AS used`.execute(ctx.tx)
+      ).rows[0]!.used) throw conflict('This number has provider history. A reviewed migration is required.', { reason: 'account_has_history' });
       const {
         rows: [r],
       } = await sql<{
@@ -130,6 +139,9 @@ export async function conversationRow(tx: Tx, id: string, lock = false) {
     facility_id: string;
     contact_point_id: string;
     status: 'open' | 'closed';
+    automation_state: 'automation' | 'handoff_requested' | 'human';
+    contact_active: boolean;
+    module_active: boolean;
     assigned_staff_id: string | null;
     assigned_staff_name: string | null;
     last_inbound_at: Date | null;
@@ -139,7 +151,7 @@ export async function conversationRow(tx: Tx, id: string, lock = false) {
     name: string | null;
     kinds: string[];
     care_allowed: boolean;
-  }>`SELECT c.*,ARRAY(SELECT DISTINCT sc.kind FROM comms.support_case sc WHERE sc.conversation_id=c.id AND sc.tenant_id=c.tenant_id) AS kinds,s.display_name AS assigned_staff_name,p.address,comms.has_consent(p.id,'care') AS care_allowed,coalesce(pt.given_name,b.name) AS name FROM comms.conversation c JOIN comms.contact_point p ON p.tenant_id=c.tenant_id AND p.id=c.contact_point_id LEFT JOIN patient.patient pt ON pt.tenant_id=p.tenant_id AND pt.id=p.patient_id LEFT JOIN booking.booking_party b ON b.tenant_id=p.tenant_id AND b.id=p.booking_party_id LEFT JOIN platform.staff s ON s.tenant_id=c.tenant_id AND s.id=c.assigned_staff_id WHERE c.id=${id} ${lock ? sql`FOR UPDATE OF c` : sql``}`.execute(
+  }>`SELECT c.*,ARRAY(SELECT DISTINCT sc.kind FROM comms.support_case sc WHERE sc.conversation_id=c.id AND sc.tenant_id=c.tenant_id) AS kinds,s.display_name AS assigned_staff_name,p.address,p.status='active' AS contact_active,coalesce((SELECT ms.state='active' FROM platform.module_state ms WHERE ms.tenant_id=c.tenant_id AND ms.module_code='comms'),true) AS module_active,comms.has_consent(p.id,'care') AS care_allowed,coalesce(pt.given_name,b.name) AS name FROM comms.conversation c JOIN comms.contact_point p ON p.tenant_id=c.tenant_id AND p.id=c.contact_point_id LEFT JOIN patient.patient pt ON pt.tenant_id=p.tenant_id AND pt.id=p.patient_id LEFT JOIN booking.booking_party b ON b.tenant_id=p.tenant_id AND b.id=p.booking_party_id LEFT JOIN platform.staff s ON s.tenant_id=c.tenant_id AND s.id=c.assigned_staff_id WHERE c.id=${id} ${lock ? sql`FOR UPDATE OF c` : sql``}`.execute(
     tx,
   );
   if (!r) throw notFound('conversation');
@@ -147,17 +159,27 @@ export async function conversationRow(tx: Tx, id: string, lock = false) {
 }
 function conversationDto(r: Awaited<ReturnType<typeof conversationRow>>, now: Date, reveal: boolean) {
   const until = r.last_inbound_at ? new Date(new Date(r.last_inbound_at).getTime() + 86400000) : null;
+  const blocked: Array<'closed' | 'human_handoff' | 'module_inactive' | 'consent_missing_or_withdrawn' | 'reply_window_expired' | 'contact_inactive'> = [];
+  if (r.status !== 'open') blocked.push('closed');
+  if (r.automation_state !== 'automation') blocked.push('human_handoff');
+  if (!r.module_active) blocked.push('module_inactive');
+  if (!r.contact_active) blocked.push('contact_inactive');
+  if (!r.care_allowed) blocked.push('consent_missing_or_withdrawn');
+  if (!until || until <= now) blocked.push('reply_window_expired');
   return ConversationSchema.parse({
     id: r.id,
     facilityId: r.facility_id,
     contactPointId: r.contact_point_id,
     status: r.status,
+    automationState: r.automation_state,
+    automationAllowed: blocked.length === 0,
+    automationBlockedReasons: blocked,
     assignedStaffId: r.assigned_staff_id,
     assignedStaffName: r.assigned_staff_name,
     version: r.version,
     updatedAt: time(r.updated_at),
     replyUntil: until ? time(until) : null,
-    canReply: r.status === 'open' && !!until && until > now && r.care_allowed,
+    canReply: r.status === 'open' && r.module_active && r.contact_active && !!until && until > now && r.care_allowed,
     contactAddress: reveal ? r.address : r.address.replace(/.(?=.{4})/g, '•'),
     name: r.name,
     kinds: r.status === 'open' ? ['reception', ...r.kinds] : r.kinds,
@@ -262,6 +284,7 @@ export async function openConversation(
     { ...caller, module: 'comms', name: 'comms.open_conversation', request: input, idempotencyKey: key },
     async (ctx) => {
       await assertWhatsAppActive(ctx.tx);
+      if (!ctx.actor.staffId) throw forbidden('a staff member must open a human conversation');
       const {
         rows: [p],
       } = await sql<{
@@ -272,11 +295,14 @@ export async function openConversation(
       );
       if (!p) throw notFound('contact at this clinic');
       await addressLock(ctx.tx, ctx.tenantId, p.address);
+      const { rows: [existing] } = await sql<{ id: string; status: 'open' | 'closed' }>`SELECT id,status FROM comms.conversation WHERE contact_point_id=${input.contactPointId} FOR UPDATE`.execute(ctx.tx);
+      // Opening an already-open inbox thread is a read, not a way to steal assignment without CAS.
+      if (existing?.status === 'open') return { id: existing.id };
       const {
         rows: [r],
       } = await sql<{
         id: string;
-      }>`INSERT INTO comms.conversation(tenant_id,facility_id,contact_point_id,created_by) VALUES(${ctx.tenantId},${input.facilityId},${input.contactPointId},${ctx.actor.staffId ?? null}) ON CONFLICT(tenant_id,contact_point_id) DO UPDATE SET status='open' RETURNING id`.execute(
+      }>`INSERT INTO comms.conversation(tenant_id,facility_id,contact_point_id,created_by,automation_state,assigned_staff_id) VALUES(${ctx.tenantId},${input.facilityId},${input.contactPointId},${ctx.actor.staffId},'human',${ctx.actor.staffId}) ON CONFLICT(tenant_id,contact_point_id) DO UPDATE SET status='open',automation_state='human',assigned_staff_id=EXCLUDED.assigned_staff_id RETURNING id`.execute(
         ctx.tx,
       );
       ctx.audit({ action: 'create', subjectType: 'comms.conversation', subjectId: r!.id });
@@ -296,7 +322,7 @@ export async function conversationCommand(
   caller: Caller,
   id: string,
   input: { version: number; text?: string },
-  action: 'assign' | 'close' | 'reply',
+  action: 'assign' | 'close' | 'reply' | 'handoff' | 'resume',
   key: string,
 ) {
   await runCommand(
@@ -310,12 +336,21 @@ export async function conversationCommand(
     },
     async (ctx) => {
       await assertWhatsAppActive(ctx.tx);
+      if (!ctx.actor.staffId) throw forbidden('a staff member must manage this conversation');
       const initial = await conversationRow(ctx.tx, id);
       await addressLock(ctx.tx, ctx.tenantId, initial.address);
       const c = await conversationRow(ctx.tx, id, true);
       if (c.version !== input.version) throw conflict('conversation changed', { reason: 'stale_version' });
       if (c.status === 'closed') throw conflict('conversation is closed');
-      if (action === 'reply') {
+      if (action === 'resume') {
+        if (!c.contact_active || !c.care_allowed)
+          throw preconditionFailed('fresh care-messaging permission is required before resuming automation', { reason: 'consent_missing_or_withdrawn' });
+        if (!c.last_inbound_at || new Date(c.last_inbound_at).getTime() + 86400000 <= clock(caller).getTime())
+          throw preconditionFailed('a current inbound reply window is required before resuming automation', { reason: 'reply_window_expired' });
+        await sql`UPDATE comms.conversation SET automation_state='automation',assigned_staff_id=NULL WHERE id=${id}`.execute(ctx.tx);
+      } else if (action === 'handoff') {
+        await sql`UPDATE comms.conversation SET automation_state='handoff_requested',assigned_staff_id=NULL WHERE id=${id}`.execute(ctx.tx);
+      } else if (action === 'reply') {
         if (!c.last_inbound_at || new Date(c.last_inbound_at).getTime() + 86400000 <= clock(caller).getTime())
           throw conflict('free-text reply window has expired', { reason: 'reply_window_expired' });
         const {
@@ -325,11 +360,11 @@ export async function conversationCommand(
         await sql`INSERT INTO comms.outbound_message(tenant_id,facility_id,contact_point_id,conversation_id,text_content,created_by) VALUES(${ctx.tenantId},${c.facility_id},${c.contact_point_id},${id},${input.text!},${ctx.actor.staffId ?? null})`.execute(
           ctx.tx,
         );
-        await sql`UPDATE comms.conversation SET assigned_staff_id=coalesce(assigned_staff_id,${ctx.actor.staffId ?? null}::uuid) WHERE id=${id}`.execute(
+        await sql`UPDATE comms.conversation SET automation_state='human',assigned_staff_id=${ctx.actor.staffId} WHERE id=${id}`.execute(
           ctx.tx,
         );
       } else
-        await sql`UPDATE comms.conversation SET status=${action === 'close' ? 'closed' : 'open'},assigned_staff_id=${ctx.actor.staffId ?? null} WHERE id=${id}`.execute(
+        await sql`UPDATE comms.conversation SET status=${action === 'close' ? 'closed' : 'open'},automation_state='human',assigned_staff_id=${ctx.actor.staffId} WHERE id=${id}`.execute(
           ctx.tx,
         );
       ctx.audit({ action: 'update', subjectType: 'comms.conversation', subjectId: id, diff: { action } });
@@ -615,14 +650,25 @@ function templateDto(r: any) {
     parameterCount: r.parameter_count,
     header: r.header,
     providerApproval: r.provider_approval,
+    providerStatusCheck: r.provider_status_check ? {
+      status: r.provider_status_check.provider_status, match: r.provider_status_check.content_match,
+      checkedAt: time(r.provider_status_check.checked_at), providerTemplateId: r.provider_status_check.provider_template_id,
+      localVersion: r.provider_status_check.template_version,
+    } : null,
+    submission: r.submission ? templateSubmissionDto(r.submission,r) : null,
     simulationOnly: true,
+    editable: !r.edit_blocked,
+    editBlockedReason: r.edit_blocked ? 'Used by an approved or scheduled campaign. Create another template instead.' : null,
     version: r.version,
   });
 }
 export async function templates(db: Kysely<DB>, caller: Caller, facilityId: string) {
   return runQuery(db, caller.tenantId, async (tx) => ({
     items: (
-      await sql<any>`SELECT * FROM comms.message_template WHERE facility_id=${facilityId} ORDER BY name`.execute(tx)
+      await sql<any>`SELECT t.*, (SELECT to_jsonb(p) FROM comms.template_provider_check p WHERE p.template_id=t.id ORDER BY p.checked_at DESC,p.id DESC LIMIT 1) AS provider_status_check,
+        (SELECT to_jsonb(s) FROM comms.template_submission s WHERE s.template_id=t.id
+          ORDER BY (s.body=t.body AND s.language=t.language AND s.category=t.category AND s.parameter_count=t.parameter_count AND t.header='none' AND s.state NOT IN('failed','cancelled')) DESC,s.created_at DESC,s.id DESC LIMIT 1) AS submission,
+        EXISTS(SELECT 1 FROM comms.campaign c WHERE c.template_id=t.id AND (c.status='scheduled' OR c.approval_hash IS NOT NULL OR c.approved_by IS NOT NULL)) AS edit_blocked FROM comms.message_template t WHERE facility_id=${facilityId} ORDER BY name`.execute(tx)
     ).rows.map(templateDto),
   }));
 }
@@ -645,18 +691,16 @@ export async function createTemplate(
     { ...caller, module: 'comms', name: 'comms.local_template', request: input, idempotencyKey: key },
     async (ctx) => {
       await assertWhatsAppActive(ctx.tx);
-      const placeholders = [...input.body.matchAll(/\{\{(\d+)\}\}/g)].map((m) => Number(m[1]));
-      if (
-        placeholders.some((n) => n < 1 || n > input.parameterCount) ||
-        new Set(placeholders).size !== input.parameterCount
-      )
-        throw invalid('template parameters must match numbered placeholders');
+      validateTemplateParameters(input.body, input.parameterCount);
       const {
         rows: [r],
       } =
         await sql<any>`INSERT INTO comms.message_template(tenant_id,facility_id,name,body,language,category,parameter_count,header,created_by) VALUES(${ctx.tenantId},${input.facilityId},${input.name},${input.body},${input.language},${input.category},${input.parameterCount},${input.header},${ctx.actor.staffId ?? null}) RETURNING *`.execute(
           ctx.tx,
-        );
+        ).catch((error: unknown) => {
+          if (pgCode(error) === '23505') throw conflict('A template with this name and language already exists at this clinic.', { reason: 'duplicate_template' });
+          throw error;
+        });
       ctx.audit({ action: 'create', subjectType: 'comms.message_template', subjectId: r.id });
       ctx.emit({
         eventType: 'template.local_draft_created',
@@ -668,6 +712,50 @@ export async function createTemplate(
     },
   );
 }
+/** Numbered body parameters must be contiguous and every brace must belong to a placeholder. */
+export function validateTemplateParameters(body: string, count: number) {
+  if (!Number.isInteger(count) || count < 0 || count > 10) throw invalid('template parameter count must be between 0 and 10');
+  const placeholders = [...body.matchAll(/\{\{([1-9][0-9]*)\}\}/g)].map(m => Number(m[1]));
+  const literal = body.replace(/\{\{([1-9][0-9]*)\}\}/g, '');
+  if (/[{}]/.test(literal) || placeholders.some(n => n > count) || new Set(placeholders).size !== count)
+    throw invalid('Use contiguous numbered placeholders {{1}} through the parameter count; names, gaps and malformed braces are not allowed.');
+}
+
+export async function templateFacility(db: Kysely<DB>, caller: Caller, id: string) {
+  return runQuery(db, caller.tenantId, async tx => {
+    const row = await tx.selectFrom('comms.message_template').select('facility_id').where('id', '=', id).executeTakeFirst();
+    if (!row) throw notFound('message template');
+    return row.facility_id;
+  });
+}
+
+export async function editTemplate(db: Kysely<DB>, caller: Caller, id: string, input: {
+  facilityId: string; version: number; name: string; body: string; language: string;
+  category: string; parameterCount: number; header: string;
+}, key: string) {
+  return runCommand(db, { ...caller, module: 'comms', name: 'comms.edit_template', request: { id, ...input }, idempotencyKey: key }, async ctx => {
+    await assertWhatsAppActive(ctx.tx);
+    const { rows: [before] } = await sql<any>`SELECT * FROM comms.message_template WHERE id=${id} AND facility_id=${input.facilityId} FOR UPDATE`.execute(ctx.tx);
+    if (!before) throw notFound('message template');
+    if (before.version !== input.version) throw conflict('This template changed. Reload it and review your changes.', { reason: 'stale_version', currentVersion: before.version });
+    const { rows: [used] } = await sql<{ blocked: boolean }>`SELECT EXISTS(SELECT 1 FROM comms.campaign WHERE template_id=${id} AND (status='scheduled' OR approval_hash IS NOT NULL OR approved_by IS NOT NULL)) AS blocked`.execute(ctx.tx);
+    if (used!.blocked) throw conflict('This template is used by an approved or scheduled campaign. Create another template.', { reason: 'approved_campaign_content' });
+    validateTemplateParameters(input.body, input.parameterCount);
+    const { rows: [draft] } = await sql<{ linked: boolean }>`SELECT EXISTS(SELECT 1 FROM comms.campaign WHERE template_id=${id} AND status='draft') AS linked`.execute(ctx.tx);
+    if (draft!.linked && (before.category !== input.category || before.parameter_count !== input.parameterCount || before.header !== input.header))
+      throw conflict('Draft campaigns use this template structure. Create another template to change category, header or parameter count.', { reason: 'draft_campaign_structure' });
+    // An edited body/language invalidates all prior local tests and review versions.
+    await sql`UPDATE comms.campaign SET local_tested=false WHERE template_id=${id} AND status='draft'`.execute(ctx.tx);
+    const { rows: [saved] } = await sql<any>`UPDATE comms.message_template SET name=${input.name},body=${input.body},language=${input.language},category=${input.category},parameter_count=${input.parameterCount},header=${input.header},provider_approval='not_synced' WHERE id=${id} RETURNING *`.execute(ctx.tx).catch((error: unknown) => {
+      if (pgCode(error) === '23505') throw conflict('A template with this name and language already exists at this clinic.', { reason: 'duplicate_template' });
+      throw error;
+    });
+    ctx.audit({ action: 'update', subjectType: 'comms.message_template', subjectId: id, diff: { version: [before.version, saved.version], providerApproval: 'not_synced' } });
+    ctx.emit({ eventType: 'template.local_draft_updated', aggregateType: 'comms.message_template', aggregateId: id, aggregateVersion: saved.version, payload: { templateId: id, providerApproval: 'not_synced' } });
+    return templateDto(saved);
+  });
+}
+
 function localRate() {
   const rate = Number(process.env.WA_ESTIMATED_RATE_MINOR ?? 100);
   if (!Number.isSafeInteger(rate) || rate < 0 || rate > 100000)
@@ -722,7 +810,7 @@ export async function createCampaign(db: Kysely<DB>, caller: Caller, input: Camp
       const {
         rows: [t],
       } =
-        await sql<any>`SELECT * FROM comms.message_template WHERE id=${input.templateId} AND facility_id=${input.facilityId}`.execute(
+        await sql<any>`SELECT * FROM comms.message_template WHERE id=${input.templateId} AND facility_id=${input.facilityId} FOR UPDATE`.execute(
           ctx.tx,
         );
       if (!t || t.category !== 'marketing') throw invalid('choose a marketing template at this clinic');
@@ -826,6 +914,9 @@ export async function campaignAction(
     async (ctx) => {
       await assertWhatsAppActive(ctx.tx);
       const initial = await campaignRecord(ctx.tx, id);
+      // Template edits and campaign approval use this same lock. Content cannot change after
+      // approval's snapshot check or while the approved campaign is being persisted.
+      await sql`SELECT id FROM comms.message_template WHERE id=${initial.template_id} FOR UPDATE`.execute(ctx.tx);
       if (action === 'approve') {
         const addresses = (
           await sql<{
@@ -1018,25 +1109,39 @@ export async function deliveryHistory(
     };
   });
 }
-export async function storeWhatsAppCallback(db: Kysely<DB>, phoneNumberId: string, payload: Record<string, unknown>) {
+export async function validateWhatsAppAccountBinding(db: Kysely<DB>, binding: WhatsAppBinding) {
   const {
     rows: [account],
   } = await sql<{
     id: string;
     tenant_id: string;
     facility_id: string;
-  }>`SELECT * FROM comms.account_for_phone(${phoneNumberId})`.execute(db);
-  if (!account) throw forbidden('unconfigured WhatsApp account');
+  }>`SELECT * FROM comms.account_for_phone(${binding.phoneNumberId})`.execute(db);
+  if (!account || (binding.mode === 'multi_clinic' && (
+    account.tenant_id !== binding.tenantId || account.facility_id !== binding.facilityId
+  ))) throw forbidden('Unconfigured WhatsApp account binding');
+  return account;
+}
+export async function storeWhatsAppCallback(db: Kysely<DB>, phoneNumberId: string, payload: Record<string, unknown>, reviewedBinding?: WhatsAppBinding) {
+  const binding = reviewedBinding ?? resolveWhatsAppBinding(phoneNumberId);
+  if (!binding?.signatureConfigured || binding.phoneNumberId !== phoneNumberId) throw forbidden('Unconfigured WhatsApp provider binding');
+  const account = await validateWhatsAppAccountBinding(db, binding);
   return runCommand(
     db,
     { tenantId: account.tenant_id, actor: { kind: 'system' }, module: 'comms', name: 'comms.provider_ingest' },
     async (ctx) => {
+      // Same clinic lock as account updates; recheck after waiting, never route using a stale lookup.
+      await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${ctx.tenantId}:account:${account.facility_id}`},0))`.execute(ctx.tx);
+      const { rows: [current] } = await sql<{ id: string }>`SELECT id FROM comms.channel_account
+        WHERE id=${account.id} AND facility_id=${account.facility_id} AND phone_number_id=${phoneNumberId} FOR UPDATE`.execute(ctx.tx);
+      if (!current) throw forbidden('WhatsApp account binding changed');
       const eventKey = hash(JSON.stringify(payload));
       const {
         rows: [r],
       } = await sql<{
         id: string;
-      }>`INSERT INTO comms.provider_event(tenant_id,account_id,event_key,payload) VALUES(${account.tenant_id},${account.id},${eventKey},${JSON.stringify(payload)}::jsonb) ON CONFLICT DO NOTHING RETURNING id`.execute(
+      }>`INSERT INTO comms.provider_event(tenant_id,account_id,event_key,payload,facility_id,phone_number_id,business_account_id)
+        VALUES(${account.tenant_id},${account.id},${eventKey},${JSON.stringify(payload)}::jsonb,${account.facility_id},${phoneNumberId},${binding.businessAccountId}) ON CONFLICT DO NOTHING RETURNING id`.execute(
         ctx.tx,
       );
       if (r) {
@@ -1068,6 +1173,10 @@ export async function storeWhatsAppCallback(db: Kysely<DB>, phoneNumberId: strin
     },
   );
 }
+/** Only explicit whole-message commands are recognized; this is not a natural-language classifier. */
+export function requestsWhatsAppHuman(text: string): boolean {
+  return ['human', 'agent', 'receptionist', 'speak to a human'].includes(text.trim().toLowerCase().replace(/\s+/g, ' '));
+}
 export async function handleWhatsAppCallback(tx: Tx, event: OutboxEvent, options: { controlOnly?: boolean } = {}) {
   const id = event.payload['providerEventId'];
   if (typeof id !== 'string') throw invalid('callback event identifier required');
@@ -1077,10 +1186,18 @@ export async function handleWhatsAppCallback(tx: Tx, event: OutboxEvent, options
     payload: any;
     account_id: string;
     facility_id: string;
-  }>`SELECT e.payload,e.account_id,a.facility_id FROM comms.provider_event e JOIN comms.channel_account a ON a.tenant_id=e.tenant_id AND a.id=e.account_id WHERE e.id=${id}`.execute(
+    phone_number_id: string | null;
+    current_phone_number_id: string;
+    current_facility_id: string;
+  }>`SELECT e.payload,e.account_id,coalesce(e.facility_id,a.facility_id) AS facility_id,e.phone_number_id,
+       a.phone_number_id AS current_phone_number_id,a.facility_id AS current_facility_id
+     FROM comms.provider_event e JOIN comms.channel_account a ON a.tenant_id=e.tenant_id AND a.id=e.account_id WHERE e.id=${id}`.execute(
     tx,
   );
   if (!r) return;
+  if (r.phone_number_id && (r.phone_number_id !== r.current_phone_number_id || r.facility_id !== r.current_facility_id ||
+    r.payload?.metadata?.phone_number_id !== r.phone_number_id))
+    throw forbidden('Accepted WhatsApp callback binding no longer matches');
   const value = r.payload;
   for (const receipt of value.statuses ?? []) {
     if (typeof receipt.id !== 'string' || typeof receipt.status !== 'string') continue;
@@ -1096,8 +1213,10 @@ export async function handleWhatsAppCallback(tx: Tx, event: OutboxEvent, options
       body =
         typeof inbound.text?.body === 'string' ? inbound.text.body.slice(0, 3000) : '[Unsupported message content]';
     const stop = body.trim().toUpperCase() === 'STOP';
-    if (options.controlOnly && !stop) continue;
-    if (!stop && (await moduleState(tx)) !== 'active') continue;
+    const humanRequested = requestsWhatsAppHuman(body);
+    // Control requests pause automation synchronously inside the signed callback transaction.
+    if (options.controlOnly && !stop && !humanRequested) continue;
+    if (!stop && !humanRequested && (await moduleState(tx)) !== 'active') continue;
     await addressLock(tx, event.tenantId, address);
     const duplicate = (
       await sql<{
@@ -1133,7 +1252,7 @@ export async function handleWhatsAppCallback(tx: Tx, event: OutboxEvent, options
       rows: [c],
     } = await sql<{
       id: string;
-    }>`INSERT INTO comms.conversation(tenant_id,facility_id,contact_point_id,last_inbound_at) VALUES(${event.tenantId},${r.facility_id},${contact.id},${received}) ON CONFLICT(tenant_id,contact_point_id) DO UPDATE SET status=CASE WHEN ${stop} AND comms.conversation.status='closed' THEN 'closed' ELSE 'open' END,last_inbound_at=greatest(comms.conversation.last_inbound_at,EXCLUDED.last_inbound_at) RETURNING id`.execute(
+    }>`INSERT INTO comms.conversation(tenant_id,facility_id,contact_point_id,last_inbound_at,automation_state) VALUES(${event.tenantId},${r.facility_id},${contact.id},${received},${humanRequested ? 'handoff_requested' : 'automation'}) ON CONFLICT(tenant_id,contact_point_id) DO UPDATE SET automation_state=CASE WHEN ${humanRequested} AND comms.conversation.automation_state='automation' THEN 'handoff_requested' ELSE comms.conversation.automation_state END,last_inbound_at=greatest(comms.conversation.last_inbound_at,EXCLUDED.last_inbound_at) RETURNING id`.execute(
       tx,
     );
     await sql`INSERT INTO comms.inbound_message(tenant_id,conversation_id,account_id,provider_message_id,text_content,received_at) VALUES(${event.tenantId},${c!.id},${r.account_id},${inbound.id},${body},${received}) ON CONFLICT DO NOTHING`.execute(
@@ -1150,7 +1269,7 @@ export async function handleWhatsAppCallback(tx: Tx, event: OutboxEvent, options
         action: 'create',
         subjectType: 'comms.inbound_message',
         subjectId: c!.id,
-        diff: { providerReceived: true, stop },
+        diff: { providerReceived: true, stop, humanRequested },
       },
     ]);
     await writeOutbox(tx, event.tenantId, event.correlationId, [
@@ -1158,7 +1277,7 @@ export async function handleWhatsAppCallback(tx: Tx, event: OutboxEvent, options
         eventType: 'conversation.message_received',
         aggregateType: 'comms.conversation',
         aggregateId: c!.id,
-        payload: { conversationId: c!.id, stop },
+        payload: { conversationId: c!.id, stop, humanRequested },
       },
     ]);
   }

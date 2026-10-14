@@ -235,11 +235,6 @@ export function GrowthModule({
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-muted-foreground">
-            {analytics
-              ? "Understand appointment outcomes"
-              : "Help patients find and book your clinic"}
-          </p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight">
             {analytics ? "Growth analytics" : "Google Business"}
           </h1>
@@ -260,11 +255,6 @@ export function GrowthModule({
           <Card>
             <CardHeader>
               <CardTitle>Report scope</CardTitle>
-              <CardDescription>
-                {demo
-                  ? "Synthetic demo records from this isolated clinic database. Production records are kept separate."
-                  : "Current clinic records. Rescheduled visits are counted once using their current appointment."}
-              </CardDescription>
             </CardHeader>
             <CardContent>
               <form
@@ -427,19 +417,10 @@ export function GrowthModule({
               <CardHeader className="flex-row items-start justify-between">
                 <div className="space-y-2">
                   <CardTitle>Start with a direct appointment link</CardTitle>
-                  <CardDescription>
-                    Let patients reach the right clinic's booking page in one
-                    step.
-                  </CardDescription>
                 </div>
                 <Badge variant="secondary">Google not connected</Badge>
               </CardHeader>
               <CardContent className="space-y-5">
-                <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                  Prepare an approved clinic booking URL here. The owner then
-                  adds it to the verified Google profile. Automated profile
-                  editing needs separate API approval and OAuth.
-                </p>
                 <Button onClick={() => onNavigate("links")}>
                   Prepare booking link
                   <ArrowRight className="size-4" />
@@ -478,10 +459,6 @@ export function GrowthModule({
             <Card>
               <CardHeader>
                 <CardTitle>WhatsApp is a separate module</CardTitle>
-                <CardDescription>
-                  Google Business can work with website booking even when a
-                  client opts out of WhatsApp.
-                </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-3">
                 <Button variant="outline" onClick={() => onNavigate("journey")}>
@@ -507,10 +484,6 @@ export function GrowthModule({
             <Card>
               <CardHeader>
                 <CardTitle>Prepare a clinic booking link</CardTitle>
-                <CardDescription>
-                  Saving prepares the link in this backend. It does not publish
-                  a change to Google.
-                </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={saveLink} className="max-w-xl space-y-5">
@@ -540,10 +513,6 @@ export function GrowthModule({
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
                     />
-                    <p className="text-sm text-muted-foreground">
-                      Use the approved HTTPS website origin. We add clinic and
-                      Google source parameters.
-                    </p>
                   </div>
                   <Button
                     type="submit"
@@ -643,10 +612,6 @@ export function GrowthModule({
             <Card>
               <CardHeader>
                 <CardTitle>Change history</CardTitle>
-                <CardDescription>
-                  Recorded backend changes attributed to the signed-in staff
-                  account.
-                </CardDescription>
               </CardHeader>
               <CardContent>
                 {history.length ? (
@@ -843,9 +808,6 @@ function PatientPreview({ name }: { name: string }) {
         <Card>
           <CardHeader>
             <CardTitle>What each patient can do</CardTitle>
-            <CardDescription>
-              Give patients a short route from discovery to a real appointment.
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             {[
@@ -867,11 +829,6 @@ function PatientPreview({ name }: { name: string }) {
             <Button variant="outline" onClick={() => open("Native slots")}>
               Explore native slots concept
             </Button>
-            <p className="text-xs leading-5 text-muted-foreground">
-              Native slots require separate healthcare partner eligibility. The
-              movie-showtime experience does not establish this clinic's
-              eligibility.
-            </p>
           </CardContent>
         </Card>
       </div>

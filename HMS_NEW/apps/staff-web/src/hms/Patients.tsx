@@ -108,7 +108,6 @@ export function PatientLookup({
       {search.length < 2 && (
         <WorkspaceEmpty
           title="Find the patient first"
-          description="Search by name, MRN or phone to avoid duplicate registration."
           action={{
             label: "Focus search",
             onClick: () => searchInput.current?.focus(),
@@ -121,7 +120,6 @@ export function PatientLookup({
         result.data?.items.length === 0 && (
           <WorkspaceEmpty
             title="No patient found"
-            description="Check the name or phone before registering someone new. Registration is available in the patient step when your role permits it."
             action={
               onRegister
                 ? { label: "Register patient", onClick: onRegister }
@@ -255,7 +253,6 @@ export function Patients() {
     return (
       <FullPage
         title="Register patient"
-        description="Register the patient, then book an in-person appointment or teleconsultation if needed."
         back="Back to patients"
         onBack={() => setRegister(false)}
       >
@@ -277,10 +274,6 @@ export function Patients() {
                   </Button>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Booking opens after registration. You’ll choose a doctor and
-                time before confirming.
-              </p>
             </section>
           )}
           <RegisterPatient
@@ -317,7 +310,6 @@ export function Patients() {
     <>
       <PageTitle
         title="Patients"
-        description="Find the right patient before booking or recording an arrival."
         action={
           can("patients.register") ? (
             <Button onClick={() => setRegister(true)}>
@@ -449,7 +441,6 @@ function PatientRecord({
   return (
     <FullPage
       title="Patient record"
-      description="Patient details and medical history."
       back="Back to patients"
       onBack={onBack}
       summary={
@@ -619,10 +610,6 @@ function PatientRecord({
         {tab === "history" && can("clinical.read") && (
           <section className="space-y-6 text-base">
             <h2 className="text-xl font-semibold">Medical history</h2>
-            <p className="text-base text-muted-foreground">
-              Review allergies, ongoing problems, vitals and previous visits.
-              Open a visit for its full notes and clinical record.
-            </p>
             <PatientChart patientId={patientId} includeRegistry />
           </section>
         )}
@@ -934,10 +921,6 @@ function EditPatient({
         })}
         {text("pincode", "Pincode", { inputMode: "numeric", maxLength: 6 })}
       </div>
-      <p className="text-xs text-muted-foreground">
-        Earlier phone numbers and addresses stay on record. The change is logged
-        with your name.
-      </p>
       {problems.map((x) => (
         <p key={x} className="text-sm text-destructive">
           {x}

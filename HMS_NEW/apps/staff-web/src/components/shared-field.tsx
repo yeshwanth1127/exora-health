@@ -154,14 +154,7 @@ export function SharedField({
           )}
         </Label>
         {decorate(children)}
-        {hint && (
-          <p
-            id={descriptionId}
-            className="text-xs leading-relaxed text-muted-foreground"
-          >
-            {hint}
-          </p>
-        )}
+        {hint && <p id={descriptionId} className="text-sm text-muted-foreground">{hint}</p>}
         {shown && (
           <p
             id={errorId}

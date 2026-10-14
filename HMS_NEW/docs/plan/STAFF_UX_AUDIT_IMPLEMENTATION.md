@@ -1,8 +1,8 @@
 # Desktop audit implementation — 13 October 2026
 
-Source audit: `/Users/deepakonda/Documents/antigravity/brave-mendel/docs/admin-dashboard-ux-audit/README.md`, snapshot `a3f320f`. Implementation checkout: `HMS_NEW/apps/staff-web` on `codex/staff-frontend-integration`.
+Source audit: `/Users/deepakonda/Documents/antigravity/brave-mendel/docs/admin-dashboard-ux-audit/README.md`, snapshot `a3f320f`. Original implementation checkout: `HMS_NEW/apps/staff-web` on `codex/staff-frontend-integration`, merged via PR #1. Subsequent backend hardening is on `codex/audit-backend-hardening`.
 
-Three agents worked in separate shared-UI, settings/recovery and setup/empty-state areas; root owned navigation, booking, scheduling, integration and desktop verification. Original neutral shadcn/Base UI/Geist design remains. **No backend/schema/permission edits, mobile work, provider delivery, production deployment, commits or pushes in this audit implementation.**
+Three agents worked in separate shared-UI, settings/recovery and setup/empty-state areas; root owned navigation, booking, scheduling, integration and desktop verification. Original neutral shadcn/Base UI/Geist design remains. The original desktop audit made no backend changes. The follow-up now adds backend contracts, migrations and persisted regressions for UXA01–UXA07; see [hardening record](AUDIT_BACKEND_HARDENING.md). Mobile, production and provider acceptance remain separate.
 
 ## Implementation packet status
 
@@ -11,14 +11,14 @@ Three agents worked in separate shared-UI, settings/recovery and setup/empty-sta
 | W01 | Implemented | Compact workflow tabs preserve active text/background on hover, focus and pressed states. Actual hovered appointment tab measured white text on dark background. |
 | W02 | Implemented pilots | Both field wrappers share IDs, visible labels, hint/error associations, blur/submit client feedback and immediate explicit server errors. Save predicates still decide validity. Failed initial reads are terminal; retained stale data is visibly read-only, lost authorization hides it. |
 | W03 | Implemented active desktop flows | One in-app discard dialog for sidebar, workflow navigation, clinic change, local Back and indexed browser Back/Forward. Meaningful booking/walk-in/registration/settings/waitlist/schedule drafts guarded. Pending/unknown commands block discard. Native beforeunload remains the browser's page-unload warning. Holds claimed before asynchronous release to avoid double cleanup. |
-| W04 | Mitigated; backend deferred | Explicit page-local visit-type filter, cursor reset including mode, honest page-local empty copy, accessible Next page and removal of dead 500-row warning. Full server filtering requires UXA01. |
-| W05 | Implemented date pilots; remaining capability boundary | Shared DayNavigator, DateRangeField and TimeRangeField preserve date-only/HH:mm values; Appointments, Queue, Activity and Schedules use task-specific date controls. Booking availability calendar already exists. Audit dates use organisation-boundary copy because authoritative timezone metadata is absent (UXA06). Large entity choices now offer accessible search with stable selected IDs, supplied context and unchanged small enums; no new entity values are fabricated. |
+| W04 | Implemented with UXA01 | Visit mode filters before server pagination. Cursor validation includes the mode; adapter removes page-local filtering. |
+| W05 | Implemented date pilots; remaining capability boundary | Shared DayNavigator, DateRangeField and TimeRangeField preserve date-only/HH:mm values; Appointments, Queue, Activity and Schedules use task-specific date controls. Booking availability calendar already exists. Audit dates and exact bounds now use authoritative organisation timezone metadata (UXA06). Large entity choices now offer accessible search with stable selected IDs, supplied context and unchanged small enums; no new entity values are fabricated. |
 | W06 | Implemented desktop | Shared field contract, compact workflow hierarchy, Settings section URLs, doctor fee ranges/details, clear action column, chart data disclosure and metric basis, capability owner notices. |
 | W07 | Implemented desktop | One global clinic selector; doctor-first full-page recurrence editor instead of stacked choosing/editing sheets. Ongoing/final date, tomorrow rule/today one-off route, split-shift overwrite guard, slot presets, plain summary, existing server review/conflict semantics. Initial timeline stays on working hours; Now and Show working hours are explicit. Row actions use Book appointment plus Manage time. |
-| W08 | Implemented supported client recovery; backend guarantees deferred | Frozen request snapshots, original intent keys only on supported routes, blocked changed intent and context changes, impact review, bounded dialogs, unknown-state recovery/readback. Decline and unsupported outcome lookup remain paused; policy/permission multi-admin compare-and-set remains UXA03/04/07. |
-| W09 | Partial with explicit contract boundaries | Authorised persisted read evidence for clinic, selected doctor/calendar, compatible current service/fee and future hours. Reads distinguish loading/unknown/known zero. Fully booked configuration stays configured. First-clinic bootstrap and exact session/service/date/video/signing/routing completeness require UXA02/05. |
+| W08 | Implemented inventoried recovery and backend guarantees | Frozen request snapshots, original intent keys, blocked changed intent and context changes, impact review, bounded dialogs and unknown-state recovery/readback. Keyed decline and authorised outcome lookup are implemented; policy/permission compare-and-set and actor-bound receipts have persisted regressions (UXA03/04/07). Outcome lookup remains limited to supported booking/waitlist scopes. |
+| W09 | Partial with explicit contract boundaries | Authorised persisted read evidence for clinic, selected doctor/calendar, compatible current service/fee and future hours. Reads distinguish loading/unknown/known zero. Fully booked configuration stays configured. First-clinic bootstrap and exact session/service/date fee quote are implemented (UXA02/05). Video/signing/provider routing remain unchecked capabilities. |
 | W10 | Implemented supported states; E19/E31 deferred | Progressive setup guide, useful permission-gated empty actions, no patient/booking/hold/provider data created to demonstrate setup. Unsupported full video readiness and full booking readiness remain explicitly unverified. See state map below and setup evidence map. |
-| W11 | Local verification; acceptance incomplete | Meaningful unit/SSR/adapter regressions and read-only desktop walkthroughs. New persisted mutation round trips, production, provider and mobile acceptance are not claimed. |
+| W11 | Local verification; deployment acceptance incomplete | Unit/SSR/adapter regressions, desktop walkthroughs and isolated persisted backend mutation/concurrency tests pass. Production, provider, mobile and retained-database upgrade acceptance remain unverified. |
 
 ## Findings closure
 
@@ -28,8 +28,8 @@ Three agents worked in separate shared-UI, settings/recovery and setup/empty-sta
 | --- | --- |
 | F01, F07, F09, F11–F13, F15–F17, F19 | Implemented within desktop scope. |
 | F03, F04, F08, F18 | Active desktop flows implemented; browser and uncertainty fixtures cover the shared paths. Full fault-injected persisted mutation acceptance remains unverified. |
-| F02 | Mitigated with honest page-local behavior; UXA01 needed for complete fix. |
-| F05 | Safe access/provisioning fallback; UXA02 required for first-clinic creation. |
+| F02 | Resolved server mode filtering and cursor binding via UXA01; persisted HTTP pagination regressions. |
+| F05 | Authorised first-clinic creation and bounded creator access implemented via UXA02; persisted concurrency and access regressions. |
 | F06 | Doctor prerequisite paths, explicit partial affiliation/calendar completion and calendar-only resume implemented. Same-sheet staff-account and department prerequisite editors preserve the affiliation draft, reread/select actual saved IDs and resume read failures without creating again. Persisted multi-step acceptance remains unverified. |
 | F10 | Shared date pilots complete; organisation timezone metadata and non-IST scheduling remain bounded/deferred. |
 | F14, F20 | Supported contextual states/owner requirements implemented; complete provider readiness and full setup certification remain deferred. |
@@ -38,7 +38,7 @@ Three agents worked in separate shared-UI, settings/recovery and setup/empty-sta
 
 | IDs | Implementation |
 | --- | --- |
-| E01 | Provisioning fallback only; verified bootstrap create is deferred. |
+| E01 | Zero-clinic evidence plus permission-gated bootstrap creation; atomic bounded creator grant. |
 | E02 | Missing clinic access guidance and Refresh access. |
 | E03–E07 | Same-sheet doctor staff/department prerequisites plus successful-load service/calendar prerequisites; permission-gated actions and partial calendar resume. |
 | E08 | Setup future-hours check and doctor/mode schedule route. |
@@ -55,7 +55,7 @@ Three agents worked in separate shared-UI, settings/recovery and setup/empty-sta
 | E24/E25 | Growth observed-zero cohort and activity filter mismatch with real review/clear action. |
 | E26 | Successful empty review queue retains quiet “no reviews waiting” state; no mandatory create action. |
 | E27 | Terminal initial errors/retry; stale readback explicitly read-only; permission loss hides rows. |
-| E28 | Frozen unknown command, original keyed recovery or proven readback only. Unsafe decline/replay stays paused. |
+| E28 | Frozen unknown command; actor-bound original keyed replay. Declines have keyed recovery and an exact closed-offer outcome. Failed/forbidden recovery retains uncertainty. |
 | E29/E30 | Existing server/adapter permission and suspended-module gating retained; no grants/module states changed. |
 | E31 | Full “ready to accept bookings” claim deferred. Recorded configuration and exact booking eligibility are separate. |
 
@@ -94,3 +94,8 @@ The supported desktop implementation is integrated. Backend-dependent closures a
 The broad redesign was reverted after user review. The original global stylesheet, native button component and neutral theme remain. Local accents identify booking/check-in next actions, statuses and destructive controls; added coloured panels, numbered cards and oversized default controls are removed. Weekly hours uses plain separated sections and the timeline toolbar aligns its labels and controls. Appointment controls are at the top, with no notification-job/messaging-preference sections. Medical history access refusal suppresses clinical registry/allergy/flag actions; the no-known-allergies action is an explicit native outline button on accessible records. Pristine fields no longer receive error-border styling before feedback is shown.
 
 Local verification: 123 frontend tests passed; typecheck passed; production bundle generated; lint remained 0 errors / 17 warnings. Desktop browser inspection verified neutral appointment layout, schedule editor and the reported denied-chart case (no allergy/flag controls). These checks created no appointment, hold, clinical record or schedule write.
+
+
+## Backend follow-up verification
+
+UXA01–UXA07 are implemented with real isolated Postgres HTTP tests, including discarded committed responses and simultaneous administrators. Historical browser/unit counts above describe the original frontend pass only. Current combined evidence and migration requirements live in [AUDIT_BACKEND_HARDENING.md](AUDIT_BACKEND_HARDENING.md). This does not complete provider, production or clinical acceptance.

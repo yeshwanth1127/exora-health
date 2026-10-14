@@ -41,7 +41,8 @@ async function call(method: 'GET' | 'POST', url: string, opts: { as?: Who | null
   const headers: Record<string, string> = {};
   if (opts.as !== null && opts.link === undefined) headers.authorization = `Bearer ${tokens[opts.as ?? 'admin']}`;
   if (opts.link !== undefined) headers['x-teleconsult-token'] = opts.link;
-  if (opts.idem) headers['idempotency-key'] = `t-${randomUUID()}`;
+  const keyed = opts.idem ?? (method === 'POST' && /^\/v1\/(appointments\/[^/]+\/cancel|schedule-exceptions\/[^/]+\/revoke|facility-holidays\/[^/]+\/revoke|waitlist\/[^/]+\/withdraw|waitlist-offers\/[^/]+\/decline)$/.test(url));
+  if (keyed) headers['idempotency-key'] = `t-${randomUUID()}`;
   headers['x-test-now'] = opts.now ?? ist('09:00');
   const res = await app.inject({ method, url, headers, ...(opts.body !== undefined ? { payload: opts.body as object } : {}) });
   return { status: res.statusCode, body: res.body ? res.json() : null, headers: res.headers };

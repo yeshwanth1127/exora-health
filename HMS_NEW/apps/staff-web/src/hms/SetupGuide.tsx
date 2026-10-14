@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { BookingReadinessSchema, type BookingReadiness } from "@hms/contracts";
+import { query } from "./client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useQuery, useWorkspace } from "./hooks";
 import { today } from "./model";
 import { addDays } from "./forms";
-import { Choice } from "./ui";
+import { Choice, Status } from "./ui";
 import { deriveSetup, type Evidence } from "./setup-readiness";
 import type {
   ClinicDirectory,
@@ -75,6 +77,14 @@ export function SetupGuide() {
       ? `/v1/practitioners/${doctor.staffId}/slots?facilityId=${facility.facilityId}&from=${day}&to=${until}&includeUnavailable=true`
       : null,
   );
+  const exactSlot = slots.data?.items.find((s) => s.facilityId === facility.facilityId && s.visitMode === mode);
+  const readiness = useQuery<BookingReadiness>(
+    readHours && doctor && exactSlot
+      ? `/v1/booking/readiness?${query({ facilityId: facility.facilityId, staffId: doctor.staffId, slotStart: exactSlot.slotStart, visitMode: mode, healthcareServiceId: exactSlot.healthcareServiceId ?? "null" })}`
+      : null,
+    0,
+    (value) => BookingReadinessSchema.parse(value),
+  );
   const items = deriveSetup({
     facilityId: facility.facilityId,
     day,
@@ -86,6 +96,7 @@ export function SetupGuide() {
     prices: rows(evidence(prices, readCatalog)),
     sessions: rows(evidence(sessions, readHours)),
     slots: rows(evidence(slots, readHours)),
+    readiness: exactSlot ? evidence(readiness, readHours) : undefined,
   });
   const checks = items.filter((i) => i.id !== "preview");
   const completed = checks.filter((i) => i.state === "complete").length;
@@ -106,7 +117,7 @@ export function SetupGuide() {
           </p>
         </div>
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           onClick={() => setExpanded(!showGuide)}
         >
@@ -164,8 +175,15 @@ export function SetupGuide() {
                     >
                       {i.title}
                     </button>{" "}
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">
-                      {i.state === "complete"
+                    <Status
+                      value={
+                        i.state === "complete"
+                          ? "completed"
+                          : i.state === "blocked" || i.state === "not_started"
+                            ? "attention"
+                            : "pending"
+                      }
+                      text={i.state === "complete"
                         ? "Confirmed"
                         : i.state === "loading"
                           ? "Checking…"
@@ -176,7 +194,7 @@ export function SetupGuide() {
                               : i.state === "blocked"
                                 ? "Needs prerequisite"
                                 : "Needs setup"}
-                    </span>
+                    />
                   </h3>
                   {active === i.id && (
                     <p className="text-sm text-muted-foreground">
@@ -207,13 +225,6 @@ export function SetupGuide() {
               </div>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">
-            Reception handles bookings manually. This guide checks recorded
-            configuration; the booking flow confirms the exact service, fee and
-            time. Video consent, provider connection, professional registration
-            and staff access require separate checks. WhatsApp, Voice and Google
-            connections remain optional.
-          </p>
           <Button
             variant="outline"
             size="sm"
@@ -224,6 +235,7 @@ export function SetupGuide() {
               void prices.refresh();
               void sessions.refresh();
               void slots.refresh();
+              void readiness.refresh();
             }}
           >
             Recheck saved setup

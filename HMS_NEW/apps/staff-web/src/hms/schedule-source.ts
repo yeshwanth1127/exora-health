@@ -511,6 +511,7 @@ export function scheduleSource(
       if (unblock && method === "DELETE")
         return request<T>(`/v1/schedule-exceptions/${unblock[1]}/revoke`, {
           method: "POST",
+          idempotencyKey: typeof b.idempotency_key === "string" ? b.idempotency_key : undefined,
           body: { reason: b.reason },
         });
       if (path === "/api/v1/admin/schedule-timeline/open") {
@@ -662,6 +663,7 @@ export function scheduleSource(
       if (cancel && method === "DELETE")
         return request<T>(`/v1/appointments/${cancel[1]}/cancel`, {
           method: "POST",
+          idempotencyKey: typeof b.idempotency_key === "string" ? b.idempotency_key : undefined,
           body: { reason: b.reason },
         });
       throw unavailable("This change");

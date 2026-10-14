@@ -26,7 +26,7 @@ import {
   scheduleRuleFacility,
 } from '../../modules/booking/index.ts';
 import { DomainError } from '@hms/platform';
-import { callerOf, hhmm, isoDate, optionalIdempotencyKey, parse, principalOf, uuid } from '../support.ts';
+import { callerOf, hhmm, isoDate, idempotencyKey, optionalIdempotencyKey, parse, principalOf, uuid } from '../support.ts';
 
 const StaffParams = z.object({ staffId: uuid });
 const Range = z.object({ from: isoDate, to: isoDate }).refine((r) => r.to >= r.from, 'to must not be before from');
@@ -158,7 +158,7 @@ export function registerCalendarRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const scope = await scheduleExceptionScope(db, callerOf(request), scheduleExceptionId);
     if (!scope) throw new DomainError('not_found', 'schedule exception not found');
     await authorizeReach(request, scope.staffId!, scope.onDate, scope.facilityId);
-    return revokeScheduleException(db, callerOf(request), { scheduleExceptionId, reason: body.reason });
+    return revokeScheduleException(db, callerOf(request), { scheduleExceptionId, reason: body.reason }, idempotencyKey(request));
   });
 
   app.post('/v1/facilities/:facilityId/holidays', async (request, reply) => {
@@ -181,7 +181,7 @@ export function registerCalendarRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const facilityId = await holidayFacility(db, callerOf(request), facilityHolidayId);
     if (!facilityId) throw new DomainError('not_found', 'facility holiday not found');
     authorize(principalOf(request), 'schedules.manage', facilityId);
-    return revokeFacilityHoliday(db, callerOf(request), { facilityHolidayId, reason: body.reason });
+    return revokeFacilityHoliday(db, callerOf(request), { facilityHolidayId, reason: body.reason }, idempotencyKey(request));
   });
 
   for (const [path, dryRun] of [['weekly-plan/preview', true], ['weekly-plan', false]] as const) {

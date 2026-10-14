@@ -1,0 +1,75 @@
+/* Colour modes under evaluation. Each mode only re-points the shadcn tokens from index.css.
+   Hierarchy comes from four layers: tinted canvas < white cards < coloured sidebar < brand primary.
+   "mono" sets nothing, so it is today's look. :root[...] outranks the plain :root block in index.css;
+   .mode-swatch[...] lets the picker preview each palette in place. */
+
+/* Lagoon: deep teal sidebar, teal primary, coral highlights. */
+:root[data-color-mode="lagoon"], .mode-swatch[data-color-mode="lagoon"] {
+  --background: #f2f6f6; --card: #ffffff; --popover: #ffffff;
+  --foreground: #0f2a2e; --card-foreground: #0f2a2e; --popover-foreground: #0f2a2e;
+  --muted: #e9f1f1; --muted-foreground: #587177;
+  --accent: #e0f0ef; --accent-foreground: #0b5352;
+  --primary: #0e7c7b; --primary-foreground: #ffffff;
+  --secondary: #e0f0ef; --secondary-foreground: #0b5352;
+  --border: #dbe6e7; --input: #cfdcdd; --ring: #5fb3b0;
+  --sidebar: #0c3a3e; --sidebar-foreground: #cfe3e3;
+  --sidebar-primary: #ff8a65; --sidebar-primary-foreground: #2a0f05;
+  --sidebar-accent: rgb(255 255 255 / 0.12); --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgb(255 255 255 / 0.1); --sidebar-ring: #5fb3b0;
+  --chart-1: #0e7c7b; --chart-2: #f0714a; --chart-3: #e0a526; --chart-4: #6a58d6; --chart-5: #8fd0ca;
+}
+
+/* Iris: soft lavender sidebar, indigo primary, peach/mint/sky charts. */
+:root[data-color-mode="iris"], .mode-swatch[data-color-mode="iris"] {
+  --background: #f6f6fb; --card: #ffffff; --popover: #ffffff;
+  --foreground: #1b1a3a; --card-foreground: #1b1a3a; --popover-foreground: #1b1a3a;
+  --muted: #efeff8; --muted-foreground: #626482;
+  --accent: #ecebfc; --accent-foreground: #3d33a8;
+  --primary: #5b4fd6; --primary-foreground: #ffffff;
+  --secondary: #ecebfc; --secondary-foreground: #3d33a8;
+  --border: #e3e3f0; --input: #d6d6e8; --ring: #9d95ea;
+  --sidebar: #eceafa; --sidebar-foreground: #2b2950;
+  --sidebar-primary: #5b4fd6; --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ffffff; --sidebar-accent-foreground: #3d33a8;
+  --sidebar-border: #dcdaf2; --sidebar-ring: #9d95ea;
+  --chart-1: #5b4fd6; --chart-2: #ef7d57; --chart-3: #14a37f; --chart-4: #2b8fd6; --chart-5: #bdb7f3;
+}
+
+/* Terracotta: cream paper, espresso sidebar, terracotta primary. */
+:root[data-color-mode="terracotta"], .mode-swatch[data-color-mode="terracotta"] {
+  --background: #f6f1ea; --card: #fffdf9; --popover: #fffdf9;
+  --foreground: #2b1d16; --card-foreground: #2b1d16; --popover-foreground: #2b1d16;
+  --muted: #f1e9df; --muted-foreground: #77665a;
+  --accent: #f8e6da; --accent-foreground: #8f3a1a;
+  --primary: #bf532b; --primary-foreground: #ffffff;
+  --secondary: #f1e9df; --secondary-foreground: #4a3328;
+  --border: #e7ddd0; --input: #dccfbf; --ring: #e09a78;
+  --sidebar: #2d201a; --sidebar-foreground: #e8dccf;
+  --sidebar-primary: #e08a3c; --sidebar-primary-foreground: #2d201a;
+  --sidebar-accent: rgb(255 240 225 / 0.12); --sidebar-accent-foreground: #fff7ef;
+  --sidebar-border: rgb(255 240 225 / 0.1); --sidebar-ring: #e09a78;
+  --chart-1: #bf532b; --chart-2: #6b7a28; --chart-3: #c99412; --chart-4: #2c7a8c; --chart-5: #e6b49c;
+}
+
+/* Sage: calm clinical green, pale sage sidebar, marigold highlights. */
+:root[data-color-mode="sage"], .mode-swatch[data-color-mode="sage"] {
+  --background: #f4f7f3; --card: #ffffff; --popover: #ffffff;
+  --foreground: #17261e; --card-foreground: #17261e; --popover-foreground: #17261e;
+  --muted: #ecf2ec; --muted-foreground: #5d6f64;
+  --accent: #e2efe5; --accent-foreground: #1d5a3f;
+  --primary: #1f7a55; --primary-foreground: #ffffff;
+  --secondary: #e2efe5; --secondary-foreground: #1d5a3f;
+  --border: #dfe7df; --input: #d2ddd3; --ring: #7fb79a;
+  --sidebar: #e4eee5; --sidebar-foreground: #1f3328;
+  --sidebar-primary: #e3a21a; --sidebar-primary-foreground: #2a1d00;
+  --sidebar-accent: #ffffff; --sidebar-accent-foreground: #1d5a3f;
+  --sidebar-border: #d3e1d5; --sidebar-ring: #7fb79a;
+  --chart-1: #1f7a55; --chart-2: #e3a21a; --chart-3: #e07a5f; --chart-4: #3d7ab8; --chart-5: #9cc9b0;
+}
+
+/* Monochrome swatch pins today's values so it doesn't inherit the active mode. */
+.mode-swatch[data-color-mode="mono"] { --sidebar: #fafafa; --primary: #18181b; --chart-2: #8e8e93; }
+
+/* Dark sidebars: muted chips and secondary text inside the sidebar must stay light-on-dark. */
+:root[data-color-mode="lagoon"] [data-slot="sidebar"] { --muted: rgb(255 255 255 / 0.12); --muted-foreground: #8fb3b4; }
+:root[data-color-mode="terracotta"] [data-slot="sidebar"] { --muted: rgb(255 240 225 / 0.12); --muted-foreground: #b3a08f; }

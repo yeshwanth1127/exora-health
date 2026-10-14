@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -118,10 +117,6 @@ export function ScheduleBlocks() {
     <Card className="mb-6">
       <CardHeader>
         <CardTitle>Doctor leave and blocked time</CardTitle>
-        <CardDescription>
-          Blocks prevent new bookings. Existing visits stay booked until
-          reception reviews and reschedules them.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <Button
@@ -533,15 +528,12 @@ export function WaitlistDesk() {
     r.refresh();
   };
   const verify = async (intent: MutationIntent) => {
-    if (intent.path.endsWith("/withdraw")) {
-      const rows = await command.read<Wait[]>(
-        "/api/v1/admin/waitlist?status=withdrawn",
-      );
-      return rows.some(
-        (row) =>
-          row.id === intent.path.split("/").at(-2) &&
-          row.status === "withdrawn",
-      );
+    // A status from the request list cannot attribute an uncertain command to us.
+    // Decline/accept/withdraw use the frozen original key for safe replay instead.
+    if (intent.path.includes("/waitlist-offers/")) {
+      const offerId = intent.path.split("/").at(-2);
+      const outcome = await command.read<{ outcome: string }>(`/api/v1/admin/waitlist-offers/${offerId}`);
+      if (outcome.outcome === "expired") throw new Error("This offer expired. Its expiry does not confirm your answer. Retry the original request to check its saved receipt.");
     }
     return false;
   };
@@ -579,10 +571,6 @@ export function WaitlistDesk() {
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
         <div className="space-y-1.5">
           <CardTitle>Cancellation waitlist</CardTitle>
-          <CardDescription>
-            Verified, explicitly requested preferences. Offer slots
-            individually; no automatic outbound message is sent.
-          </CardDescription>
         </div>
         {canBook && (
           <Button

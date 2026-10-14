@@ -56,10 +56,10 @@ export async function listStaffAccounts(db: Kysely<DB>, caller: Caller, facility
   });
 }
 
-/** The clinic a grant is at (null: every clinic), or undefined when there is no such active grant. */
+/** The grant scope, including revoked grants so permission-gated replay can reach its frozen receipt. */
 export async function grantFacility(db: Kysely<DB>, caller: Caller, grantId: string): Promise<string | null | undefined> {
   return runQuery(db, caller.tenantId, async (tx) => {
-    const g = await tx.selectFrom('platform.role_grant').select('facility_id').where('id', '=', grantId).where('revoked_at', 'is', null).executeTakeFirst();
+    const g = await tx.selectFrom('platform.role_grant').select('facility_id').where('id', '=', grantId).executeTakeFirst();
     return g ? g.facility_id : undefined;
   });
 }
@@ -83,6 +83,17 @@ export async function staffFacilities(db: Kysely<DB>, caller: Caller, staffId: s
 
 // Access changes in a tenant run one at a time, so two administrators can't remove each other at once.
 export const lockAccess = (ctx: CommandContext) => sql`SELECT pg_advisory_xact_lock(hashtextextended('access:' || ${ctx.tenantId}, 0))`.execute(ctx.tx);
+
+/** Called under lockAccess: a principal resolved before a concurrent revocation is not write authority. */
+export async function assertLiveAccessManager(ctx: CommandContext) {
+  const { rows } = await sql`
+    SELECT 1 FROM platform.staff_permission sp
+    JOIN platform.staff s ON s.id = sp.staff_id AND s.status = 'active' AND NOT s.is_system_account
+    JOIN platform.user_account ua ON ua.staff_id = s.id AND ua.status = 'active'
+    WHERE sp.staff_id = ${ctx.actor.staffId ?? null} AND sp.permission = 'access.manage' AND sp.facility_id IS NULL
+    LIMIT 1`.execute(ctx.tx);
+  if (ctx.actor.kind !== 'staff' || !rows.length) throw deny('organization-wide access management was revoked; reload your account', { reason: 'access_revoked', permission: 'access.manage' });
+}
 
 /**
  * The caller may grant this role here only if they hold every permission in it here (or everywhere, for
@@ -194,8 +205,8 @@ export async function grantRole(db: Kysely<DB>, caller: Caller, input: { staffId
   });
 }
 
-export async function revokeGrant(db: Kysely<DB>, caller: Caller, input: { grantId: string; reason: string }) {
-  return runCommand(db, { ...caller, module: 'platform', name: 'platform.revoke_grant' }, async (ctx) => {
+export async function revokeGrant(db: Kysely<DB>, caller: Caller, input: { grantId: string; reason: string }, idempotencyKey?: string) {
+  return runCommand(db, { ...caller, module: 'platform', name: 'platform.revoke_grant', idempotencyKey, request: input }, async (ctx) => {
     await lockAccess(ctx);
     const g = await ctx.tx
       .selectFrom('platform.role_grant as g')
@@ -218,8 +229,8 @@ export async function revokeGrant(db: Kysely<DB>, caller: Caller, input: { grant
   });
 }
 
-export async function setStaffStatus(db: Kysely<DB>, caller: Caller, input: { staffId: string; status: 'active' | 'inactive'; reason: string }) {
-  return runCommand(db, { ...caller, module: 'platform', name: 'platform.set_staff_status' }, async (ctx) => {
+export async function setStaffStatus(db: Kysely<DB>, caller: Caller, input: { staffId: string; status: 'active' | 'inactive'; reason: string }, idempotencyKey?: string) {
+  return runCommand(db, { ...caller, module: 'platform', name: 'platform.set_staff_status', idempotencyKey, request: input }, async (ctx) => {
     await lockAccess(ctx);
     if (input.staffId === ctx.actor.staffId) throw conflict("you can't change your own status", { reason: 'self' });
     const staff = await ctx.tx

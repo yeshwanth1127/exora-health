@@ -26,8 +26,14 @@ import { INSURANCE_PROVIDERS, CLINIC_LOCATIONS } from '../ai/aiTriageData';
 import { format, addDays } from 'date-fns';
 import { DOCTOR_PROFILES } from '../../data/doctorProfiles';
 import { demoStartDate } from '../../data/demoAvailability';
+import type { PublicCatalog } from '../../lib/publicBookingApi';
+import { doctorDepartment, matchesDoctorDepartment, scheduleProfile, symptomDepartment, usePublicAvailability } from '../../lib/hmsAvailability';
 
 export interface SearchResultsPageProps {
+  catalog?: PublicCatalog;
+  rosterLoading?: boolean;
+  rosterError?: string;
+  onRosterRetry?: () => void;
   careType: string;
   specialtyId?: string;
   dateTime?: string;
@@ -43,6 +49,7 @@ export interface SearchResultsPageProps {
 }
 
 export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
+  catalog, rosterLoading, rosterError, onRosterRetry,
   careType,
   specialtyId,
   initialQuery = '',
@@ -54,7 +61,7 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
   onOpenBooking,
 }) => {
   // Search header state matching 1:1 reference
-  const [searchQuery, setSearchQuery] = useState(initialQuery || careType || 'Pediatric Dermatology');
+  const [searchQuery, setSearchQuery] = useState(initialQuery || (catalog ? '' : careType || 'Pediatric Dermatology'));
   const [selectedInsurance, setSelectedInsurance] = useState('');
   const [selectedLocation, setSelectedLocation] = useState(CLINIC_LOCATIONS[0]);
 
@@ -75,8 +82,8 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
   const [dateOffset, setDateOffset] = useState(0);
 
   const baseDate = useMemo(() => {
-    return addDays(demoStartDate(), dateOffset);
-  }, [dateOffset]);
+    return addDays(catalog ? new Date(catalog.today+'T12:00:00') : demoStartDate(), dateOffset);
+  }, [dateOffset,catalog]);
 
   const fiveDays = useMemo(() => {
     return Array.from({ length: 5 }, (_, i) => {
@@ -98,12 +105,14 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
   // Selected doctor for detailed photo/profile modal
   const [selectedDoctorDetail, setSelectedDoctorDetail] = useState<typeof DOCTOR_PROFILES[0] | null>(null);
 
-  // 7 Providers matching the 1:1 reference
+  // {catalog ? matchedDoctors.length : 7} Providers matching the 1:1 reference
   const matchedDoctors = useMemo(() => {
-    let list = [...doctors];
+    const source = catalog ? catalog.doctors.map(d=>({id:d.slug,name:d.name,title:d.roleTitle??d.specialty??'',departmentId:doctorDepartment(d),departmentName:d.departments.join(' · '),bio:d.bio??'',experienceYears:d.experienceYears??0})) : doctors;
+    let list = [...source];
     const q = searchQuery.toLowerCase().trim();
+    const department = catalog ? (searchQuery===initialQuery ? specialtyId ?? symptomDepartment(searchQuery) : symptomDepartment(searchQuery)) : specialtyId;
 
-    if (q && q !== 'all' && q !== 'pediatric dermatology') {
+    if (q && q !== 'all' && q !== 'pediatric dermatology' && !(catalog && department)) {
       list = list.filter(
         (d) =>
           d.name.toLowerCase().includes(q) ||
@@ -113,13 +122,13 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
       );
     }
 
-    if (specialtyId && (!q || q.length < 3)) {
-      const direct = doctors.filter((d) => d.departmentId === specialtyId);
-      if (direct.length > 0) list = direct;
+    if (department && (catalog || !q || q.length < 3)) {
+      const direct = source.filter((d) => catalog ? catalog.doctors.some(p=>p.slug===d.id && matchesDoctorDepartment(p,department)) : d.departmentId === department);
+      list = list.filter(d=>direct.some(other=>other.id===d.id));
     }
 
     // Gender filter
-    if (selectedGender !== 'No preference') {
+    if (!catalog && selectedGender !== 'No preference') {
       if (selectedGender === 'Female') {
         list = list.filter((d) => d.name.includes('Dr. Ananya') || d.name.includes('Dr. Priya') || d.name.includes('Dr. Kavya') || d.name.includes('Dr. Meera'));
       } else if (selectedGender === 'Male') {
@@ -132,8 +141,10 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
       list.sort((a, b) => b.experienceYears - a.experienceYears);
     }
 
-    return list.length > 0 ? list : doctors;
-  }, [searchQuery, specialtyId, selectedGender, sortBy]);
+    return catalog ? list : list.length > 0 ? list : doctors;
+  }, [searchQuery, specialtyId, selectedGender, sortBy,catalog,initialQuery]);
+
+  const availability=usePublicAvailability(catalog,matchedDoctors.map(d=>d.id),'in_person',fiveDays[0].formatted,fiveDays[4].formatted);
 
   useEffect(() => {
     trackSearchUsed('search_page', countToBucket(matchedDoctors.length));
@@ -211,11 +222,11 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
               <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-white min-w-0">
                 <MapPin className="size-4 text-[#154734] fill-[#154734] shrink-0 pointer-events-none" />
                 <select
-                  value={selectedLocation}
+                  value={catalog ? catalog.clinicName : selectedLocation}
                   onChange={(e) => setSelectedLocation(e.target.value)}
                   className="w-full bg-transparent text-sm text-stone-900 font-medium focus:outline-none cursor-pointer truncate min-w-0"
                 >
-                  {CLINIC_LOCATIONS.map((loc) => (
+                  {(catalog ? [catalog.clinicName] : CLINIC_LOCATIONS).map((loc) => (
                     <option key={loc} value={loc}>
                       {loc}
                     </option>
@@ -379,6 +390,7 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setDateOffset((prev) => prev + 5)}
+                  disabled={!!catalog && fiveDays[4].formatted>=catalog.bookingUntil}
                   className="size-6 rounded-full bg-[#154734] hover:bg-[#0f3426] text-white flex items-center justify-center transition cursor-pointer shadow-xs"
                   title="Next 5 days"
                 >
@@ -443,12 +455,15 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
       {/* ── DOCTOR LISTINGS (Matching media_1790069042700.png 1:1) ── */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-10">
+          {(rosterLoading || availability.loading) && <p role="status">Loading hospital doctors and available times…</p>}
+          {(rosterError || availability.error) && <div role="alert"><p>{rosterError || availability.error}</p><button type="button" onClick={onRosterRetry} className="underline text-[#154734]">Try again</button></div>}
+          {catalog && !matchedDoctors.length && <p>No published doctors match this specialty. Try another search or contact reception.</p>}
           {matchedDoctors.map((doc, index) => {
-            const isFirst = index === 0;
-            const profile = DOCTOR_PROFILES.find((p) => p.id === doc.id) ?? DOCTOR_PROFILES[0];
+            const isFirst = !catalog && index === 0;
+            const profile = catalog ? scheduleProfile(catalog.doctors.find(d=>d.slug===doc.id)!,catalog,[...(availability.byDoctor[doc.id]??[]),...(availability.unpricedByDoctor[doc.id]??[])]) : DOCTOR_PROFILES.find((p) => p.id === doc.id) ?? DOCTOR_PROFILES[0];
             const docName = profile.name;
             const docSpecialty = profile.specialty;
-            const nextVisitText = profile.nextVisitText;
+            const nextVisitText = profile.nextVisitText ?? 'No published times in these five days';
             // Most doctors will have direct slots in the 5-day grid; doctor index 4 displays the "Check for availability" button
             const hasDirectSlots = Boolean(
               profile.availableSlots &&
@@ -473,8 +488,7 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
                     src={profile.photo}
                     alt={profile.name}
                     onError={(e) => {
-                      e.currentTarget.src =
-                        'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=800';
+                      e.currentTarget.style.visibility='hidden';
                     }}
                     className="w-full h-full object-cover object-top group-hover/img:scale-105 transition-transform duration-300"
                   />
@@ -562,6 +576,8 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
                             return (
                               <button
                                 key={slot}
+                                disabled={!!catalog && !(availability.byDoctor[doc.id]??[]).some(q=>new Intl.DateTimeFormat('en-CA',{timeZone:catalog.timezone}).format(new Date(q.startsAt))===col.formatted && new Intl.DateTimeFormat('en-US',{timeZone:catalog.timezone,hour:'2-digit',minute:'2-digit',hour12:true}).format(new Date(q.startsAt))===slot)}
+                                title={catalog ? 'Book a priced time; grey times need a consultation fee' : undefined}
                                 type="button"
                                 onClick={() => {
                                   if (onScheduleDoctor) {
@@ -570,7 +586,7 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
                                     onBookDoctor(profile.id, 'New Patient Office Visit', col.formatted, slot);
                                   }
                                 }}
-                                className="h-8 w-full bg-[#154734] hover:bg-[#0f3426] active:scale-95 text-white font-semibold text-[11px] rounded-[3px] transition cursor-pointer flex items-center justify-center leading-none shadow-2xs"
+                                className="h-8 w-full disabled:bg-stone-200 disabled:text-stone-600 disabled:cursor-not-allowed bg-[#154734] hover:bg-[#0f3426] active:scale-95 text-white font-semibold text-[11px] rounded-[3px] transition cursor-pointer flex items-center justify-center leading-none shadow-2xs"
                               >
                                 {slot}
                               </button>
@@ -585,6 +601,8 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
                   })}
                 </div>
 
+                {catalog && !!availability.unpricedByDoctor[doc.id]?.length && <p className="mt-3 text-xs text-amber-800">Grey times are scheduled. The hospital must set the consultation fee before online booking.</p>}
+                {catalog && !availability.loading && !(availability.byDoctor[doc.id]?.length || availability.unpricedByDoctor[doc.id]?.length) && <p className="mt-3 text-xs text-stone-600">No published times in these five days.</p>}
                 {/* View all availability link -> lands at Step 1 */}
                 <div className="pt-3">
                   <button
@@ -641,7 +659,7 @@ export const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
                       </div>
                     </div>
                   </div>
-                ) : hasDirectSlots ? (
+                ) : (catalog || hasDirectSlots) ? (
                   /* ══════════════════════════════════════════════════════════════
                      DOCTORS WITH AVAILABILITY: 2-COLUMN LAYOUT WITH 5-DAY MATRIX
                      ══════════════════════════════════════════════════════════════ */

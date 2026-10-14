@@ -7,7 +7,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { HmsError, IntentKeys, request } from "./client";
+import { HmsError, IntentKeys, request, identityRevision } from "./client";
+import { nativeKeyed } from "./operational-intent";
 import { can } from "./model";
 import type { Facility, Me, Practitioner } from "./types";
 export type Workspace = {
@@ -130,8 +131,10 @@ export function useCommand() {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [failure, setFailure] = useState<HmsError | null>(null),
-    [unknown, setUnknown] = useState(false);
+    [unknown, setUnknown] = useState(false),
+    [recoverable, setRecoverable] = useState(false);
   useUnsaved(busy || unknown, { pending: busy || unknown });
+  const frozen = useRef<{ path: string; body?: unknown; keyed: boolean; method: string; revision: number } | null>(null);
   const keys = useRef(new IntentKeys()),
     inFlight = useRef(false),
     uncertainIntent = useRef("");
@@ -141,6 +144,11 @@ export function useCommand() {
     keyed = false,
     method = "POST",
   ): Promise<T | undefined> {
+    keyed ||= nativeKeyed(path, method);
+    if (unknown && frozen.current?.revision !== identityRevision()) {
+      setError("The workspace changed. Recover this change in its original workspace.");
+      return;
+    }
     const fingerprint = JSON.stringify([path, body, method]);
     if (inFlight.current || (unknown && !keyed)) return;
     if (unknown && uncertainIntent.current !== fingerprint) {
@@ -149,6 +157,8 @@ export function useCommand() {
       );
       return;
     }
+    frozen.current = { path, body: structuredClone(body), keyed, method, revision: identityRevision() };
+    setRecoverable(keyed);
     inFlight.current = true;
     setBusy(true);
     setError("");
@@ -164,7 +174,7 @@ export function useCommand() {
       return result;
     } catch (e) {
       const uncertain =
-        unknown || (e instanceof HmsError && e.code === "outcome_unknown");
+        unknown || (e instanceof HmsError && ["outcome_unknown", "context_changed"].includes(e.code));
       setUnknown(uncertain);
       uncertainIntent.current = uncertain ? fingerprint : "";
       setFailure(e instanceof HmsError ? e : null);
@@ -179,12 +189,22 @@ export function useCommand() {
   }
   return {
     run,
+    canReplay: unknown && recoverable,
+    replay: async <T,>(): Promise<T | undefined> => {
+      const original = frozen.current;
+      if (!unknown || !original?.keyed || original.revision !== identityRevision()) return undefined;
+      return run<T>(original.path, structuredClone(original.body), true, original.method);
+    },
     busy,
     error,
     /** The last refusal, for reacting to its code (e.g. a stale version). */
     failure,
     unknown,
     reconciled: () => {
+      if (unknown) {
+        setError("A refreshed record cannot confirm who saved this change. Check the original request, or ask an administrator to reconcile it.");
+        return;
+      }
       setUnknown(false);
       setError("");
       setFailure(null);

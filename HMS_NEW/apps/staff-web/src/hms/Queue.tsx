@@ -53,7 +53,6 @@ export function Queue() {
     <>
       <PageTitle
         title="Queue"
-        description="Call the next patient and hand them over for consultation."
         action={
           <div className="flex gap-2">
             {can("appointments.check_in") && can("patients.read") && (
@@ -116,12 +115,6 @@ export function Queue() {
           Refresh
         </Button>
       </div>
-      {!selected && (can("queue.manage") || can("appointments.check_in")) && (
-        <p className="mb-5 text-xs text-muted-foreground">
-          Choose a doctor to call their next patient or record a walk-in
-          arrival.
-        </p>
-      )}
       {walkIn && selected && (
         <Sheet
           open
@@ -243,11 +236,6 @@ export function Queue() {
                     ? "No queue arrivals for this day"
                     : "No doctors in this clinic"
                 }
-                description={
-                  doctors.length
-                    ? `No queue tokens for ${selected ? "this doctor" : "this clinic"} on ${date}. Check another day or record a walk-in after choosing a doctor.`
-                    : "Add a doctor and their clinic assignment before recording arrivals."
-                }
                 action={
                   doctors.length
                     ? selected &&
@@ -271,9 +259,6 @@ export function Queue() {
             )}
           </Card>
         </LoadingState>
-        <p className="text-xs text-muted-foreground">
-          Open the patient’s consultation to record care and complete the visit.
-        </p>
       </div>
     </>
   );

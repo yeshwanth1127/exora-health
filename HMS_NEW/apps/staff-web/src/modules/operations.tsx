@@ -132,11 +132,6 @@ function ActivityPage({
     <>
       <PageTitle
         title={overview ? "Overview" : "System status"}
-        description={
-          overview
-            ? "Appointment activity across the clinic’s booking channels."
-            : "Background event processing, temporary reservations and database readiness."
-        }
         action={
           <Button variant="outline" onClick={refresh}>
             <RefreshCw />
@@ -369,7 +364,6 @@ function ActivityPage({
                 {!r.data?.recent_appointments.length && (
                   <Empty
                     title="No appointments yet"
-                    description="New clinic bookings will appear here."
                   />
                 )}
               </CardContent>
@@ -379,10 +373,6 @@ function ActivityPage({
           <Card>
             <CardHeader>
               <CardTitle>Event outbox</CardTitle>
-              <CardDescription>
-                Most recent 100 events across all clinics. A processed event is
-                separate from a patient delivery receipt.
-              </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -416,7 +406,6 @@ function ActivityPage({
               {!events.data?.length && (
                 <Empty
                   title="No operational events"
-                  description="Booking changes appear here."
                 />
               )}
             </CardContent>
@@ -437,7 +426,6 @@ function CataloguePage() {
     <>
       <PageTitle
         title="Hospital catalogue"
-        description="Clinic locations, specialties and doctor coverage available to patients and agents."
         action={
           <Button variant="outline" onClick={refresh}>
             <RefreshCw />

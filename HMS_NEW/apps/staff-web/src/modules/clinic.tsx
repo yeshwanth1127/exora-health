@@ -84,7 +84,6 @@ function Doctors() {
     <>
       <PageTitle
         title="Doctors"
-        description="Keep booking fees and doctor availability accurate across all clinic channels."
       />
       <Resource {...r}>
         <Card className="p-0">
@@ -239,7 +238,6 @@ function Schedules() {
     <>
       <PageTitle
         title="Schedules"
-        description="Drag across a doctor's day to open time, block time or book a visit."
       />
       <ScheduleTimeline day={day} setDay={setDay} />
     </>

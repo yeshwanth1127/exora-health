@@ -1,3 +1,4 @@
+import type { BookingReadiness } from "@hms/contracts";
 import type {
   ClinicDirectory,
   FacilityDetail,
@@ -34,6 +35,7 @@ export type SetupEvidence = {
   prices: Evidence<PriceBookItem[]>;
   sessions: Evidence<Session[]>;
   slots: Evidence<Slot[]>;
+  readiness?: Evidence<BookingReadiness>;
 };
 const missingRead = (e: Evidence<unknown>): SetupState | null =>
   e.state === "known" ? null : e.state;
@@ -137,6 +139,13 @@ export function deriveSetup(e: SetupEvidence): SetupItem[] {
               Date.parse(`${e.day}T00:00:00Z`) + 31 * 86400000,
         )
       : [];
+  const exact = e.readiness?.state === "known" ? e.readiness.value : null;
+  const exactState = e.readiness ? missingRead(e.readiness) : null;
+  const exactInScope = exact && exact.facilityId === e.facilityId && exact.staffId === e.doctor?.staffId && exact.visitMode === e.mode &&
+    e.slots.state === "known" && e.slots.value.some((s) => s.slotStart === exact.slotStart && s.facilityId === exact.facilityId && s.visitMode === exact.visitMode && (s.healthcareServiceId ?? null) === exact.healthcareServiceId);
+  const exactDetail = exactInScope
+    ? `${exact.configuration.complete ? "Configuration confirmed" : "Configuration needs review"} for the selected doctor’s session on ${exact.sessionOn}. ${exact.fee ? `Exact fee: ₹${(exact.fee.feeMinor / 100).toFixed(2)}.` : "No eligible fee recorded; a missing fee is not free."} ${exact.occupancy === "free" ? "This time was open when checked." : `Capacity: ${exact.occupancy.replaceAll("_", " ")}.`} Saving rechecks availability and pricing; this read never holds a time. Video provider, consent and signing are separate checks.`
+    : null;
   return [
     item(
       "clinic",
@@ -167,8 +176,8 @@ export function deriveSetup(e: SetupEvidence): SetupItem[] {
     item(
       "service",
       "Consultation and fee",
-      serviceState ?? (priced ? "complete" : "not_started"),
-      priced
+      exactState ?? (exactInScope ? (exact.fee ? "complete" : "not_started") : serviceState ?? (priced ? "complete" : "not_started")),
+      exactInScope ? (exact.fee ? `The selected session on ${exact.sessionOn} has an eligible fee of ₹${(exact.fee.feeMinor / 100).toFixed(2)}. Zero is a deliberate free consultation.` : "The selected session has no eligible fee recorded; a missing fee is not free.") : priced
         ? "An active compatible consultation has a fee effective today. Zero is a deliberate free consultation."
         : "Add a compatible consultation and its effective fee; a blank fee is not free.",
       "catalogue",
@@ -188,13 +197,13 @@ export function deriveSetup(e: SetupEvidence): SetupItem[] {
     ),
     item(
       "preview",
-      "Confirm the exact booking",
-      previewState ?? (configured ? "optional_deferred" : "blocked"),
-      configured
+      "Exact session and fee",
+      exactState ?? (exactInScope ? (exact.configuration.complete ? "complete" : "blocked") : previewState ?? (configured ? "optional_deferred" : "blocked")),
+      exactDetail ?? (configured
         ? available.length
           ? `${available.length} times were returned as open. Choose a time in Book appointment; the actual session, service and effective fee are checked when saving. Clinic-level configuration is not proof every time can be booked.`
           : "Recorded configuration is present; no free times in this period. Choose another period or review the schedule. Exact session, service and fee eligibility is checked during booking."
-        : "Resolve the configuration checks above. This read-only guide never reserves a time or creates a booking.",
+        : "Resolve the configuration checks above. This read-only guide never reserves a time or creates a booking."),
       e.mode === "virtual"
         ? "appointments?book=1&mode=virtual"
         : "appointments",

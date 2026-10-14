@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { FastifyInstance } from "fastify";
 import { sql, type DB, type Kysely } from "@hms/db";
-import { DomainError, runQuery } from "@hms/platform";
+import { DomainError, invalid, runQuery } from "@hms/platform";
 import {
   BookingLinkInputSchema,
   VoiceEventSchema,
@@ -29,6 +29,7 @@ import {
   voiceAccess,
   recordingBytes,
   validVoiceSecret,
+  voiceRuntimeForRequest,
   type ChannelSettings,
 } from "../../modules/comms/voice-growth.ts";
 
@@ -124,7 +125,8 @@ export function registerVoiceGrowthRoutes(
     );
   });
   app.post("/integrations/voice/events", async (request, reply) => {
-    if (!settings.voice)
+    const binding = voiceRuntimeForRequest(settings, request.headers['x-voice-account']);
+    if (!binding)
       return reply
         .status(503)
         .send({
@@ -133,9 +135,13 @@ export function registerVoiceGrowthRoutes(
             message: "Voice runtime ingestion is not configured",
           },
         });
-    if (!validVoiceSecret(settings, request.headers["x-voice-secret"]))
+    const scopedSettings = { ...settings, voice: binding };
+    if (!validVoiceSecret(scopedSettings, request.headers["x-voice-secret"]))
       throw new AuthenticationError("invalid runtime authentication");
-    return ingestVoice(db, parse(VoiceEventSchema, request.body), settings);
+    const event = parse(VoiceEventSchema, request.body);
+    if (settings.voiceBindings !== undefined && event.agentVersion !== binding.agentVersion)
+      throw invalid('runtime agent version must match the configured deployment');
+    return ingestVoice(db, event, scopedSettings);
   });
   app.get("/v1/voice-calls", async (request) => {
     const q = parse(

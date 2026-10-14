@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowRight, Phone } from 'lucide-react';
 import { departments } from '../../data/departments';
 import { doctors } from '../../data/doctors';
+import type { HmsRosterDoctor } from '../doctor/hmsRoster';
 
 // Patient and experience figures supplied for the client demo, not taken from the hospital
 // website; confirm them with the hospital before this goes live.
@@ -26,10 +27,11 @@ export const reasons = [
 export const hospitalPhoto = '/clients/sri-lakshmi/339b1070-asian-female-doctor-talking-to-smiling-diverse-senior-female-patient-in-hospital-corridor-e1699179241527.jpg';
 
 interface WhyChooseUsSectionProps {
+  roster?: HmsRosterDoctor[];
   onBookInPerson?: () => void;
 }
 
-export const WhyChooseUsSection: React.FC<WhyChooseUsSectionProps> = ({ onBookInPerson }) => (
+export const WhyChooseUsSection: React.FC<WhyChooseUsSectionProps> = ({ roster, onBookInPerson }) => (
   <section id="why-choose-us" className="w-full border-b border-[#ebe4d8] bg-white py-16 sm:py-24">
     <div className="mx-auto grid max-w-[1280px] items-center gap-10 px-5 sm:px-8 lg:grid-cols-[5fr_7fr] lg:gap-16 lg:px-12">
       <img
@@ -48,7 +50,7 @@ export const WhyChooseUsSection: React.FC<WhyChooseUsSectionProps> = ({ onBookIn
         </p>
 
         <dl className="mt-8 divide-y divide-[#ebe4d8] border-y border-[#ebe4d8]">
-          {reasons.map(reason => (
+          {(roster === undefined ? reasons : [{ value: String(roster.length), title: 'Doctors available for online booking', body: 'See our current medical team and choose a published consultation time.' }, { value: String(new Set(roster.flatMap(doctor => doctor.departments)).size), title: 'Departments represented', body: 'Browse our doctors by specialty to find the care you need.' }]).map(reason => (
             <div key={reason.title} className="grid gap-1 py-5 sm:grid-cols-[13rem_1fr] sm:items-baseline sm:gap-6">
               <dt className="text-4xl font-black leading-none tracking-tight text-[#24553c] sm:text-5xl">{reason.value}</dt>
               <dd>

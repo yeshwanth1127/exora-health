@@ -36,6 +36,7 @@ type Roles = {
     name: string;
     builtIn: boolean;
     permissions: string[];
+    version: number;
   }[];
   permissions: { code: string; module: string; description: string }[];
 };
@@ -136,6 +137,7 @@ export function SettingsPage() {
               name: x.name,
               built_in: x.builtIn,
               permissions: x.permissions,
+              version: x.version,
             })),
             permissions: r.permissions.map((p) => ({
               key: p.code,
@@ -145,11 +147,11 @@ export function SettingsPage() {
           } as T;
         }
         if (path === "/api/v1/admin/booking-policy") {
-          const r = await request<{ enabled: boolean }>(
+          const r = await request<{ enabled: boolean; version: string | null }>(
             `/v1/facilities/${at}/overbooking`,
             { signal },
           );
-          return { overbooking: r.enabled } as T;
+          return { overbooking: r.enabled, version: r.version } as T;
         }
         throw new Error("Not available on this page.");
       },
@@ -163,17 +165,20 @@ export function SettingsPage() {
         if (options.method === "PUT" && path === "/api/v1/admin/booking-policy")
           return request<T>(`/v1/facilities/${at}/overbooking`, {
             method: "PUT",
-            body: { enabled: b.overbooking === true },
+            idempotencyKey: key,
+            body: { enabled: b.overbooking === true, version: b.version },
           });
         let m: RegExpExecArray | null;
         if (options.method === "PUT" && (m = paths.permission.exec(path)))
           return request<T>(`/v1/roles/${m[1]}/permissions/${m[2]}`, {
             method: "PUT",
-            body: { allowed: b.allowed === true },
+            idempotencyKey: key,
+            body: { allowed: b.allowed === true, version: b.version },
           });
         if (options.method === "PATCH" && (m = paths.user.exec(path)))
           return request<T>(`/v1/staff/${m[1]}`, {
             method: "PATCH",
+            idempotencyKey: key,
             body: {
               version: b.version,
               displayName: b.name,
@@ -185,6 +190,7 @@ export function SettingsPage() {
         if ((m = paths.retire.exec(path)))
           return request<T>(`/v1/roles/${m[1]}/retire`, {
             method: "POST",
+            idempotencyKey: key,
             body: { reason: b.reason },
           });
         if (path === "/api/v1/staff/users")
@@ -216,11 +222,13 @@ export function SettingsPage() {
         if ((m = paths.status.exec(path)))
           return request<T>(`/v1/staff/${m[1]}/status`, {
             method: "POST",
+            idempotencyKey: key,
             body: { status: b.status, reason: b.reason },
           });
         if ((m = paths.revoke.exec(path)))
           return request<T>(`/v1/role-grants/${m[1]}/revoke`, {
             method: "POST",
+            idempotencyKey: key,
             body: { reason: b.reason },
           });
         throw new Error("Not available on this page.");
@@ -230,10 +238,6 @@ export function SettingsPage() {
   return (
     <OriginalResourceContext.Provider value={source}>
       <h1 className="mb-2 text-2xl font-semibold">Workspace settings</h1>
-      <p className="mb-5 text-sm text-muted-foreground">
-        Clinic settings for {facility.name}. Roles, module states and consent
-        documents apply across the organisation.
-      </p>
       <nav
         aria-label="Settings sections"
         className="mb-6 flex flex-wrap gap-2 border-b pb-4"

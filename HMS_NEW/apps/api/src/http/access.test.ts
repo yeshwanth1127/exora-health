@@ -23,6 +23,7 @@ const tokens = {} as Record<keyof typeof people, string>;
 
 async function call(method: 'GET' | 'POST' | 'PUT', url: string, opts: { token?: string; body?: unknown; idem?: string | true } = {}) {
   const headers: Record<string, string> = { authorization: `Bearer ${opts.token ?? tokens.admin}` };
+  if (!opts.idem && /\/(revoke|status|retire)$/.test(url)) headers['idempotency-key'] = `test-${randomUUID()}`;
   if (opts.idem) headers['idempotency-key'] = opts.idem === true ? `test-${randomUUID()}` : opts.idem;
   const res = await app.inject({ method, url, headers, ...(opts.body !== undefined ? { payload: opts.body as object } : {}) });
   return { status: res.statusCode, body: res.body ? res.json() : null };
@@ -62,9 +63,10 @@ describe('activity log (G18)', () => {
   const log = (query: string, token = tokens.auditor) => call('GET', `/v1/audit-events?${query}`, { token });
 
   it('lists who changed what, filtered, for auditors and every-clinic administrators only', async () => {
-    const toggled = await call('PUT', `/v1/facilities/${t.facilityId}/overbooking`, { token: tokens.branchAdmin, body: { enabled: true } });
+    const initial = await call('GET', `/v1/facilities/${t.facilityId}/overbooking`);
+    const toggled = await call('PUT', `/v1/facilities/${t.facilityId}/overbooking`, { token: tokens.branchAdmin, idem: true, body: { enabled: true, version: initial.body.version } });
     expect(toggled.status).toBe(200);
-    expect((await call('PUT', `/v1/facilities/${t.facilityId}/overbooking`, { token: tokens.branchAdmin, body: { enabled: false } })).status).toBe(200);
+    expect((await call('PUT', `/v1/facilities/${t.facilityId}/overbooking`, { token: tokens.branchAdmin, idem: true, body: { enabled: false, version: toggled.body.version } })).status).toBe(200);
     const found = await log(`actor=${encodeURIComponent('branch one')}&action=config_setting`);
     expect(found.status).toBe(200);
     expect(found.body.items[0]).toMatchObject({ actorName: 'Branch One Lead', actorIsSystem: false, action: 'update', subjectType: 'platform.config_setting' });
@@ -233,7 +235,10 @@ describe('custom roles (G16)', () => {
   const load = async () => {
     roles = Object.fromEntries((await call('GET', '/v1/roles')).body.roles.map((r: { code: string }) => [r.code, r]));
   };
-  const toggle = (roleId: string, permission: string, allowed: boolean, token = tokens.admin) => call('PUT', `/v1/roles/${roleId}/permissions/${permission}`, { token, body: { allowed } });
+  const toggle = async (roleId: string, permission: string, allowed: boolean, token = tokens.admin) => {
+    const role = (await call('GET', '/v1/roles')).body.roles.find((r: { roleId: string }) => r.roleId === roleId);
+    return call('PUT', `/v1/roles/${roleId}/permissions/${permission}`, { token, idem: true, body: { allowed, version: role.version } });
+  };
 
   it('copies a built-in role, edits the copy and grants it; built-in roles stay read-only', async () => {
     await load();

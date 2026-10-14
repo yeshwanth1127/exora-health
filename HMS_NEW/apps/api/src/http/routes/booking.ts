@@ -1,9 +1,11 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import { BookingReadinessQuerySchema, BookingReadinessSchema } from '@hms/contracts';
 import type { DB, Kysely } from '@hms/db';
 import { DomainError } from '@hms/platform';
 import { authorize, authorizeEvery, grantedFacilities } from '../../auth/principal.ts';
 import {
+  bookingReadiness,
   bookAppointment,
   bookWalkIn,
   cancelAppointment,
@@ -20,6 +22,7 @@ import {
   withdrawFromWaitlist,
   waitlistFacility,
   waitlistOfferFacility,
+  getWaitlistOffer,
   recentOutboxEvents,
   getOverbooking,
   markNoShow,
@@ -30,7 +33,7 @@ import {
   setOverbooking,
   slotFacility,
 } from '../../modules/booking/index.ts';
-import { callerOf, e164, idempotencyKey, isoDate, parse, principalOf, uuid } from '../support.ts';
+import { callerOf, e164, idempotencyKey, optionalIdempotencyKey, isoDate, parse, principalOf, uuid } from '../support.ts';
 
 const AppointmentParams = z.object({ appointmentId: uuid });
 const Priority = z.enum(['normal', 'senior_citizen', 'emergency', 'vip']);
@@ -108,9 +111,9 @@ export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
 
   app.put('/v1/facilities/:facilityId/overbooking', async (request) => {
     const { facilityId } = parse(FacilityParams, request.params);
-    const body = parse(z.object({ enabled: z.boolean() }), request.body);
+    const body = parse(z.object({ enabled: z.boolean(), version: uuid.nullable() }), request.body);
     authorize(principalOf(request), 'config.manage', facilityId);
-    return setOverbooking(db, callerOf(request), { facilityId, enabled: body.enabled });
+    return setOverbooking(db, callerOf(request), { facilityId, ...body }, idempotencyKey(request));
   });
 
   // Clinic overview (G12): the same appointment data the list shows, so the same permission at that clinic.
@@ -174,6 +177,12 @@ export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
     return reply.status(201).send(await offerWaitlistSlot(db, callerOf(request), { waitlistEntryId, ...body }, idempotencyKey(request)));
   });
 
+  app.get('/v1/waitlist-offers/:offerId', async (request) => {
+    const { offerId } = parse(OfferParams, request.params);
+    atClinic(request, 'appointments.read', await waitlistOfferFacility(db, callerOf(request), offerId));
+    return getWaitlistOffer(db, callerOf(request), offerId);
+  });
+
   app.post('/v1/waitlist-offers/:offerId/accept', async (request, reply) => {
     const { offerId } = parse(OfferParams, request.params);
     atClinic(request, 'appointments.book', await waitlistOfferFacility(db, callerOf(request), offerId));
@@ -183,14 +192,21 @@ export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
   app.post('/v1/waitlist-offers/:offerId/decline', async (request) => {
     const { offerId } = parse(OfferParams, request.params);
     atClinic(request, 'appointments.book', await waitlistOfferFacility(db, callerOf(request), offerId));
-    return declineWaitlistOffer(db, callerOf(request), { offerId });
+    return declineWaitlistOffer(db, callerOf(request), { offerId }, idempotencyKey(request));
   });
 
   app.post('/v1/waitlist/:waitlistEntryId/withdraw', async (request) => {
     const { waitlistEntryId } = parse(WaitlistParams, request.params);
     const body = parse(z.object({ reason: z.string().trim().min(3).max(500) }), request.body);
     atClinic(request, 'appointments.cancel', await waitlistFacility(db, callerOf(request), waitlistEntryId));
-    return withdrawFromWaitlist(db, callerOf(request), { waitlistEntryId, reason: body.reason });
+    return withdrawFromWaitlist(db, callerOf(request), { waitlistEntryId, reason: body.reason }, idempotencyKey(request));
+  });
+
+  app.get('/v1/booking/readiness', async (request) => {
+    const raw = request.query as Record<string, unknown>;
+    const q = parse(BookingReadinessQuerySchema, { ...raw, healthcareServiceId: raw.healthcareServiceId === 'null' ? null : raw.healthcareServiceId });
+    authorize(principalOf(request), 'appointments.read', q.facilityId);
+    return BookingReadinessSchema.parse(await bookingReadiness(db, callerOf(request), q));
   });
 
   app.get('/v1/appointments', async (request) => {
@@ -203,8 +219,9 @@ export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
           staffId: uuid.optional(),
           patientId: uuid.optional(),
           status: z.enum(['confirmed', 'checked_in', 'completed', 'cancelled', 'no_show']).optional(),
+          visitMode: z.enum(['in_person', 'virtual']).optional(),
           q: z.string().trim().min(2).max(100).optional(),
-          cursor: z.string().max(300).optional(),
+          cursor: z.string().max(600).optional(),
           limit: z.coerce.number().int().min(1).max(500).optional(),
         })
         .refine((r) => r.to >= r.from, 'to must not be before from'),
@@ -228,7 +245,7 @@ export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const { appointmentId } = parse(AppointmentParams, request.params);
     const body = parse(z.object({ reason: z.string().trim().min(1).max(500) }), request.body);
     await authorizedAppointment(request, appointmentId, 'appointments.cancel');
-    return cancelAppointment(db, callerOf(request), { appointmentId, reason: body.reason });
+    return cancelAppointment(db, callerOf(request), { appointmentId, reason: body.reason }, idempotencyKey(request));
   });
 
   app.post('/v1/appointments/:appointmentId/reschedule', async (request) => {

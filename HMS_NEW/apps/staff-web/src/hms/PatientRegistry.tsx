@@ -178,10 +178,6 @@ export function PatientRegistry({
                 onChanged={refresh}
               />
               <Block title="External records">
-                <p className="text-sm text-muted-foreground">
-                  ABHA and external record retrieval are not connected. Medical
-                  history shows records saved in this system.
-                </p>
                 {reg.data.identifiers.length > 0 && (
                   <Identifiers r={reg.data} />
                 )}
@@ -655,10 +651,6 @@ function Duplicates({
           >
             Propose merge into this record
           </Button>
-          <p className="text-xs text-muted-foreground">
-            A second person with merge rights decides. Nothing changes until
-            then.
-          </p>
         </div>
       )}
       <Refused cmd={cmd} />

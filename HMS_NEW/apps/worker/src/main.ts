@@ -1,6 +1,7 @@
 // Background worker: delivers outbox events and runs housekeeping jobs.
 //   pnpm worker:dev
 import { evaluateDueNotifications } from '../../api/src/modules/comms/notifications.ts';
+import { dispatchTemplateSubmissions } from '../../api/src/modules/comms/template-submissions.ts';
 import { createDb } from '@hms/db';
 import { config } from '../../../db/scripts/config.mjs';
 import { dispatchOnce } from './dispatcher.ts';
@@ -40,3 +41,5 @@ void every('partitions', 24 * 3600_000, () => maintainPartitions(db));
 void every('purge-idempotency', 3600_000, () => purgeIdempotencyRecords(db));
 
 void every('notification-readback', 5_000, () => evaluateDueNotifications(db));
+// Dedicated dispatcher commits each provider attempt before POST; outbox retries must never resend it.
+void every('whatsapp-template-submissions', 5_000, () => dispatchTemplateSubmissions(db));

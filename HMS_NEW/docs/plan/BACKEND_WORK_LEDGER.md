@@ -1,6 +1,8 @@
 # Missing backend work ledger
 
-**Phase closed by the product owner on 12 October 2026.** Local staff implementation is accepted. Active focus is UX/UI and operations review; webpage/Voice-bot integration is on hold. Provider work below is carried forward in [UX_AND_CHANNEL_TODO.md](UX_AND_CHANNEL_TODO.md), not silently marked implemented. [Current operations review](STAFF_OPS_REVIEW.md).
+**Current follow-up, 13 October 2026:** all seven audit backend items UXA01–UXA07 are implemented and verified in isolated PostgreSQL; see [hardening evidence](AUDIT_BACKEND_HARDENING.md). Managed WhatsApp/Sarvam onboarding is active, with live provider work still open in [channel onboarding](MANAGED_CHANNEL_ONBOARDING.md). Public webpage integration remains on hold.
+
+**Historical checkpoint, 12 October 2026:** the product owner closed the original local staff implementation phase. The module inventory below preserves that checkpoint; it does not supersede the current follow-up. [Operations review](STAFF_OPS_REVIEW.md).
 
 Schema/workflow review: [frontend/backend contract decisions](FRONTEND_BACKEND_CONTRACT_DECISIONS.md). Preserve the original design while resolving incompatible semantics before enabling writes.
 
@@ -137,16 +139,16 @@ If arbitrary overlap ranges are required, add a separate typed server command ac
 
 ## Desktop audit follow-ups — 13 October 2026
 
-Frontend-only implementation from the [admin dashboard audit](STAFF_UX_AUDIT_IMPLEMENTATION.md). No backend, schema or permission changes were made. Existing accepted module work remains closed; the following additional contracts belong to the dedicated backend agent.
+The original [admin dashboard audit implementation](STAFF_UX_AUDIT_IMPLEMENTATION.md) was frontend-only. This follow-up adds backend contracts, migrations and permission changes on codex/audit-backend-hardening. All seven additional contracts are implemented. See AUDIT_BACKEND_HARDENING.md for verification and deployment boundaries.
 
 | ID | Required backend decision/work | Current UI boundary / acceptance requirement |
 | --- | --- | --- |
-| UXA01 | Add a typed `visitMode` filter to `GET /v1/appointments` **before** SQL pagination; include it in cursor validation. | UI explicitly filters visit type **on the loaded page**, retains pagination and resets the cursor when mode changes. Verify >100 mixed visits, a matching visit on a later page, all modes, scope and cursor changes. F02 is mitigated, not resolved. |
-| UXA02 | Define first-clinic bootstrap authorization independently of a fabricated facility context; expose zero-clinic versus inaccessible-clinic evidence and creator grant/provisioning result. | No clinic creation is exposed from an unverified empty list. Refresh access and account-provisioning guidance remain available. Test creation success with missing creator grant and prevent duplicate creation on resume. |
-| UXA03 | Add compare-and-set/version guarantees to booking-overlap policy and role-permission PUTs. | Changes are staged with impact review and single pending intent; readback can confirm current state, but cannot prevent another administrator overwriting it. Test simultaneous administrators and stale refusal. |
-| UXA04 | Add idempotent decline or an authorized closed-offer outcome read with offer ID, decision/version and actor provenance. | Unknown waitlist decline stays frozen. A waiting row without an offer can mean expiry, so it is never treated as proof that decline succeeded. Test timeout after commit and expiry-versus-decline. |
-| UXA05 | Provide exact selected-doctor/session/service/effective-date fee eligibility, preferably a read-only quote/readiness contract. Keep video consent/provider, signing eligibility and walk-in capacity as separate evidence. | Clinic-level service/fee plus future hours are separate recorded configuration checks. Final exact booking check is labelled “Checked during booking”; E19/E31 full readiness is not fabricated. Fully booked clinics remain configured. |
-| UXA06 | Expose the organisation timezone/date-boundary metadata used by audit-event filtering. | Activity sends unchanged plain dates and labels the organisation boundary. It does not substitute the selected clinic timezone; scheduling editor is explicitly limited to Asia/Kolkata. Verify organisation/clinic timezone mismatch and midnight boundaries. |
-| UXA07 | Add attributable outcome/version evidence for currently non-keyed operational changes where current-record reads cannot prove the original request: retirement/revocation, publication/renewal and cancellation where needed. | Safe current-state readback is distinguished from an original-request receipt. Uncertain writes without a safe replay or proven lookup remain paused. See [mutation inventory](STAFF_MUTATION_RECOVERY_MAP.md). |
+| UXA01 | IMPLEMENTED: typed server visitMode filter before pagination; cursors bind actor, tenant and all filters. | Mixed-mode pagination, later-page matches, scope/cursor refusal covered in booking-read-contracts.test.ts. |
+| UXA02 | IMPLEMENTED: zero/inaccessible clinic evidence, real organisation-wide bootstrap authority, atomic bounded creator grant. | Parallel/replayed creation and permissions after migration covered in admin-guarantees.test.ts. |
+| UXA03 | IMPLEMENTED: numeric role version and immutable policy-row version token (null when unset). | Concurrent reviewed changes refuse stale versions. Roles/policy recheck live authority under access locks. |
+| UXA04 | IMPLEMENTED: keyed decline and authorised closed-offer outcome including actor/version. | Discarded committed response, expiry, accept/decline race and revoked-authority replay covered in command-recovery.test.ts. |
+| UXA05 | IMPLEMENTED: typed /v1/booking/readiness for exact clinic/doctor/slot/mode/service/effective fee. | Configuration, occupancy and unchecked provider/consent/signing remain distinct; not a reservation or activation certificate. |
+| UXA06 | IMPLEMENTED: tenant timezone and exact half-open filter bounds in audit read/export responses. | DST 23-hour day, midnight boundaries, clinic mismatch and invalid dates covered in audit-boundary.test.ts. |
+| UXA07 | IMPLEMENTED for active inventoried operational routes: required actor-bound keys and original receipts; legacy actorless records fail closed. | Admin, catalogue, cancellations/revocations and waitlist adapters preserve keys. Unknown outcomes cannot be cleared by blind refresh. See mutation inventory. |
 
-Public webpage and external Voice-bot targets are still awaiting the user's later selection. WhatsApp delivery, production media/runtime integration and provider acceptance remain deferred in [UX_AND_CHANNEL_TODO.md](UX_AND_CHANNEL_TODO.md).
+Public webpage remains deferred. Managed Sarvam/WhatsApp onboarding is now active work: see MANAGED_CHANNEL_ONBOARDING.md. Live delivery, provider binding/approval and carrier-routing acceptance remain unfinished.

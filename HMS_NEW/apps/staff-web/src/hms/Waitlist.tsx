@@ -94,6 +94,8 @@ export function Waitlist() {
             },
           })) as T;
         }
+        const offerRead = url.pathname.match(/^\/api\/v1\/admin\/waitlist-offers\/([0-9a-f-]{36})$/i);
+        if (offerRead) return request<T>(`/v1/waitlist-offers/${offerRead[1]}`, { signal });
         if (url.pathname === "/api/v1/admin/doctors")
           return practitioners.map((p) => ({
             id: p.staffId,
@@ -161,11 +163,12 @@ export function Waitlist() {
         if ((m = answerPath.exec(path)))
           return request<T>(`/v1/waitlist-offers/${m[1]}/${m[2]}`, {
             method: "POST",
-            ...(m[2] === "accept" ? { idempotencyKey: b.idempotency_key } : {}),
+            idempotencyKey: b.idempotency_key,
           });
         if ((m = withdrawPath.exec(path)))
           return request<T>(`/v1/waitlist/${m[1]}/withdraw`, {
             method: "POST",
+            idempotencyKey: b.idempotency_key,
             body: { reason: b.reason },
           });
         throw new Error("Not available on this page.");

@@ -13,7 +13,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import {
   Table,
@@ -63,9 +62,6 @@ export function NotificationOverview({
               <h2 className="text-xl font-semibold tracking-tight">
                 Notification records at your clinic
               </h2>
-              <p className="text-sm text-muted-foreground mt-2">
-                Review saved notification records and requested follow-ups.
-              </p>
             </div>
             <StateBadge value={r.data.moduleStatus} />
           </div>
@@ -121,24 +117,18 @@ export function NotificationOverview({
               <Card className="gap-0 p-0">
                 <CardHeader className="p-5 border-b">
                   <CardTitle className="text-base">Your next steps</CardTitle>
-                  <CardDescription>
-                    Keep consent and visit changes visible to reception.
-                  </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
                   <TaskLink
                     title="Review notification history"
-                    description="Queued records do not mean a patient has been contacted."
                     onClick={() => go("delivery")}
                   />
                   <TaskLink
                     title="Configure visit reminders"
-                    description="Save local rules and schedule a requested contact for a completed visit."
                     onClick={() => go("followups")}
                   />
                   <TaskLink
                     title="Open appointments"
-                    description="Check the visit and contact preferences before contacting a patient."
                     onClick={onAppointments}
                   />
                 </CardContent>
@@ -148,10 +138,6 @@ export function NotificationOverview({
                   <CardTitle className="text-base">
                     Inbox, content and campaigns
                   </CardTitle>
-                  <CardDescription>
-                    The original tabs are retained for the next integration
-                    slice.
-                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-start gap-3 text-sm text-muted-foreground">
@@ -238,7 +224,6 @@ export function NotificationDelivery() {
     >
       <SectionTitle
         title="Delivery history"
-        description="Saved local records. Queued does not mean sent, delivered or read."
         action={
           <Button
             variant="outline"
@@ -352,7 +337,6 @@ export function NotificationDelivery() {
         !r.error && (
           <Empty
             title="No matching records"
-            description="Adjust filters or wait for a recorded booking event. Missing consent is shown as skipped, never as a sent message."
           />
         )
       )}

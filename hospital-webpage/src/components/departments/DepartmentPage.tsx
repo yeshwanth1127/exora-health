@@ -12,9 +12,13 @@ import { departments } from '../../data/departments';
 import { doctors } from '../../data/doctors';
 import { getDepartmentTiaContent } from '../../data/departmentTiaData';
 import type { Doctor } from '../../types';
+import { departmentMatches, rosterCard, type HmsRosterDoctor } from '../doctor/hmsRoster';
+import { HmsDoctorPhoto } from '../doctor/HmsDoctorPhoto';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 
 interface Props {
+  roster?: HmsRosterDoctor[];
+  rosterClinicName?: string;
   departmentId: string;
   aiRecommendation?: { query: string; matchedDoctor: Doctor; clinicalReasoning: string } | null;
   onBackToHome: () => void;
@@ -26,6 +30,8 @@ interface Props {
 }
 
 export function DepartmentPage({
+  roster,
+  rosterClinicName,
   departmentId,
   aiRecommendation,
   onBackToHome,
@@ -40,7 +46,7 @@ export function DepartmentPage({
     name: 'Clinical Care',
     description: 'Comprehensive medical specialties and personalized patient care.',
   };
-  const team = doctors.filter((d) => d.departmentId === department.id);
+  const team = roster === undefined ? doctors.filter((d) => d.departmentId === department.id) : roster.filter(doctor => departmentMatches(doctor, department.id, department.name)).map(doctor => rosterCard(doctor, rosterClinicName));
   const content = getDepartmentTiaContent(department.id);
 
   // Interactive Symptom Carousel State with defensive defaults
@@ -390,9 +396,9 @@ export function DepartmentPage({
                   <div>
                     <div className="flex items-center gap-4 mb-4">
                       <div className="size-16 rounded-xl overflow-hidden bg-[#EDF3EC] shrink-0 border border-[#DCE7DA]">
-                        <img
-                          src={doctor.image}
-                          alt={doctor.name}
+                        <HmsDoctorPhoto
+                          name={doctor.name}
+                          url={doctor.image}
                           className="w-full h-full object-cover object-top"
                         />
                       </div>

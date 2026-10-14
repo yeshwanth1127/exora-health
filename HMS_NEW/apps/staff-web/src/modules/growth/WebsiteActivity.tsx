@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -89,10 +88,6 @@ export function WebsiteActivity({
                 : "Not connected"}
           </Badge>
         </div>
-        <CardDescription>
-          Website engagement is separate from the persisted appointment reports
-          above.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -165,8 +160,6 @@ export function WebsiteActivity({
               {data.retrieved_at
                 ? new Date(data.retrieved_at).toLocaleString()
                 : "—"}
-              . Visitors are counted per event and must not be added across
-              rows.
             </p>
           </>
         )}
