@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageTitle } from "@/components/workspace";
+import { WhatsAppIcon } from "@/components/brand-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -138,7 +139,7 @@ function Setup({ clinic }: { clinic: Clinic }) {
   if (stage === "live")
     return (
       <>
-        <PageTitle title="WhatsApp" action={preflight} />
+        <PageTitle title="WhatsApp" icon={<WhatsAppIcon className="size-7" />} action={preflight} />
         {editing ? (
           <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
             <Card className="p-6 shadow-none">
@@ -162,7 +163,7 @@ function Setup({ clinic }: { clinic: Clinic }) {
     );
   return (
     <>
-      <PageTitle title="WhatsApp" action={preflight} />
+      <PageTitle title="WhatsApp" icon={<WhatsAppIcon className="size-7" />} action={preflight} />
       <div className="mb-6 max-w-3xl">
         <h2 className="text-xl font-semibold tracking-tight">
           Take appointments on WhatsApp

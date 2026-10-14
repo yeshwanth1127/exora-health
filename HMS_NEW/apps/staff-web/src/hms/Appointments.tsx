@@ -8,9 +8,9 @@ import {
   CalendarClock,
   XCircle,
   UserX,
-  MessageCircle,
   ArrowRight,
 } from "lucide-react";
+import { WhatsAppIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -392,7 +392,7 @@ function AppointmentDetails({
                   </p>
                   {a.originChannel === "whatsapp" && (
                     <span className="inline-flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-1 text-sm text-green-800">
-                      <MessageCircle className="size-4" />
+                      <WhatsAppIcon className="size-4" />
                       Booked through WhatsApp
                     </span>
                   )}

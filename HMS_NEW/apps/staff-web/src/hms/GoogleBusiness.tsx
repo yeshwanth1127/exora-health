@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -10,12 +10,12 @@ import {
   ExternalLink,
   Globe,
   MapPin,
-  MessageCircle,
   Navigation,
   Phone,
   Share2,
   Star,
 } from "lucide-react";
+import { GoogleIcon, WhatsAppIcon } from "@/components/brand-icons";
 import { toast } from "sonner";
 import { PageTitle } from "@/components/workspace";
 import { Badge } from "@/components/ui/badge";
@@ -190,14 +190,14 @@ function Google({ exora }: { exora: Exora }) {
   if (!data.account)
     return (
       <>
-        <PageTitle title="Google Business" action={preview} />
+        <PageTitle title="Google Business" icon={<GoogleIcon className="size-7" />} action={preview} />
         <Connect exora={exora} canManage={canManage} onConnected={(email) => change((d) => ({ ...d, account: { email, listing: d.listing.name } }))} />
       </>
     );
   const unreplied = data.reviews.filter((r) => !r.reply).length;
   return (
     <>
-      <PageTitle title="Google Business" action={preview} />
+      <PageTitle title="Google Business" icon={<GoogleIcon className="size-7" />} action={preview} />
       <div className="space-y-6">
         <Tabs value={tab} onValueChange={(v) => open(v as GTab)}>
           <div className="-mx-1 overflow-x-auto px-1">
@@ -243,7 +243,7 @@ function Connect({ exora, canManage, onConnected }: { exora: Exora; canManage: b
           {(
             [
               [CalendarCheck, "A Book button", "Patients book straight from Google Search and Maps."],
-              [MessageCircle, "A WhatsApp button", "For patients who'd rather message than call."],
+              [WhatsAppIcon, "A WhatsApp button", "For patients who'd rather message than call."],
               [Clock, "Hours that are always right", "Taken from your doctors' schedules, holidays included."],
               [Star, "Reviews in one place", "Reply quickly with suggested replies that keep patient details private."],
             ] as const
@@ -261,7 +261,7 @@ function Connect({ exora, canManage, onConnected }: { exora: Exora; canManage: b
         </ul>
         <div className="flex flex-wrap items-center gap-3">
           <Button size="lg" disabled={!canManage} onClick={() => setStep("signin")}>
-            <GoogleMark /> Connect Google
+            <GoogleIcon className="size-4" /> Connect Google
           </Button>
           <span className="text-xs text-muted-foreground">Sign in with the Google account that manages your listing on Maps.</span>
         </div>
@@ -513,12 +513,12 @@ function Overview({
   );
 }
 
-export function Delta({ now, before }: { now: number; before: number }) {
-  if (!before) return <p className="text-[11px] text-muted-foreground">{now ? "New this month" : "—"}</p>;
+export function Delta({ now, before, label = "last month" }: { now: number; before: number; label?: string }) {
+  if (!before) return <p className="text-[11px] text-muted-foreground">{now ? "New" : "—"}</p>;
   const pct = Math.round(((now - before) / before) * 100);
   return (
     <p className={`text-[11px] ${pct > 0 ? "text-emerald-700" : pct < 0 ? "text-destructive" : "text-muted-foreground"}`}>
-      {pct > 0 ? "▲" : pct < 0 ? "▼" : ""} {Math.abs(pct)}% vs last month
+      {pct > 0 ? "▲" : pct < 0 ? "▼" : ""} {Math.abs(pct)}% vs {label}
     </p>
   );
 }
@@ -538,17 +538,6 @@ function ScoreRing({ value }: { value: number }) {
   );
 }
 
-function GoogleMark() {
-  return (
-    <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
-      <path fill="#4285F4" d="M22.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2-1.9 3.3-4.7 3.3-7.9z" />
-      <path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.8c-1 .7-2.2 1-3.7 1-2.8 0-5.2-1.9-6.1-4.5H2.2v2.8A11 11 0 0 0 12 23z" />
-      <path fill="#FBBC05" d="M5.9 14c-.2-.7-.4-1.3-.4-2s.1-1.4.4-2V7.2H2.2a11 11 0 0 0 0 9.6L5.9 14z" />
-      <path fill="#EA4335" d="M12 5.4c1.6 0 3 .6 4.2 1.6l3.1-3.1A11 11 0 0 0 2.2 7.2L5.9 10c.9-2.6 3.3-4.6 6.1-4.6z" />
-    </svg>
-  );
-}
-
 /** A Google Search / Maps style card, so changes are seen the way patients see them. */
 export function ListingCard({ listing: l, rating }: { listing: Listing; rating: { avg: number; count: number } | null }) {
   const now = new Date();
@@ -556,9 +545,9 @@ export function ListingCard({ listing: l, rating }: { listing: Listing; rating: 
   const hm = now.toTimeString().slice(0, 5);
   const todays = l.hours.filter((p) => p.day === day);
   const openNow = todays.find((p) => p.open <= hm && hm < p.close);
-  const actions: [typeof Phone, string, boolean][] = [
+  const actions: [ComponentType<{ className?: string }>, string, boolean][] = [
     [CalendarCheck, "Book", !!l.bookUrl],
-    [MessageCircle, "WhatsApp", !!l.whatsappUrl],
+    [WhatsAppIcon, "WhatsApp", !!l.whatsappUrl],
     [Navigation, "Directions", true],
     [Phone, "Call", !!l.phone],
     [Globe, "Website", !!l.website],

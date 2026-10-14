@@ -8,8 +8,6 @@ import {
 import {
   LayoutDashboard,
   Headphones,
-  MessageCircle,
-  Globe,
   ChartNoAxesCombined,
   ScrollText,
   Ticket,
@@ -24,6 +22,7 @@ import {
   Users,
   Video,
 } from "lucide-react";
+import { GoogleIcon, WhatsAppIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ModePicker } from "@/components/ModePicker";
@@ -66,8 +65,8 @@ import { Doctors } from "@/hms/Doctors";
 import { PendingModule } from "@/hms/PendingModule";
 import { WhatsApp } from "@/hms/WhatsApp";
 import { Voice } from "@/hms/Voice";
-import { Growth } from "@/hms/Growth";
 import { GoogleBusiness } from "@/hms/GoogleBusiness";
+import { WebsiteAnalytics } from "@/hms/WebsiteAnalytics";
 import { SettingsPage } from "@/hms/Settings";
 import { Schedules } from "@/hms/Schedules";
 import { Overview } from "@/hms/Overview";
@@ -111,7 +110,7 @@ const navigation = [
   {
     key: "whatsapp",
     name: "WhatsApp",
-    icon: MessageCircle,
+    icon: WhatsAppIcon,
     permission: "comms.read",
   },
   {
@@ -138,6 +137,11 @@ const navigation = [
     icon: Clock3,
     permission: "appointments.read",
   },
+];
+const growthNavigation = [
+  { key: "google_business", name: "Google Business", icon: GoogleIcon },
+  { key: "growth_analytics", name: "Website analytics", icon: ChartNoAxesCombined },
+  { key: "loyalty", name: "Loyalty program", icon: Ticket },
 ];
 function Brand() {
   return (
@@ -548,19 +552,7 @@ function StaffApp() {
               <SidebarGroupLabel>PATIENT GROWTH</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {[
-                    {
-                      key: "google_business",
-                      name: "Google Business",
-                      icon: Globe,
-                    },
-                    {
-                      key: "growth_analytics",
-                      name: "Growth analytics",
-                      icon: ChartNoAxesCombined,
-                    },
-                    { key: "loyalty", name: "Loyalty program", icon: Ticket },
-                  ]
+                  {growthNavigation
                     .filter(
                       (n) =>
                         n.key === "loyalty" ||
@@ -665,7 +657,7 @@ function StaffApp() {
                   ? "Appointments"
                   : ["activity", "operations"].includes(page)
                     ? "Activity"
-                    : navigation.find((n) => n.key === page)?.name) ??
+                    : [...navigation, ...growthNavigation].find((n) => n.key === page)?.name) ??
                   (page === "settings"
                     ? "Workspace settings"
                     : page === "activity"
@@ -874,7 +866,7 @@ function DirectoryContent({
         ) : page === "google_business" ? (
           <GoogleBusiness />
         ) : page === "growth_analytics" ? (
-          <Growth key={page} module={page} />
+          <WebsiteAnalytics />
         ) : page === "loyalty" ? (
           <PendingModule key={page} page={page} />
         ) : (

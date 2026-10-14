@@ -192,13 +192,18 @@ export function Resource({
 export function PageTitle({
   title,
   action,
+  icon,
 }: {
   title: string;
   action?: ReactNode;
+  icon?: ReactNode;
 }) {
   return (
     <div className="page-title">
-      <h1>{title}</h1>
+      <h1 className={icon ? "flex items-center gap-3" : undefined}>
+        {icon}
+        {title}
+      </h1>
       {action}
     </div>
   );

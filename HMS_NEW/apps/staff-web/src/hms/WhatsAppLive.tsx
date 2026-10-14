@@ -6,9 +6,9 @@ import {
   CheckCircle2,
   ExternalLink,
   FileText,
-  MessageCircle,
   Pencil,
 } from "lucide-react";
+import { WhatsAppIcon } from "@/components/brand-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -109,7 +109,7 @@ function StatusCard({ setup, update, canManage }: { setup: WhatsAppSetup; update
     <Card className="flex-row flex-wrap items-center justify-between gap-4 p-5 shadow-none">
       <div className="flex items-center gap-4">
         <div className="grid size-11 place-items-center rounded-full bg-[#25d366]/15">
-          <MessageCircle className="size-5 text-[#128c7e]" />
+          <WhatsAppIcon className="size-5" />
         </div>
         <div>
           <div className="flex flex-wrap items-center gap-2">
