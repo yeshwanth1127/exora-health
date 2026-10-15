@@ -22,7 +22,9 @@ const autoVoiceProvision = process.env.AUTO_VOICE_PROVISION === '1';
 const voiceProvisionerUrl = process.env.SARVAM_PROVISIONER_URL;
 const voiceProvisionerToken = process.env.SARVAM_PROVISIONER_TOKEN;
 const superadminToken = process.env.SUPERADMIN_TOKEN;
+const provisionerToken = process.env.PROVISIONER_TOKEN;
 const isSuperadmin = (authorization?: string) => !!superadminToken && authorization === `Bearer ${superadminToken}`;
+const isProvisioner = (authorization?: string) => !!provisionerToken && authorization === `Bearer ${provisionerToken}`;
 
 const Onboarding = z.object({
   organisation: z.string().trim().min(2).max(120),
@@ -150,7 +152,15 @@ function tenantUuid(slug: string) {
   return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
 }
 
-async function markReady(id: string, payload: z.infer<typeof Onboarding>, port: number) {
+type CompletedDeployment = {
+  tenantId?: string;
+  composeProject?: string;
+  image?: string;
+  publicUrl?: string;
+  staffUrl?: string;
+};
+
+async function markReady(id: string, payload: z.infer<typeof Onboarding>, port: number, deployment: CompletedDeployment = {}) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -159,12 +169,12 @@ async function markReady(id: string, payload: z.infer<typeof Onboarding>, port: 
       VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(onboarding_id) DO NOTHING`,
       [customerId, id, payload.organisation, payload.slug, payload.email.toLowerCase(), payload.plan, JSON.stringify(modulesFor(payload.plan)), payload.voice ? 'requested' : 'not_requested']);
     const { rows: [customer] } = await client.query('SELECT id FROM control.customer WHERE onboarding_id=$1', [id]);
-    const tenantUrl = tenantUrlTemplate
+    const tenantUrl = deployment.publicUrl?.replace(/\/$/, '') ?? (tenantUrlTemplate
       ? tenantUrlTemplate.replaceAll('{slug}', payload.slug).replace(/\/$/, '')
-      : `${publicBase}:${port}`;
+      : `${publicBase}:${port}`);
     await client.query(`INSERT INTO control.deployment(id,customer_id,tenant_id,compose_project,image,public_url,staff_url,state,health)
-      VALUES($1,$2,$3,$4,'exora/hms:local',$5,$6,'ready','healthy') ON CONFLICT(customer_id) DO UPDATE SET state='ready',health='healthy',public_url=excluded.public_url,staff_url=excluded.staff_url,updated_at=now()`,
-      [randomUUID(), customer.id, tenantUuid(payload.slug), `exora-${payload.slug}`, `${tenantUrl}/`, `${tenantUrl}/staff/appointments`]);
+      VALUES($1,$2,$3,$4,$5,$6,$7,'ready','healthy') ON CONFLICT(customer_id) DO UPDATE SET tenant_id=excluded.tenant_id,compose_project=excluded.compose_project,image=excluded.image,state='ready',health='healthy',public_url=excluded.public_url,staff_url=excluded.staff_url,last_error=NULL,updated_at=now()`,
+      [randomUUID(), customer.id, deployment.tenantId ?? tenantUuid(payload.slug), deployment.composeProject ?? `exora-${payload.slug}`, deployment.image ?? 'exora/hms:local', `${tenantUrl}/`, deployment.staffUrl ?? `${tenantUrl}/staff/appointments`]);
     if (payload.voice) await client.query(`INSERT INTO control.voice_agent_binding(customer_id,state,service_secret_ref)
       VALUES($1,'requested',$2) ON CONFLICT(customer_id) DO NOTHING`, [customer.id, `tenant-env://${payload.slug}/VOICE_SERVICE_KEY`]);
     await client.query("UPDATE control.onboarding_request SET status='ready',error=NULL,updated_at=now() WHERE id=$1", [id]);
@@ -217,6 +227,43 @@ await app.register(cors, { origin: process.env.CORS_ORIGINS?.split(',') ?? ['htt
 
 app.get('/health', async () => ({ status: 'ok' }));
 app.get('/ready', async (_request, reply) => { try { await pool.query('SELECT 1'); return { status: 'ready' }; } catch { return reply.status(503).send({ status: 'database unavailable' }); } });
+
+const Completion = z.object({
+  tenantId: z.uuid(),
+  composeProject: z.string().regex(/^[a-z0-9][a-z0-9-]{1,80}$/),
+  image: z.string().min(3).max(200),
+  publicUrl: z.url(),
+  staffUrl: z.url(),
+});
+
+app.post('/control/v1/internal/provisioning/claim', async (request, reply) => {
+  if (!isProvisioner(request.headers.authorization)) return reply.status(401).send({ error: 'unauthorized' });
+  const { rows: [job] } = await pool.query(`UPDATE control.onboarding_request SET status='provisioning',error=NULL,updated_at=now()
+    WHERE id=(SELECT id FROM control.onboarding_request WHERE status='queued' ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1)
+    RETURNING id,payload,allocated_port`);
+  return job ?? null;
+});
+
+app.post('/control/v1/internal/provisioning/:id/complete', async (request, reply) => {
+  if (!isProvisioner(request.headers.authorization)) return reply.status(401).send({ error: 'unauthorized' });
+  const id = z.uuid().safeParse((request.params as { id?: string }).id);
+  const completed = Completion.safeParse(request.body);
+  if (!id.success || !completed.success) return reply.status(400).send({ error: 'validation' });
+  const { rows: [job] } = await pool.query("SELECT payload,allocated_port FROM control.onboarding_request WHERE id=$1 AND status='provisioning'", [id.data]);
+  if (!job) return reply.status(409).send({ error: 'not_provisioning' });
+  await markReady(id.data, Onboarding.parse(job.payload), job.allocated_port, completed.data);
+  return { status: 'ready' };
+});
+
+app.post('/control/v1/internal/provisioning/:id/fail', async (request, reply) => {
+  if (!isProvisioner(request.headers.authorization)) return reply.status(401).send({ error: 'unauthorized' });
+  const id = z.uuid().safeParse((request.params as { id?: string }).id);
+  const body = z.object({ error: z.string().trim().min(1).max(4000) }).safeParse(request.body);
+  if (!id.success || !body.success) return reply.status(400).send({ error: 'validation' });
+  const result = await pool.query("UPDATE control.onboarding_request SET status='failed',error=$2,updated_at=now() WHERE id=$1 AND status='provisioning'", [id.data, body.data.error]);
+  if (!result.rowCount) return reply.status(409).send({ error: 'not_provisioning' });
+  return { status: 'failed' };
+});
 
 app.post('/control/v1/onboarding', async (request, reply) => {
   const parsed = Onboarding.safeParse(request.body);

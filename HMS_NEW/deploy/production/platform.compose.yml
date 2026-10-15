@@ -15,6 +15,7 @@ services:
       SERVE_PLATFORM_ASSETS: "1"
       CONTROL_DATABASE_URL: ${CONTROL_DATABASE_URL:?CONTROL_DATABASE_URL is required}
       SUPERADMIN_TOKEN: ${SUPERADMIN_TOKEN:?SUPERADMIN_TOKEN is required}
+      PROVISIONER_TOKEN: ${PROVISIONER_TOKEN:?PROVISIONER_TOKEN is required}
       PUBLIC_BASE_URL: https://health.exora.solutions
       TENANT_PUBLIC_URL_TEMPLATE: https://{slug}.health.exora.solutions
       CORS_ORIGINS: https://health.exora.solutions
