@@ -20,6 +20,7 @@ import {
   Settings2,
   Stethoscope,
   Users,
+  UserRound,
   Video,
 } from "lucide-react";
 import { GoogleIcon, WhatsAppIcon } from "@/components/brand-icons";
@@ -62,7 +63,6 @@ import {
   ActivityWorkspace,
 } from "@/hms/WorkflowWorkspace";
 import { Doctors } from "@/hms/Doctors";
-import { PendingModule } from "@/hms/PendingModule";
 import { WhatsApp } from "@/hms/WhatsApp";
 import { Voice } from "@/hms/Voice";
 import { GoogleBusiness } from "@/hms/GoogleBusiness";
@@ -73,76 +73,27 @@ import { Overview } from "@/hms/Overview";
 import { Catalogue } from "@/hms/Catalogue";
 import { Consultations } from "@/hms/Consultations";
 import { Teleconsultations } from "@/hms/Teleconsultations";
+import { Loyalty } from "@/hms/Loyalty";
 import { PatientVideo } from "@/hms/PatientVideo";
 import type { Facility, Me, Practitioner } from "@/hms/types";
 
 const navigation = [
-  {
-    key: "overview",
-    name: "Overview",
-    icon: LayoutDashboard,
-    permission: "appointments.read",
-  },
-  {
-    key: "appointments",
-    name: "Appointments",
-    icon: CalendarDays,
-    permission: "appointments.read",
-  },
-  {
-    key: "patients",
-    name: "Patients",
-    icon: Users,
-    permission: "patients.read",
-  },
-  {
-    key: "consultations",
-    name: "Consultations",
-    icon: Stethoscope,
-    permission: "encounters.read",
-  },
-  {
-    key: "teleconsultations",
-    name: "Teleconsultations",
-    icon: Video,
-    permission: "teleconsult.read",
-  },
-  {
-    key: "whatsapp",
-    name: "WhatsApp",
-    icon: WhatsAppIcon,
-    permission: "comms.read",
-  },
-  {
-    key: "voice",
-    name: "Voice",
-    icon: Headphones,
-    permission: "voice.read",
-  },
-  {
-    key: "catalogue",
-    name: "Hospital catalogue",
-    icon: Building2,
-    permission: "catalog.read",
-  },
-  {
-    key: "doctors",
-    name: "Doctors",
-    icon: Building2,
-    permission: "catalog.read",
-  },
-  {
-    key: "schedules",
-    name: "Schedules",
-    icon: Clock3,
-    permission: "appointments.read",
-  },
+  { group: "Clinic", key: "overview", name: "Overview", icon: LayoutDashboard, permission: "appointments.read" },
+  { group: "Clinic", key: "appointments", name: "Appointments", icon: CalendarDays, permission: "appointments.read" },
+  { group: "Clinic", key: "schedules", name: "Schedules", icon: Clock3, permission: "appointments.read" },
+  { group: "Clinic", key: "patients", name: "Patients", icon: Users, permission: "patients.read" },
+  { group: "Care", key: "consultations", name: "Consultations", icon: Stethoscope, permission: "encounters.read" },
+  { group: "Care", key: "teleconsultations", name: "Teleconsultations", icon: Video, permission: "teleconsult.read" },
+  { group: "Messages", key: "whatsapp", name: "WhatsApp", icon: WhatsAppIcon, permission: "comms.read" },
+  { group: "Messages", key: "voice", name: "Voice", icon: Headphones, permission: "voice.read" },
+  { group: "Growth", key: "google_business", name: "Google Business", icon: GoogleIcon, permission: "growth.read" },
+  { group: "Growth", key: "growth_analytics", name: "Website analytics", icon: ChartNoAxesCombined, permission: "growth.read" },
+  // Reception checks membership at the desk, so anyone who sees appointments sees loyalty.
+  { group: "Growth", key: "loyalty", name: "Loyalty programs", icon: Ticket, permission: "appointments.read" },
+  { group: "Workspace", key: "catalogue", name: "Hospital catalogue", icon: Building2, permission: "catalog.read" },
+  { group: "Workspace", key: "doctors", name: "Doctors", icon: UserRound, permission: "catalog.read" },
 ];
-const growthNavigation = [
-  { key: "google_business", name: "Google Business", icon: GoogleIcon },
-  { key: "growth_analytics", name: "Website analytics", icon: ChartNoAxesCombined },
-  { key: "loyalty", name: "Loyalty program", icon: Ticket },
-];
+const groups = ["Clinic", "Care", "Messages", "Growth"];
 function Brand() {
   return (
     <div className="flex items-center gap-3">
@@ -509,10 +460,6 @@ function StaffApp() {
     ...(auditor && can(me, "appointments.read", facilityId)
       ? ["operations"]
       : []),
-    ...(can(me, "growth.read", facilityId)
-      ? ["google_business", "growth_analytics"]
-      : []),
-    "loyalty",
   ];
   const allowed =
     extraPages.includes(page) || visible.some((n) => n.key === page);
@@ -524,62 +471,40 @@ function StaffApp() {
             <Brand />
           </SidebarHeader>
           <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupLabel>CLINIC OPERATIONS</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {visible
-                    .filter((n) => !["catalogue", "doctors"].includes(n.key))
-                    .map((n) => (
-                      <SidebarMenuItem key={n.key}>
-                        <NavigationButton
-                          isActive={
-                            page === n.key ||
-                            (n.key === "appointments" &&
-                              ["waitlist", "queue"].includes(page))
-                          }
-                          onClick={() => go(n.key)}
-                        >
-                          <n.icon />
-                          <span>{n.name}</span>
-                        </NavigationButton>
-                      </SidebarMenuItem>
-                    ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-            <SidebarGroup>
-              <SidebarGroupLabel>PATIENT GROWTH</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {growthNavigation
-                    .filter(
-                      (n) =>
-                        n.key === "loyalty" ||
-                        can(me, "growth.read", facilityId),
-                    )
-                    .map((n) => (
-                      <SidebarMenuItem key={n.key}>
-                        <NavigationButton
-                          isActive={page === n.key}
-                          onClick={() => go(n.key)}
-                        >
-                          <n.icon />
-                          <span>{n.name}</span>
-                          <span className="ml-auto text-[10px] text-muted-foreground">
-                            {n.key === "loyalty" ? "Concept" : ""}
-                          </span>
-                        </NavigationButton>
-                      </SidebarMenuItem>
-                    ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+            {groups.map((g) => {
+              const items = visible.filter((n) => n.group === g);
+              return (
+                items.length > 0 && (
+                  <SidebarGroup key={g}>
+                    <SidebarGroupLabel>{g}</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                      <SidebarMenu>
+                        {items.map((n) => (
+                          <SidebarMenuItem key={n.key}>
+                            <NavigationButton
+                              isActive={
+                                page === n.key ||
+                                (n.key === "appointments" &&
+                                  ["waitlist", "queue"].includes(page))
+                              }
+                              onClick={() => go(n.key)}
+                            >
+                              <n.icon />
+                              <span>{n.name}</span>
+                            </NavigationButton>
+                          </SidebarMenuItem>
+                        ))}
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                  </SidebarGroup>
+                )
+              );
+            })}
             <SidebarGroup className="mt-auto">
-              <SidebarGroupLabel>WORKSPACE</SidebarGroupLabel>
+              <SidebarGroupLabel>Workspace</SidebarGroupLabel>
               <SidebarMenu>
                 {visible
-                  .filter((n) => ["catalogue", "doctors"].includes(n.key))
+                  .filter((n) => n.group === "Workspace")
                   .map((n) => (
                     <SidebarMenuItem key={n.key}>
                       <NavigationButton
@@ -657,7 +582,7 @@ function StaffApp() {
                   ? "Appointments"
                   : ["activity", "operations"].includes(page)
                     ? "Activity"
-                    : [...navigation, ...growthNavigation].find((n) => n.key === page)?.name) ??
+                    : navigation.find((n) => n.key === page)?.name) ??
                   (page === "settings"
                     ? "Workspace settings"
                     : page === "activity"
@@ -868,7 +793,7 @@ function DirectoryContent({
         ) : page === "growth_analytics" ? (
           <WebsiteAnalytics />
         ) : page === "loyalty" ? (
-          <PendingModule key={page} page={page} />
+          <Loyalty />
         ) : (
           <SettingsPage />
         )}

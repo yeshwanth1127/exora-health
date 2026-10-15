@@ -37,6 +37,9 @@ export function useQuery<T>(
   const { me, facility } = useWorkspace();
   const key = `${me.tenantId}:${facility.facilityId}:${path}`;
   const reload = useRef<(() => Promise<boolean>) | null>(null);
+  // Callers often pass an inline decoder; keeping it out of the effect's deps stops a fetch on every render.
+  const decodeRef = useRef(decode);
+  decodeRef.current = decode;
   const [state, setState] = useState<{
     key: string;
     data: T | null;
@@ -67,7 +70,7 @@ export function useQuery<T>(
       }));
       try {
         const response = await request<T>(path!, { signal: controller.signal });
-        const data = decode ? decode(response) : response;
+        const data = decodeRef.current ? decodeRef.current(response) : response;
         if (alive && current === sequence) {
           setState({ key, data, error: "", failure: null, loading: false });
           return true;
@@ -118,7 +121,7 @@ export function useQuery<T>(
       clearTimeout(timer);
       document.removeEventListener("visibilitychange", visible);
     };
-  }, [path, key, pollMs, decode]);
+  }, [path, key, pollMs]);
   return {
     data: state.key === key ? state.data : null,
     error: state.key === key ? state.error : "",
