@@ -31,6 +31,80 @@ pnpm worker:dev        # outbox delivery + housekeeping
 
 Settings: see `.env.example`.
 
+## Exora SaaS and tenant containers
+
+The Exora product website and connected onboarding run at `pnpm platform:dev`
+(`http://127.0.0.1:5190`). The SaaS architecture and delivery gates are documented in
+[`docs/plan/SAAS_PLATFORM_PLAN.md`](docs/plan/SAAS_PLATFORM_PLAN.md).
+
+Start the containerized Exora control plane (corporate site, onboarding API, superadmin UI and its
+operations-only PostgreSQL database):
+
+```bash
+pnpm control:up
+# Corporate/onboarding: http://127.0.0.1:8090/
+# Superadmin:          http://127.0.0.1:8090/admin/
+```
+
+The local default superadmin token is `local-superadmin-change-me`; override `SUPERADMIN_TOKEN`
+outside a throwaway development machine. The control plane stores customer, subscription,
+entitlement, deployment and voice-binding metadata only—never patient or clinical records.
+
+For local self-service provisioning, run the control API on the Docker host with
+`AUTO_PROVISION=1`; production uses a dedicated provisioner worker. The containerized control API
+queues requests (`AUTO_PROVISION=0`) and never receives the Docker socket.
+
+Build the tenant image containing the customer public booking site, staff frontend, HMS API and
+worker, then launch its isolated PostgreSQL stack:
+
+```bash
+docker build --build-arg VITE_HMS_DEV_LOGIN=true -t exora/hms:local .
+TENANT_PORT=8080 docker compose -f compose.tenant.yml up -d --no-build
+```
+
+For a customer-specific local development stack:
+
+```bash
+pnpm tenant:provision -- \
+  --slug northstar-health \
+  --name "Northstar Health" \
+  --email owner@northstar.example \
+  --owner "Northstar Administrator" \
+  --facility "Indiranagar Clinic" \
+  --city Bengaluru \
+  --plan connect \
+  --port 8081
+```
+
+The provisioner creates `.tenants/<slug>/.env` with mode `0600`, generated database/application
+secrets, a dedicated Compose project, private volumes and links. The customer website is `/`; the
+shared staff workspace is `/staff/appointments`. Local development uses the `admin` subject with no
+password. Production must use tenant-specific OIDC and a one-time activation flow; development
+login is rejected in `NODE_ENV=production`.
+
+To add Voice to an existing local tenant, generate its isolated service identity first:
+
+```bash
+pnpm tenant:voice:prepare -- --slug test-hospital
+```
+
+After the tenant has a public HTTPS URL, use the superadmin voice manifest to create and test its
+dedicated Sarvam agent, then bind the committed app without exposing the Sarvam API key in an
+argument or browser bundle:
+
+```bash
+read -s SARVAM_API_KEY && export SARVAM_API_KEY
+pnpm tenant:voice -- --slug test-hospital --org-id ORG --workspace-id WORKSPACE \
+  --app-id APP --app-version VERSION --agent-name "Test Hospital Front Desk"
+unset SARVAM_API_KEY
+```
+
+The public website then exposes the consent-gated call control. Sarvam tools use the tenant's
+`X-Service-Key` and can read branches, doctors, schedules and live availability, and can hold,
+book, look up, cancel and reschedule appointments. See
+[`docs/plan/SARVAM_VOICE_SAAS.md`](docs/plan/SARVAM_VOICE_SAAS.md) for the complete activation and
+hosting runbook.
+
 ## Layout
 | Path | Contents |
 |---|---|
@@ -46,6 +120,9 @@ Settings: see `.env.example`.
 | `apps/api/src/modules/` | Module commands and queries: `booking`, `patient`, `directory` |
 | `apps/api/src/http/`, `src/auth/` | HTTP routes, token verification, principal + permission checks |
 | `apps/worker/` | Outbox dispatcher and housekeeping jobs |
+| `apps/platform-web/` | Exora corporate site and connected onboarding |
+| `apps/control-api/`, `apps/admin-web/` | SaaS registry/API and isolated superadmin control plane |
+| `apps/public-web/` | Tenant-branded public site and live booking flow |
 | `docs/api/` | API reference |
 
 ## Notes

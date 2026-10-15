@@ -54,6 +54,7 @@ import {
 } from "./clinic-types";
 import type { DeskAppointment } from "./NurseDesk";
 import { AppointmentActions } from "./appointment-actions";
+import { QuickScheduleDialog } from "./quick-schedule-dialog";
 
 export type Period = {
   kind: "available" | "booked" | "blocked" | "held";
@@ -186,7 +187,8 @@ export function ScheduleTimeline({
       "in_person",
     ),
     [weeklyPicker, setWeeklyPicker] = useState(false),
-    [weeklyDoctor, setWeeklyDoctor] = useState("");
+    [weeklyDoctor, setWeeklyDoctor] = useState(""),
+    [quickSchedule, setQuickSchedule] = useState(false);
   useUnsaved(selected?.span.kind === "blocked" && !!unblockReason.trim());
   const [consumedLink, setConsumedLink] = useState("");
   const canEditWeekly = permissions.can("schedules.manage");
@@ -464,6 +466,12 @@ export function ScheduleTimeline({
             Show working hours
           </Button>
           {canEditWeekly && (
+            <Button onClick={() => setQuickSchedule(true)}>
+              <CalendarPlus />
+              Set doctor hours
+            </Button>
+          )}
+          {canEditWeekly && (
             <Button
               variant="outline"
               onClick={() => {
@@ -477,8 +485,9 @@ export function ScheduleTimeline({
               Teleconsultation hours
             </Button>
           )}
-          {permissions.can("schedules.manage") && (
+          {canEditWeekly && (
             <Button
+              variant="outline"
               onClick={() => {
                 setWeeklyMode("in_person");
                 const active = rows.filter((r) => r.doctor.is_active);
@@ -487,11 +496,20 @@ export function ScheduleTimeline({
               }}
             >
               <CalendarDays />
-              Configure weekly hours
+              Advanced scheduling
             </Button>
           )}
         </div>
       </div>
+      {facilityId && (
+        <QuickScheduleDialog
+          open={quickSchedule}
+          onOpenChange={setQuickSchedule}
+          doctors={doctors.data ?? []}
+          facilityId={facilityId}
+          onSaved={refreshBoard}
+        />
+      )}
       {initialDoctorId && !canEditWeekly && (
         <p className="mb-4 text-xs text-muted-foreground">
           Publishing doctor hours requires scheduling permission at this clinic.

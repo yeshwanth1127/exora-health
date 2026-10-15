@@ -1,0 +1,95 @@
+name: exora-${TENANT_SLUG:?TENANT_SLUG is required}
+
+services:
+  migrate:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        VITE_HMS_DEV_LOGIN: ${VITE_HMS_DEV_LOGIN:-true}
+        VITE_HMS_DEFAULT_SUBJECT: ${VITE_HMS_DEFAULT_SUBJECT:-admin}
+    image: exora/hms:${IMAGE_TAG:-production}
+    entrypoint: ["node", "db/scripts/bootstrap-runtime.mjs"]
+    restart: "no"
+    environment:
+      ADMIN_DATABASE_URL: ${ADMIN_DATABASE_URL:?ADMIN_DATABASE_URL is required}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      APP_DATABASE_URL: ${APP_DATABASE_URL:?APP_DATABASE_URL is required}
+      HMS_APP_PASSWORD: ${HMS_APP_PASSWORD:?HMS_APP_PASSWORD is required}
+      TENANT_BOOTSTRAP: ${TENANT_BOOTSTRAP:-custom}
+      TENANT_SLUG: ${TENANT_SLUG}
+      TENANT_PLAN: ${TENANT_PLAN:-connect}
+      VOICE_REQUESTED: ${VOICE_REQUESTED:-0}
+      VOICE_SERVICE_ACCOUNT_ID: ${VOICE_SERVICE_ACCOUNT_ID:-}
+      BOOTSTRAP_TENANT_ID: ${BOOTSTRAP_TENANT_ID:?BOOTSTRAP_TENANT_ID is required}
+      BOOTSTRAP_TENANT_NAME: ${BOOTSTRAP_TENANT_NAME:?BOOTSTRAP_TENANT_NAME is required}
+      BOOTSTRAP_OWNER_NAME: ${BOOTSTRAP_OWNER_NAME:?BOOTSTRAP_OWNER_NAME is required}
+      BOOTSTRAP_OWNER_EMAIL: ${BOOTSTRAP_OWNER_EMAIL:?BOOTSTRAP_OWNER_EMAIL is required}
+      BOOTSTRAP_FACILITY_NAME: ${BOOTSTRAP_FACILITY_NAME:?BOOTSTRAP_FACILITY_NAME is required}
+      BOOTSTRAP_CITY: ${BOOTSTRAP_CITY:-Bengaluru}
+    network_mode: host
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  app:
+    image: exora/hms:${IMAGE_TAG:-production}
+    restart: unless-stopped
+    init: true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      HOST: 0.0.0.0
+      PORT: 3000
+      SKIP_DB_BOOTSTRAP: "1"
+      AUTH_MODE: ${AUTH_MODE:-dev}
+      APP_DATABASE_URL: ${APP_DATABASE_URL:?APP_DATABASE_URL is required}
+      DEV_JWT_SECRET: ${DEV_JWT_SECRET:?DEV_JWT_SECRET is required}
+      PUBLIC_TENANT_ID: ${PUBLIC_TENANT_ID:?PUBLIC_TENANT_ID is required}
+      SERVE_WEB_ASSETS: "1"
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS is required}
+      TELE_PATIENT_LINK_BASE: ${TELE_PATIENT_LINK_BASE:?TELE_PATIENT_LINK_BASE is required}
+      JITSI_SECRET: ${JITSI_SECRET:?JITSI_SECRET is required}
+      COMMS_STORAGE_PATH: /data/comms
+      VOICE_SERVICE_KEY: ${VOICE_SERVICE_KEY:-}
+      VOICE_SIGNING_SECRET: ${VOICE_SIGNING_SECRET:-}
+      VOICE_SERVICE_ACCOUNT_ID: ${VOICE_SERVICE_ACCOUNT_ID:-}
+      VOICE_NOTICE_VERSION: ${VOICE_NOTICE_VERSION:-2026-10-14}
+      VOICE_SESSION_SECONDS: ${VOICE_SESSION_SECONDS:-900}
+      VOICE_RECORDING_NOTICE: ${VOICE_RECORDING_NOTICE:-}
+      SARVAM_API_KEY: ${SARVAM_API_KEY:-}
+      SARVAM_ORG_ID: ${SARVAM_ORG_ID:-}
+      SARVAM_WORKSPACE_ID: ${SARVAM_WORKSPACE_ID:-}
+      SARVAM_APP_ID: ${SARVAM_APP_ID:-}
+      SARVAM_APP_VERSION: ${SARVAM_APP_VERSION:-}
+      SARVAM_AGENT_NAME: ${SARVAM_AGENT_NAME:-}
+    ports:
+      - "127.0.0.1:${TENANT_PORT:?TENANT_PORT is required}:3000"
+    volumes:
+      - tenant_private_data:/data
+    mem_limit: 2g
+    cpus: 2.0
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+volumes:
+  tenant_private_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=10.0.0.1,nfsvers=4,rw,hard,timeo=600,retrans=2
+      device: ":${TENANT_DATA_EXPORT:?TENANT_DATA_EXPORT is required}"

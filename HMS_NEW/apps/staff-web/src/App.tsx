@@ -48,6 +48,10 @@ import {
 } from "@/components/ui/sidebar";
 import { HmsError, request, setIdentity, setTenant } from "@/hms/client";
 import { devLoginEnabled, finishLogin, oidc } from "@/hms/auth";
+import {
+  fallbackTenantName,
+  fetchTenantName,
+} from "@/hms/tenant-brand";
 import { can, permittedFacilities, practitionersFor } from "@/hms/model";
 import { WorkspaceContext, useQuery } from "@/hms/hooks";
 import { hasUnsavedChanges, requestLeave, leaveState } from "@/hms/leave";
@@ -94,7 +98,7 @@ const navigation = [
   { group: "Workspace", key: "doctors", name: "Doctors", icon: UserRound, permission: "catalog.read" },
 ];
 const groups = ["Clinic", "Care", "Messages", "Growth"];
-function Brand() {
+function Brand({ tenantName }: { tenantName: string }) {
   return (
     <div className="flex items-center gap-3">
       <div className="brand-icon">
@@ -102,7 +106,10 @@ function Brand() {
       </div>
       <div>
         <div className="font-semibold tracking-tight text-[15px]">
-          Exora Health
+          {tenantName}
+        </div>
+        <div className="text-xs text-muted-foreground mt-0.5">
+          Powered by Exora Health
         </div>
       </div>
     </div>
@@ -135,6 +142,7 @@ export default function App() {
   );
 }
 function StaffApp() {
+  const [tenantName, setTenantName] = useState(fallbackTenantName);
   const [me, setMe] = useState<Me | null>(null),
     [facilities, setFacilities] = useState<Facility[]>([]),
     [facilityId, setFacilityId] = useState("");
@@ -159,6 +167,19 @@ function StaffApp() {
   } | null>(null);
   const [listedClinics, setListedClinics] = useState(0);
   const [bootstrap, setBootstrap] = useState<{ state: string; canCreateClinic: boolean; organizationProvisioned: boolean } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void fetchTenantName()
+      .then((name) => {
+        if (alive) setTenantName(name);
+      })
+      .catch(() => {
+        // Keep a neutral label if bootstrap is temporarily unavailable.
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
   function go(next: string) {
     requestLeave(() => {
       const index = route.current.index + 1;
@@ -324,7 +345,7 @@ function StaffApp() {
       <TooltipProvider>
         <div className="login-layout">
           <aside className="login-story">
-            <Brand />
+            <Brand tenantName={tenantName} />
             <div>
               <Badge
                 variant="secondary"
@@ -343,7 +364,9 @@ function StaffApp() {
                 One workspace for your clinic.
               </p>
             </div>
-            <p className="text-sm opacity-70">Exora Health · Staff workspace</p>
+            <p className="text-sm opacity-70">
+              {tenantName} · Staff workspace
+            </p>
           </aside>
           <main className="login-panel">
             <div className="login-form space-y-6">
@@ -428,7 +451,7 @@ function StaffApp() {
   if (!facility)
     return (
       <div className="p-8 space-y-4">
-        <Brand />
+        <Brand tenantName={tenantName} />
         <h1 className="text-xl font-semibold">
           {listedClinics
             ? "You don’t have clinic access yet"
@@ -468,7 +491,7 @@ function StaffApp() {
       <SidebarProvider>
         <Sidebar>
           <SidebarHeader className="px-5 py-6">
-            <Brand />
+            <Brand tenantName={tenantName} />
           </SidebarHeader>
           <SidebarContent>
             {groups.map((g) => {
@@ -574,7 +597,7 @@ function StaffApp() {
             <div className="flex items-center gap-3">
               <SidebarTrigger />
               <span className="text-sm text-muted-foreground hidden md:block">
-                Clinic workspace
+                {tenantName}
               </span>
               <ChevronRight className="size-3 text-muted-foreground hidden md:block" />
               <span className="text-xs font-medium hidden md:block">
@@ -622,7 +645,7 @@ function StaffApp() {
             go={go}
           />
           <footer className="workspace-footer">
-            <span>Exora Health · {facility.name}</span>
+            <span>{tenantName} · {facility.name}</span>
             <span>{facility.timezone}</span>
           </footer>
         </SidebarInset>
@@ -638,10 +661,22 @@ function DevSignIn({
   busy: boolean;
   onLogin: (subject: string, email?: string) => Promise<void>;
 }) {
-  const configuredSubject = import.meta.env.VITE_HMS_DEV_SUBJECT?.trim() || "";
+  const configuredSubject =
+    import.meta.env.VITE_HMS_DEV_SUBJECT?.trim() ||
+    import.meta.env.VITE_HMS_DEFAULT_SUBJECT?.trim() ||
+    "";
+  const devIdentities = [
+    ...(configuredSubject ? [{ value: configuredSubject, label: "Workspace administrator" }] : []),
+    { value: "ravi", label: "Ravi · Front desk" },
+    { value: "asha", label: "Dr Asha · Doctor" },
+    { value: "meena", label: "Meena · Nurse" },
+    { value: "priya", label: "Priya · Administrator" },
+  ].filter((identity, index, identities) =>
+    identities.findIndex(({ value }) => value === identity.value) === index
+  );
   const [subject, setSubject] = useState(configuredSubject || "ravi"),
     [email, setEmail] = useState(""),
-    [customIdentity,setCustomIdentity]=useState(Boolean(configuredSubject));
+    [customIdentity, setCustomIdentity] = useState(false);
   return (
     <Card>
       <CardContent className="pt-5 space-y-4">
@@ -650,14 +685,18 @@ function DevSignIn({
           label="Staff identity"
           value={subject}
           onChange={setSubject}
-          options={[
-            { value: "ravi", label: "Ravi · Front desk" },
-            { value: "asha", label: "Dr Asha · Doctor" },
-            { value: "meena", label: "Meena · Nurse" },
-            { value: "priya", label: "Priya · Administrator" },
-          ]}
+          options={devIdentities}
         />}
-        {!configuredSubject && <Button variant="outline" size="sm" onClick={()=>{setCustomIdentity(!customIdentity);setSubject(customIdentity?'ravi':'');}}>{customIdentity?'Use the original development identities':'Use another registered identity'}</Button>}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setCustomIdentity(!customIdentity);
+            setSubject(customIdentity ? configuredSubject || "ravi" : "");
+          }}
+        >
+          {customIdentity ? "Use the development identities" : "Use another registered identity"}
+        </Button>
         <Button
           className="w-full"
           disabled={busy || !subject.trim()}

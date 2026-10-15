@@ -1,0 +1,86 @@
+name: exora-${TENANT_SLUG:-demo}
+
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hms
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-demo-postgres}
+    volumes:
+      - tenant_pgdata:/var/lib/postgresql
+    networks:
+      - tenant_private
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d hms"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_HMS_DEV_LOGIN: ${VITE_HMS_DEV_LOGIN:-true}
+        VITE_HMS_DEFAULT_SUBJECT: ${VITE_HMS_DEFAULT_SUBJECT:-admin}
+    image: ${HMS_IMAGE:-exora/hms:local}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      HOST: 0.0.0.0
+      PORT: 3000
+      AUTH_MODE: ${AUTH_MODE:-dev}
+      VITE_HMS_DEV_LOGIN: ${VITE_HMS_DEV_LOGIN:-true}
+      ADMIN_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-local-demo-postgres}@db:5432/hms?sslmode=disable
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-local-demo-postgres}@db:5432/hms?sslmode=disable
+      APP_DATABASE_URL: postgres://hms_app:${HMS_APP_PASSWORD:-local-demo-app}@db:5432/hms?sslmode=disable
+      HMS_APP_PASSWORD: ${HMS_APP_PASSWORD:-local-demo-app}
+      DEV_JWT_SECRET: ${DEV_JWT_SECRET:-local-container-secret-change-before-sharing}
+      TENANT_BOOTSTRAP: ${TENANT_BOOTSTRAP:-demo}
+      TENANT_SLUG: ${TENANT_SLUG:-demo}
+      TENANT_PLAN: ${TENANT_PLAN:-connect}
+      VOICE_REQUESTED: ${VOICE_REQUESTED:-0}
+      VOICE_SERVICE_KEY: ${VOICE_SERVICE_KEY:-}
+      VOICE_SIGNING_SECRET: ${VOICE_SIGNING_SECRET:-}
+      VOICE_SERVICE_ACCOUNT_ID: ${VOICE_SERVICE_ACCOUNT_ID:-}
+      VOICE_NOTICE_VERSION: ${VOICE_NOTICE_VERSION:-2026-10-14}
+      VOICE_SESSION_SECONDS: ${VOICE_SESSION_SECONDS:-900}
+      VOICE_RECORDING_NOTICE: ${VOICE_RECORDING_NOTICE:-}
+      SARVAM_API_KEY: ${SARVAM_API_KEY:-}
+      SARVAM_ORG_ID: ${SARVAM_ORG_ID:-}
+      SARVAM_WORKSPACE_ID: ${SARVAM_WORKSPACE_ID:-}
+      SARVAM_APP_ID: ${SARVAM_APP_ID:-}
+      SARVAM_APP_VERSION: ${SARVAM_APP_VERSION:-}
+      SARVAM_AGENT_NAME: ${SARVAM_AGENT_NAME:-}
+      PUBLIC_TENANT_ID: ${PUBLIC_TENANT_ID:-01920000-0000-7000-8000-000000000001}
+      BOOTSTRAP_TENANT_ID: ${BOOTSTRAP_TENANT_ID:-01920000-0000-7000-8000-000000000001}
+      BOOTSTRAP_TENANT_NAME: ${BOOTSTRAP_TENANT_NAME:-Demo Health}
+      BOOTSTRAP_OWNER_NAME: ${BOOTSTRAP_OWNER_NAME:-Workspace Administrator}
+      BOOTSTRAP_OWNER_EMAIL: ${BOOTSTRAP_OWNER_EMAIL:-admin@example.test}
+      BOOTSTRAP_FACILITY_NAME: ${BOOTSTRAP_FACILITY_NAME:-Main Clinic}
+      BOOTSTRAP_CITY: ${BOOTSTRAP_CITY:-Bengaluru}
+      SERVE_WEB_ASSETS: "1"
+      COMMS_STORAGE_PATH: /data/comms
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://127.0.0.1:8080,http://localhost:8080}
+      TELE_PATIENT_LINK_BASE: ${TELE_PATIENT_LINK_BASE:-http://127.0.0.1:8080/staff/video-consult}
+    ports:
+      - "127.0.0.1:${TENANT_PORT:-8080}:3000"
+    volumes:
+      - tenant_private_data:/data
+    networks:
+      - tenant_private
+      - tenant_ingress
+
+networks:
+  tenant_private:
+    internal: true
+  tenant_ingress:
+
+volumes:
+  tenant_pgdata:
+  tenant_private_data:
