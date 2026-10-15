@@ -55,7 +55,14 @@ import { useRecoverableCommand } from "@/hms/operational-command";
 import { RecoveryNotice } from "@/hms/OperationalRecovery";
 import { useUnsaved } from "@/hms/leave";
 import { LeaveDialog } from "@/hms/LeaveDialog";
-import { Choice, Empty, ErrorMessage, Field, Hint, LoadingState } from "@/hms/ui";
+import {
+  Choice,
+  Empty,
+  ErrorMessage,
+  Field,
+  Hint,
+  LoadingState,
+} from "@/hms/ui";
 import { Input } from "@/components/ui/input";
 import { Patients } from "@/hms/Patients";
 import {
@@ -78,20 +85,98 @@ import { PatientVideo } from "@/hms/PatientVideo";
 import type { Facility, Me, Practitioner } from "@/hms/types";
 
 const navigation = [
-  { group: "Clinic", key: "overview", name: "Overview", icon: LayoutDashboard, permission: "appointments.read" },
-  { group: "Clinic", key: "appointments", name: "Appointments", icon: CalendarDays, permission: "appointments.read" },
-  { group: "Clinic", key: "schedules", name: "Schedules", icon: Clock3, permission: "appointments.read" },
-  { group: "Clinic", key: "patients", name: "Patients", icon: Users, permission: "patients.read" },
-  { group: "Care", key: "consultations", name: "Consultations", icon: Stethoscope, permission: "encounters.read" },
-  { group: "Care", key: "teleconsultations", name: "Teleconsultations", icon: Video, permission: "teleconsult.read" },
-  { group: "Messages", key: "whatsapp", name: "WhatsApp", icon: WhatsAppIcon, permission: "comms.read" },
-  { group: "Messages", key: "voice", name: "Voice", icon: Headphones, permission: "voice.read" },
-  { group: "Growth", key: "google_business", name: "Google Business", icon: GoogleIcon, permission: "growth.read" },
-  { group: "Growth", key: "growth_analytics", name: "Website analytics", icon: ChartNoAxesCombined, permission: "growth.read" },
+  {
+    group: "Clinic",
+    key: "overview",
+    name: "Overview",
+    icon: LayoutDashboard,
+    permission: "appointments.read",
+  },
+  {
+    group: "Clinic",
+    key: "appointments",
+    name: "Appointments",
+    icon: CalendarDays,
+    permission: "appointments.read",
+  },
+  {
+    group: "Clinic",
+    key: "schedules",
+    name: "Schedules",
+    icon: Clock3,
+    permission: "appointments.read",
+  },
+  {
+    group: "Clinic",
+    key: "patients",
+    name: "Patients",
+    icon: Users,
+    permission: "patients.read",
+  },
+  {
+    group: "Care",
+    key: "consultations",
+    name: "Consultations",
+    icon: Stethoscope,
+    permission: "encounters.read",
+  },
+  {
+    group: "Care",
+    key: "teleconsultations",
+    name: "Teleconsultations",
+    icon: Video,
+    permission: "teleconsult.read",
+  },
+  {
+    group: "Messages",
+    key: "whatsapp",
+    name: "WhatsApp",
+    icon: WhatsAppIcon,
+    permission: "comms.read",
+  },
+  {
+    group: "Messages",
+    key: "voice",
+    name: "Voice",
+    icon: Headphones,
+    permission: "voice.read",
+  },
+  {
+    group: "Growth",
+    key: "google_business",
+    name: "Google Business",
+    icon: GoogleIcon,
+    permission: "growth.read",
+  },
+  {
+    group: "Growth",
+    key: "growth_analytics",
+    name: "Website analytics",
+    icon: ChartNoAxesCombined,
+    permission: "growth.read",
+  },
   // Reception checks membership at the desk, so anyone who sees appointments sees loyalty.
-  { group: "Growth", key: "loyalty", name: "Loyalty programs", icon: Ticket, permission: "appointments.read" },
-  { group: "Workspace", key: "catalogue", name: "Hospital catalogue", icon: Building2, permission: "catalog.read" },
-  { group: "Workspace", key: "doctors", name: "Doctors", icon: UserRound, permission: "catalog.read" },
+  {
+    group: "Growth",
+    key: "loyalty",
+    name: "Loyalty programs",
+    icon: Ticket,
+    permission: "appointments.read",
+  },
+  {
+    group: "Workspace",
+    key: "catalogue",
+    name: "Hospital catalogue",
+    icon: Building2,
+    permission: "catalog.read",
+  },
+  {
+    group: "Workspace",
+    key: "doctors",
+    name: "Doctors",
+    icon: UserRound,
+    permission: "catalog.read",
+  },
 ];
 const groups = ["Clinic", "Care", "Messages", "Growth"];
 function Brand() {
@@ -158,7 +243,11 @@ function StaffApp() {
     phase: "restoring" | "accepting";
   } | null>(null);
   const [listedClinics, setListedClinics] = useState(0);
-  const [bootstrap, setBootstrap] = useState<{ state: string; canCreateClinic: boolean; organizationProvisioned: boolean } | null>(null);
+  const [bootstrap, setBootstrap] = useState<{
+    state: string;
+    canCreateClinic: boolean;
+    organizationProvisioned: boolean;
+  } | null>(null);
   function go(next: string) {
     requestLeave(() => {
       const index = route.current.index + 1;
@@ -196,14 +285,33 @@ function StaffApp() {
       const identity = await request<Me>("/v1/me");
       if (identity.isSystemAccount)
         throw new Error("Integration accounts cannot use the staff workspace.");
-      const context = await request<{ facilities: Facility[]; bootstrap: { state: string; canCreateClinic: boolean; organizationProvisioned: boolean } }>("/v1/session-context");
+      const context = await request<{
+        facilities: Facility[];
+        bootstrap: {
+          state: string;
+          canCreateClinic: boolean;
+          organizationProvisioned: boolean;
+        };
+      }>("/v1/session-context");
       setBootstrap(context.bootstrap);
       const result = { items: context.facilities };
       const allowed = permittedFacilities(identity, result.items);
       setTenantOptions([]);
-      setListedClinics(context.bootstrap.state === "inaccessible_clinics" ? 1 : result.items.length);
+      setListedClinics(
+        context.bootstrap.state === "inaccessible_clinics"
+          ? 1
+          : result.items.length,
+      );
       setFacilities(allowed);
-      setFacilityId(allowed[0]?.facilityId ?? "");
+      setFacilityId(
+        allowed.find(
+          (f) =>
+            f.facilityId ===
+            new URLSearchParams(location.search).get("facility"),
+        )?.facilityId ??
+          allowed[0]?.facilityId ??
+          "",
+      );
       setMe(identity);
     } catch (e) {
       if (e instanceof HmsError && Array.isArray(e.details.tenants)) {
@@ -590,7 +698,7 @@ function StaffApp() {
                       : page.replaceAll("_", " "))}
               </span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 md:flex-nowrap md:gap-3">
               <ModePicker />
               <div className="w-52 max-w-[55vw]">
                 <Choice
@@ -641,23 +749,48 @@ function DevSignIn({
   const configuredSubject = import.meta.env.VITE_HMS_DEV_SUBJECT?.trim() || "";
   const [subject, setSubject] = useState(configuredSubject || "ravi"),
     [email, setEmail] = useState(""),
-    [customIdentity,setCustomIdentity]=useState(Boolean(configuredSubject));
+    [customIdentity, setCustomIdentity] = useState(Boolean(configuredSubject));
   return (
     <Card>
       <CardContent className="pt-5 space-y-4">
         <Badge variant="outline">Local development only</Badge>
-        {customIdentity ? <label htmlFor="dev-subject" className="block space-y-1.5 text-sm"><span className="font-medium">Registered staff identity</span><Input id="dev-subject" value={subject} onChange={e=>setSubject(e.target.value)} autoComplete="off" /></label> : <Choice
-          label="Staff identity"
-          value={subject}
-          onChange={setSubject}
-          options={[
-            { value: "ravi", label: "Ravi · Front desk" },
-            { value: "asha", label: "Dr Asha · Doctor" },
-            { value: "meena", label: "Meena · Nurse" },
-            { value: "priya", label: "Priya · Administrator" },
-          ]}
-        />}
-        {!configuredSubject && <Button variant="outline" size="sm" onClick={()=>{setCustomIdentity(!customIdentity);setSubject(customIdentity?'ravi':'');}}>{customIdentity?'Use the original development identities':'Use another registered identity'}</Button>}
+        {customIdentity ? (
+          <label htmlFor="dev-subject" className="block space-y-1.5 text-sm">
+            <span className="font-medium">Registered staff identity</span>
+            <Input
+              id="dev-subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              autoComplete="off"
+            />
+          </label>
+        ) : (
+          <Choice
+            label="Staff identity"
+            value={subject}
+            onChange={setSubject}
+            options={[
+              { value: "ravi", label: "Ravi · Front desk" },
+              { value: "asha", label: "Dr Asha · Doctor" },
+              { value: "meena", label: "Meena · Nurse" },
+              { value: "priya", label: "Priya · Administrator" },
+            ]}
+          />
+        )}
+        {!configuredSubject && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setCustomIdentity(!customIdentity);
+              setSubject(customIdentity ? "ravi" : "");
+            }}
+          >
+            {customIdentity
+              ? "Use the original development identities"
+              : "Use another registered identity"}
+          </Button>
+        )}
         <Button
           className="w-full"
           disabled={busy || !subject.trim()}
@@ -803,21 +936,75 @@ function DirectoryContent({
 }
 
 function FirstClinic({ onCreated }: { onCreated: () => Promise<void> }) {
-  const [name, setName] = useState(""), [code, setCode] = useState(""), [stateCode, setStateCode] = useState("29");
+  const [name, setName] = useState(""),
+    [code, setCode] = useState(""),
+    [stateCode, setStateCode] = useState("29");
   const command = useRecoverableCommand(request, "first-clinic");
   useUnsaved(!!name || !!code || command.busy || command.unknown);
   const create = async () => {
-    if (await command.run("/v1/facilities", { name: name.trim(), code: code.trim(), stateCode, facilityType: "clinic" }, true)) await onCreated();
+    if (
+      await command.run(
+        "/v1/facilities",
+        {
+          name: name.trim(),
+          code: code.trim(),
+          stateCode,
+          facilityType: "clinic",
+        },
+        true,
+      )
+    )
+      await onCreated();
   };
-  return <Card className="max-w-xl"><CardContent className="space-y-4 pt-6">
-    <h2 className="text-lg font-semibold">Create your first clinic</h2>
-    <fieldset disabled={command.busy || command.unknown} className="space-y-4">
-      <Field label="Clinic name" id="bootstrap-name"><Input id="bootstrap-name" value={name} onChange={e => setName(e.target.value)} maxLength={120} /></Field>
-      <Field label="Clinic code" id="bootstrap-code"><Input id="bootstrap-code" value={code} onChange={e => setCode(e.target.value)} maxLength={30} /></Field>
-      <Field label="State code" id="bootstrap-state"><Input id="bootstrap-state" value={stateCode} onChange={e => setStateCode(e.target.value)} maxLength={2} /></Field>
-      <Button disabled={name.trim().length < 2 || !/^[A-Za-z0-9_-]{1,30}$/.test(code.trim()) || !/^[0-9]{2}$/.test(stateCode)} onClick={() => void create()}>Create clinic</Button>
-    </fieldset>
-    <ErrorMessage text={command.error} />
-    <RecoveryNotice command={command} onRecovered={() => void onCreated()} />
-  </CardContent></Card>;
+  return (
+    <Card className="max-w-xl">
+      <CardContent className="space-y-4 pt-6">
+        <h2 className="text-lg font-semibold">Create your first clinic</h2>
+        <fieldset
+          disabled={command.busy || command.unknown}
+          className="space-y-4"
+        >
+          <Field label="Clinic name" id="bootstrap-name">
+            <Input
+              id="bootstrap-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={120}
+            />
+          </Field>
+          <Field label="Clinic code" id="bootstrap-code">
+            <Input
+              id="bootstrap-code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              maxLength={30}
+            />
+          </Field>
+          <Field label="State code" id="bootstrap-state">
+            <Input
+              id="bootstrap-state"
+              value={stateCode}
+              onChange={(e) => setStateCode(e.target.value)}
+              maxLength={2}
+            />
+          </Field>
+          <Button
+            disabled={
+              name.trim().length < 2 ||
+              !/^[A-Za-z0-9_-]{1,30}$/.test(code.trim()) ||
+              !/^[0-9]{2}$/.test(stateCode)
+            }
+            onClick={() => void create()}
+          >
+            Create clinic
+          </Button>
+        </fieldset>
+        <ErrorMessage text={command.error} />
+        <RecoveryNotice
+          command={command}
+          onRecovered={() => void onCreated()}
+        />
+      </CardContent>
+    </Card>
+  );
 }

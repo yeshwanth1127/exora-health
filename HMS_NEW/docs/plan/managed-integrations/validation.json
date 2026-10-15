@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-15",
+  "scope": "Local browser; integration responses mocked; workspace identity and reference data use isolated local PostgreSQL. This is not live provider acceptance.",
+  "browserChecks": {
+    "result": "PASS",
+    "checks": [
+      "Analytics add submits one API intent",
+      "Installation waits for accepted collection",
+      "Analytics settings are company managed",
+      "No customer provider credentials requested",
+      "Desktop and 390px have no horizontal overflow",
+      "Untracked conversion remains explicit",
+      "Google reply uses one server action",
+      "Rejected provider reply not displayed as published",
+      "Integration state not stored in localStorage",
+      "Connected WhatsApp inbox renders",
+      "WhatsApp reply uses one intent",
+      "Consent refusal remains explicit",
+      "Rejected WhatsApp reply not displayed as sent"
+    ],
+    "widths": [
+      {
+        "viewport": 1440,
+        "scrollWidth": 1440
+      },
+      {
+        "viewport": 390,
+        "scrollWidth": 390
+      }
+    ]
+  },
+  "backend": {
+    "result": "PASS",
+    "tests": 398,
+    "files": 37,
+    "targetedNewTests": 18
+  },
+  "staff": {
+    "result": "PASS",
+    "tests": 163
+  },
+  "typecheck": "PASS",
+  "staffBuild": "PASS; existing bundle-size warning",
+  "liveProviders": "UNVERIFIABLE: no provider credentials or public callback deployment configured",
+  "deployment": "NOT PERFORMED"
+}

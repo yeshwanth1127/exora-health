@@ -20,10 +20,16 @@ export default defineConfig(({ mode }) => {
       port: 5188,
       strictPort: true,
       proxy: Object.fromEntries(
-        ["/v1", "/tele/v1", "/dev", "/health", "/ready"].map((prefix) => [
-          prefix,
-          { target, changeOrigin: true },
-        ]),
+        [
+          "/a.js",
+          "/a/",
+          "/integrations",
+          "/v1",
+          "/tele/v1",
+          "/dev",
+          "/health",
+          "/ready",
+        ].map((prefix) => [prefix, { target, changeOrigin: true }]),
       ),
     },
   };

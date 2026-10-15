@@ -57,7 +57,8 @@ export async function request<T>(
       signal: options.signal
         ? AbortSignal.any([options.signal, AbortSignal.timeout(20000)])
         : AbortSignal.timeout(20000),
-      credentials: "omit",
+      credentials:
+        path === "/v1/google-business/connect" ? "same-origin" : "omit",
       cache: "no-store",
       redirect: "error",
       headers: {
@@ -76,7 +77,12 @@ export async function request<T>(
         options.body !== undefined ? JSON.stringify(options.body) : undefined,
     });
   } catch (e) {
-    if ((!options.method || options.method === "GET") && e instanceof Error && e.name === "AbortError") throw e;
+    if (
+      (!options.method || options.method === "GET") &&
+      e instanceof Error &&
+      e.name === "AbortError"
+    )
+      throw e;
     throw new HmsError(
       options.method && options.method !== "GET"
         ? "We could not confirm whether the change was saved. Refresh the record before trying again."
