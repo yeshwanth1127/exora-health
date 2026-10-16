@@ -43,6 +43,11 @@ nav button.active { background: #1c443b; color: white; }
 .release-panel dd { margin:4px 0 0;font-size:11px;overflow-wrap:anywhere; }
 .release-panel code { font-size:10px; }
 .release-panel h2:not(:first-child) { margin-top:30px; }
+.phone-card { border:1px solid var(--line);border-radius:12px;padding:14px;background:#f8faf7; }
+.phone-card strong,.phone-card small { display:block; }
+.phone-card strong { font:700 17px Manrope; }
+.phone-card small { color:var(--muted);margin:5px 0 12px;line-height:1.45; }
+.phone-card.assigned { border-color:#91c5b8;background:#eff8f4; }
 .release { border-top:1px solid var(--line);padding:12px 0; }
 .release strong,.release small { display:block; }
 .release small { color:var(--muted);margin-top:4px; }

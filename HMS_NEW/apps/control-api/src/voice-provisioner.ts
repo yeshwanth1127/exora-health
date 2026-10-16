@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type pg from 'pg';
 import { compileVoiceManifest, VoiceSettingsSchema } from './voice-control.ts';
+import { managedTelephonyRequest } from './voice-telephony.ts';
 
 const ProviderResult = z.strictObject({
   agentId: z.string().min(3).max(200),
@@ -8,6 +9,7 @@ const ProviderResult = z.strictObject({
   deploymentId: z.string().min(3).max(200).nullable().optional(),
   connectionId: z.string().min(3).max(200).nullable().optional(),
   phoneNumber: z.string().max(32).nullable().optional(),
+  telephonyStatus: z.enum(['assigned', 'already_assigned']).optional(),
   configurationHash: z.string().regex(/^[a-f0-9]{64}$/),
 });
 
@@ -15,6 +17,7 @@ export type VoiceProvisionerOptions = {
   url: string;
   token: string;
   templateAgentId?: string;
+  preferredConnectionId?: string;
 };
 
 export async function processOneVoiceOperation(pool: pg.Pool, options: VoiceProvisionerOptions): Promise<boolean> {
@@ -56,6 +59,14 @@ export async function processOneVoiceOperation(pool: pg.Pool, options: VoiceProv
       publicUrl: row.public_url,
     }, VoiceSettingsSchema.parse(row.settings), options.templateAgentId);
     await pool.query("UPDATE control.voice_provisioning_operation SET stage='provider_apply',updated_at=now() WHERE id=$1", [operationId]);
+    const telephony = managedTelephonyRequest({
+      customerId: String(row.customer_id),
+      timezone: String(payload.timezone ?? 'Asia/Kolkata'),
+      preferredConnectionId: options.preferredConnectionId,
+      connectionId: row.connection_id,
+      phoneNumber: row.phone_number,
+      deploymentId: row.deployment_id,
+    });
     const response = await fetch(options.url, {
       method: 'POST',
       headers: { authorization: `Bearer ${options.token}`, 'content-type': 'application/json', 'idempotency-key': operationId },
@@ -63,6 +74,7 @@ export async function processOneVoiceOperation(pool: pg.Pool, options: VoiceProv
         operationId, operation: row.operation, manifest,
         secretRef: row.service_secret_ref,
         currentBinding: { agentId: row.agent_id, appVersion: row.app_version, deploymentId: row.deployment_id, connectionId: row.connection_id, phoneNumber: row.phone_number },
+        telephony,
       }),
       signal: AbortSignal.timeout(120_000),
     });
@@ -70,6 +82,9 @@ export async function processOneVoiceOperation(pool: pg.Pool, options: VoiceProv
     if (!response.ok) throw new Error(`Sarvam provisioner rejected the operation (${response.status})`);
     const result = ProviderResult.parse(raw);
     if (result.configurationHash !== manifest.configurationHash) throw new Error('Sarvam provisioner applied a different configuration hash');
+    if (!result.deploymentId || !result.connectionId || !result.phoneNumber) {
+      throw new Error('Dedicated Voice number inventory is exhausted; rent or import another Sarvam number and retry');
+    }
     const completed = await pool.connect();
     try {
       await completed.query('BEGIN');

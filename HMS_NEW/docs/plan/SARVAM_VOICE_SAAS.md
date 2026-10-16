@@ -369,6 +369,21 @@ the Exophone. Other providers use their documented webhook/media-stream setup.
 5. Create the inbound deployment and verify it.
 6. Alert before low credit or renewal failure can release it.
 
+Current implementation: onboarding now creates the default Voice revision and an idempotent
+`provision` operation automatically. Every provider-adapter request contains a required
+`dedicated_managed_number` allocation contract with the tenant allocation key and any existing
+binding. The adapter must lock provider inventory, exclude every number present in an inbound
+deployment or the Exora binding registry, then return `connectionId`, `phoneNumber` and
+`deploymentId` together. Exora rejects an incomplete result and enforces unique phone and
+deployment bindings in the control database.
+
+Sarvam currently rents new numbers through its dashboard after KYC and a billable confirmation; the
+workspace API does not expose that purchase operation. Accordingly, automatic tenant provisioning
+allocates from numbers already rented/imported into the managed pool. An empty pool produces the
+actionable `Dedicated Voice number inventory is exhausted` failure and never reassigns a number from
+another deployment. Keep at least one unused number in inventory before onboarding the next Voice
+tenant.
+
 ### Shared number policy
 
 Never route unrelated tenants through one shared Sarvam number unless Exora first owns a verified

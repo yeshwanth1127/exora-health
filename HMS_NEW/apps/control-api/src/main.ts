@@ -103,6 +103,8 @@ async function schema() {
     ALTER TABLE control.voice_agent_binding ADD COLUMN IF NOT EXISTS previous_app_version integer;
     ALTER TABLE control.voice_agent_binding ADD COLUMN IF NOT EXISTS configuration_hash text;
     ALTER TABLE control.voice_agent_binding ADD COLUMN IF NOT EXISTS tenant_api_origin text;
+    CREATE UNIQUE INDEX IF NOT EXISTS voice_binding_phone_unique ON control.voice_agent_binding(phone_number) WHERE phone_number IS NOT NULL;
+    CREATE UNIQUE INDEX IF NOT EXISTS voice_binding_deployment_unique ON control.voice_agent_binding(deployment_id) WHERE deployment_id IS NOT NULL;
     CREATE TABLE IF NOT EXISTS control.voice_configuration_revision (
       customer_id uuid NOT NULL REFERENCES control.customer(id),
       revision integer NOT NULL CHECK(revision > 0),
@@ -175,8 +177,28 @@ async function markReady(id: string, payload: z.infer<typeof Onboarding>, port: 
     await client.query(`INSERT INTO control.deployment(id,customer_id,tenant_id,compose_project,image,public_url,staff_url,state,health)
       VALUES($1,$2,$3,$4,$5,$6,$7,'ready','healthy') ON CONFLICT(customer_id) DO UPDATE SET tenant_id=excluded.tenant_id,compose_project=excluded.compose_project,image=excluded.image,state='ready',health='healthy',public_url=excluded.public_url,staff_url=excluded.staff_url,last_error=NULL,updated_at=now()`,
       [randomUUID(), customer.id, deployment.tenantId ?? tenantUuid(payload.slug), deployment.composeProject ?? `exora-${payload.slug}`, deployment.image ?? 'exora/hms:local', `${tenantUrl}/`, deployment.staffUrl ?? `${tenantUrl}/staff/appointments`]);
-    if (payload.voice) await client.query(`INSERT INTO control.voice_agent_binding(customer_id,state,service_secret_ref)
-      VALUES($1,'requested',$2) ON CONFLICT(customer_id) DO NOTHING`, [customer.id, `tenant-env://${payload.slug}/VOICE_SERVICE_KEY`]);
+    if (payload.voice) {
+      const settings = defaultVoiceSettings(payload.organisation);
+      const manifest = compileVoiceManifest({
+        customerId: customer.id,
+        tenantId: deployment.tenantId ?? tenantUuid(payload.slug),
+        slug: payload.slug,
+        hospitalName: payload.organisation,
+        facilityName: payload.facilityName,
+        timezone: payload.timezone,
+        publicUrl: `${tenantUrl}/`,
+      }, settings, process.env.SARVAM_TEMPLATE_AGENT_ID);
+      await client.query(`INSERT INTO control.voice_agent_binding(customer_id,state,service_secret_ref,desired_revision,configuration_hash,tenant_api_origin)
+        VALUES($1,'configuring',$2,1,$3,$4) ON CONFLICT(customer_id) DO NOTHING`,
+        [customer.id, `tenant-env://${payload.slug}/VOICE_SERVICE_KEY`, manifest.configurationHash, manifest.backendOrigin]);
+      await client.query(`INSERT INTO control.voice_configuration_revision(customer_id,revision,settings,configuration_hash,state,created_by)
+        VALUES($1,1,$2,$3,'publishing','onboarding') ON CONFLICT(customer_id,revision) DO NOTHING`,
+        [customer.id, settings, manifest.configurationHash]);
+      await client.query(`INSERT INTO control.voice_provisioning_operation(id,customer_id,revision,operation,idempotency_key,state,stage,created_by)
+        VALUES($1,$2,1,'provision',$3,'queued','configure_agent','onboarding') ON CONFLICT(idempotency_key) DO NOTHING`,
+        [randomUUID(), customer.id, `voice:onboarding:${id}`]);
+      await client.query("UPDATE control.customer SET voice_status='configuring' WHERE id=$1", [customer.id]);
+    }
     await client.query("UPDATE control.onboarding_request SET status='ready',error=NULL,updated_at=now() WHERE id=$1", [id]);
     await client.query('COMMIT');
   } catch (error) { await client.query('ROLLBACK'); throw error; }
@@ -215,7 +237,7 @@ async function claimProvisioningJob() {
 async function claimVoiceProvisioningJob() {
   if (!autoVoiceProvision || !voiceProvisionerUrl || !voiceProvisionerToken) return;
   try {
-    await processOneVoiceOperation(pool, { url: voiceProvisionerUrl, token: voiceProvisionerToken, templateAgentId: process.env.SARVAM_TEMPLATE_AGENT_ID });
+    await processOneVoiceOperation(pool, { url: voiceProvisionerUrl, token: voiceProvisionerToken, templateAgentId: process.env.SARVAM_TEMPLATE_AGENT_ID, preferredConnectionId: process.env.SARVAM_TELEPHONY_CONNECTION_ID });
   } catch (error) { app.log.error(error, 'failed to process Voice provisioning operation'); }
   finally { voiceProvisionTimer = setTimeout(() => void claimVoiceProvisioningJob(), 2000); }
 }
@@ -413,6 +435,35 @@ app.post('/control/v1/admin/customers/:id/voice-publish', async (request, reply)
   } catch (error) { await client.query('ROLLBACK'); throw error; }
   finally { client.release(); }
   return reply.status(202).send({ operationId, customerId: id.data, revision: body.data.revision, state: 'queued', stage: 'configure_agent', configurationHash: manifest.configurationHash });
+});
+
+app.post('/control/v1/admin/customers/:id/voice-phone/allocate', async (request, reply) => {
+  if (!isSuperadmin(request.headers.authorization)) return reply.status(401).send({ error: 'unauthorized' });
+  const id = z.uuid().safeParse((request.params as { id?: string }).id);
+  const idempotencyKey = request.headers['idempotency-key'];
+  if (!id.success) return reply.status(400).send({ error: 'validation' });
+  if (typeof idempotencyKey !== 'string' || idempotencyKey.length < 16 || idempotencyKey.length > 128) return reply.status(400).send({ error: 'idempotency_key_required' });
+  const customer = await voiceCustomer(id.data);
+  if (!customer) return reply.status(404).send({ error: 'not_found' });
+  if (customer.voice_status === 'not_requested') return reply.status(409).send({ error: 'voice_not_requested' });
+  if (customer.subscription_status === 'suspended' || customer.subscription_status === 'cancelled') return reply.status(409).send({ error: 'subscription_inactive' });
+  if (customer.phone_number && customer.deployment_id) {
+    return { state: 'active', phoneNumber: customer.phone_number, deploymentId: customer.deployment_id, alreadyAssigned: true };
+  }
+  const { rows: [revision] } = await pool.query(`SELECT revision FROM control.voice_configuration_revision
+    WHERE customer_id=$1 ORDER BY revision DESC LIMIT 1`, [id.data]);
+  if (!revision) return reply.status(409).send({ error: 'voice_revision_required', message: 'Save the initial Voice configuration before assigning a number.' });
+  const operationId = randomUUID();
+  const result = await pool.query(`INSERT INTO control.voice_provisioning_operation(id,customer_id,revision,operation,idempotency_key,state,stage,created_by)
+    VALUES($1,$2,$3,'provision',$4,'queued','allocate_number','superadmin') ON CONFLICT(idempotency_key) DO NOTHING RETURNING *`,
+    [operationId,id.data,revision.revision,idempotencyKey]);
+  if (!result.rowCount) {
+    const { rows: [existing] } = await pool.query('SELECT * FROM control.voice_provisioning_operation WHERE idempotency_key=$1', [idempotencyKey]);
+    return reply.status(202).send(existing);
+  }
+  await pool.query("UPDATE control.voice_agent_binding SET state='configuring',last_error=NULL,updated_at=now() WHERE customer_id=$1", [id.data]);
+  await pool.query("UPDATE control.customer SET voice_status='configuring' WHERE id=$1", [id.data]);
+  return reply.status(202).send(result.rows[0]);
 });
 
 app.post('/control/v1/admin/customers/:id/voice-rollback', async (request, reply) => {
