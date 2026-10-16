@@ -467,6 +467,7 @@ export async function conversationCommand(
   action: "assign" | "close" | "reply" | "handoff" | "resume",
   key: string,
   managedSendRequested = false,
+  managedDetails:Record<string,string> = {},
 ) {
   await runCommand(
     db,
@@ -477,7 +478,7 @@ export async function conversationCommand(
       request: {
         id,
         ...input,
-        ...(managedSendRequested ? { managedSendRequested: true } : {}),
+        ...(managedSendRequested ? { managedSendRequested: true,managedDetails } : {}),
       },
       idempotencyKey: key,
     },
@@ -533,7 +534,7 @@ export async function conversationCommand(
           throw preconditionFailed(
             "explicit care-messaging consent is required",
           );
-        await sql`INSERT INTO comms.outbound_message(tenant_id,facility_id,contact_point_id,conversation_id,text_content,created_by,managed_send_requested) VALUES(${ctx.tenantId},${c.facility_id},${c.contact_point_id},${id},${input.text!},${ctx.actor.staffId ?? null},${managedSendRequested})`.execute(
+        await sql`INSERT INTO comms.outbound_message(tenant_id,facility_id,contact_point_id,conversation_id,text_content,created_by,managed_send_requested,managed_details) VALUES(${ctx.tenantId},${c.facility_id},${c.contact_point_id},${id},${input.text!},${ctx.actor.staffId ?? null},${managedSendRequested},${JSON.stringify(managedDetails)}::jsonb)`.execute(
           ctx.tx,
         );
         await sql`UPDATE comms.conversation SET automation_state='human',assigned_staff_id=${ctx.actor.staffId} WHERE id=${id}`.execute(
@@ -1795,7 +1796,9 @@ export async function handleWhatsAppCallback(
           ? inbound.text.body.slice(0, 3000)
           : "[Unsupported message content]";
     const stop = body.trim().toUpperCase() === "STOP";
-    const humanRequested = requestsWhatsAppHuman(body);
+    const {rows:[workspace]}=await sql<any>`SELECT preferences FROM comms.whatsapp_workspace WHERE facility_id=${r.facility_id}`.execute(tx);
+    const handoffWords=String(workspace?.preferences?.handoffWords??'').split(',').map(w=>w.trim().toLowerCase()).filter(Boolean);
+    const humanRequested = requestsWhatsAppHuman(body) || handoffWords.includes(body.trim().toLowerCase());
     // Control requests pause automation synchronously inside the signed callback transaction.
     if (options.controlOnly && !stop && !humanRequested) continue;
     if (!stop && !humanRequested && (await moduleState(tx)) !== "active")
@@ -1843,7 +1846,7 @@ export async function handleWhatsAppCallback(
     }>`INSERT INTO comms.conversation(tenant_id,facility_id,contact_point_id,last_inbound_at,automation_state) VALUES(${event.tenantId},${r.facility_id},${contact.id},${received},${humanRequested ? "handoff_requested" : "automation"}) ON CONFLICT(tenant_id,contact_point_id) DO UPDATE SET automation_state=CASE WHEN ${humanRequested} AND comms.conversation.automation_state='automation' THEN 'handoff_requested' ELSE comms.conversation.automation_state END,last_inbound_at=greatest(comms.conversation.last_inbound_at,EXCLUDED.last_inbound_at) RETURNING id`.execute(
       tx,
     );
-    await sql`INSERT INTO comms.inbound_message(tenant_id,conversation_id,account_id,provider_message_id,text_content,received_at) VALUES(${event.tenantId},${c!.id},${r.account_id},${inbound.id},${body},${received}) ON CONFLICT DO NOTHING`.execute(
+    await sql`INSERT INTO comms.inbound_message(tenant_id,conversation_id,account_id,provider_message_id,text_content,received_at,phone_number_id) VALUES(${event.tenantId},${c!.id},${r.account_id},${inbound.id},${body},${received},${r.phone_number_id}) ON CONFLICT DO NOTHING`.execute(
       tx,
     );
     if (stop) {

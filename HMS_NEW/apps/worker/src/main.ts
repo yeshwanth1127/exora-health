@@ -1,3 +1,7 @@
+import { dispatchGooglePosts } from "../../api/src/modules/comms/managed-google.ts";
+import { pollAutomationApprovals } from "../../api/src/modules/comms/managed-automations.ts";
+import { dispatchAnalyticsMirror } from "../../api/src/modules/comms/managed-analytics.ts";
+import { dispatchBookingChats } from "../../api/src/modules/comms/managed-booking-chat.ts";
 // Background worker: delivers outbox events and runs housekeeping jobs.
 //   pnpm worker:dev
 import { dispatchManagedWhatsApp } from "../../api/src/modules/comms/managed-whatsapp.ts";
@@ -67,4 +71,20 @@ void every("whatsapp-template-submissions", 5_000, () =>
 const managedSettings = loadManagedSettings();
 void every("managed-whatsapp-replies", 2000, () =>
   dispatchManagedWhatsApp(db, managedSettings),
+);
+
+void every("managed-booking-chats", 2000, () =>
+  dispatchBookingChats(db, managedSettings),
+);
+
+void every("analytics-mirror", 5000, () =>
+  dispatchAnalyticsMirror(db, managedSettings),
+);
+
+void every("managed-message-approvals", 60000, () =>
+  pollAutomationApprovals(db, managedSettings),
+);
+
+void every("managed-google-posts", 10000, () =>
+  dispatchGooglePosts(db, managedSettings),
 );

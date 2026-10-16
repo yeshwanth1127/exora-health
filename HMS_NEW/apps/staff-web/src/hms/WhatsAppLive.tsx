@@ -5,7 +5,6 @@ import {
   ArrowRight,
   CalendarClock,
   CheckCircle2,
-  ExternalLink,
   FileText,
   Pencil,
 } from "lucide-react";
@@ -39,6 +38,10 @@ import {
   type Change,
   type Clinic,
 } from "./whatsapp-ui";
+import {
+  ManagedAutomations,
+  ManagedPromotions,
+} from "./WhatsAppManagedOperations";
 import { Inbox } from "./WhatsAppInbox";
 import { Activity } from "./WhatsAppActivity";
 import type { Patch } from "./WhatsApp";
@@ -110,7 +113,7 @@ export function Live({
         {data.capabilities?.sending
           ? "Replies are sent from this inbox. Delivery is shown only after Meta confirms it."
           : "Sending is not available yet."}{" "}
-        Automatic booking, scheduled messages and promotions are being prepared.
+        Booking and appointment notices follow the clinic’s saved settings.
       </p>
       <Tabs value={tab} onValueChange={(v) => open(v as Tab)}>
         <div className="-mx-1 overflow-x-auto px-1">
@@ -146,16 +149,8 @@ export function Live({
           openAutomations={() => open("automations", "&id=staff_reply")}
         />
       )}
-      {tab === "automations" && (
-        <p className="text-sm text-muted-foreground">
-          Scheduled messages are not available yet.
-        </p>
-      )}
-      {tab === "promotions" && (
-        <p className="text-sm text-muted-foreground">
-          Promotions are not available yet.
-        </p>
-      )}
+      {tab === "automations" && <ManagedAutomations />}
+      {tab === "promotions" && <ManagedPromotions />}
       {tab === "log" && <Activity data={data} change={change} />}
       {tab === "settings" && (
         <SettingsTab
@@ -175,12 +170,17 @@ export function Live({
 function StatusCard({
   setup,
   update,
+  active,
+  ready,
 }: {
   setup: WhatsAppSetup;
   update: (p: Patch) => void;
   canManage: boolean;
+  active: boolean;
+  ready: boolean;
 }) {
-  const paused = setup.paused || !setup.live;
+  const { can } = useWorkspace();
+  const paused = !active;
   return (
     <Card className="flex-row flex-wrap items-center justify-between gap-4 p-5 shadow-none">
       <div className="flex items-center gap-4">
@@ -194,7 +194,7 @@ function StatusCard({
               <span
                 className={`size-1.5 rounded-full ${paused ? "bg-amber-500" : "bg-emerald-600"}`}
               />
-              {paused ? "Connected · booking not active" : "Taking bookings"}
+              {paused ? "Connected · booking paused" : "Taking bookings"}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -207,13 +207,13 @@ function StatusCard({
       </div>
       <label className="flex items-center gap-3 text-sm">
         {paused
-          ? "Paused. Patients get your away reply."
+          ? "Booking paused. Reception can still reply."
           : "Accepting bookings"}
         <Switch
           checked={!paused}
-          disabled={true}
+          disabled={!can("comms.manage") || !ready}
           aria-label="Accept bookings on WhatsApp"
-          onCheckedChange={(on) => update({ paused: !on })}
+          onCheckedChange={(on) => update({ live: on, paused: !on })}
         />
       </label>
     </Card>
@@ -243,7 +243,9 @@ function Overview({
   const delivered = settled.filter(
     (e) => e.status === "delivered" || e.status === "read",
   ).length;
-  const failed = out.filter((e) => e.status === "failed").length;
+  const failed =
+    data.messageStats?.failed ??
+    out.filter((e) => e.status === "failed").length;
   const waiting = data.conversations.filter(needsReply).length;
   const waitingApproval = data.automations.filter(
     (a) => a.on && !a.approved,
@@ -289,15 +291,31 @@ function Overview({
   const todo = attention.filter((a) => a[3]);
   return (
     <div className="space-y-6">
-      <StatusCard setup={setup} update={update} canManage={canManage} />
+      <StatusCard
+        setup={setup}
+        update={update}
+        canManage={canManage}
+        active={!!data.bookingActive}
+        ready={!!data.capabilities?.booking && !data.busy}
+      />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat label="Booked on WhatsApp today" value="—" />
-        <Stat label="Messages sent today" value={out.length} />
+        <Stat
+          label="Booked on WhatsApp today"
+          value={data.bookedToday ?? "—"}
+        />
+        <Stat
+          label="Messages accepted today"
+          value={
+            data.messageStats?.sent ??
+            out.filter((e) => ["sent", "delivered", "read"].includes(e.status))
+              .length
+          }
+        />
         <Stat
           label="Delivered"
           value={
-            settled.length
-              ? `${Math.round((delivered / settled.length) * 100)}%`
+            (data.messageStats?.settled ?? settled.length)
+              ? `${Math.round(((data.messageStats?.delivered ?? delivered) / (data.messageStats?.settled ?? settled.length)) * 100)}%`
               : "—"
           }
         />
@@ -493,20 +511,6 @@ function SettingsTab({
           ))}
         </dl>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            nativeButton={false}
-            render={
-              <a
-                href="https://business.facebook.com/wa/manage/home/"
-                target="_blank"
-                rel="noreferrer"
-              />
-            }
-          >
-            <ExternalLink /> Open WhatsApp Manager
-          </Button>
           <Button variant="ghost" size="sm" onClick={() => edit("connect")}>
             Change number
           </Button>
@@ -588,8 +592,7 @@ function SettingsTab({
           <span>
             <span className="font-medium">Away reply</span>
             <span className="block text-xs text-muted-foreground">
-              Sent once when a patient asks for staff after hours or while
-              bookings are paused.
+              Included in the opening booking reply outside reception hours.
             </span>
           </span>
           <Switch
@@ -611,7 +614,7 @@ function SettingsTab({
       </Section>
       <Section
         title="Quiet hours"
-        text="Automated reminders and follow-ups wait until morning. Booking replies are never held."
+        text="Appointment notices and promotions wait during quiet hours. Booking replies are never held."
       >
         <label className="flex items-center justify-between gap-4 text-sm">
           <span className="font-medium">Hold automated messages overnight</span>
@@ -666,20 +669,9 @@ function SettingsTab({
         title="Promotions consent"
         text="Promotions only go to patients who said yes."
       >
-        <label className="flex items-center justify-between gap-4 text-sm">
-          <span>
-            Ask after each WhatsApp booking: “Get health tips and offers from us
-            on WhatsApp?”
-          </span>
-          <Switch
-            checked={s.askConsent}
-            aria-label="Ask for promotions consent"
-            onCheckedChange={(askConsent) => set({ askConsent })}
-          />
-        </label>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Promotion consent counts are not available yet. Anyone can reply STOP
-          to opt out.
+        <p className="text-sm">
+          {data.optedIn} contacts opted in. Record explicit permission from the
+          inbox. Anyone can reply STOP to opt out.
         </p>
       </Section>
       <Section

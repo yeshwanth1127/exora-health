@@ -41,7 +41,16 @@ export function useManagedSetup() {
       version.current = q.data.version;
       loaded.current = true;
     }
-  }, [q.data]);
+  }, [q.data, saving]);
+  const refreshRef = useRef(q.refresh);
+  refreshRef.current = q.refresh;
+  useEffect(() => {
+    const refresh = () => {
+      void refreshRef.current();
+    };
+    window.addEventListener("hms-whatsapp-updated", refresh);
+    return () => window.removeEventListener("hms-whatsapp-updated", refresh);
+  }, [facility.facilityId]);
   const update = (patch: Patch) => {
     if (!loaded.current || error) return;
     const p = typeof patch === "function" ? patch(current.current) : patch;
@@ -77,6 +86,8 @@ export function useManagedSetup() {
         });
         version.current = result.version;
         keys.current.complete(path, body);
+        await q.refresh();
+        window.dispatchEvent(new Event("hms-whatsapp-updated"));
       } catch (e) {
         dirty.current = true;
         setError(

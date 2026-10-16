@@ -110,9 +110,9 @@ async function assertLiveBookingActor(ctx:CommandContext,site:PublicBookingSite)
       AND (p.facility_id IS NULL OR p.facility_id=${site.facilityId})) AS ok`.execute(ctx.tx);
   if(!r?.ok) throw forbidden('Online booking access has been withdrawn.');
 }
-export async function publicBook(db:Kysely<DB>,caller:Caller,site:PublicBookingSite,secret:string,input:PublicBookingInput,claim:SlotClaim,key:string) {
+export async function publicBook(db:Kysely<DB>,caller:Caller,site:PublicBookingSite,secret:string,input:PublicBookingInput,claim:SlotClaim,key:string,channel: 'web' | 'whatsapp' = 'web',whatsappContactId?:string) {
   if(claim.siteSlug!==site.siteSlug || claim.tenantId!==site.tenantId || claim.facilityId!==site.facilityId) throw forbidden('This time selection belongs to another clinic.');
-  return runCommand(db,{...caller,module:'booking',name:`booking.public_book.${site.siteSlug}`,idempotencyKey:key,request:input},async ctx=>{
+  return runCommand(db,{...caller,module:'booking',name:`booking.public_book.${site.siteSlug}${channel==='web'?'':'.whatsapp'}`,idempotencyKey:key,request:input},async ctx=>{
     const now=clock(caller);
     await assertLiveBookingActor(ctx,site);
     await lockCalendar(ctx.tx,site.tenantId);
@@ -163,8 +163,26 @@ export async function publicBook(db:Kysely<DB>,caller:Caller,site:PublicBookingS
       (SELECT resource_id FROM booking.reservation WHERE id=${hold.reservationId}),${day}::date,${day}::date)
       WHERE facility_id=${site.facilityId} AND tstzrange(starts_at,ends_at) @> tstzrange(${new Date(claim.startsAt)},${new Date(claim.endsAt)})`.execute(ctx.tx);
     if(sessions.length!==1 || sessions[0]!.healthcare_service_id!==claim.serviceId || sessions[0]!.visit_mode!==claim.visitMode)throw conflict('The schedule changed. Choose the appointment time again.');
-    const partyId=await createBookingParty(ctx,{name:input.name,phone:input.phone,...(input.email?{email:input.email}:{})},null,now);
-    const result=await confirmHeldReservation(ctx,now,hold.reservationId,{patientId:null,bookingPartyId:partyId,visitType:'new',originChannel:'web',priority:'normal',reason:input.reason??null,rescheduledFromId:null});
+    let verifiedWhatsApp=false;
+    if(channel==='whatsapp') {
+      const {rows:[proof]}=await sql<{ok:boolean}>`SELECT EXISTS(SELECT 1 FROM comms.contact_point p JOIN comms.conversation c ON c.contact_point_id=p.id AND c.tenant_id=p.tenant_id
+        JOIN comms.inbound_message i ON i.conversation_id=c.id AND i.tenant_id=c.tenant_id
+        WHERE p.id=${whatsappContactId??null} AND p.facility_id=${site.facilityId} AND p.address=${input.phone} AND p.status='active'
+        AND c.automation_state='automation' AND c.status='open' AND i.id=${key}::uuid AND upper(btrim(i.text_content))='CONFIRM'
+        AND EXISTS(SELECT 1 FROM comms.managed_connection mc WHERE mc.facility_id=p.facility_id AND mc.tenant_id=p.tenant_id AND mc.provider='whatsapp' AND mc.enabled AND mc.external_id=i.phone_number_id AND mc.metadata->>'subscribed'='true')
+        AND i.received_at>now()-interval '24 hours' AND comms.has_consent(p.id,'care')) AS ok`.execute(ctx.tx);
+      if(!proof?.ok)throw forbidden('WhatsApp booking requires a verified, consented confirmation.');verifiedWhatsApp=true;
+    }
+    const partyId=await createBookingParty(ctx,{name:input.name,phone:input.phone,...(input.email?{email:input.email}:{}),...(verifiedWhatsApp?{verifiedChannel:'whatsapp' as const}:{})},null,now);
+    if(verifiedWhatsApp) {
+      await sql`SET LOCAL ROLE mod_comms`.execute(ctx.tx);
+      const {rows:[contact]}=await sql<{id:string}>`INSERT INTO comms.contact_point(tenant_id,facility_id,booking_party_id,channel,address) VALUES(${site.tenantId},${site.facilityId},${partyId},'whatsapp',${input.phone}) RETURNING id`.execute(ctx.tx);
+      // Transfer only the explicit purposes belonging to this verified caller, never marketing or a clinical identity.
+      for(const purpose of ['care','reminders'])await sql`INSERT INTO comms.messaging_consent_event(tenant_id,contact_point_id,purpose,action,source,evidence,explicit_opt_in,recorded_by)
+        SELECT ${site.tenantId},${contact!.id},${purpose},'opt_in','provider','Explicit consent from the signed WhatsApp booking conversation',true,NULL WHERE comms.has_consent(${whatsappContactId!},${purpose})`.execute(ctx.tx);
+      await sql`SET LOCAL ROLE mod_booking`.execute(ctx.tx);
+    }
+    const result=await confirmHeldReservation(ctx,now,hold.reservationId,{patientId:null,bookingPartyId:partyId,visitType:'new',originChannel:channel,priority:'normal',reason:input.reason??null,rescheduledFromId:null});
     // Defend against a price/session change between the quote check and core confirmation.
     const saved=await ctx.tx.selectFrom('booking.appointment').select(['practitioner_staff_id','facility_id','healthcare_service_id','visit_mode','starts_at','ends_at','fee_snapshot_minor']).where('id','=',result.appointmentId).executeTakeFirstOrThrow();
     if(saved.practitioner_staff_id!==claim.staffId || saved.facility_id!==claim.facilityId || saved.healthcare_service_id!==claim.serviceId || saved.visit_mode!==claim.visitMode || saved.starts_at?.toISOString()!==claim.startsAt || saved.ends_at?.toISOString()!==claim.endsAt || saved.fee_snapshot_minor!==claim.feeMinor)

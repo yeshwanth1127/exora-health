@@ -43,7 +43,11 @@ export type TemplateDraft = Template & {
   rejection: string | null;
 };
 export type TemplateState =
-  "not_submitted" | "in_review" | "rejected" | "approved" | "edited";
+  | "not_submitted"
+  | "in_review"
+  | "rejected"
+  | "approved"
+  | "edited";
 
 const same = (a: Template, b: Template) =>
   a.body === b.body && a.buttons.join("\n") === b.buttons.join("\n");
@@ -329,7 +333,11 @@ export type Audience =
   | { kind: "specialty"; value: string }
   | { kind: "lapsed"; months: number };
 export type CampaignStatus =
-  "in_review" | "scheduled" | "sending" | "sent" | "rejected";
+  | "in_review"
+  | "scheduled"
+  | "sending"
+  | "sent"
+  | "rejected";
 export type Campaign = {
   id: string;
   name: string;
@@ -361,6 +369,14 @@ export type WaSettings = {
 };
 
 export type WaData = {
+  bookedToday?: number;
+  messageStats?: {
+    sent: number;
+    delivered: number;
+    settled: number;
+    failed: number;
+  };
+  bookingActive?: boolean;
   capabilities?: {
     sending: boolean;
     booking: boolean;

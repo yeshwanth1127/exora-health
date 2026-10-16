@@ -1,6 +1,6 @@
 {
-  "date": "2026-10-15",
-  "scope": "Local browser; integration responses mocked; workspace identity and reference data use isolated local PostgreSQL. This is not live provider acceptance.",
+  "date": "2026-10-16",
+  "scope": "Local PostgreSQL/API integration tests and browser fixtures; injected provider HTTP transports. Provider accounts/deployment are not provisioned. No real patient message or provider publication was sent.",
   "browserChecks": {
     "result": "PASS",
     "checks": [
@@ -16,7 +16,16 @@
       "Connected WhatsApp inbox renders",
       "WhatsApp reply uses one intent",
       "Consent refusal remains explicit",
-      "Rejected WhatsApp reply not displayed as sent"
+      "Rejected WhatsApp reply not displayed as sent",
+      "Booking activation waits for server confirmation",
+      "Booking activation submits one intent",
+      "Appointment notice toggle persists one intent",
+      "Promotion requires a persisted preview",
+      "Promotion approval submits one intent",
+      "Rejected promotion remains in review",
+      "Rejected promotion is never shown as scheduled",
+      "Operations request no provider credentials",
+      "Promotion review fits a 390px screen"
     ],
     "widths": [
       {
@@ -31,9 +40,9 @@
   },
   "backend": {
     "result": "PASS",
-    "tests": 398,
-    "files": 37,
-    "targetedNewTests": 18
+    "tests": 409,
+    "files": 38,
+    "targetedNewTests": 29
   },
   "staff": {
     "result": "PASS",
@@ -41,6 +50,24 @@
   },
   "typecheck": "PASS",
   "staffBuild": "PASS; existing bundle-size warning",
-  "liveProviders": "UNVERIFIABLE: no provider credentials or public callback deployment configured",
-  "deployment": "NOT PERFORMED"
+  "liveProviders": "UNVERIFIABLE: user confirmed accounts and deployment URL are not provisioned; Meta app metadata inspection only (development mode, existing Avocado webhook unchanged).",
+  "deployment": "NOT PERFORMED",
+  "operatorPreflight": {
+    "database": "PASS",
+    "providerConfiguration": "EXPECTED NOT READY",
+    "exitCode": 2,
+    "secretsReturned": false
+  },
+  "minimalReleaseExclusions": [
+    "Media uploads",
+    "Advanced Google category/service/attribute/holiday publishing",
+    "Automatic review requests",
+    "Arbitrary marketing-template design",
+    "Automatic instrumentation of a separate website repository"
+  ],
+  "localRuntime": {
+    "api": "PASS: /health and /ready; development authentication; port 3069",
+    "worker": "PASS: started with live sending disabled; no provider dispatch enabled",
+    "staff": "Local dev preview at port 5199"
+  }
 }

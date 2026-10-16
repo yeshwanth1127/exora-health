@@ -1,3 +1,8 @@
+import { createHmac } from 'node:crypto';
+import { seal, type ManagedSettings } from '../modules/comms/managed-config.ts';
+import { dispatchBookingChats } from '../modules/comms/managed-booking-chat.ts';
+import { dispatchManagedWhatsApp } from '../modules/comms/managed-whatsapp.ts';
+import { dispatchAnalyticsMirror } from '../modules/comms/managed-analytics.ts';
 import { randomUUID } from 'node:crypto';
 import { beforeAll,afterAll,describe,it,expect } from 'vitest';
 import type { FastifyInstance } from 'fastify';
@@ -10,6 +15,14 @@ import { readSlot,signSlot,type PublicBookingSite } from '../modules/booking/pub
 let k:Kit,app:FastifyInstance,admin:Person,doctor:Person,site:PublicBookingSite,service:string,department:string,resource:string;
 const secret='public-booking-test-signing-secret-12345',origin='http://127.0.0.1:5210',day=nextMonday();
 const prefix='/public/v1/booking/sri-lakshmi';
+const sent:any[]=[],mirrored:any[]=[];
+let mirrorFails=false;
+const managed:ManagedSettings={encryptionKey:Buffer.alloc(32,8),publicOrigin:'https://dashboard.example.com',whatsappSending:true,meta:{appId:'123456',appSecret:'test-managed-secret',configId:'123456',graphVersion:'v23.0'},umami:{origin:'https://analytics.example.com',key:'private-test-key'},posthog:{origin:'https://us.i.posthog.com',key:'private-mirror-key'},fetcher:async(url,init={})=>{
+  if(String(url).includes('posthog.com')){mirrored.push(JSON.parse(String(init.body)));return new Response('{}',{status:mirrorFails?503:200});}
+  if(String(url).endsWith('/messages')){sent.push(JSON.parse(String(init.body)));return new Response(JSON.stringify({messages:[{id:'wamid.test-'+sent.length}]}));}
+  return new Response('{}');
+}};
+const priorSecret=process.env.WA_APP_SECRET;
 const payload=(token:string)=>({slotToken:token,name:'Example Person',phone:'+919988776655'});
 async function request(method:'GET'|'POST',path:string,body?:object,key=randomUUID(),requestOrigin:string|null=origin) {
   const r=await app.inject({method,url:prefix+path,headers:{...(requestOrigin?{origin:requestOrigin}:{}),...(method==='POST'?{'idempotency-key':key}:{})},...(body?{payload:body}:{})});
@@ -35,9 +48,11 @@ beforeAll(async()=>{
   resource=await one("INSERT INTO booking.schedulable_resource(tenant_id,staff_id,kind,name)VALUES($1,$2,'practitioner','Doctor')RETURNING id",[site.tenantId,doctor.staffId]);
   await k.admin.query("INSERT INTO booking.schedule_rule(tenant_id,resource_id,facility_id,weekday,start_local,end_local,slot_minutes,healthcare_service_id,visit_mode,effective_from)VALUES($1,$2,$3,1,'09:00','13:00',15,$4,'in_person','2020-01-01')",[site.tenantId,resource,site.facilityId,service]);
   await k.admin.query("INSERT INTO platform.module_state(tenant_id,module_code,state)VALUES($1,'booking','active')ON CONFLICT(tenant_id,module_code)DO UPDATE SET state='active'",[site.tenantId]);
-  app=buildServer({db:k.db,verifier:createVerifier({mode:'dev',secret:DEV_SECRET_DEFAULT,issuer:DEV_ISSUER}),publicBooking:{sites:[site],signingSecret:secret}});
+  managed.booking={sites:[site],signingSecret:secret};
+  process.env.WA_APP_SECRET=managed.meta!.appSecret;
+  app=buildServer({db:k.db,managed,verifier:createVerifier({mode:'dev',secret:DEV_SECRET_DEFAULT,issuer:DEV_ISSUER}),publicBooking:{sites:[site],signingSecret:secret}});
 });
-afterAll(async()=>{await app?.close();await k?.close();});
+afterAll(async()=>{if(priorSecret===undefined)delete process.env.WA_APP_SECRET;else process.env.WA_APP_SECRET=priorSecret;await app?.close();await k?.close();});
 
 describe('public website booking into HMS',()=>{
   it('returns published backend profiles only and accepts no staff credentials or patient chart request',async()=>{
@@ -158,5 +173,75 @@ describe('public website booking into HMS',()=>{
     expect(status).toBe(429);
     const budget=(await k.admin.query('SELECT subject_hash FROM booking.public_request_budget WHERE tenant_id=$1',[site.tenantId])).rows;
     expect(budget.every(r=>/^[0-9a-f]{64}$/.test(r.subject_hash))).toBe(true);
+  });
+});
+
+describe('managed booking operations',()=>{
+  beforeAll(async()=>{
+    await k.admin.query("INSERT INTO platform.role_grant(tenant_id,staff_id,role_id,facility_id) SELECT $1,u.staff_id,r.id,$2 FROM platform.user_account u CROSS JOIN platform.role r WHERE u.identity_subject=$3 AND r.tenant_id IS NULL AND r.code='front_desk'",[site.tenantId,site.facilityId,site.identitySubject]);
+    await k.admin.query('DELETE FROM booking.public_request_budget WHERE tenant_id=$1',[site.tenantId]);
+    await k.admin.query("INSERT INTO platform.module_state(tenant_id,module_code,state)VALUES($1,'comms','active')ON CONFLICT(tenant_id,module_code)DO UPDATE SET state='active'",[site.tenantId]);
+  });
+  let chatId:string;
+  const phone='777777777777777',waba='888888888888888';
+  async function inbound(text:string,id=randomUUID()) {
+    const value={metadata:{phone_number_id:phone},messages:[{id,from:'919999887766',timestamp:String(Math.floor(Date.now()/1000)),type:'text',text:{body:text}}]};
+    const raw=JSON.stringify({object:'whatsapp_business_account',entry:[{id:waba,changes:[{field:'messages',value}]}]});
+    const response=await app.inject({method:'POST',url:'/v1/integrations/whatsapp/webhook',headers:{'content-type':'application/json','x-hub-signature-256':'sha256='+createHmac('sha256',managed.meta!.appSecret).update(raw).digest('hex')},payload:raw});
+    expect(response.statusCode,response.body).toBe(200);await k.dispatch();
+    await Promise.all([dispatchBookingChats(k.db,managed),dispatchBookingChats(k.db,managed)]);
+    const latest=(await k.admin.query("SELECT m.text_content,m.conversation_id FROM comms.outbound_message m JOIN comms.inbound_message i ON i.id=m.managed_inbound_id WHERE i.provider_message_id=$1",[id])).rows[0];
+    if(latest)chatId=latest.conversation_id;
+    return latest?.text_content as string|undefined;
+  }
+  it('persists the real consent -> doctor -> time -> name -> confirmation conversation exactly once',async()=>{
+    const credential=seal(managed,{token:'test-never-return-token'},`${site.tenantId}:${site.facilityId}:whatsapp`);
+    await k.admin.query("INSERT INTO comms.channel_account(tenant_id,facility_id,phone_number_id) VALUES($1,$2,$3)",[site.tenantId,site.facilityId,phone]);
+    await k.admin.query("INSERT INTO comms.managed_connection(tenant_id,facility_id,provider,external_id,credential,metadata,created_by)VALUES($1,$2,'whatsapp',$3,$4,$5,$6)",[site.tenantId,site.facilityId,phone,credential,JSON.stringify({subscribed:true,businessAccountId:waba}),admin.staffId]);
+    await k.admin.query("INSERT INTO comms.whatsapp_workspace(tenant_id,facility_id,draft,preferences,created_by,booking_enabled_at)VALUES($1,$2,$3,$4,$5,now()-interval '1 minute')",[site.tenantId,site.facilityId,JSON.stringify({live:false,paused:false}),JSON.stringify({quiet:{on:false,from:'21:00',to:'08:00'}}),admin.staffId]);
+    const workspace=await app.inject({method:'GET',url:`/v1/whatsapp-workspace?facilityId=${site.facilityId}`,headers:{authorization:`Bearer ${admin.token}`}});
+    expect(workspace.statusCode).toBe(200);const stored=workspace.json(),{connected,...draft}=stored.setup;
+    const activation=await app.inject({method:'PUT',url:'/v1/whatsapp-workspace',headers:{authorization:`Bearer ${admin.token}`,'idempotency-key':randomUUID()},payload:{facilityId:site.facilityId,version:stored.version,draft:{...draft,live:true},preferences:stored.data.settings}});
+    expect(activation.statusCode,activation.body).toBe(200);
+    expect(await inbound('HI')).toContain('reply YES');
+    expect(await inbound('YES')).toContain('Reply REMIND');
+    expect(await inbound('REMIND')).toContain('Dr Real');
+    expect(await inbound('1')).toContain('visit type');
+    expect(await inbound('1')).toContain('Choose an available time');
+    expect(await inbound('1')).toContain('full name');
+    expect(await inbound('Synthetic Visitor')).toContain('Reply CONFIRM');
+    const id=randomUUID(),confirmation=await inbound('CONFIRM',id);
+    expect(confirmation).toContain('Your appointment is confirmed.');
+    await inbound('CONFIRM',id);
+    const appointments=(await k.admin.query("SELECT a.id,a.patient_id,a.origin_channel,b.phone FROM booking.appointment a JOIN booking.booking_party b ON b.id=a.booking_party_id WHERE a.tenant_id=$1 AND a.origin_channel='whatsapp'",[site.tenantId])).rows;
+    expect(appointments).toHaveLength(1);
+    expect((await k.admin.query("SELECT comms.has_consent(p.id,'reminders') ok FROM comms.contact_point p JOIN booking.appointment a ON a.booking_party_id=p.booking_party_id WHERE a.id=$1",[appointments[0].id])).rows[0].ok).toBe(true);expect(appointments[0]).toMatchObject({patient_id:null,origin_channel:'whatsapp',phone:'+919999887766'});
+    expect((await k.admin.query("SELECT count(*)::int n FROM comms.outbound_message m JOIN comms.inbound_message i ON i.id=m.managed_inbound_id WHERE i.provider_message_id=$1",[id])).rows[0].n).toBe(1);
+    await Promise.all([dispatchManagedWhatsApp(k.db,managed),dispatchManagedWhatsApp(k.db,managed)]);
+    expect(sent.filter(m=>m.text?.body?.includes('Your appointment is confirmed.'))).toHaveLength(1);
+    expect((await k.admin.query("SELECT count(*)::int n FROM comms.outbound_message WHERE conversation_id=$1 AND status='sent'",[chatId])).rows[0].n).toBe(8);
+  });
+  it('human handoff and STOP block queued automated sends and do not create bookings',async()=>{
+    await inbound('RESTART');
+    expect(await inbound('HUMAN')).toBeUndefined();
+    const before=sent.length;await dispatchManagedWhatsApp(k.db,managed);expect(sent).toHaveLength(before);
+    expect((await k.admin.query('SELECT automation_state FROM comms.conversation WHERE id=$1',[chatId])).rows[0].automation_state).toBe('handoff_requested');
+    await k.admin.query("UPDATE comms.conversation SET automation_state='automation' WHERE id=$1",[chatId]);
+    await inbound('RESTART');await inbound('STOP');
+    await dispatchManagedWhatsApp(k.db,managed);expect(sent).toHaveLength(before);
+    expect((await k.admin.query("SELECT comms.has_consent(contact_point_id,'care') ok FROM comms.conversation WHERE id=$1",[chatId])).rows[0].ok).toBe(false);
+  });
+  it('attributes only committed, origin-matched website bookings once and mirrors no personal data',async()=>{
+    const id=randomUUID();await k.admin.query("INSERT INTO comms.analytics_site(id,tenant_id,facility_id,origin,kind,umami_id,enabled,created_by)VALUES($1,$2,$3,$4,'booking',$5,true,$6)",[id,site.tenantId,site.facilityId,origin,randomUUID(),admin.staffId]);
+    const [slot]=await slots(),key=randomUUID(),input={...payload(slot!.slotToken),phone:'+919988770009'};
+    const made=await request('POST','/appointments',input,key);expect(made.status,JSON.stringify(made.body)).toBe(201);
+    expect((await request('POST','/appointments',input,key)).body).toEqual(made.body);
+    expect((await k.admin.query('SELECT count(*)::int n FROM comms.booking_attribution WHERE appointment_id=$1',[made.body.appointmentId])).rows[0].n).toBe(1);
+    mirrorFails=true;await dispatchAnalyticsMirror(k.db,managed);expect(mirrored).toHaveLength(1);
+    await k.admin.query("UPDATE comms.analytics_mirror SET next_attempt_at=now() WHERE tenant_id=$1",[site.tenantId]);
+    mirrorFails=false;await Promise.all([dispatchAnalyticsMirror(k.db,managed),dispatchAnalyticsMirror(k.db,managed)]);
+    expect(mirrored).toHaveLength(2);expect(mirrored[0].uuid).toBe(mirrored[1].uuid);
+    const report=JSON.stringify(mirrored);for(const value of [input.name,input.phone,made.body.appointmentId,made.body.confirmationCode,'patient_id','booking_party_id'])expect(report).not.toContain(value);
+    expect(mirrored[0]).toMatchObject({event:'booking_completed',properties:{$process_person_profile:false,page:'/book'}});
   });
 });

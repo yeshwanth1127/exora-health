@@ -1,7 +1,10 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { preconditionFailed } from "@hms/platform";
 
+import { loadPublicBookingConfig, type PublicBookingConfig } from "../booking/public-config.ts";
+
 export interface ManagedSettings {
+  booking?: PublicBookingConfig;
   fetcher: typeof fetch;
   encryptionKey?: Buffer;
   publicOrigin?: string;
@@ -21,6 +24,7 @@ export function loadManagedSettings(
 ): ManagedSettings {
   const settings: ManagedSettings = {
     fetcher: fetch,
+    booking: loadPublicBookingConfig(env),
     whatsappSending: env.WA_MANAGED_SENDING_ENABLED === "true",
   };
   const origin = (value: string, local = false) => {

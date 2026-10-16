@@ -1,3 +1,5 @@
+import { broadcastPayload } from "./managed-promotions.ts";
+import { reminderPayload, quietNow } from "./managed-automations.ts";
 import { createHash, randomBytes, randomInt } from "node:crypto";
 import { z } from "zod";
 import { sql, type DB, type Kysely, type Transaction } from "@hms/db";
@@ -28,6 +30,11 @@ import {
 } from "./whatsapp.ts";
 import type { WhatsAppBinding } from "./whatsapp-provider-config.ts";
 import { addressLock } from "./notifications.ts";
+import {
+  bookingAuthority,
+  bookingSite,
+  verifyChatActivation,
+} from "./managed-booking-chat.ts";
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 const aad = (t: string, f: string) => `${t}:${f}:whatsapp`;
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
@@ -128,6 +135,20 @@ export async function whatsappDashboard(
     );
     return row;
   });
+  const validWindows = await runQuery(
+    db,
+    caller.tenantId,
+    async (tx) =>
+      new Set(
+        (
+          await sql<{
+            conversation_id: string;
+          }>`SELECT DISTINCT conversation_id FROM comms.inbound_message WHERE phone_number_id=${conn?.external_id ?? ""} AND received_at>now()-interval '24 hours'`.execute(
+            tx,
+          )
+        ).rows.map((r) => r.conversation_id),
+      ),
+  );
   const list = await conversations(
     db,
     caller,
@@ -136,8 +157,8 @@ export async function whatsappDashboard(
   );
   const activity = await runQuery(db, caller.tenantId, async (tx) => {
     const { rows } = await sql<any>`SELECT * FROM (
-      SELECT m.id,m.conversation_id,m.created_at,m.updated_at,p.address,m.text_content,m.status,'out'::text AS direction FROM comms.outbound_message m JOIN comms.contact_point p ON p.id=m.contact_point_id AND p.tenant_id=m.tenant_id WHERE m.facility_id=${facilityId} AND m.conversation_id IS NOT NULL
-      UNION ALL SELECT m.id,m.conversation_id,m.received_at AS created_at,m.received_at AS updated_at,p.address,m.text_content,'received'::text AS status,'in'::text AS direction FROM comms.inbound_message m JOIN comms.conversation c ON c.id=m.conversation_id AND c.tenant_id=m.tenant_id JOIN comms.contact_point p ON p.id=c.contact_point_id AND p.tenant_id=c.tenant_id WHERE c.facility_id=${facilityId}
+      SELECT m.id,m.conversation_id,m.created_at,m.updated_at,p.address,m.text_content,m.status,m.managed_purpose,'out'::text AS direction FROM comms.outbound_message m JOIN comms.contact_point p ON p.id=m.contact_point_id AND p.tenant_id=m.tenant_id WHERE m.facility_id=${facilityId} AND (m.conversation_id IS NOT NULL OR m.managed_send_requested)
+      UNION ALL SELECT m.id,m.conversation_id,m.received_at AS created_at,m.received_at AS updated_at,p.address,m.text_content,'received'::text AS status,NULL::text AS managed_purpose,'in'::text AS direction FROM comms.inbound_message m JOIN comms.conversation c ON c.id=m.conversation_id AND c.tenant_id=m.tenant_id JOIN comms.contact_point p ON p.id=c.contact_point_id AND p.tenant_id=c.tenant_id WHERE c.facility_id=${facilityId}
     ) activity ORDER BY created_at DESC,id DESC LIMIT 100`.execute(tx);
     const {
       rows: [count],
@@ -146,7 +167,24 @@ export async function whatsappDashboard(
     }>`SELECT count(DISTINCT address)::int AS n FROM comms.contact_point WHERE facility_id=${facilityId} AND status='active' AND comms.has_consent(id,'marketing')`.execute(
       tx,
     );
+    const {
+      rows: [booked],
+    } = await sql<{
+      n: number;
+    }>`SELECT count(*)::int AS n FROM booking.appointment a JOIN platform.facility f ON f.id=a.facility_id AND f.tenant_id=a.tenant_id WHERE a.facility_id=${facilityId} AND a.origin_channel='whatsapp' AND (a.created_at AT TIME ZONE f.timezone)::date=(now() AT TIME ZONE f.timezone)::date`.execute(
+      tx,
+    );
+    const {
+      rows: [stats],
+    } =
+      await sql<any>`SELECT count(*) FILTER(WHERE m.status IN('sent','delivered','read'))::int AS sent,count(*) FILTER(WHERE m.status IN('delivered','read'))::int AS delivered,count(*) FILTER(WHERE m.status IN('delivered','read','failed'))::int AS settled,count(*) FILTER(WHERE m.status='failed')::int AS failed
+      FROM comms.outbound_message m JOIN platform.facility f ON f.id=m.facility_id AND f.tenant_id=m.tenant_id
+      WHERE m.facility_id=${facilityId} AND m.managed_send_requested AND (m.created_at AT TIME ZONE f.timezone)::date=(now() AT TIME ZONE f.timezone)::date`.execute(
+        tx,
+      );
     return {
+      messageStats: stats,
+      bookedToday: booked?.n ?? 0,
       optedIn: count?.n ?? 0,
       log: rows.map((r) => ({
         id: r.id,
@@ -157,9 +195,28 @@ export async function whatsappDashboard(
           ? r.address
           : r.address.slice(0, 3) + " ••••• " + r.address.slice(-5),
         direction: r.direction,
-        kind: r.direction === "in" ? "Patient message" : "Staff reply",
-        template: null,
-        category: "service",
+        kind:
+          r.direction === "in"
+            ? "Patient message"
+            : r.managed_purpose === "broadcast"
+              ? "Promotion"
+              : r.managed_purpose === "reminder"
+                ? "Appointment notice"
+                : r.managed_purpose?.startsWith("booking")
+                  ? "Booking assistant"
+                  : "Staff reply",
+        template:
+          r.managed_purpose === "reminder"
+            ? "Appointment notice"
+            : r.managed_purpose === "broadcast"
+              ? "Promotion"
+              : null,
+        category:
+          r.managed_purpose === "broadcast"
+            ? "marketing"
+            : r.managed_purpose === "reminder"
+              ? "utility"
+              : "service",
         body: r.text_content ?? "",
         status: r.status,
         history: [{ status: r.status, at: new Date(r.updated_at).getTime() }],
@@ -177,19 +234,24 @@ export async function whatsappDashboard(
       connected: conn?.metadata.subscribed
         ? { phone: conn.metadata.phone, name: conn.metadata.name }
         : null,
-      live: false,
     },
     capabilities: {
       sending: !!settings.whatsappSending && !!conn?.metadata.subscribed,
-      booking: false,
-      automations: false,
-      campaigns: false,
+      booking:
+        !!settings.booking?.sites.some(
+          (s) => s.tenantId === caller.tenantId && s.facilityId === facilityId,
+        ) && !!settings.whatsappSending,
+      automations: !!settings.meta && !!conn?.metadata.subscribed,
+      campaigns: !!settings.meta && !!conn?.metadata.subscribed,
       uploads: true,
     },
     data: {
       v: 1,
       day: clock(caller).toISOString().slice(0, 10),
       optedIn: activity.optedIn,
+      bookedToday: activity.bookedToday,
+      messageStats: activity.messageStats,
+      bookingActive: !!stored?.draft.live && !stored?.draft.paused,
       automations: [],
       campaigns: [],
       log: activity.log,
@@ -197,11 +259,16 @@ export async function whatsappDashboard(
       conversations: list.items.map((c) => ({
         id: c.id,
         version: c.version,
-        canReply: c.canReply,
+        canReply: c.canReply && validWindows.has(c.id),
         patient: c.name ?? "WhatsApp visitor",
         phone: c.contactAddress,
         reason: "",
-        status: c.status === "closed" ? "resolved" : "open",
+        status:
+          c.status === "closed"
+            ? "resolved"
+            : c.automationState === "automation"
+              ? "bot"
+              : "open",
         assignee: c.assignedStaffName,
         messages: activity.log
           .filter((e) => e.conversationId === c.id)
@@ -226,11 +293,14 @@ export async function saveWhatsAppWorkspace(
   draft: z.infer<typeof WhatsAppDraft>,
   prefs: z.infer<typeof WhatsAppPreferences>,
   key: string,
+  settings: ManagedSettings,
 ) {
-  if (draft.live)
-    throw preconditionFailed(
-      "Automatic booking is not available yet. You can connect your number and manage conversations here.",
-    );
+  if (draft.live) {
+    await verifyChatActivation(db, caller, facilityId, settings);
+    const c = await connection(db, caller, facilityId, "whatsapp");
+    if (!c?.metadata.subscribed)
+      throw preconditionFailed("Connect WhatsApp before accepting bookings.");
+  }
   if (Object.keys(draft.content).length || draft.steps.some((s) => s.header))
     throw preconditionFailed(
       "Upload files using the clinic document controls before adding them to a booking flow.",
@@ -271,8 +341,8 @@ export async function saveWhatsAppWorkspace(
       } = await sql<{
         id: string;
         version: number;
-      }>`INSERT INTO comms.whatsapp_workspace(tenant_id,facility_id,draft,preferences,created_by) VALUES(${caller.tenantId},${facilityId},${JSON.stringify(draft)}::jsonb,${JSON.stringify(prefs)}::jsonb,${caller.actor.staffId!})
-      ON CONFLICT(tenant_id,facility_id) DO UPDATE SET draft=EXCLUDED.draft,preferences=EXCLUDED.preferences RETURNING id,version`.execute(
+      }>`INSERT INTO comms.whatsapp_workspace(tenant_id,facility_id,draft,preferences,created_by,booking_enabled_at) VALUES(${caller.tenantId},${facilityId},${JSON.stringify(draft)}::jsonb,${JSON.stringify(prefs)}::jsonb,${caller.actor.staffId!},${draft.live ? new Date() : null})
+      ON CONFLICT(tenant_id,facility_id) DO UPDATE SET booking_enabled_at=CASE WHEN EXCLUDED.draft->>'live'='true' AND (comms.whatsapp_workspace.draft->>'live' IS DISTINCT FROM 'true' OR (comms.whatsapp_workspace.draft->>'paused'='true' AND coalesce(EXCLUDED.draft->>'paused','false')<>'true')) THEN now() ELSE comms.whatsapp_workspace.booking_enabled_at END,draft=EXCLUDED.draft,preferences=EXCLUDED.preferences RETURNING id,version`.execute(
         ctx.tx,
       );
       ctx.audit({
@@ -561,10 +631,15 @@ export async function dispatchManagedWhatsApp(
       const {
         rows: [m],
       } =
-        await sql<any>`SELECT m.*,c.id AS connection_id,c.external_id,c.metadata,c.credential FROM comms.outbound_message m JOIN comms.managed_connection c ON c.tenant_id=m.tenant_id AND c.facility_id=m.facility_id AND c.provider='whatsapp' AND c.enabled WHERE m.id=${row.id} AND m.status='queued' AND m.managed_send_requested AND c.metadata->>'subscribed'='true' FOR UPDATE OF m`.execute(
+        await sql<any>`SELECT m.*,c.id AS connection_id,c.external_id,c.metadata,c.credential,c.enabled FROM comms.outbound_message m JOIN comms.managed_connection c ON c.tenant_id=m.tenant_id AND c.facility_id=m.facility_id AND c.provider='whatsapp' AND c.enabled WHERE m.id=${row.id} AND m.status='queued' AND m.managed_send_requested AND c.metadata->>'subscribed'='true' FOR UPDATE OF m`.execute(
           tx,
         );
       if (!m) return null;
+      if (
+        ["reminder", "broadcast"].includes(m.managed_purpose) &&
+        (await quietNow(tx, m.facility_id))
+      )
+        return null;
       const {
         rows: [d],
       } = await sql<{
@@ -591,6 +666,41 @@ export async function dispatchManagedWhatsApp(
         );
         if (!contact) throw Error();
         await addressLock(tx, row.tenant_id, contact.address);
+        await sql`SELECT pg_advisory_xact_lock(hashtextextended('access:' || ${row.tenant_id},0))`.execute(
+          tx,
+        );
+        await sql`SET LOCAL ROLE mod_platform`.execute(tx);
+        await sql`SELECT id FROM platform.tenant WHERE id=${row.tenant_id} FOR SHARE`.execute(
+          tx,
+        );
+        await sql`SELECT id FROM platform.facility WHERE id=${claim.facility_id} FOR SHARE`.execute(
+          tx,
+        );
+        await sql`SELECT id FROM platform.module_state WHERE module_code='comms' FOR SHARE`.execute(
+          tx,
+        );
+        await sql`SET LOCAL ROLE mod_comms`.execute(tx);
+        const {
+          rows: [operational],
+        } = await sql<{
+          ok: boolean;
+        }>`SELECT EXISTS(SELECT 1 FROM platform.tenant t JOIN platform.facility f ON f.tenant_id=t.id WHERE t.status IN('active','trial') AND f.id=${claim.facility_id} AND f.status='active') AS ok`.execute(
+          tx,
+        );
+        if (!operational?.ok) throw Error();
+        await assertWhatsAppActive(tx);
+        // Disconnect/reconnect cannot race a provider request using a superseded credential.
+        const {
+          rows: [currentConnection],
+        } =
+          await sql`SELECT id FROM comms.managed_connection WHERE id=${claim.connection_id} AND enabled AND credential=${claim.credential} AND external_id=${claim.external_id} AND metadata->>'subscribed'='true' FOR SHARE`.execute(
+            tx,
+          );
+        if (
+          !currentConnection ||
+          claim.managed_details.phoneNumberId !== claim.external_id
+        )
+          throw Error();
         const {
           rows: [valid],
         } = await sql<{
@@ -599,12 +709,40 @@ export async function dispatchManagedWhatsApp(
           JOIN platform.staff s ON s.id=${claim.created_by} AND s.tenant_id=c.tenant_id AND s.status='active'
           JOIN platform.facility f ON f.id=c.facility_id AND f.tenant_id=c.tenant_id AND f.status='active'
           WHERE c.id=${claim.conversation_id} AND c.status='open' AND p.status='active' AND comms.has_consent(p.id,'care') AND c.last_inbound_at>now()-interval '24 hours'
+          AND EXISTS(SELECT 1 FROM comms.inbound_message i WHERE i.conversation_id=c.id AND i.phone_number_id=${claim.external_id} AND i.received_at>now()-interval '24 hours')
           AND EXISTS(SELECT 1 FROM platform.staff_permission sp WHERE sp.staff_id=s.id AND sp.permission='comms.reply' AND (sp.facility_id IS NULL OR sp.facility_id=c.facility_id))
           AND EXISTS(SELECT 1 FROM platform.user_account u WHERE u.staff_id=s.id AND u.status='active')
           AND EXISTS(SELECT 1 FROM comms.managed_connection mc WHERE mc.id=${claim.connection_id} AND mc.enabled AND mc.external_id=${claim.external_id} AND mc.credential=${claim.credential} AND mc.metadata->>'subscribed'='true')) AS ok`.execute(
           tx,
         );
-        if (!valid?.ok) throw Error();
+        let templateBody: any;
+        if (claim.managed_purpose === "broadcast") {
+          templateBody = await broadcastPayload(tx, claim, settings);
+        } else if (claim.managed_purpose === "reminder") {
+          templateBody = await reminderPayload(tx, claim, settings);
+        } else if (claim.managed_purpose === "reply") {
+          if (!valid?.ok) throw Error();
+        } else {
+          const {
+            rows: [bot],
+          } = await sql<{
+            ok: boolean;
+          }>`SELECT EXISTS(SELECT 1 FROM comms.conversation c JOIN comms.contact_point p ON p.id=c.contact_point_id AND p.tenant_id=c.tenant_id
+            JOIN comms.whatsapp_workspace w ON w.facility_id=c.facility_id AND w.tenant_id=c.tenant_id
+            JOIN platform.facility f ON f.id=c.facility_id AND f.tenant_id=c.tenant_id AND f.status='active'
+            JOIN comms.inbound_message i ON i.id=${claim.managed_inbound_id} AND i.tenant_id=c.tenant_id AND i.conversation_id=c.id
+            JOIN comms.managed_connection mc ON mc.id=${claim.connection_id} AND mc.tenant_id=c.tenant_id AND mc.enabled AND mc.credential=${claim.credential} AND mc.metadata->>'subscribed'='true'
+            WHERE c.id=${claim.conversation_id} AND c.status='open' AND c.automation_state='automation' AND p.status='active' AND c.last_inbound_at>now()-interval '24 hours'
+            AND w.draft->>'live'='true' AND coalesce(w.draft->>'paused','false')<>'true' AND i.created_at>=w.booking_enabled_at AND i.phone_number_id=${claim.external_id}
+            AND (comms.has_consent(p.id,'care') OR (${claim.managed_purpose}='booking_prompt' AND NOT EXISTS(SELECT 1 FROM comms.messaging_consent_event e JOIN comms.contact_point alias ON alias.id=e.contact_point_id AND alias.tenant_id=e.tenant_id WHERE alias.address=p.address AND e.action='stop' AND e.occurred_at>i.created_at)))) AS ok`.execute(
+            tx,
+          );
+          if (!bot?.ok) throw Error();
+          await bookingAuthority(
+            db,
+            bookingSite(settings, row.tenant_id, claim.facility_id),
+          );
+        }
         const tokens = unseal<{ token: string }>(
           settings,
           claim.credential,
@@ -625,8 +763,10 @@ export async function dispatchManagedWhatsApp(
                 messaging_product: "whatsapp",
                 recipient_type: "individual",
                 to: contact.address.replace("+", ""),
-                type: "text",
-                text: { preview_url: false, body: claim.text_content },
+                ...(templateBody ?? {
+                  type: "text",
+                  text: { preview_url: false, body: claim.text_content },
+                }),
               }),
             },
           );
@@ -658,10 +798,10 @@ export async function dispatchManagedWhatsApp(
       });
     } catch {
       await tenantTx(db, row.tenant_id, async (tx) => {
-        await sql`UPDATE comms.managed_delivery SET state='uncertain' WHERE id=${claim.attemptId} AND state='claimed'`.execute(
+        await sql`UPDATE comms.managed_delivery SET state='failed' WHERE id=${claim.attemptId} AND state='claimed'`.execute(
           tx,
         );
-        await sql`UPDATE comms.outbound_message SET status='unknown' WHERE id=${row.id} AND status='claimed'`.execute(
+        await sql`UPDATE comms.outbound_message SET status='cancelled' WHERE id=${row.id} AND status='claimed'`.execute(
           tx,
         );
       });
@@ -676,7 +816,25 @@ export async function whatsappThread(
   id: string,
   reveal: boolean,
 ) {
-  return thread(db, caller, id, reveal);
+  const result = await thread(db, caller, id, reveal);
+  const c = await connection(
+    db,
+    caller,
+    result.conversation.facilityId,
+    "whatsapp",
+  );
+  const window = await runQuery(
+    db,
+    caller.tenantId,
+    async (tx) =>
+      (
+        await sql`SELECT id FROM comms.inbound_message WHERE conversation_id=${id} AND phone_number_id=${c?.external_id ?? ""} AND received_at>now()-interval '24 hours' LIMIT 1`.execute(
+          tx,
+        )
+      ).rows.length > 0,
+  );
+  result.conversation.canReply = result.conversation.canReply && !!c && window;
+  return result;
 }
 export async function whatsappCommand(
   db: Kysely<DB>,
@@ -687,10 +845,27 @@ export async function whatsappCommand(
   key: string,
   settings: ManagedSettings,
 ) {
+  if (action === "resume") {
+    const ready = await runQuery(
+      db,
+      caller.tenantId,
+      async (tx) =>
+        (
+          await sql`SELECT w.id FROM comms.whatsapp_workspace w JOIN comms.conversation c ON c.facility_id=w.facility_id AND c.tenant_id=w.tenant_id WHERE c.id=${id} AND w.draft->>'live'='true' AND coalesce(w.draft->>'paused','false')<>'true'`.execute(
+            tx,
+          )
+        ).rows.length > 0,
+    );
+    if (!ready)
+      throw preconditionFailed(
+        "Enable booking before handing this conversation back to the assistant.",
+      );
+  }
   if (action === "reply" && !settings.whatsappSending)
     throw preconditionFailed(
       "WhatsApp sending is not available yet. Your reply was not queued.",
     );
+  let managedDetails: Record<string, string> = {};
   if (action === "reply") {
     const facilityId = await runQuery(
       db,
@@ -707,6 +882,21 @@ export async function whatsappCommand(
     const conn = await connection(db, caller, facilityId, "whatsapp");
     if (!conn?.metadata.subscribed)
       throw preconditionFailed("Connect WhatsApp before sending a reply.");
+    const hasWindow = await runQuery(
+      db,
+      caller.tenantId,
+      async (tx) =>
+        (
+          await sql`SELECT id FROM comms.inbound_message WHERE conversation_id=${id} AND phone_number_id=${conn.external_id} AND received_at>now()-interval '24 hours' LIMIT 1`.execute(
+            tx,
+          )
+        ).rows.length > 0,
+    );
+    if (!hasWindow)
+      throw preconditionFailed(
+        "Wait for a new message to this WhatsApp number before replying.",
+      );
+    managedDetails = { phoneNumberId: conn.external_id };
   }
   return conversationCommand(
     db,
@@ -716,5 +906,6 @@ export async function whatsappCommand(
     action,
     key,
     action === "reply",
+    managedDetails,
   );
 }

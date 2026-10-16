@@ -84,8 +84,8 @@ export const routesOf = (app: FastifyInstance): readonly RouteEntry[] =>
 export function buildServer(deps: ServerDeps): FastifyInstance {
   // Configuration mistakes fail before listening, without leaking credential values.
   parseWhatsAppProviderConfig();
-  const managed = deps.managed ?? loadManagedSettings();
   const publicBooking = deps.publicBooking ?? loadPublicBookingConfig();
+  const managed = { ...(deps.managed ?? loadManagedSettings()), booking: publicBooking };
   const trustedProxies = (process.env.TRUSTED_PROXY_CIDRS ?? "")
     .split(",")
     .map((v) => v.trim())
@@ -293,7 +293,7 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   registerPatientRoutes(app, deps.db);
   registerCalendarRoutes(app, deps.db);
   registerBookingRoutes(app, deps.db);
-  registerPublicBookingRoutes(app, deps.db, publicBooking);
+  registerPublicBookingRoutes(app, deps.db, publicBooking, managed);
   registerQueueRoutes(app, deps.db);
   registerClinicalRoutes(app, deps.db);
   registerAdminRoutes(app, deps.db);

@@ -41,7 +41,7 @@ import {
 import { Profile } from "./GoogleProfile";
 import { Posts, Reviews } from "./GoogleEngage";
 
-export type GChange = (fn: (d: GbpData) => GbpData) => void;
+export type GChange = (fn: (d: GbpData) => GbpData) => Promise<boolean>;
 
 export function GoogleBusiness() {
   const { facility } = useWorkspace();
@@ -171,8 +171,8 @@ function useGbp(facilityId: string) {
   const [busy, setBusy] = useState(false);
   const [keys] = useState(() => new IntentKeys());
   const [guard] = useState(() => ({ busy: false }));
-  const change: GChange = (fn) => {
-    if (!query.data || guard.busy) return;
+  const change: GChange = async (fn) => {
+    if (!query.data || guard.busy) return false;
     const old = query.data,
       next = fn(old);
     const action: any = { version: old.version };
@@ -202,7 +202,7 @@ function useGbp(facilityId: string) {
         toast.error(
           "This field is not available for publishing from Exora yet.",
         );
-        return;
+        return false;
       }
       for (const k of supported)
         if (different(next.listing[k], old.listing[k]))
@@ -211,7 +211,7 @@ function useGbp(facilityId: string) {
       const review = next.reviews.find((r) =>
         different(r.reply, old.reviews.find((o) => o.id === r.id)?.reply),
       );
-      if (!review) return;
+      if (!review) return false;
       action.action = "reply";
       action.reviewId = review.id;
       action.text = review.reply?.text ?? null;
@@ -221,9 +221,9 @@ function useGbp(facilityId: string) {
         ),
         removed = old.posts.find((p) => !next.posts.some((o) => o.id === p.id));
       if (added) {
-        if (added.status === "scheduled" || added.image) {
-          toast.error("Scheduled posts and post images are not available yet.");
-          return;
+        if (added.image) {
+          toast.error("Post images are not available yet.");
+          return false;
         }
         Object.assign(action, {
           action: "post",
@@ -234,14 +234,17 @@ function useGbp(facilityId: string) {
           url:
             added.button === "book" ? exoraBookingUrl() : old.listing.website,
           ...(added.dates ? { dates: added.dates } : {}),
+          ...(added.status === "scheduled"
+            ? { publishAt: new Date(added.at).toISOString() }
+            : {}),
         });
       } else if (removed) {
         action.action = "delete_post";
         action.postId = removed.id;
-      } else return;
+      } else return false;
     } else {
       toast.error("This setting is not available yet.");
-      return;
+      return false;
     }
     function exoraBookingUrl() {
       return old.listing.bookUrl || old.listing.website;
@@ -249,21 +252,25 @@ function useGbp(facilityId: string) {
     guard.busy = true;
     setBusy(true);
     const path = `/v1/google-business/actions?facilityId=${facilityId}`;
-    void request(path, {
+    return request(path, {
       method: "POST",
       body: action,
       idempotencyKey: keys.for(path, action),
     })
-      .then(async () => {
+      .then(async (result: any) => {
         keys.complete(path, action);
         await query.refresh();
         toast.success(
-          "Google accepted the change. Some changes may need review.",
+          result.scheduled
+            ? "Post scheduled."
+            : "Google accepted the change. Some changes may need review.",
         );
+        return true;
       })
       .catch((e) => {
         toast.error(e.message);
         void query.refresh();
+        return false;
       })
       .finally(() => {
         guard.busy = false;

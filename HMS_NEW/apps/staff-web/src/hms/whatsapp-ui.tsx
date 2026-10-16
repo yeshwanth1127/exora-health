@@ -76,7 +76,16 @@ export function useWaData(_key: string, make: () => WaData) {
         setData(refs.current.latest);
       }
     }
-  }, [remote.data]);
+  }, [remote.data, busy]);
+  const refreshRef = useRef(remote.refresh);
+  refreshRef.current = remote.refresh;
+  useEffect(() => {
+    const refresh = () => {
+      void refreshRef.current();
+    };
+    window.addEventListener("hms-whatsapp-updated", refresh);
+    return () => window.removeEventListener("hms-whatsapp-updated", refresh);
+  }, [facility.facilityId]);
   const change: Change = (fn) => {
     const r = refs.current,
       old = r.latest,
@@ -93,7 +102,9 @@ export function useWaData(_key: string, make: () => WaData) {
       JSON.stringify(next.automations) !== JSON.stringify(old.automations) ||
       JSON.stringify(next.campaigns) !== JSON.stringify(old.campaigns)
     ) {
-      toast.error("Scheduled messages and promotions are not available yet.");
+      toast.error(
+        "Use Automations or Promotions to review and save these changes.",
+      );
       return;
     }
     const chat = next.conversations.find(
@@ -160,6 +171,7 @@ export function useWaData(_key: string, make: () => WaData) {
       try {
         await saveWaPreferences(facility.facilityId, r.remote!, prefs, r.keys);
         await remote.refresh();
+        window.dispatchEvent(new Event("hms-whatsapp-updated"));
       } catch (e) {
         toast.error(
           e instanceof Error ? e.message : "Settings could not be saved.",

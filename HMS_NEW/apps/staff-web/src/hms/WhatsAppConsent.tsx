@@ -23,13 +23,14 @@ export function WhatsAppConsent({
 }) {
   const [open, setOpen] = useState(false),
     [evidence, setEvidence] = useState(""),
+    [purpose, setPurpose] = useState("care"),
     [confirmed, setConfirmed] = useState(false),
     [busy, setBusy] = useState(false);
   const [keys] = useState(() => new IntentKeys());
-  const save = async (action: "opt_in" | "stop") => {
+  const save = async (action: "opt_in" | "opt_out") => {
     const path = `/v1/contact-points/${contactPointId}/consents`,
       body = {
-        purpose: "care",
+        purpose,
         action,
         source: "staff",
         evidence: evidence.trim(),
@@ -80,6 +81,22 @@ export function WhatsAppConsent({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            <label className="text-sm">
+              Message type
+              <select
+                className="mt-1 block h-9 w-full rounded-md border bg-background px-3"
+                value={purpose}
+                disabled={busy}
+                onChange={(e) => {
+                  setPurpose(e.target.value);
+                  setConfirmed(false);
+                }}
+              >
+                <option value="care">Care messages</option>
+                <option value="reminders">Appointment reminders</option>
+                <option value="marketing">Promotions</option>
+              </select>
+            </label>
             <Label htmlFor="wa-consent-evidence">
               How and when permission was given or withdrawn
             </Label>
@@ -98,7 +115,13 @@ export function WhatsAppConsent({
                 onCheckedChange={(v) => setConfirmed(!!v)}
               />
               <span>
-                This person explicitly agreed to care messages from this clinic.
+                This person explicitly agreed to{" "}
+                {purpose === "care"
+                  ? "care messages"
+                  : purpose === "reminders"
+                    ? "appointment reminders"
+                    : "promotions"}{" "}
+                from this clinic.
               </span>
             </label>
           </div>
@@ -106,7 +129,7 @@ export function WhatsAppConsent({
             <Button
               variant="outline"
               disabled={busy || evidence.trim().length < 3}
-              onClick={() => void save("stop")}
+              onClick={() => void save("opt_out")}
             >
               Record withdrawal
             </Button>

@@ -293,7 +293,7 @@ export function Inbox({
             <li className="grid place-items-center gap-2 p-8 text-center text-sm text-muted-foreground">
               <InboxIcon className="size-5" />
               {filter === "waiting"
-                ? "No one is waiting. The bot is handling every chat."
+                ? "No conversations are waiting for a staff reply."
                 : "No chats here."}
             </li>
           )}
@@ -334,7 +334,7 @@ export function Inbox({
                     </Button>
                   )}
                   <Button
-                    disabled={!data.capabilities?.booking}
+                    disabled={!data.bookingActive}
                     size="sm"
                     variant="ghost"
                     onClick={() => {

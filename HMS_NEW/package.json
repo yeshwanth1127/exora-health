@@ -24,7 +24,8 @@
     "dev:token": "tsx apps/api/src/auth/dev-token.ts",
     "staff:dev": "pnpm --filter @hms/staff-web dev",
     "staff:build": "pnpm --filter @hms/staff-web build",
-    "staff:test": "pnpm --filter @hms/staff-web test"
+    "staff:test": "pnpm --filter @hms/staff-web test",
+    "integrations:check": "tsx --env-file-if-exists=.env scripts/check-managed-integrations.ts"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

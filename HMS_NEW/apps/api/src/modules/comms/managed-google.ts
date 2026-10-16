@@ -8,6 +8,7 @@ import {
   preconditionFailed,
   runCommand,
   runQuery,
+  setTransactionContext,
 } from "@hms/platform";
 import { z } from "zod";
 import type { Caller } from "../../caller.ts";
@@ -592,6 +593,34 @@ export async function googleDashboard(
               : "checking",
         views: null,
       }));
+    const local = await runQuery(
+      db,
+      caller.tenantId,
+      async (tx) =>
+        (
+          await sql<any>`SELECT * FROM comms.google_scheduled_post WHERE facility_id=${facilityId} AND status IN('scheduled','claimed','unknown') ORDER BY due_at DESC LIMIT 100`.execute(
+            tx,
+          )
+        ).rows,
+    );
+    base.posts = [
+      ...local.map((j) => ({
+        id: "scheduled-" + j.id,
+        kind: j.payload.kind,
+        title: j.payload.title,
+        text: j.payload.text,
+        button: j.payload.button,
+        image: null,
+        dates: j.payload.dates,
+        at: new Date(j.due_at).getTime(),
+        status: j.status === "scheduled" ? "scheduled" : "unknown",
+        views: null,
+      })),
+      ...base.posts,
+    ];
+    base.version =
+      (await connection(db, caller, facilityId, "google"))?.version ??
+      base.version;
     return { ...base, reviewUrl: l.metadata?.newReviewUri ?? null };
   } catch {
     return {
@@ -640,6 +669,7 @@ export const GoogleAction = z.discriminatedUnion("action", [
     button: z.enum(["book", "call", "learn"]).nullable(),
     url: z.url().max(400).optional(),
     dates: z.strictObject({ from: z.iso.date(), to: z.iso.date() }).optional(),
+    publishAt: z.iso.datetime({ offset: true }).optional(),
   }),
   z.strictObject({
     action: z.literal("delete_post"),
@@ -668,6 +698,77 @@ export async function googleAction(
     throw invalid(
       "Events and offers need a title and a valid start and end date.",
     );
+  if (input.action === "post" && input.publishAt) {
+    const due = new Date(input.publishAt);
+    if (due <= new Date() || due.getTime() > Date.now() + 90 * 86400000)
+      throw invalid("Choose a publishing time in the next 90 days.");
+    if (
+      input.button &&
+      input.button !== "call" &&
+      (!input.url || new URL(input.url).protocol !== "https:")
+    )
+      throw invalid("Choose a public HTTPS destination for this post.");
+    return runCommand(
+      db,
+      {
+        ...caller,
+        module: "comms",
+        name: "comms.google_schedule",
+        request: { facilityId, ...input },
+        idempotencyKey: key,
+      },
+      async (ctx) => {
+        const { publishAt, ...payload } = input;
+        const {
+          rows: [job],
+        } = await sql<{
+          id: string;
+        }>`INSERT INTO comms.google_scheduled_post(tenant_id,facility_id,connection_id,external_id,payload,due_at,actor_staff_id,actor_user_id)
+        VALUES(${caller.tenantId},${facilityId},${row.id},${row.external_id},${JSON.stringify(payload)}::jsonb,${due},${caller.actor.staffId!},${caller.actor.userId!}) RETURNING id`.execute(
+          ctx.tx,
+        );
+        ctx.audit({
+          action: "create",
+          subjectType: "comms.google_scheduled_post",
+          subjectId: job!.id,
+          diff: { dueAt: publishAt },
+        });
+        return { accepted: true, scheduled: true };
+      },
+    );
+  }
+  if (input.action === "delete_post" && input.postId.startsWith("scheduled-")) {
+    const id = input.postId.slice(10);
+    if (!z.uuid().safeParse(id).success)
+      throw invalid("Invalid scheduled post.");
+    return runCommand(
+      db,
+      {
+        ...caller,
+        module: "comms",
+        name: "comms.google_schedule_cancel",
+        request: { facilityId, ...input },
+        idempotencyKey: key,
+      },
+      async (ctx) => {
+        const { rows } =
+          await sql`UPDATE comms.google_scheduled_post SET status='cancelled' WHERE id=${id} AND facility_id=${facilityId} AND status='scheduled' RETURNING id`.execute(
+            ctx.tx,
+          );
+        if (!rows.length)
+          throw conflict(
+            "This post was already attempted. Refresh to check its result.",
+          );
+        ctx.audit({
+          action: "update",
+          subjectType: "comms.google_scheduled_post",
+          subjectId: id,
+          diff: { status: "cancelled" },
+        });
+        return { accepted: true };
+      },
+    );
+  }
   const attempt = await runCommand(
     db,
     {
@@ -713,119 +814,149 @@ export async function googleAction(
   const token = await access(db, caller, row, settings),
     headers = auth(token),
     root = `https://mybusiness.googleapis.com/v4/${row.external_id}`;
-  if (input.action === "reply")
-    await providerJson(settings, `${root}/reviews/${input.reviewId}/reply`, {
-      method: input.text === null ? "DELETE" : "PUT",
-      headers,
-      ...(input.text === null
-        ? {}
-        : { body: JSON.stringify({ comment: input.text }) }),
-    });
-  else if (input.action === "delete_post")
-    await providerJson(settings, `${root}/localPosts/${input.postId}`, {
-      method: "DELETE",
-      headers,
-    });
-  else if (input.action === "profile") {
-    const body: any = {},
-      mask: string[] = [];
-    for (const [k, v] of Object.entries(input.patch)) {
-      if (k === "name") {
-        body.title = v;
-        mask.push("title");
-      } else if (k === "phone") {
-        body.phoneNumbers = { primaryPhone: v };
-        mask.push("phoneNumbers");
-      } else if (k === "website") {
-        body.websiteUri = v;
-        mask.push("websiteUri");
-      } else if (k === "description") {
-        body.profile = { description: v };
-        mask.push("profile.description");
-      } else if (k === "hours") {
-        const days = [
-          "MONDAY",
-          "TUESDAY",
-          "WEDNESDAY",
-          "THURSDAY",
-          "FRIDAY",
-          "SATURDAY",
-          "SUNDAY",
-        ];
-        body.regularHours = {
-          periods: (v as z.infer<typeof period>[]).map((p) => ({
-            openDay: days[p.day],
-            closeDay: days[p.day],
-            openTime: {
-              hours: Number(p.open.slice(0, 2)),
-              minutes: Number(p.open.slice(3)),
-            },
-            closeTime: {
-              hours: Number(p.close.slice(0, 2)),
-              minutes: Number(p.close.slice(3)),
-            },
-          })),
-        };
-        mask.push("regularHours");
-      }
-    }
-    if (!mask.length) throw invalid("Choose a field to update.");
-    await providerJson(
+  const refreshed = await connection(db, caller, facilityId, "google");
+  if (
+    !refreshed ||
+    unseal<Tokens>(
       settings,
-      `https://mybusinessbusinessinformation.googleapis.com/v1/${row.external_id.split("/").slice(-2).join("/")}?updateMask=${encodeURIComponent(mask.join(","))}`,
-      { method: "PATCH", headers, body: JSON.stringify(body) },
+      refreshed.credential,
+      aad(caller.tenantId, facilityId),
+    ).access_token !== token
+  )
+    throw conflict("This connection changed. Refresh before publishing.");
+  await db.transaction().execute(async (tx) => {
+    await setTransactionContext(tx, caller.tenantId);
+    await sql`SET LOCAL ROLE mod_comms`.execute(tx);
+    await sql`SELECT pg_advisory_xact_lock(hashtextextended('access:' || ${caller.tenantId},0))`.execute(
+      tx,
     );
-  } else {
-    const date = (v: string) => {
-      const [year, month, day] = v.split("-").map(Number);
-      return { year, month, day };
-    };
-    if (
-      input.button &&
-      input.button !== "call" &&
-      (!input.url || new URL(input.url).protocol !== "https:")
-    )
-      throw invalid("Choose a public HTTPS destination for this post.");
-    await providerJson(settings, `${root}/localPosts`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        languageCode: "en",
-        summary: input.text,
-        topicType:
-          input.kind === "event"
-            ? "EVENT"
-            : input.kind === "offer"
-              ? "OFFER"
-              : "STANDARD",
-        ...(input.dates
-          ? {
-              event: {
-                title: input.title,
-                schedule: {
-                  startDate: date(input.dates.from),
-                  endDate: date(input.dates.to),
+    const {
+      rows: [valid],
+    } =
+      await sql`SELECT c.id FROM comms.managed_connection c JOIN platform.facility f ON f.id=c.facility_id AND f.tenant_id=c.tenant_id AND f.status='active'
+      JOIN platform.tenant t ON t.id=c.tenant_id AND t.status IN('active','trial')
+      JOIN platform.staff s ON s.id=${caller.actor.staffId!} AND s.tenant_id=c.tenant_id AND s.status='active'
+      JOIN platform.user_account u ON u.id=${caller.actor.userId!} AND u.staff_id=s.id AND u.tenant_id=c.tenant_id AND u.status='active'
+      WHERE c.id=${row.id} AND c.enabled AND c.credential=${refreshed.credential} AND c.external_id=${row.external_id}
+      AND EXISTS(SELECT 1 FROM platform.staff_permission p WHERE p.staff_id=s.id AND p.permission='growth.manage' AND (p.facility_id IS NULL OR p.facility_id=c.facility_id)) FOR SHARE OF c`.execute(
+        tx,
+      );
+    if (!valid)
+      throw forbidden("Publishing access has changed. Refresh the listing.");
+    if (input.action === "reply")
+      await providerJson(settings, `${root}/reviews/${input.reviewId}/reply`, {
+        method: input.text === null ? "DELETE" : "PUT",
+        headers,
+        ...(input.text === null
+          ? {}
+          : { body: JSON.stringify({ comment: input.text }) }),
+      });
+    else if (input.action === "delete_post")
+      await providerJson(settings, `${root}/localPosts/${input.postId}`, {
+        method: "DELETE",
+        headers,
+      });
+    else if (input.action === "profile") {
+      const body: any = {},
+        mask: string[] = [];
+      for (const [k, v] of Object.entries(input.patch)) {
+        if (k === "name") {
+          body.title = v;
+          mask.push("title");
+        } else if (k === "phone") {
+          body.phoneNumbers = { primaryPhone: v };
+          mask.push("phoneNumbers");
+        } else if (k === "website") {
+          body.websiteUri = v;
+          mask.push("websiteUri");
+        } else if (k === "description") {
+          body.profile = { description: v };
+          mask.push("profile.description");
+        } else if (k === "hours") {
+          const days = [
+            "MONDAY",
+            "TUESDAY",
+            "WEDNESDAY",
+            "THURSDAY",
+            "FRIDAY",
+            "SATURDAY",
+            "SUNDAY",
+          ];
+          body.regularHours = {
+            periods: (v as z.infer<typeof period>[]).map((p) => ({
+              openDay: days[p.day],
+              closeDay: days[p.day],
+              openTime: {
+                hours: Number(p.open.slice(0, 2)),
+                minutes: Number(p.open.slice(3)),
+              },
+              closeTime: {
+                hours: Number(p.close.slice(0, 2)),
+                minutes: Number(p.close.slice(3)),
+              },
+            })),
+          };
+          mask.push("regularHours");
+        }
+      }
+      if (!mask.length) throw invalid("Choose a field to update.");
+      await providerJson(
+        settings,
+        `https://mybusinessbusinessinformation.googleapis.com/v1/${row.external_id.split("/").slice(-2).join("/")}?updateMask=${encodeURIComponent(mask.join(","))}`,
+        { method: "PATCH", headers, body: JSON.stringify(body) },
+      );
+    } else {
+      const date = (v: string) => {
+        const [year, month, day] = v.split("-").map(Number);
+        return { year, month, day };
+      };
+      if (
+        input.button &&
+        input.button !== "call" &&
+        (!input.url || new URL(input.url).protocol !== "https:")
+      )
+        throw invalid("Choose a public HTTPS destination for this post.");
+      await providerJson(settings, `${root}/localPosts`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          languageCode: "en",
+          summary: input.text,
+          topicType:
+            input.kind === "event"
+              ? "EVENT"
+              : input.kind === "offer"
+                ? "OFFER"
+                : "STANDARD",
+          ...(input.dates
+            ? {
+                event: {
+                  title: input.title,
+                  schedule: {
+                    startDate: date(input.dates.from),
+                    endDate: date(input.dates.to),
+                  },
                 },
-              },
-            }
-          : {}),
-        ...(input.kind === "offer" ? { offer: {} } : {}),
-        ...(input.button
-          ? {
-              callToAction: {
-                actionType:
-                  input.button === "book"
-                    ? "BOOK"
-                    : input.button === "call"
-                      ? "CALL"
-                      : "LEARN_MORE",
-                ...(input.button === "call" ? {} : { url: input.url }),
-              },
-            }
-          : {}),
-      }),
-    });
-  }
+              }
+            : {}),
+          ...(input.kind === "offer" ? { offer: {} } : {}),
+          ...(input.button
+            ? {
+                callToAction: {
+                  actionType:
+                    input.button === "book"
+                      ? "BOOK"
+                      : input.button === "call"
+                        ? "CALL"
+                        : "LEARN_MORE",
+                  ...(input.button === "call" ? {} : { url: input.url }),
+                },
+              }
+            : {}),
+        }),
+      });
+    }
+  });
   await runCommand(
     db,
     { ...caller, module: "comms", name: "comms.google_write_completed" },
@@ -967,4 +1098,93 @@ export async function googlePerformance(
       daily: [],
     };
   }
+}
+
+/** A committed claim precedes publishing. Unknown requests are never automatically repeated. */
+export async function dispatchGooglePosts(
+  db: Kysely<DB>,
+  settings: ManagedSettings,
+) {
+  if (!settings.google) return 0;
+  const { rows } = await sql<{
+    tenant_id: string;
+    id: string;
+  }>`SELECT * FROM comms.google_post_candidates()`.execute(db);
+  for (const r of rows) {
+    const job = await db.transaction().execute(async (tx) => {
+      await setTransactionContext(tx, r.tenant_id);
+      await sql`SET LOCAL ROLE mod_comms`.execute(tx);
+      const {
+        rows: [locked],
+      } =
+        await sql`SELECT id FROM comms.google_scheduled_post WHERE id=${r.id} AND status='scheduled' AND due_at<=now() FOR UPDATE SKIP LOCKED`.execute(
+          tx,
+        );
+      if (!locked) return null;
+      const {
+        rows: [j],
+      } =
+        await sql<any>`SELECT j.*,c.version AS connection_version FROM comms.google_scheduled_post j
+        JOIN comms.managed_connection c ON c.id=j.connection_id AND c.tenant_id=j.tenant_id AND c.enabled AND c.external_id=j.external_id
+        JOIN platform.facility f ON f.id=j.facility_id AND f.tenant_id=j.tenant_id AND f.status='active'
+        JOIN platform.tenant t ON t.id=j.tenant_id AND t.status IN('active','trial')
+        JOIN platform.staff s ON s.id=j.actor_staff_id AND s.tenant_id=j.tenant_id AND s.status='active'
+        JOIN platform.user_account u ON u.id=j.actor_user_id AND u.staff_id=s.id AND u.tenant_id=j.tenant_id AND u.status='active'
+        WHERE j.id=${r.id} AND j.status='scheduled' AND j.due_at<=now() AND j.due_at>now()-interval '1 day'
+        AND EXISTS(SELECT 1 FROM platform.staff_permission p WHERE p.staff_id=s.id AND p.permission='growth.manage' AND (p.facility_id IS NULL OR p.facility_id=j.facility_id)) FOR UPDATE OF j SKIP LOCKED`.execute(
+          tx,
+        );
+      if (!j) {
+        await sql`UPDATE comms.google_scheduled_post SET status='cancelled' WHERE id=${r.id}`.execute(
+          tx,
+        );
+        return null;
+      }
+      await sql`UPDATE comms.google_scheduled_post SET status='claimed' WHERE id=${j.id}`.execute(
+        tx,
+      );
+      return j;
+    });
+    if (!job) continue;
+    let status = "unknown";
+    try {
+      await googleAction(
+        db,
+        {
+          tenantId: r.tenant_id,
+          actor: {
+            kind: "staff",
+            staffId: job.actor_staff_id,
+            userId: job.actor_user_id,
+          },
+        },
+        job.facility_id,
+        { ...job.payload, version: job.connection_version },
+        job.id,
+        settings,
+      );
+      status = "accepted";
+    } catch {}
+    await runCommand(
+      db,
+      {
+        tenantId: r.tenant_id,
+        actor: { kind: "system" },
+        module: "comms",
+        name: "comms.google_scheduled_result",
+      },
+      async (ctx) => {
+        await sql`UPDATE comms.google_scheduled_post SET status=${status} WHERE id=${job.id}`.execute(
+          ctx.tx,
+        );
+        ctx.audit({
+          action: "update",
+          subjectType: "comms.google_scheduled_post",
+          subjectId: job.id,
+          diff: { status },
+        });
+      },
+    );
+  }
+  return rows.length;
 }

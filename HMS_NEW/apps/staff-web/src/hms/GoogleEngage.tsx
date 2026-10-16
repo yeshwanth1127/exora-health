@@ -399,10 +399,12 @@ export function Posts({
       "The end date is before the start date.",
     /\b\d{10}\b|\+91/.test(text) &&
       "Remove phone numbers. Use the Call button instead.",
-    when === "later" && "Scheduling is not available yet. Choose publish now.",
+    when === "later" &&
+      (!at || new Date(at).getTime() <= Date.now()) &&
+      "Choose a future publishing time.",
     image && "Post images are not available yet.",
   ].filter(Boolean) as string[];
-  const publish = () => {
+  const publish = async () => {
     const post: Post = {
       id: uid(),
       kind,
@@ -415,13 +417,13 @@ export function Posts({
       status: when === "later" ? "scheduled" : "checking",
       views: 0,
     };
-    change((d) => ({ ...d, posts: [post, ...d.posts] }));
+    const saved = await change((d) => ({ ...d, posts: [post, ...d.posts] }));
+    if (!saved) return;
     setText("");
     setTitle("");
     setFrom("");
     setTo("");
     setImage(null);
-    toast.success(when === "later" ? "Post scheduled" : "Posted to Google");
   };
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -586,9 +588,11 @@ export function Posts({
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {p.kind[0].toUpperCase() + p.kind.slice(1)} ·{" "}
-                    {p.status === "scheduled"
-                      ? `Scheduled for ${new Date(p.at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`
-                      : since(p.at)}
+                    {p.status === "unknown"
+                      ? "Check Google before retrying"
+                      : p.status === "scheduled"
+                        ? `Scheduled for ${new Date(p.at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`
+                        : since(p.at)}
                     {p.dates &&
                       ` · runs ${day(p.dates.from)}–${day(p.dates.to)}`}
                     {p.status === "live" &&
@@ -597,15 +601,17 @@ export function Posts({
                   </p>
                 </div>
                 <Badge variant="outline" className="font-normal">
-                  {p.status === "checking"
-                    ? "Google is checking"
-                    : p.status === "scheduled"
-                      ? "Scheduled"
-                      : p.status === "rejected"
-                        ? "Not accepted"
-                        : "Live"}
+                  {p.status === "unknown"
+                    ? "Check result"
+                    : p.status === "checking"
+                      ? "Google is checking"
+                      : p.status === "scheduled"
+                        ? "Scheduled"
+                        : p.status === "rejected"
+                          ? "Not accepted"
+                          : "Live"}
                 </Badge>
-                {canManage && (
+                {canManage && p.status !== "unknown" && (
                   <Button
                     size="icon-xs"
                     variant="ghost"

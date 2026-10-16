@@ -323,7 +323,7 @@ function Overview({
               before.booked,
             ],
             [
-              "Visitors who booked",
+              "Bookings / measured visitors",
               data.bookingsTracked ? `${rate.toFixed(1)}%` : "—",
               rate,
               percent(before.booked, before.visitors),
@@ -345,8 +345,8 @@ function Overview({
         <p className="text-sm">
           Most recorded referrals came from{" "}
           <span className="font-medium">{sourceNames[top[0]]}</span>. About{" "}
-          {Math.max(1, Math.round(rate))} in every 100 visitors booked an
-          appointment.
+          {Math.round(rate)} confirmed website bookings per 100 measured visitors.
+          Visit tracking can be blocked, so this is an aggregate ratio.
         </p>
       )}
       <Card className="gap-3 p-5 shadow-none">

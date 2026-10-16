@@ -468,6 +468,12 @@ async function schedule(
     await sql`INSERT INTO comms.outbound_message(tenant_id,facility_id,reminder_job_id,contact_point_id) VALUES(${event.tenantId},${a.facility_id},${j.id},${c!.id})`.execute(
       tx,
     );
+  // Only newly scheduled jobs under an explicitly enabled, provider-approved managed rule can send.
+  // Historical log rows are never upgraded by enabling a rule later.
+  if(status==='scheduled') await sql`UPDATE comms.outbound_message m SET managed_send_requested=true,managed_purpose='reminder',
+    managed_details=jsonb_build_object('automationId',r.id,'automationVersion',r.version,'phoneNumberId',mc.external_id)
+    FROM comms.managed_automation r JOIN comms.managed_connection mc ON mc.id=r.connection_id AND mc.tenant_id=r.tenant_id AND mc.enabled AND mc.metadata->>'subscribed'='true'
+    WHERE m.reminder_job_id=${j.id} AND r.facility_id=${a.facility_id} AND r.kind=${kind} AND r.enabled AND r.provider_status='approved' AND ${a.created_at}>=r.enabled_at AND ${kind!=='confirmation'||a.origin_channel!=='whatsapp'}`.execute(tx);
   await writeAudit(tx, event.tenantId, { kind: 'system' }, event.correlationId, [
     { action: 'create', subjectType: 'comms.reminder_job', subjectId: j.id, diff: { kind, status, reason } },
   ]);

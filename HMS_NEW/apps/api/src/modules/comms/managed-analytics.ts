@@ -7,6 +7,7 @@ import {
   preconditionFailed,
   runCommand,
   runQuery,
+  setTransactionContext,
 } from "@hms/platform";
 import type { Caller } from "../../caller.ts";
 import { providerJson, type ManagedSettings } from "./managed-config.ts";
@@ -312,6 +313,12 @@ export async function analyticsDashboard(
     startDate = new Date(Date.parse(date) - 86400000 * (days - 1))
       .toISOString()
       .slice(0, 10);
+  base.bookingsTracked = !!settings.booking?.sites.some(
+    (s) =>
+      s.tenantId === caller.tenantId &&
+      s.facilityId === facilityId &&
+      rows.some((r) => r.enabled && s.origins.includes(r.origin)),
+  );
   const series = new Map<string, ReturnType<typeof zero> & { date: string }>();
   for (let i = 0; i < days; i++) {
     const date = new Date(Date.parse(startDate) + i * 86400000)
@@ -406,6 +413,33 @@ export async function analyticsDashboard(
         else if (e.x === "call_click") base.totals.clicks.call += n;
         else if (e.x === "whatsapp_click") base.totals.clicks.whatsapp += n;
         else if (e.x === "directions_click") base.totals.clicks.directions += n;
+      }
+    }
+    if (base.bookingsTracked) {
+      const previousStart = new Date(Date.parse(startDate) - days * 86400000)
+        .toISOString()
+        .slice(0, 10);
+      const counts = await runQuery(
+        db,
+        caller.tenantId,
+        async (tx) =>
+          (
+            await sql<{
+              day: string;
+              n: number;
+            }>`SELECT (a.created_at AT TIME ZONE ${timezone})::date::text AS day,count(*)::int AS n
+        FROM comms.booking_attribution a JOIN comms.analytics_site s ON s.id=a.site_id AND s.tenant_id=a.tenant_id
+        WHERE s.facility_id=${facilityId} AND (a.created_at AT TIME ZONE ${timezone})::date BETWEEN ${previousStart}::date AND ${endDate}::date GROUP BY 1`.execute(
+              tx,
+            )
+          ).rows,
+      );
+      for (const c of counts) {
+        if (c.day >= startDate) {
+          base.totals.booked += c.n;
+          const d = series.get(c.day);
+          if (d) d.booked += c.n;
+        } else base.before.booked += c.n;
       }
     }
     base.days = [...series.values()];
@@ -510,27 +544,133 @@ export async function collectAnalytics(
       );
     },
   );
-  if (settings.posthog) {
-    // Optional mirror only. Exora reports remain consistent when this service is unavailable.
-    await providerJson(settings, `${settings.posthog.origin}/i/v0/e/`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        api_key: settings.posthog.key,
-        event: input.event,
-        properties: {
-          distinct_id: randomUUID(),
-          $process_person_profile: false,
-          site_id: site.id,
-          facility_id: site.facility_id,
-          tenant_id: tenant,
-          page: input.page,
-          source: input.source,
-          device: input.device,
-        },
-      }),
-    }).catch(() => {});
-  }
+  if (settings.posthog)
+    await queueMirror(db, tenant, site.id, {
+      event: input.event,
+      page: input.page,
+      source: input.source,
+      device: input.device,
+    });
   return { accepted: true };
 }
 export const trackerScript = `(()=>{const s=document.currentScript;if(!s||navigator.globalPrivacyControl||navigator.doNotTrack==='1'||location.pathname.startsWith('/staff')||location.pathname.startsWith('/tele'))return;const site=s.dataset.site,base=new URL(s.src).origin;let route='';const page=()=>{const p=location.pathname;return /^\\/(book|booking)(\\.html|\\/|$)/.test(p)?'/book':p==='/'?'/':['doctors','services','contact'].includes(p.split('/')[1])?'/'+p.split('/')[1]:'/other'};const source=()=>{const t=new URLSearchParams(location.search).get('utm_source')||'';if(/^(whatsapp|maps|google|social)$/.test(t))return t;try{const h=new URL(document.referrer).hostname;if(/(^|\\.)google\\./.test(h))return h==='maps.google.com'?'maps':'google';if(/(^|\\.)(facebook.com|instagram.com)$/.test(h))return 'social';return h&&h!==location.hostname?'other':'direct'}catch{return 'direct'}};const send=event=>{fetch(base+'/a/collect',{method:'POST',mode:'cors',credentials:'omit',keepalive:true,headers:{'content-type':'text/plain'},body:JSON.stringify({site,event,page:page(),source:source(),device:innerWidth<640?'mobile':innerWidth<1024?'tablet':'desktop'})}).catch(()=>{})};const view=()=>{if(route===location.pathname)return;route=location.pathname;send('pageview')};view();for(const k of ['pushState','replaceState']){const f=history[k];history[k]=function(...a){const r=f.apply(this,a);view();return r}}addEventListener('popstate',view);document.addEventListener('click',e=>{const a=e.target.closest?.('a[href]');if(!a)return;const h=a.getAttribute('href')||'';if(h.startsWith('tel:'))send('call_click');else if(/^https:\\/\\/(wa.me|api.whatsapp.com)\\//.test(h))send('whatsapp_click');else if(/maps.google|google.com\\/maps/.test(h))send('directions_click');else if(/\\/(book|booking)(\\.html|\\/|\\?|$)/.test(h))send('booking_open')})})();`;
+
+/** Only the booking route calls this, after a committed appointment and with its server-owned binding. */
+export async function attributeBooking(
+  db: Kysely<DB>,
+  tenant: string,
+  facility: string,
+  origin: string,
+  appointmentId: string,
+  settings: ManagedSettings,
+) {
+  if (!settings.umami) return;
+  await runCommand(
+    db,
+    {
+      tenantId: tenant,
+      actor: { kind: "system" },
+      module: "comms",
+      name: "comms.attribute_booking",
+    },
+    async (ctx) => {
+      const {
+        rows: [site],
+      } = await sql<{
+        id: string;
+      }>`SELECT id FROM comms.analytics_site WHERE facility_id=${facility} AND origin=${origin} AND enabled AND NOT retired`.execute(
+        ctx.tx,
+      );
+      if (!site) return;
+      const {
+        rows: [created],
+      } = await sql<{
+        id: string;
+      }>`INSERT INTO comms.booking_attribution(tenant_id,site_id,appointment_id)
+      SELECT ${tenant},${site.id},a.id FROM booking.appointment a WHERE a.id=${appointmentId} AND a.facility_id=${facility} AND a.origin_channel='web'
+      ON CONFLICT DO NOTHING RETURNING id`.execute(ctx.tx);
+      if (created && settings.posthog)
+        await sql`INSERT INTO comms.analytics_mirror(tenant_id,site_id,payload) VALUES(${tenant},${site.id},${JSON.stringify({ event: "booking_completed", page: "/book", source: "direct", device: "unknown" })}::jsonb)`.execute(
+          ctx.tx,
+        );
+    },
+  );
+}
+async function queueMirror(
+  db: Kysely<DB>,
+  tenant: string,
+  site: string,
+  payload: Record<string, string>,
+) {
+  await runCommand(
+    db,
+    {
+      tenantId: tenant,
+      actor: { kind: "system" },
+      module: "comms",
+      name: "comms.analytics_mirror_queue",
+    },
+    async (ctx) => {
+      await sql`INSERT INTO comms.analytics_mirror(tenant_id,site_id,payload) VALUES(${tenant},${site},${JSON.stringify(payload)}::jsonb)`.execute(
+        ctx.tx,
+      );
+    },
+  );
+}
+/** Durable optional mirror. Its UUID is reused on retries so PostHog can deduplicate uncertain requests. */
+export async function dispatchAnalyticsMirror(
+  db: Kysely<DB>,
+  settings: ManagedSettings,
+) {
+  if (!settings.posthog) return 0;
+  const { rows } = await sql<{
+    tenant_id: string;
+    id: string;
+  }>`SELECT * FROM comms.analytics_mirror_candidates()`.execute(db);
+  for (const r of rows)
+    await db.transaction().execute(async (tx) => {
+      await setTransactionContext(tx, r.tenant_id);
+      await sql`SET LOCAL ROLE mod_comms`.execute(tx);
+      const {
+        rows: [job],
+      } =
+        await sql<any>`SELECT m.*,s.enabled,s.retired FROM comms.analytics_mirror m JOIN comms.analytics_site s ON s.tenant_id=m.tenant_id AND s.id=m.site_id
+      WHERE m.id=${r.id} AND m.status='pending' AND m.next_attempt_at<=now() FOR UPDATE OF m SKIP LOCKED`.execute(
+          tx,
+        );
+      if (!job) return;
+      if (!job.enabled || job.retired) {
+        await sql`UPDATE comms.analytics_mirror SET status='failed' WHERE id=${r.id}`.execute(
+          tx,
+        );
+        return;
+      }
+      let success = false;
+      try {
+        await providerJson(settings, settings.posthog!.origin + "/i/v0/e/", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            api_key: settings.posthog!.key,
+            uuid: job.id,
+            timestamp: new Date(job.created_at).toISOString(),
+            event: job.payload.event,
+            properties: {
+              distinct_id: job.id,
+              $process_person_profile: false,
+              site_id: job.site_id,
+              page: job.payload.page,
+              source: job.payload.source,
+              device: job.payload.device,
+            },
+          }),
+        });
+        success = true;
+      } catch {}
+      const attempts = job.attempts + 1;
+      await sql`UPDATE comms.analytics_mirror SET status=${success ? "done" : attempts >= 10 ? "failed" : "pending"},attempts=${attempts},next_attempt_at=now()+${Math.min(3600, 2 ** attempts)}*interval '1 second' WHERE id=${r.id}`.execute(
+        tx,
+      );
+    });
+  return rows.length;
+}

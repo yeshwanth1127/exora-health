@@ -1,3 +1,15 @@
+import {
+  PromotionInput,
+  promotionsDashboard,
+  previewPromotion,
+  promotionAction,
+} from "../../modules/comms/managed-promotions.ts";
+import {
+  AutomationKind,
+  automationDashboard,
+  setAutomation,
+  refreshAutomation,
+} from "../../modules/comms/managed-automations.ts";
 import { z } from "zod";
 import type { FastifyInstance } from "fastify";
 import type { DB, Kysely } from "@hms/db";
@@ -28,6 +40,79 @@ export function registerManagedWhatsAppRoutes(
   settings: ManagedSettings,
 ) {
   const scope = z.strictObject({ facilityId: uuid });
+  app.get("/v1/whatsapp-workspace/promotions", async (r) => {
+    const { facilityId } = parse(scope, r.query);
+    authorize(principalOf(r), "campaigns.manage", facilityId);
+    return promotionsDashboard(db, callerOf(r), facilityId, settings);
+  });
+  app.post("/v1/whatsapp-workspace/promotions/preview", async (r) => {
+    const input = parse(PromotionInput, r.body);
+    authorize(principalOf(r), "campaigns.manage", input.facilityId);
+    return previewPromotion(
+      db,
+      callerOf(r),
+      input,
+      idempotencyKey(r),
+      settings,
+    );
+  });
+  app.post("/v1/whatsapp-workspace/promotions/:id/:action", async (r) => {
+    const { id, action } = parse(
+      z.strictObject({ id: uuid, action: z.enum(["approve", "pause"]) }),
+      r.params,
+    );
+    const { facilityId, version } = parse(
+      scope.extend({ version: z.number().int().positive() }),
+      r.body,
+    );
+    authorize(
+      principalOf(r),
+      action === "approve" ? "campaigns.approve" : "campaigns.manage",
+      facilityId,
+    );
+    return promotionAction(
+      db,
+      callerOf(r),
+      facilityId,
+      id,
+      version,
+      action,
+      idempotencyKey(r),
+      settings,
+    );
+  });
+  app.get("/v1/whatsapp-workspace/automations", async (r) => {
+    const { facilityId } = parse(scope, r.query);
+    authorize(principalOf(r), "comms.read", facilityId);
+    return automationDashboard(db, callerOf(r), facilityId);
+  });
+  app.put("/v1/whatsapp-workspace/automations", async (r) => {
+    const { facilityId, ...input } = parse(
+      scope.extend({
+        kind: AutomationKind,
+        enabled: z.boolean(),
+        version: z.number().int().nonnegative(),
+      }),
+      r.body,
+    );
+    authorize(principalOf(r), "comms.manage", facilityId);
+    return setAutomation(
+      db,
+      callerOf(r),
+      facilityId,
+      input,
+      idempotencyKey(r),
+      settings,
+    );
+  });
+  app.post("/v1/whatsapp-workspace/automations/refresh", async (r) => {
+    const { facilityId, kind } = parse(
+      scope.extend({ kind: AutomationKind }),
+      r.body,
+    );
+    authorize(principalOf(r), "comms.manage", facilityId);
+    return refreshAutomation(db, callerOf(r), facilityId, kind, settings);
+  });
   app.get("/v1/whatsapp-workspace", async (r) => {
     const { facilityId } = parse(scope, r.query),
       p = principalOf(r);
@@ -59,6 +144,7 @@ export function registerManagedWhatsAppRoutes(
       b.draft,
       b.preferences,
       idempotencyKey(r),
+      settings,
     );
   });
   app.post("/v1/whatsapp-workspace/connect", async (r) => {

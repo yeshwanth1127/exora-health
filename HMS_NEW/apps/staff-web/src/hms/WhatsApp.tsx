@@ -72,7 +72,7 @@ const titles: Record<Exclude<Stage, "live">, [string, string]> = {
     "Add doctor and department files",
     "Optional photos and PDFs patients receive.",
   ],
-  test: ["Booking availability", "Automatic booking is being prepared."],
+  test: ["Booking availability", "Book a real appointment by messaging your connected number."],
 };
 
 function Setup({ clinic }: { clinic: Clinic }) {
@@ -214,7 +214,7 @@ function Setup({ clinic }: { clinic: Clinic }) {
       )}
       <p className="mb-4 text-sm text-muted-foreground">
         Connect your number to manage real conversations. Automatic booking,
-        promotions and scheduled messages are not available yet.
+        appointment notices and promotions are managed from this workspace.
       </p>
       <div className="mb-6 max-w-3xl">
         <h2 className="text-xl font-semibold tracking-tight">
@@ -222,8 +222,7 @@ function Setup({ clinic }: { clinic: Clinic }) {
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Connect securely to manage patient conversations from this dashboard.
-          Save your booking preferences here while automatic booking is being
-          prepared.
+          Set up booking messages here, then enable bookings from the overview.
         </p>
         <div
           className="mt-4 flex gap-1.5"
@@ -666,7 +665,7 @@ function TestStep({ setup, update, done }: Omit<StepProps, "clinic">) {
             <span>
               <span className="font-medium">Automatic booking test</span>
               <span className="block text-xs text-muted-foreground">
-                Available when the booking runtime is ready.
+                After enabling bookings, send HI to check the full conversation. Bookings appear in Appointments.
               </span>
             </span>
           </label>
@@ -681,13 +680,13 @@ function TestStep({ setup, update, done }: Omit<StepProps, "clinic">) {
             <div>
               <p className="text-sm font-medium">Accept bookings on WhatsApp</p>
               <p className="text-xs text-muted-foreground">
-                Automatic booking is being prepared. Your connected inbox is
+                Book a real appointment by messaging your connected number. Your connected inbox is
                 available now.
               </p>
             </div>
             <Switch
               checked={setup.live}
-              disabled={true}
+              disabled={!setup.connected}
               aria-label="Accept bookings on WhatsApp"
               onCheckedChange={(live) =>
                 live ? done({ live: true }) : update({ live: false })

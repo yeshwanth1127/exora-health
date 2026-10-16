@@ -106,7 +106,7 @@ export type Post = {
   /** Events and offers only; Google requires a date range for them. YYYY-MM-DD. */
   dates?: { from: string; to: string };
   at: number;
-  status: "scheduled" | "checking" | "live" | "rejected";
+  status: "scheduled" | "checking" | "live" | "rejected" | "unknown";
   views: number;
 };
 export type Metrics = {
