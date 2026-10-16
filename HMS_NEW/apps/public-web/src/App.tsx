@@ -39,6 +39,7 @@ type Bootstrap = {
   tenant: { name: string; slug: string; planCode: string | null };
   facilities: Facility[];
   practitioners: Practitioner[];
+  analytics?: { siteId: string; script: string } | null;
 };
 type Patient = { name: string; phone: string; email: string; reason: string };
 
@@ -100,6 +101,15 @@ export function App() {
     json<Bootstrap>("/public/v1/bootstrap")
       .then((value) => {
         setData(value);
+        // Company-hosted websites need no snippet installation by the clinic.
+        if (value.analytics && !document.querySelector('script[data-hms-analytics]')) {
+          const tracker = document.createElement('script');
+          tracker.src = '/a.js';
+          tracker.dataset.site = value.analytics.siteId;
+          tracker.dataset.hmsAnalytics = 'true';
+          tracker.defer = true;
+          document.head.append(tracker);
+        }
         document.title = `${value.tenant.name} · Appointments`;
       })
       .catch((reason: Error) => setError(reason.message))

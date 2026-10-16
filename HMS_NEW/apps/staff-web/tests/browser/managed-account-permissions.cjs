@@ -1,0 +1,45 @@
+// Run against managed-api-harness.ts and staff Vite on 5197. Dashboard endpoints are real;
+// the harness supplies synthetic provider responses. Only Meta's external SDK window is simulated.
+async page => {
+  const checks=[];
+  const check=(value,label)=>{if(!value)throw Error(label);checks.push(label);};
+  await page.goto('http://127.0.0.1:5197/staff/whatsapp');
+  await page.getByText('Browser Owner',{exact:true}).waitFor();
+  await page.getByText('Saved to your clinic',{exact:true}).waitFor();
+  await page.route('https://connect.facebook.net/en_US/sdk.js', route=>route.fulfill({contentType:'application/javascript',body:`window.FB={init:()=>{},login:(cb,options)=>{if(JSON.stringify(options.extras)!=='{}')throw Error('Expected v4 extras');window.dispatchEvent(new MessageEvent('message',{origin:'https://www.facebook.com',data:{type:'WA_EMBEDDED_SIGNUP',event:'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING',data:{waba_id:'998877665'}}}));cb({authResponse:{code:'synthetic-code'}})}}`}));
+  await page.getByLabel('WhatsApp number',{exact:true}).fill('+919876543210');
+  const boxes=page.getByRole('checkbox');for(let i=0;i<await boxes.count();i++)await boxes.nth(i).check();
+  await page.getByRole('button',{name:'Continue with Facebook',exact:true}).click();
+  const connected=page.waitForResponse(r=>r.url().endsWith('/v1/whatsapp-workspace/connect/complete'));
+  await page.getByRole('button',{name:'Connect securely with Meta',exact:true}).click();
+  check((await connected).status()===200,'Owner completes Business app connection through actual API');
+  await page.getByText('Permission Test Clinic',{exact:false}).first().waitFor();
+  check(true,'Connection survives the page reload');
+  await page.screenshot({path:'/tmp/hms-onboarding-owner.png'});
+  await page.getByRole('button',{name:'Website analytics',exact:true}).click();
+  await page.getByRole('tab',{name:'Websites',exact:true}).click();
+  await page.getByRole('button',{name:'Add a website',exact:true}).click();
+  await page.getByLabel('Website address').fill(`https://permission-${Date.now()}.example.com`);
+  const created=page.waitForResponse(r=>r.url().endsWith('/v1/website-analytics/sites')&&r.request().method()==='POST');
+  await page.getByRole('button',{name:'Add website',exact:true}).click();
+  check((await created).status()===200,'Owner adds website through actual API');
+  await page.getByText('Waiting for a visit',{exact:true}).waitFor();
+  check(await page.getByLabel(/API key|Personal key|Project ID/).count()===0,'No company provider credential fields');
+  await page.getByRole('button',{name:'Google Business',exact:true}).click();
+  check(await page.getByRole('button',{name:'Connect Google',exact:true}).isEnabled(),'Owner can start Google setup');
+  await page.getByRole('button',{name:'Sign out',exact:true}).click();
+  await page.getByRole('button',{name:'Use another registered identity',exact:true}).click();
+  await page.getByLabel('Registered staff identity',{exact:true}).fill('reception');
+  await page.getByRole('button',{name:'Open workspace',exact:true}).click();
+  await page.getByText('Browser Reception',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'Google Business',exact:true}).click();
+  check(await page.getByRole('button',{name:'Connect Google',exact:true}).isDisabled(),'Reception cannot connect Google');
+  await page.getByRole('button',{name:'WhatsApp',exact:true}).click();
+  await page.getByText('Saved to your clinic',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'Booking setup',exact:true}).click();
+  await page.getByText('Your administrator needs to finish WhatsApp setup. You can follow progress here.',{exact:true}).waitFor();
+  const fields=await page.locator('fieldset').evaluateAll(xs=>xs.map(x=>x.disabled));
+  check(fields.length>0&&fields.every(Boolean),'Reception WhatsApp setup is read only');
+  await page.screenshot({path:'/tmp/hms-onboarding-reception.png'});
+  return {checks};
+}

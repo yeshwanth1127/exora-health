@@ -553,6 +553,16 @@ export async function collectAnalytics(
     });
   return { accepted: true };
 }
+/** Public IDs only: resolve from the configured runtime origin, never the incoming Host header. */
+export async function hostedAnalyticsSite(db: Kysely<DB>, tenant: string, facility: string, settings: ManagedSettings) {
+  if (!settings.umami || !settings.publicOrigin) return null;
+  return runQuery(db, tenant, async tx => {
+    const site = await tx.selectFrom('comms.analytics_site').select('id')
+      .where('facility_id', '=', facility).where('origin', '=', settings.publicOrigin!)
+      .where('enabled', '=', true).where('retired', '=', false).executeTakeFirst();
+    return site ? { siteId: site.id, script: '/a.js' } : null;
+  });
+}
 export const trackerScript = `(()=>{const s=document.currentScript;if(!s||navigator.globalPrivacyControl||navigator.doNotTrack==='1'||location.pathname.startsWith('/staff')||location.pathname.startsWith('/tele'))return;const site=s.dataset.site,base=new URL(s.src).origin;let route='';const page=()=>{const p=location.pathname;return /^\\/(book|booking)(\\.html|\\/|$)/.test(p)?'/book':p==='/'?'/':['doctors','services','contact'].includes(p.split('/')[1])?'/'+p.split('/')[1]:'/other'};const source=()=>{const t=new URLSearchParams(location.search).get('utm_source')||'';if(/^(whatsapp|maps|google|social)$/.test(t))return t;try{const h=new URL(document.referrer).hostname;if(/(^|\\.)google\\./.test(h))return h==='maps.google.com'?'maps':'google';if(/(^|\\.)(facebook.com|instagram.com)$/.test(h))return 'social';return h&&h!==location.hostname?'other':'direct'}catch{return 'direct'}};const send=event=>{fetch(base+'/a/collect',{method:'POST',mode:'cors',credentials:'omit',keepalive:true,headers:{'content-type':'text/plain'},body:JSON.stringify({site,event,page:page(),source:source(),device:innerWidth<640?'mobile':innerWidth<1024?'tablet':'desktop'})}).catch(()=>{})};const view=()=>{if(route===location.pathname)return;route=location.pathname;send('pageview')};view();for(const k of ['pushState','replaceState']){const f=history[k];history[k]=function(...a){const r=f.apply(this,a);view();return r}}addEventListener('popstate',view);document.addEventListener('click',e=>{const a=e.target.closest?.('a[href]');if(!a)return;const h=a.getAttribute('href')||'';if(h.startsWith('tel:'))send('call_click');else if(/^https:\\/\\/(wa.me|api.whatsapp.com)\\//.test(h))send('whatsapp_click');else if(/maps.google|google.com\\/maps/.test(h))send('directions_click');else if(/\\/(book|booking)(\\.html|\\/|\\?|$)/.test(h))send('booking_open')})})();`;
 
 /** Only the booking route calls this, after a committed appointment and with its server-owned binding. */

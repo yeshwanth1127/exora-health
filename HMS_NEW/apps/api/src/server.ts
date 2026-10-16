@@ -294,7 +294,7 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   registerManagedIntegrationRoutes(app, deps.db, managed);
   if (deps.publicTenantId) {
     const voice = deps.voice ?? loadVoiceRuntimeSettings();
-    registerTenantPublicBookingRoutes(app, deps.db, deps.publicTenantId);
+    registerTenantPublicBookingRoutes(app, deps.db, deps.publicTenantId, managed);
     registerPublicVoiceRoutes(app, deps.db, voice, channels);
     if (voice.integration) registerVoiceIntegrationRoutes(app, deps.db, deps.publicTenantId, voice.integration);
   }

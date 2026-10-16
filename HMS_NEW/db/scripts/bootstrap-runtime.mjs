@@ -6,6 +6,7 @@ import pg from 'pg';
 import { randomUUID } from 'node:crypto';
 import { applySeeds, dbmate, enableLocalAppLogin } from './lib.mjs';
 import { config } from './config.mjs';
+import { ensureManagedBookingIdentity } from './managed-booking-identity.mjs';
 
 dbmate(config.databaseUrl, ['up']);
 await applySeeds(config.databaseUrl, [config.referenceSeedsDir]);
@@ -72,8 +73,9 @@ if (process.env.TENANT_BOOTSTRAP === 'custom') {
         );
         await client.query(
           `INSERT INTO platform.user_account(tenant_id,staff_id,identity_issuer,identity_subject,email,status)
-           VALUES($1,$2,'local-dev','admin',$3,'active')`,
-          [tenantId, staffId, ownerEmail],
+           VALUES($1,$2,CASE WHEN $4='oidc' THEN NULL ELSE 'local-dev' END,
+             CASE WHEN $4='oidc' THEN NULL ELSE 'admin' END,$3,CASE WHEN $4='oidc' THEN 'invited' ELSE 'active' END)`,
+          [tenantId, staffId, ownerEmail, process.env.AUTH_MODE ?? 'dev'],
         );
         await client.query(
           `INSERT INTO platform.role_grant(tenant_id,staff_id,role_id)
@@ -105,6 +107,20 @@ if (process.env.TENANT_BOOTSTRAP === 'custom') {
         await client.query('ROLLBACK');
         throw error;
       }
+    }
+    if (process.env.AUTH_MODE === 'oidc') {
+      // Convert only the bootstrap development owner. Existing real identities remain intact.
+      await client.query(`UPDATE platform.user_account SET identity_issuer=NULL,identity_subject=NULL,status='invited',invite_expires_at=now()+interval '14 days'
+        WHERE tenant_id=(SELECT id FROM platform.tenant WHERE slug=$1) AND lower(email::text)=lower($2)
+        AND identity_issuer='local-dev' AND identity_subject='admin'`, [slug, ownerEmail]);
+      await client.query(`UPDATE platform.user_account SET invite_expires_at=now()+interval '14 days'
+        WHERE tenant_id=(SELECT id FROM platform.tenant WHERE slug=$1) AND lower(email::text)=lower($2)
+        AND status='invited' AND identity_subject IS NULL AND invite_expires_at IS NULL`, [slug, ownerEmail]);
+    }
+    if (process.env.MANAGED_BOOKING_STAFF_ID) {
+      const { rows: [tenant] } = await client.query('SELECT id FROM platform.tenant WHERE slug=$1', [slug]);
+      await ensureManagedBookingIdentity(client, { tenantId: tenant.id,
+        facilityId: required('BOOTSTRAP_FACILITY_ID'), staffId: required('MANAGED_BOOKING_STAFF_ID') });
     }
     // Voice can be enabled after the tenant already exists. Reconcile the system identity on every
     // container start instead of making it dependent on the first database bootstrap.

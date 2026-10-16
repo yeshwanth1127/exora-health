@@ -1,10 +1,14 @@
 // Company operator check. Never returns credentials, URLs, tenant IDs or account identifiers.
+import { readFileSync } from "node:fs";
+import { validateRuntimeAuth } from "./check-runtime-auth.mjs";
+import { bookingAuthority } from "../apps/api/src/modules/comms/managed-booking-chat.ts";
 import { config } from "../db/scripts/config.mjs";
 import { createDb, sql } from "../packages/db/src/index.ts";
 import { loadManagedSettings } from "../apps/api/src/modules/comms/managed-config.ts";
 const checks: Record<string, boolean> = {};
+let settings: ReturnType<typeof loadManagedSettings> | undefined;
 try {
-  const s = loadManagedSettings();
+  const s = settings = loadManagedSettings();
   checks.secureConnections = !!s.encryptionKey && !!s.publicOrigin;
   checks.whatsapp = !!s.meta && !!process.env.WA_VERIFY_TOKEN;
   checks.whatsappSending = !!s.whatsappSending;
@@ -18,6 +22,10 @@ try {
   );
   process.exitCode = 2;
 }
+try {
+  validateRuntimeAuth({ ...process.env, NODE_ENV: 'production' }, JSON.parse(readFileSync('apps/staff-web/dist/runtime-auth.json', 'utf8')));
+  checks.productionSignIn = true;
+} catch { checks.productionSignIn = false; }
 const db = createDb({
   connectionString: config.appDatabaseUrl,
   maxConnections: 1,
@@ -27,16 +35,22 @@ try {
     rows: [r],
   } = await sql<{
     ready: boolean;
-  }>`SELECT to_regclass('comms.managed_connection') IS NOT NULL AND to_regclass('comms.managed_automation') IS NOT NULL AND to_regclass('comms.managed_broadcast') IS NOT NULL AND to_regclass('comms.booking_attribution') IS NOT NULL AND to_regclass('comms.google_scheduled_post') IS NOT NULL AND EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='comms' AND table_name='managed_automation' AND column_name='enabled_at') AND EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='comms' AND table_name='inbound_message' AND column_name='phone_number_id') AS ready`.execute(
+  }>`SELECT to_regprocedure('comms.managed_phones_for_waba(text)') IS NOT NULL AND to_regclass('comms.managed_connection') IS NOT NULL AND to_regclass('comms.managed_automation') IS NOT NULL AND to_regclass('comms.managed_broadcast') IS NOT NULL AND to_regclass('comms.booking_attribution') IS NOT NULL AND to_regclass('comms.google_scheduled_post') IS NOT NULL AND EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='comms' AND table_name='managed_automation' AND column_name='enabled_at') AND EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='comms' AND table_name='inbound_message' AND column_name='phone_number_id') AS ready`.execute(
     db,
   );
   checks.database = !!r?.ready;
+  checks.bookingIdentity = !!settings?.booking?.sites.length;
+  for (const site of settings?.booking?.sites ?? []) {
+    try { await bookingAuthority(db, site); } catch { checks.bookingIdentity = false; }
+  }
 } catch {
   checks.database = false;
 } finally {
   await db.destroy();
 }
 const ready = [
+  "productionSignIn",
+  "bookingIdentity",
   "secureConnections",
   "whatsapp",
   "whatsappSending",

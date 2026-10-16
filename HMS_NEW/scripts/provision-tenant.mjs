@@ -54,6 +54,12 @@ const values = {
   BOOTSTRAP_TENANT_ID: tenantUuid,
   TENANT_BOOTSTRAP: 'custom',
   BOOTSTRAP_TENANT_NAME: name,
+  BOOTSTRAP_FACILITY_ID: randomUUID(),
+  MANAGED_BOOKING_STAFF_ID: randomUUID(),
+  INTEGRATIONS_ENCRYPTION_KEY: randomBytes(32).toString('hex'),
+  INTEGRATIONS_PUBLIC_ORIGIN: `http://127.0.0.1:${port}`,
+  PUBLIC_BOOKING_SIGNING_SECRET: secret(),
+  WA_VERIFY_TOKEN: secret(),
   BOOTSTRAP_OWNER_NAME: owner,
   BOOTSTRAP_OWNER_EMAIL: email,
   BOOTSTRAP_FACILITY_NAME: facility,
@@ -69,6 +75,10 @@ const values = {
   CORS_ORIGINS: `http://127.0.0.1:${port},http://localhost:${port}`,
   TELE_PATIENT_LINK_BASE: `http://127.0.0.1:${port}/staff/video-consult`,
 };
+values.PUBLIC_BOOKING_ENABLED = 'true';
+values.PUBLIC_BOOKING_SITES_JSON = JSON.stringify([{ siteSlug: slug, tenantId: tenantUuid,
+  facilityId: values.BOOTSTRAP_FACILITY_ID, identityIssuer: 'hms-managed-booking',
+  identitySubject: tenantUuid, origins: [`http://127.0.0.1:${port}`] }]);
 if (voice) {
   values.VOICE_SERVICE_KEY = secret(40);
   values.VOICE_SIGNING_SECRET = secret(40);

@@ -1,7 +1,7 @@
 // Facilities and practitioners for booking screens and channels.
-import type { DB, Kysely } from '@hms/db';
+import { sql, type DB, type Kysely } from '@hms/db';
 import { runQuery } from '@hms/platform';
-import type { Caller } from '../../caller.ts';
+import { clock, type Caller } from '../../caller.ts';
 
 export async function listFacilities(db: Kysely<DB>, caller: Caller, opts: { includeInactive?: boolean } = {}) {
   return runQuery(db, caller.tenantId, (tx) => {
@@ -24,6 +24,7 @@ export async function listPractitioners(db: Kysely<DB>, caller: Caller, filter: 
       .selectFrom('platform.staff as s')
       .innerJoin('catalog.practitioner_affiliation as pa', 'pa.staff_id', 's.id')
       .innerJoin('platform.department as d', 'd.id', 'pa.department_id')
+      .innerJoin('platform.facility as f', 'f.id', 'pa.facility_id')
       .leftJoin('catalog.practitioner_profile as pp', 'pp.staff_id', 's.id')
       .leftJoin('catalog.specialty as sp', 'sp.id', 'pp.specialty_id')
       .leftJoin('booking.schedulable_resource as sr', 'sr.staff_id', 's.id')
@@ -39,8 +40,8 @@ export async function listPractitioners(db: Kysely<DB>, caller: Caller, filter: 
       ])
       .where('s.status', '=', 'active')
       .where('s.is_system_account', '=', false)
-      .where('pa.valid_from', '<=', new Date().toISOString().slice(0, 10))
-      .where((eb) => eb.or([eb('pa.valid_to', 'is', null), eb('pa.valid_to', '>', new Date().toISOString().slice(0, 10))]));
+      .where('pa.valid_from', '<=', sql<string>`(${clock(caller)}::timestamptz AT TIME ZONE f.timezone)::date`)
+      .where((eb) => eb.or([eb('pa.valid_to', 'is', null), eb('pa.valid_to', '>', sql<string>`(${clock(caller)}::timestamptz AT TIME ZONE f.timezone)::date`)]));
     if (filter.facilityId) q = q.where('pa.facility_id', '=', filter.facilityId);
     if (filter.specialty) q = q.where('sp.code', '=', filter.specialty);
     return q.orderBy('s.display_name').execute();

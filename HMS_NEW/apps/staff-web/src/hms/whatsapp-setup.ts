@@ -87,7 +87,7 @@ const copy = (clinic: string, doctor: string): Record<StepId, string> => ({
   slot: `Pick a day and time${doctor ? ` with ${doctor}` : ""}.`,
   details: "Please type the patient's full name.",
   confirm:
-    "Your appointment is booked. We've sent the details below. Reply hi any time to view, change or cancel it.",
+    "Your appointment is booked. We've sent the details below. Contact reception to change or cancel it.",
 });
 
 /** Every step exists so switching a step back on keeps its edits; the shape decides which start on. */

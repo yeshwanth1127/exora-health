@@ -175,7 +175,7 @@ export async function connectMeta(
       reject(Error(message));
     };
     const complete = () => {
-      if (!finished && code && businessAccountId && phoneNumberId) {
+      if (!finished && code && businessAccountId && (phoneNumberId || path === "coexistence")) {
         finished = true;
         clean();
         resolve({ code, businessAccountId, phoneNumberId });
@@ -221,13 +221,8 @@ export async function connectMeta(
         config_id: start.configId,
         response_type: "code",
         override_default_response_type: true,
-        extras: {
-          setup: {},
-          sessionInfoVersion: "3",
-          ...(path === "coexistence"
-            ? { featureType: "whatsapp_business_app_onboarding" }
-            : {}),
-        },
+        // v4 products and coexistence are selected in the company's Login for Business configuration.
+        extras: {},
       },
     );
   });
@@ -239,6 +234,7 @@ export async function connectMeta(
       attemptId: start.attemptId,
       nonce: start.nonce,
       ...result,
+      phoneNumberId: result.phoneNumberId || undefined,
     },
   });
 }

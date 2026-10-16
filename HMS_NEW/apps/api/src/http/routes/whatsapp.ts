@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import type { ManagedSettings } from "../../modules/comms/managed-config.ts";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import type { DB, Kysely } from "@hms/db";
+import { sql, type DB, type Kysely } from "@hms/db";
 import { forbidden, preconditionFailed, invalid } from "@hms/platform";
 import {
   WhatsAppDeliveryQuerySchema,
@@ -462,15 +462,22 @@ export function registerWhatsAppRoutes(
       const managed = [];
       if (options.managed) {
         const ids = new Set<string>();
+        const syncAccounts = new Set<string>();
         if (Array.isArray(body?.entry) && body.entry.length <= 100)
           for (const entry of body.entry) {
             if (Array.isArray(entry?.changes) && entry.changes.length <= 100)
               for (const change of entry.changes) {
+                if (['history', 'smb_app_state_sync', 'smb_message_echoes'].includes(change?.field) && typeof entry.id === 'string' && /^\d{5,40}$/.test(entry.id)) syncAccounts.add(entry.id);
                 const phone = change?.value?.metadata?.phone_number_id;
                 if (typeof phone === "string" && /^\d{5,40}$/.test(phone))
                   ids.add(phone);
               }
           }
+        if (syncAccounts.size > 100) throw invalid('Too many WhatsApp webhook changes');
+        for (const account of syncAccounts) {
+          const { rows } = await sql<{phone_number_id:string}>`SELECT * FROM comms.managed_phones_for_waba(${account})`.execute(db);
+          for (const row of rows) ids.add(row.phone_number_id);
+        }
         if (ids.size > 100) throw invalid("Too many WhatsApp webhook changes");
         for (const phone of ids) {
           const binding = await managedWhatsAppBinding(

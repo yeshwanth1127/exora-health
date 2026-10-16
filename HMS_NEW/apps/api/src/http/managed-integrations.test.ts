@@ -183,7 +183,7 @@ const settings: ManagedSettings = {
               id: "123456789",
               display_phone_number: "+919876543210",
               verified_name: "Real clinic",
-              code_verification_status: "VERIFIED",
+              code_verification_status: "VERIFIED", is_on_biz_app: true,
             },
           ],
         });
@@ -191,6 +191,7 @@ const settings: ManagedSettings = {
         if (failSend) throw Error("network unknown with a secret");
         return json({ messages: [{ id: "wamid.actual_provider_id" }] });
       }
+      if (u.pathname.endsWith("/smb_app_data")) return json({ request_id: "sync-request" });
       return json({ success: true });
     }
     if (u.host === "us.i.posthog.com") return json({ status: 1 });

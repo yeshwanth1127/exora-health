@@ -4,8 +4,13 @@ set -euo pipefail
 request_path=${1:?claim JSON path is required}
 config=${EXORA_PROVISIONER_CONFIG:-/etc/exora-health/provisioner.env}
 [[ -r $config ]] || { echo "missing $config" >&2; exit 1; }
+# Real tenant hostnames must never expose the password-free development issuer.
 # shellcheck disable=SC1090
 source "$config"
+: "${OIDC_ISSUER:?Configure the company identity provider before provisioning customers}"
+: "${OIDC_JWKS_URL:?OIDC_JWKS_URL is required}"
+: "${OIDC_AUDIENCE:?OIDC_AUDIENCE is required}"
+: "${OIDC_CLIENT_ID:?OIDC_CLIENT_ID is required; the image must be built with matching browser settings}"
 
 slug="$(jq -er '.payload.slug | select(test("^[a-z0-9][a-z0-9-]{1,62}$"))' "$request_path")"
 name="$(jq -er '.payload.organisation' "$request_path")"
@@ -43,6 +48,17 @@ if [[ $(jq -r '.voiceCallbackSecret // empty' "$secrets") == '' ]]; then
   mv "$secret_temp" "$secrets"
 fi
 
+# Generate missing managed secrets once; never rotate existing encrypted connections on restart.
+for field in integrationsKey bookingSecret whatsappVerifyToken bookingStaffId; do
+  if [[ $(jq -r --arg field "$field" '.[$field] // empty' "$secrets") == '' ]]; then
+    if [[ $field == bookingStaffId ]]; then value="$(cat /proc/sys/kernel/random/uuid)"; else value="$(openssl rand -hex 32)"; fi
+    secret_temp="$(mktemp "$tenant_dir/.secrets.XXXXXX")"
+    jq --arg field "$field" --arg value "$value" '.[$field]=$value' "$secrets" > "$secret_temp"
+    chmod 600 "$secret_temp"
+    mv "$secret_temp" "$secrets"
+  fi
+done
+
 database_password="$(jq -r .databasePassword "$secrets")"
 app_password="$(jq -r .appPassword "$secrets")"
 data_state="$(jq -n --arg slug "$slug" --arg databasePassword "$database_password" '{slug:$slug,databasePassword:$databasePassword}' | ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$DATA_SSH_KEY" "$DATA_SSH_TARGET" provision)"
@@ -75,9 +91,25 @@ umask 077
   env_line HMS_APP_PASSWORD "$app_password"
   env_line DEV_JWT_SECRET "$(jq -r .jwtSecret "$secrets")"
   env_line JITSI_SECRET "$(jq -r .jitsiSecret "$secrets")"
-  env_line AUTH_MODE dev
-  env_line NODE_ENV development
-  env_line VITE_HMS_DEV_LOGIN true
+  env_line AUTH_MODE oidc
+  env_line NODE_ENV production
+  env_line VITE_HMS_DEV_LOGIN false
+  env_line OIDC_ISSUER "$OIDC_ISSUER"
+  env_line OIDC_JWKS_URL "$OIDC_JWKS_URL"
+  env_line OIDC_AUDIENCE "$OIDC_AUDIENCE"
+  env_line OIDC_CLIENT_ID "$OIDC_CLIENT_ID"
+  env_line OIDC_SCOPE "${OIDC_SCOPE:-openid profile email}"
+  env_line INTEGRATIONS_PUBLIC_ORIGIN "$origin"
+  env_line INTEGRATIONS_ENCRYPTION_KEY "$(jq -r .integrationsKey "$secrets")"
+  env_line MANAGED_BOOKING_STAFF_ID "$(jq -r .bookingStaffId "$secrets")"
+  env_line PUBLIC_BOOKING_ENABLED true
+  env_line PUBLIC_BOOKING_SIGNING_SECRET "$(jq -r .bookingSecret "$secrets")"
+  env_line PUBLIC_BOOKING_SITES_JSON "$(jq -cn --arg slug "$slug" --arg tenant "$tenant_id" --arg facility "$facility_id" --arg origin "$origin" '[{siteSlug:$slug,tenantId:$tenant,facilityId:$facility,identityIssuer:"hms-managed-booking",identitySubject:$tenant,origins:[$origin]}]')"
+  env_line WA_VERIFY_TOKEN "${WA_VERIFY_TOKEN:-$(jq -r .whatsappVerifyToken "$secrets")}"
+  # Only these company-owned provider settings are forwarded. No credentials go to VITE_*.
+  for key in GOOGLE_BUSINESS_CLIENT_ID GOOGLE_BUSINESS_CLIENT_SECRET WA_APP_ID WA_APP_SECRET META_SIGNUP_CONFIG_ID WA_GRAPH_VERSION WA_MANAGED_SENDING_ENABLED WA_ESTIMATED_RATE_MINOR UMAMI_ORIGIN UMAMI_API_KEY UMAMI_TEAM_ID MANAGED_POSTHOG_ORIGIN MANAGED_POSTHOG_KEY TRUSTED_PROXY_CIDRS; do
+    if [[ -n ${!key:-} ]]; then env_line "$key" "${!key}"; fi
+  done
   env_line VITE_HMS_DEFAULT_SUBJECT admin
   env_line IMAGE_TAG "$IMAGE_TAG"
   env_line CORS_ORIGINS "$origin"

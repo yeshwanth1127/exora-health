@@ -1,5 +1,6 @@
 // Directory administration over HTTP: clinics, departments, rooms, services, fees, doctors, patients and
 // roles can be changed from the workspace, by the right people, at the right clinic, without stale edits.
+import { listPractitioners } from '../modules/directory/read.ts';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { localDay, startKit, type Kit, type Person } from './test-kit.ts';
 
@@ -141,6 +142,13 @@ describe('doctor profile and clinics', () => {
     dept = (await k.call(p.admin, 'POST', `/v1/facilities/${f1}/departments`, { code: 'GM', name: 'General Medicine' }, true)).body.departmentId;
   });
 
+  it('uses each clinic day when an affiliation starts between local and UTC midnight', async () => {
+    const lead = await k.person('Midnight Doctor','doctor',f1,'doctor');
+    await k.admin.query("INSERT INTO catalog.practitioner_affiliation(tenant_id,staff_id,facility_id,department_id,valid_from,valid_to) VALUES($1,$2,$3,$4,'2026-10-17','2026-10-18')", [k.tenant.tenantId,lead.staffId,f1,dept]);
+    const read = (now:string) => listPractitioners(k.db,{tenantId:k.tenant.tenantId,actor:{kind:'system'},now:new Date(now)},{facilityId:f1});
+    expect((await read('2026-10-16T20:00:00Z')).some(d=>d.staffId===lead.staffId)).toBe(true);
+    expect((await read('2026-10-17T20:00:00Z')).some(d=>d.staffId===lead.staffId)).toBe(false);
+  });
   it('adds the doctor to a clinic, saves the booking profile once, and refuses a stale save', async () => {
     expect((await k.call(p.branchAdmin, 'POST', `/v1/practitioners/${p.doctor.staffId}/affiliations`, { facilityId: f2, departmentId: dept, validFrom: localDay() }, true)).status).toBe(403);
     expect((await k.call(p.branchAdmin, 'POST', `/v1/practitioners/${p.doctor.staffId}/affiliations`, { facilityId: f1, departmentId: dept, validFrom: localDay() }, true)).status).toBe(201);

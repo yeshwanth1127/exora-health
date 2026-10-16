@@ -18,7 +18,7 @@ export const oidc =
         client_id: clientId,
         redirect_uri: `${location.origin}/staff/callback`,
         response_type: "code",
-        scope: import.meta.env.VITE_OIDC_SCOPE || "openid profile",
+        scope: import.meta.env.VITE_OIDC_SCOPE || "openid profile email",
         userStore: new WebStorageStateStore({
           store: new InMemoryWebStorage(),
         }),

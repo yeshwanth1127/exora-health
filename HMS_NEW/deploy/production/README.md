@@ -17,9 +17,9 @@ Tenant production startup is deliberately split into `migrate` and `app`. The sh
 container receives the database-owner credential, runs idempotent migrations and bootstrap, and
 exits. The long-running app receives only the restricted `hms_app` login.
 
-The current development staff login must be protected at the gateway before a tenant hostname is
-made public. For a real customer, switch to OIDC and build the staff bundle with the customer's OIDC
-settings. Each tenant also needs a DNS hostname such as `clinic.health.exora.solutions`; use a
+Customer provisioning requires company OIDC and defaults to production mode. Build the staff image
+with development login disabled and matching OIDC settings; the runtime refuses an incompatible
+bundle. The bootstrap owner receives an invitation linked only after a verified-email sign-in. Each tenant also needs a DNS hostname such as `clinic.health.exora.solutions`; use a
 wildcard DNS record and wildcard certificate, or create and certify hostnames during onboarding.
 
 ## Automated tenant provisioning
@@ -52,3 +52,18 @@ The only supported remote command is `provision`, and the agent validates every 
 Use a Cloudflare-scoped API token with Certbot's DNS plugin to issue and renew a certificate named
 `health.exora.solutions-wildcard` for `health.exora.solutions` and
 `*.health.exora.solutions`.
+
+## Managed dashboard integrations
+
+Follow [the activation checklist](../../docs/plan/INTEGRATION_SETUP_CHECKLIST.md) before enabling
+provider sending. Add the company OIDC/provider settings to the private provisioner configuration.
+The provisioner generates and retains each tenant's encryption/signing keys, dedicated booking
+identity and origin mapping; the API and worker receive identical provider settings. The image
+supervises both processes and restarts if either exits.
+
+`analytics.compose.yml` is an optional private Umami stack for the data host. Supply a pinned
+official PostgreSQL-compatible v3 Umami image supporting persistent API keys, a URL-safe database
+password and a persistent application secret. Give the application a company-only HTTPS ingress,
+change the initial admin password, and generate a server API key before setting `UMAMI_ORIGIN`
+and `UMAMI_API_KEY` on HMS. Back up this database as well as the tenant databases; do not put the
+Umami console or its database on a public customer endpoint.

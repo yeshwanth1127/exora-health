@@ -321,9 +321,9 @@ const eligibility = [
   "You can log in to Facebook as an admin of the clinic's business",
 ];
 const coexistenceChanges = [
-  "Your team keeps using the Business app. Chats appear in both places.",
-  "Up to 6 months of chat history is copied across.",
-  "Group chats don't sync. Disappearing and view-once messages turn off.",
+  "Your team keeps using the Business app. New incoming messages appear in Exora.",
+  "Past chats and phone contacts are not imported into Exora. App replies stay in the Business app.",
+  "Groups and disappearing messages are not supported in the dashboard.",
   "Linked devices (WhatsApp Web) sign out once and need re-linking.",
 ];
 

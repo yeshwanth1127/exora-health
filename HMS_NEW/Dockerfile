@@ -6,6 +6,14 @@ ENV PATH=$PNPM_HOME:$PATH
 RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
 
 WORKDIR /app
+ARG VITE_OIDC_AUTHORITY
+ARG VITE_OIDC_CLIENT_ID
+ARG VITE_OIDC_AUDIENCE
+ARG VITE_OIDC_SCOPE="openid profile email"
+ENV VITE_OIDC_AUTHORITY=$VITE_OIDC_AUTHORITY
+ENV VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID
+ENV VITE_OIDC_AUDIENCE=$VITE_OIDC_AUDIENCE
+ENV VITE_OIDC_SCOPE=$VITE_OIDC_SCOPE
 ARG VITE_HMS_DEV_LOGIN=false
 ARG VITE_HMS_DEFAULT_SUBJECT=admin
 ENV VITE_HMS_DEV_LOGIN=$VITE_HMS_DEV_LOGIN
@@ -14,6 +22,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json vitest.config
 COPY apps ./apps
 COPY packages ./packages
 COPY db ./db
+COPY scripts ./scripts
 RUN pnpm install --frozen-lockfile
 RUN pnpm public:build && pnpm staff:build
 
@@ -34,6 +43,7 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/apps ./apps
 COPY --from=build /app/packages ./packages
 COPY --from=build /app/db ./db
+COPY --from=build /app/scripts ./scripts
 COPY docker/tenant-entrypoint.sh /usr/local/bin/tenant-entrypoint
 RUN chmod +x /usr/local/bin/tenant-entrypoint && mkdir -p /data/comms && chown -R node:node /app /data
 

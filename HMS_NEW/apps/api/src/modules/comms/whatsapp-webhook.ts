@@ -35,7 +35,7 @@ const Envelope = z.looseObject({
           .regex(/^\d{5,40}$/)
           .optional(),
         changes: z
-          .array(z.looseObject({ field: z.string().optional(), value: Value }))
+          .array(z.looseObject({ field: z.string().optional(), value: z.unknown() }))
           .min(1)
           .max(100),
       }),
@@ -63,9 +63,22 @@ export function decodeWhatsAppWebhook(
     ]),
   );
   const values: WhatsAppWebhookValue[] = [];
+  let changes = 0;
   for (const entry of parsed.data.entry)
     for (const change of entry.changes) {
-      const binding = configured.get(change.value.metadata.phone_number_id);
+      if (++changes > 100) throw invalid('Too many WhatsApp webhook changes');
+      if (['history', 'smb_app_state_sync', 'smb_message_echoes'].includes(change.field ?? '')) {
+        // These are deliberately acknowledged without importing old contacts/messages or granting
+        // patient consent. Business-app replies stay in the Business app in this minimal release.
+        const known = [...configured.values()].some(b => b.signatureConfigured && b.mode === 'multi_clinic' && b.businessAccountId === entry.id);
+        if (parsed.data.object !== 'whatsapp_business_account' || !known || !change.value || typeof change.value !== 'object' || Array.isArray(change.value))
+          throw forbidden('WhatsApp event does not match its provider binding');
+        continue;
+      }
+      const decoded = Value.safeParse(change.value);
+      if (!decoded.success) throw invalid('Invalid WhatsApp webhook value');
+      const value = decoded.data;
+      const binding = configured.get(value.metadata.phone_number_id);
       // This decoder runs after raw-byte HMAC verification. Losing the GET challenge token
       // must not discard authentic STOP/human requests from an existing subscription.
       if (!binding?.signatureConfigured)
@@ -83,7 +96,7 @@ export function decodeWhatsAppWebhook(
         entry.id !== binding.businessAccountId
       )
         throw forbidden("WhatsApp event does not match its provider binding");
-      values.push({ binding, value: change.value });
+      values.push({ binding, value });
       if (values.length > 100)
         throw invalid("Too many WhatsApp webhook changes");
     }

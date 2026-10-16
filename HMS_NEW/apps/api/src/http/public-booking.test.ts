@@ -244,4 +244,25 @@ describe('managed booking operations',()=>{
     const report=JSON.stringify(mirrored);for(const value of [input.name,input.phone,made.body.appointmentId,made.body.confirmationCode,'patient_id','booking_party_id'])expect(report).not.toContain(value);
     expect(mirrored[0]).toMatchObject({event:'booking_completed',properties:{$process_person_profile:false,page:'/book'}});
   });
+  it('attributes the provisioned tenant website booking once and respects GPC', async()=>{
+    const tenantApp=buildServer({db:k.db,managed:{...managed,publicOrigin:origin},publicTenantId:site.tenantId,
+      verifier:createVerifier({mode:'dev',secret:DEV_SECRET_DEFAULT,issuer:DEV_ISSUER}),publicBooking:{sites:[site],signingSecret:secret}});
+    try {
+      const make=async(gpc=false)=>{
+        const [slot]=await slots();
+        const held=await tenantApp.inject({method:'POST',url:'/public/v1/holds',headers:{'idempotency-key':randomUUID()},payload:{facilityId:site.facilityId,staffId:doctor.staffId,slotStart:slot!.startsAt}});
+        expect(held.statusCode,held.body).toBe(201);
+        const key=randomUUID(),payload={reservationId:held.json().reservationId,name:'Hosted Visitor',phone:'+919988770011'};
+        const send=()=>tenantApp.inject({method:'POST',url:'/public/v1/appointments',headers:{origin,'idempotency-key':key,...(gpc?{'sec-gpc':'1'}:{})},payload});
+        const first=await send();expect(first.statusCode,first.body).toBe(201);
+        expect((await send()).json()).toEqual(first.json());
+        return first.json().appointmentId;
+      };
+      const id=await make();
+      expect((await k.admin.query('SELECT count(*)::int n FROM comms.booking_attribution WHERE appointment_id=$1',[id])).rows[0].n).toBe(1);
+      const privateId=await make(true);
+      expect((await k.admin.query('SELECT count(*)::int n FROM comms.booking_attribution WHERE appointment_id=$1',[privateId])).rows[0].n).toBe(0);
+    } finally { await tenantApp.close(); }
+  });
+
 });

@@ -1,12 +1,12 @@
 # Managed dashboard integrations
 
-Implementation checkout: branch `codex/dashboard-integrations`. This packet covers the HMS_NEW staff dashboard and its Fastify API/worker. It does not modify the older hospital backend or deploy anything.
+Implementation follow-up: branch `codex/integration-self-service` based on current main. See [activation checklist](INTEGRATION_SETUP_CHECKLIST.md) for current provider status and tenant provisioning. This packet covers the HMS_NEW staff dashboard and its Fastify API/worker. It does not modify the older hospital backend or deploy anything.
 
 ## Customer experience
 
 - WhatsApp: connect through Meta's secure consent window, use the inbox, assign conversations, send replies, accept appointment bookings, enable appointment notices, review and approve promotions, see recorded delivery, record purpose-specific consent, and disconnect. Meta owns account/password/phone verification. Provider credentials, registration PINs, webhook settings and token exchanges remain on the server.
 - Google: connect through Google consent, select an accessible clinic listing, read details/reviews/posts, publish supported profile fields, reply/delete replies, publish/delete text updates/events/offers, schedule text posts, inspect performance, and disconnect. Google can review or reject changes after accepting them. Owners must grant access; OAuth cannot remove that requirement.
-- Analytics: company-managed Umami, one website address and one public installation snippet. A site's status becomes Counting only after its origin-matched event is accepted by Umami. Counts, referrals, devices, public page categories and supported clicks are read server-side. PostHog is an optional company-managed mirror, not a second customer setup flow.
+- Analytics: company-managed Umami and one website address. Exora-hosted patient websites install automatically; independent websites use one public installation snippet. A site's status becomes Counting only after its origin-matched event is accepted by Umami. Counts, referrals, devices, public page categories and supported clicks are read server-side. PostHog is an optional company-managed mirror, not a second customer setup flow.
 
 The existing page shell, tab structure and component kit remain. The analytics provider/key-entry screens are replaced by managed setup. Integration setup no longer requires adding doctors, fees and schedules first; published doctors, priced consultation slots and a dedicated server booking identity are prerequisites for accepting appointments.
 
@@ -36,7 +36,7 @@ Populate the server-only settings documented in `.env.example`; none belong in a
 6. Apply the migration and regenerate DB types. Route `/v1/*`, `/integrations/*`, `/a.js` and `/a/collect` to the API under the configured origin. Keep the separate Umami administration surface private. CORS does not replace HTTPS or the exact site's Origin check.
 7. Connect an authorized test clinic from the dashboard. Verify provider callbacks and receipt/readback, installation collection and owner-visible publishing with real accounts before production acceptance.
 
-The user confirmed on 2026-10-16 that the deployment URL and company accounts are not provisioned yet. No company provider credentials were present in the inspected checkout. Read-only Meta inspection found Hospital-WA-booking in development mode, with its existing messages subscription targeting the Avocado service; no subscription was changed. Live provider acceptance, delivery, production hosting and owner-consent flows are therefore unverified. Local provider tests use injected HTTP transports and a separate PostgreSQL cluster on port 54339.
+The user confirmed on 2026-10-17 that WhatsApp already runs on Exora Health, while Google and Umami are not provisioned. The current read-only Meta inspection and account/setup requirements are recorded in the activation checklist. No company provider credentials were present in the inspected checkout. Read-only Meta inspection found Hospital-WA-booking in development mode, with its existing messages subscription targeting the Avocado service; no subscription was changed. Live provider acceptance, delivery, production hosting and owner-consent flows are therefore unverified. Local provider tests use injected HTTP transports and a separate PostgreSQL cluster on port 54339.
 
 ## Operational behavior
 
@@ -62,7 +62,7 @@ A crash after an irreversible send/publishing claim can leave a claimed/unknown 
 
 Run `pnpm integrations:check` with the deployment's server environment. It checks only configuration presence/shape and schema readiness, prints no secret values or account identifiers, and performs no provider writes. Exit 2 means company provisioning is incomplete; it is the expected current local result. PostHog is optional. A green configuration check still requires API/worker deployment, dashboard owner consent and real provider receipt/readback.
 
-Use `pnpm db:migrate` for an existing deployment, then start both `pnpm api:dev` and `pnpm worker:dev` under the production process manager's equivalent commands. `db:reset` below is for the disposable local test environment only. Apply all three managed-integration migrations, including the account-rotation snapshot migration. Keep provider consoles and Umami administration within the company environment; clinic users only get the dashboard consent and operational controls.
+Use `pnpm db:migrate` for an existing deployment, then start both `pnpm api:dev` and `pnpm worker:dev` under the production process manager's equivalent commands. `db:reset` below is for the disposable local test environment only. Apply all managed-integration migrations, including account-rotation snapshots and the coexistence callback lookup. Keep provider consoles and Umami administration within the company environment; clinic users only get the dashboard consent and operational controls.
 
 ## Verification
 
@@ -81,7 +81,7 @@ node --import tsx --test tests/*.test.ts
 node_modules/.bin/vite build
 ```
 
-Current local results: **409 backend tests, 163 staff tests, TypeScript and production staff build passed**. Twenty-two browser checks passed with mocked provider responses, including 1440px/390px layout checks and failure/refusal behavior. See `managed-integrations/validation.json`. The shared header now wraps on narrow screens; desktop layout stays the same. The production build retains its existing large-chunk warning.
+Latest local results: **433 backend tests in 42 files, 166 staff tests, TypeScript and both frontend builds passed**. See `managed-integrations/validation.json`; the follow-up includes real HTTP/OIDC invitation tests and seven browser permission checks against the actual API. The earlier operational baseline passed **409 backend tests and 163 staff tests** before the current main merge and onboarding additions. Twenty-two browser checks passed with mocked provider responses, including 1440px/390px layout checks and failure/refusal behavior. See `managed-integrations/validation.json`. The shared header now wraps on narrow screens; desktop layout stays the same. The production build retains its existing large-chunk warning.
 
 Reproducible browser fixtures live under `apps/staff-web/tests/browser`. Start the local API and staff dev server with `VITE_HMS_DEV_LOGIN=true` and `VITE_HMS_DEV_SUBJECT=priya` against the synthetic dev database, then run each through `playwright-cli -s=<session> run-code --filename=<fixture>`. Open the browser in that session first. These fixtures never connect a real provider or send a real message. They intentionally assert failure paths by returning provider refusal responses.
 

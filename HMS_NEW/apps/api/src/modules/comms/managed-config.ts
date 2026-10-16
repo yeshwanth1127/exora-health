@@ -17,6 +17,7 @@ export interface ManagedSettings {
   };
   umami?: { origin: string; key: string; teamId?: string };
   whatsappSending?: boolean;
+  webhookVerifyToken?: string;
   posthog?: { origin: string; key: string };
 }
 export function loadManagedSettings(
@@ -24,6 +25,7 @@ export function loadManagedSettings(
 ): ManagedSettings {
   const settings: ManagedSettings = {
     fetcher: fetch,
+    webhookVerifyToken: env.WA_VERIFY_TOKEN,
     booking: loadPublicBookingConfig(env),
     whatsappSending: env.WA_MANAGED_SENDING_ENABLED === "true",
   };
@@ -73,6 +75,7 @@ export function loadManagedSettings(
     if (
       !env.WA_APP_ID ||
       !env.WA_APP_SECRET ||
+      !env.WA_VERIFY_TOKEN ||
       !/^v\d+\.\d+$/.test(env.WA_GRAPH_VERSION ?? "") ||
       !settings.encryptionKey ||
       !settings.publicOrigin

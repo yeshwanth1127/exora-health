@@ -1,6 +1,6 @@
 {
-  "date": "2026-10-16",
-  "scope": "Local PostgreSQL/API integration tests and browser fixtures; injected provider HTTP transports. Provider accounts/deployment are not provisioned. No real patient message or provider publication was sent.",
+  "date": "2026-10-17",
+  "scope": "Local PostgreSQL, real HTTP/OIDC/JWKS invitation and permission tests, browser against actual local API. Remote provider transports and Meta SDK window are synthetic. Existing Meta app inspected read-only; no live subscription or real message/listing changed.",
   "browserChecks": {
     "result": "PASS",
     "checks": [
@@ -36,21 +36,24 @@
         "viewport": 390,
         "scrollWidth": 390
       }
-    ]
+    ],
+    "date": "2026-10-16; earlier mocked endpoint baseline"
   },
   "backend": {
     "result": "PASS",
-    "tests": 409,
-    "files": 38,
-    "targetedNewTests": 29
+    "tests": 433,
+    "files": 42,
+    "onboardingTests": 10,
+    "productionAuthTests": 2,
+    "previousOperationalTargetedTests": 29
   },
   "staff": {
     "result": "PASS",
-    "tests": 163
+    "tests": 166
   },
   "typecheck": "PASS",
   "staffBuild": "PASS; existing bundle-size warning",
-  "liveProviders": "UNVERIFIABLE: user confirmed accounts and deployment URL are not provisioned; Meta app metadata inspection only (development mode, existing Avocado webhook unchanged).",
+  "liveProviders": "UNVERIFIABLE: existing Meta messages subscription observed, app in development mode, no App Review submission recorded; Google/Umami not provisioned. No live delivery, external customer OAuth or deployed acceptance test.",
   "deployment": "NOT PERFORMED",
   "operatorPreflight": {
     "database": "PASS",
@@ -66,8 +69,26 @@
     "Automatic instrumentation of a separate website repository"
   ],
   "localRuntime": {
-    "api": "PASS: /health and /ready; development authentication; port 3069",
-    "worker": "PASS: started with live sending disabled; no provider dispatch enabled",
-    "staff": "Local dev preview at port 5199"
-  }
+    "api": "PASS: real HTTP onboarding test and browser harness on 3067",
+    "worker": "Current dispatcher regression suite PASS; live sending not enabled",
+    "staff": "PASS: browser role checks on 5197; test processes stopped after verification"
+  },
+  "accountPermissionsBrowser": {
+    "result": "PASS",
+    "date": "2026-10-17",
+    "checks": [
+      "Owner completes Business app connection through actual API",
+      "Connection survives page reload",
+      "Owner adds website through actual API",
+      "No company provider credential fields",
+      "Owner can start Google setup",
+      "Reception cannot connect Google",
+      "Reception WhatsApp setup is read-only"
+    ],
+    "evidence": "Actual dashboard/API/restricted PostgreSQL; development browser login, synthetic Meta SDK and injected remote provider transport. OIDC invitation/token verification tested separately over real HTTP.",
+    "fixture": "apps/staff-web/tests/browser/managed-account-permissions.cjs"
+  },
+  "publicBuild": "PASS",
+  "composeConfiguration": "PASS: local tenant, production tenant and private analytics templates",
+  "containerExecution": "UNVERIFIABLE: local Docker daemon unavailable"
 }

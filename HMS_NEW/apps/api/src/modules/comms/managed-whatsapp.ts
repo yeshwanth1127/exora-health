@@ -412,7 +412,7 @@ export const WhatsAppConnectInput = z.strictObject({
   nonce: z.string().regex(/^[\w-]{43}$/),
   code: z.string().min(1).max(4096),
   businessAccountId: z.string().regex(/^\d{5,40}$/),
-  phoneNumberId: z.string().regex(/^\d{5,40}$/),
+  phoneNumberId: z.string().regex(/^\d{5,40}$/).optional(),
   path: z.enum(["coexistence", "new_number"]),
 });
 export async function finishWhatsApp(
@@ -440,6 +440,7 @@ export async function finishWhatsApp(
         );
     },
   );
+  let bound = false;
   try {
     const result = await providerJson(settings, `${root}/oauth/access_token`, {
       method: "POST",
@@ -457,14 +458,23 @@ export async function finishWhatsApp(
     };
     const phones = await providerJson(
       settings,
-      `${root}/${input.businessAccountId}/phone_numbers?fields=id,display_phone_number,verified_name,code_verification_status,platform_type&limit=100`,
+      `${root}/${input.businessAccountId}/phone_numbers?fields=id,display_phone_number,verified_name,code_verification_status,platform_type,is_on_biz_app&limit=100`,
       { headers },
     );
-    const phone = phones.data?.find((p: any) => p.id === input.phoneNumberId);
+    const candidates = Array.isArray(phones.data) ? phones.data : [];
+    // Coexistence's completion event can contain only a WABA. Never guess among several numbers.
+    const phone = input.phoneNumberId ? candidates.find((p: any) => p.id === input.phoneNumberId)
+      : candidates.length === 1 ? candidates[0] : undefined;
     if (!phone || phone.code_verification_status !== "VERIFIED")
       throw preconditionFailed(
         "Verify this phone number with Meta before connecting.",
       );
+    if (typeof phone.id !== 'string' || !/^\d{5,40}$/.test(phone.id)) throw Error();
+    input.phoneNumberId = phone.id;
+    if (input.path === 'coexistence' && phone.is_on_biz_app !== true)
+      throw preconditionFailed('Choose the WhatsApp Business app connection in Meta, or use the new number option.');
+    if (input.path === 'new_number' && phone.is_on_biz_app === true)
+      throw preconditionFailed('This number uses the Business app. Choose Keep your current number.');
     const display =
       "+" + String(phone.display_phone_number ?? "").replace(/\D/g, "");
     if (
@@ -498,7 +508,8 @@ export async function finishWhatsApp(
         await sql`INSERT INTO comms.managed_connection(tenant_id,facility_id,provider,external_id,credential,metadata,created_by)
         VALUES(${caller.tenantId},${facilityId},'whatsapp',${input.phoneNumberId},${seal(settings, { token: result.access_token }, aad(caller.tenantId, facilityId))},
         ${JSON.stringify({ phone: display, name: phone.verified_name, businessAccountId: input.businessAccountId, path: input.path, subscribed: false })}::jsonb,${caller.actor.staffId!})
-        ON CONFLICT(tenant_id,facility_id,provider) DO UPDATE SET credential=EXCLUDED.credential,metadata=EXCLUDED.metadata,enabled=true`.execute(
+        ON CONFLICT(tenant_id,facility_id,provider) DO UPDATE SET credential=EXCLUDED.credential,
+        metadata=EXCLUDED.metadata||jsonb_build_object('syncRequests',CASE WHEN comms.managed_connection.metadata->>'businessAccountId'=EXCLUDED.metadata->>'businessAccountId' THEN coalesce(comms.managed_connection.metadata->'syncRequests','{}'::jsonb) ELSE '{}'::jsonb END),enabled=true`.execute(
           ctx.tx,
         );
         ctx.audit({
@@ -508,14 +519,28 @@ export async function finishWhatsApp(
         });
       },
     );
-    const subscription = await providerJson(
-      settings,
-      `${root}/${input.businessAccountId}/subscribed_apps`,
-      { method: "POST", headers, body: "{}" },
-    );
-    if (subscription.success !== true) throw Error();
+    bound = true;
+    // An empty subscription POST removes an existing WABA callback override. Leave an existing
+    // subscription intact; only the explicitly connected phone receives a new callback below.
+    const subscriptions = await providerJson(settings, `${root}/${input.businessAccountId}/subscribed_apps`, { headers });
+    if (!subscriptions.data?.some((s: any) => s.whatsapp_business_api_data?.id === config.appId)) {
+      const subscription = await providerJson(settings, `${root}/${input.businessAccountId}/subscribed_apps`, { method: 'POST', headers, body: '{}' });
+      if (subscription.success !== true) throw Error();
+    }
+    if (settings.webhookVerifyToken && settings.publicOrigin?.startsWith('https:')) {
+      const callback = `${settings.publicOrigin}/v1/integrations/whatsapp/webhook`;
+      if (callback.length > 200) throw Error();
+      const routed = await providerJson(settings, `${root}/${input.phoneNumberId}`, {
+        method: 'POST', headers, body: JSON.stringify({ webhook_configuration: {
+          override_callback_uri: callback, verify_token: settings.webhookVerifyToken,
+        } }),
+      });
+      if (routed.success !== true) throw Error();
+      const readback = await providerJson(settings, `${root}/${input.phoneNumberId}?fields=webhook_configuration`, { headers });
+      if (readback.webhook_configuration?.phone_number !== callback) throw Error();
+    }
     // Coexistence numbers are registered by Meta's Business app onboarding. Other numbers need Cloud registration.
-    if (input.path === "new_number") {
+    if (input.path === "new_number" && phone.platform_type !== "CLOUD_API") {
       const pin = String(randomInt(100000, 1000000));
       const registered = await providerJson(
         settings,
@@ -554,15 +579,35 @@ export async function finishWhatsApp(
         });
       },
     );
+    if (input.path === 'coexistence') {
+      for (const sync_type of ['smb_app_state_sync', 'history']) {
+        const claim = await runCommand(db, { ...caller, module: 'comms', name: 'comms.whatsapp_sync_claim' }, async ctx => {
+          const { rows:[row] } = await sql<{metadata:any}>`SELECT metadata FROM comms.managed_connection WHERE facility_id=${facilityId} AND provider='whatsapp' AND external_id=${input.phoneNumberId} AND enabled FOR UPDATE`.execute(ctx.tx);
+          if (!row) throw preconditionFailed('This connection changed. Connect again.');
+          const previous = row.metadata.syncRequests?.[sync_type];
+          if (previous?.state === 'completed') return false;
+          if (previous) throw preconditionFailed('Synchronization needs a company connection check before retrying.');
+          await sql`UPDATE comms.managed_connection SET metadata=jsonb_set(metadata,'{syncRequests}',coalesce(metadata->'syncRequests','{}'::jsonb)||${JSON.stringify({[sync_type]:{state:'claimed'}})}::jsonb) WHERE facility_id=${facilityId} AND provider='whatsapp'`.execute(ctx.tx);
+          return true;
+        });
+        if (!claim) continue;
+        const sync = await providerJson(settings, `${root}/${input.phoneNumberId}/smb_app_data`, {
+          method: 'POST', headers, body: JSON.stringify({ messaging_product: 'whatsapp', sync_type }),
+        });
+        if (typeof sync.request_id !== 'string') throw Error();
+        await runCommand(db, { ...caller, module:'comms', name:'comms.whatsapp_sync_accepted' }, async ctx => {
+          await sql`UPDATE comms.managed_connection SET metadata=jsonb_set(metadata,'{syncRequests}',coalesce(metadata->'syncRequests','{}'::jsonb)||${JSON.stringify({[sync_type]:{state:'completed',requestId:sync.request_id}})}::jsonb) WHERE facility_id=${facilityId} AND provider='whatsapp' AND external_id=${input.phoneNumberId} AND enabled`.execute(ctx.tx);
+        });
+      }
+    }
     return { connected: true };
   } catch {
     await runCommand(
       db,
       { ...caller, module: "comms", name: "comms.whatsapp_connect_failed" },
       async (ctx) => {
-        await sql`UPDATE comms.integration_attempt SET status='failed' WHERE id=${input.attemptId}`.execute(
-          ctx.tx,
-        );
+        await sql`UPDATE comms.integration_attempt SET status='failed' WHERE id=${input.attemptId}`.execute(ctx.tx);
+        if (bound) await sql`UPDATE comms.managed_connection SET metadata=metadata||'{"subscribed":false}'::jsonb WHERE facility_id=${facilityId} AND provider='whatsapp' AND external_id=${input.phoneNumberId ?? ''}`.execute(ctx.tx);
       },
     );
     throw preconditionFailed(
