@@ -9,6 +9,7 @@ import {
   Database,
   Globe2,
   LoaderCircle,
+  PhoneCall,
   RefreshCw,
   ShieldCheck,
 } from "lucide-react";
@@ -29,6 +30,7 @@ type VoiceRuntime = {
   app_id?: string;
   version?: number;
   agent_name?: string;
+  phone_number?: string | null;
   recording_notice?: string;
   session_seconds?: number;
 };
@@ -152,6 +154,32 @@ function VoiceControl() {
         <p className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
           {error}
         </p>
+      )}
+
+      {runtime?.phone_number && (
+        <Card className="border-emerald-200 bg-emerald-50/40">
+          <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
+            <div className="flex items-center gap-3">
+              <span className="flex size-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                <PhoneCall className="size-5" />
+              </span>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Assigned voice number
+                </p>
+                <a className="text-lg font-semibold hover:underline" href={`tel:${runtime.phone_number}`}>
+                  {runtime.phone_number}
+                </a>
+                <p className="text-xs text-muted-foreground">
+                  Calls to this number are routed to this hospital&apos;s voice agent.
+                </p>
+              </div>
+            </div>
+            <Badge variant="outline" className="border-emerald-300 text-emerald-700">
+              Dedicated to this tenant
+            </Badge>
+          </CardContent>
+        </Card>
       )}
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">

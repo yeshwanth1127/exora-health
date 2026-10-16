@@ -51,6 +51,7 @@ export function registerPublicVoiceRoutes(
     integration_ready: !!integration,
     agent_ready: !!agent && !!settings.sarvamApiKey,
     state: enabled ? 'active' : integration ? 'awaiting_sarvam_agent' : 'not_requested',
+    phone_number: settings.assignedPhoneNumber ?? null,
     ...(enabled ? {
       org_id: agent.orgId,
       workspace_id: agent.workspaceId,

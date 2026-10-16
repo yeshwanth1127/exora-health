@@ -72,6 +72,7 @@ services:
       SARVAM_APP_ID: ${SARVAM_APP_ID:-}
       SARVAM_APP_VERSION: ${SARVAM_APP_VERSION:-}
       SARVAM_AGENT_NAME: ${SARVAM_AGENT_NAME:-}
+      SARVAM_PHONE_NUMBER: ${SARVAM_PHONE_NUMBER:-}
     ports:
       - "127.0.0.1:${TENANT_PORT:?TENANT_PORT is required}:3000"
     volumes:

@@ -42,6 +42,11 @@ set('SARVAM_WORKSPACE_ID', required('workspace-id'));
 set('SARVAM_APP_ID', required('app-id'));
 set('SARVAM_APP_VERSION', String(version));
 set('SARVAM_AGENT_NAME', args.get('agent-name')?.trim() || 'booking assistant');
+const phoneNumber = args.get('phone-number')?.trim();
+if (phoneNumber && !/^\+[1-9]\d{7,14}$/.test(phoneNumber)) {
+  throw new Error('--phone-number must be an E.164 phone number, for example +917965480947');
+}
+if (phoneNumber) set('SARVAM_PHONE_NUMBER', phoneNumber);
 writeFileSync(envPath, [...values].map(([key, value]) => `${key}=${value}`).join('\n') + '\n', { mode: 0o600 });
 
 execFileSync('docker', ['compose', '--env-file', envPath, '-f', path.join(root, 'compose.tenant.yml'), 'up', '-d', '--no-build', '--force-recreate', 'app'], {

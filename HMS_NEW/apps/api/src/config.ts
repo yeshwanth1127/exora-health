@@ -39,6 +39,8 @@ export interface VoiceRuntimeSettings {
   };
   /** Enables the public website's browser voice call. Omitted until an agent is committed. */
   agent?: VoiceAgentBinding;
+  /** Public inbound number assigned exclusively to this tenant's agent. */
+  assignedPhoneNumber?: string;
   sarvamApiKey?: string;
   recordingNotice: string;
   noticeVersion: string;
@@ -94,6 +96,10 @@ export function loadVoiceRuntimeSettings(env: NodeJS.ProcessEnv = process.env): 
         runtimeBaseUrl: '/sarvam-runtime/',
       }
     : undefined;
+  const assignedPhoneNumber = env.SARVAM_PHONE_NUMBER?.trim();
+  if (assignedPhoneNumber && !/^\+[1-9]\d{7,14}$/.test(assignedPhoneNumber)) {
+    throw new Error('SARVAM_PHONE_NUMBER must be an E.164 phone number');
+  }
   const sessionSeconds = Number(env.VOICE_SESSION_SECONDS ?? 900);
   if (!Number.isInteger(sessionSeconds) || sessionSeconds < 60 || sessionSeconds > 3600) {
     throw new Error('VOICE_SESSION_SECONDS must be an integer from 60 to 3600');
@@ -101,6 +107,7 @@ export function loadVoiceRuntimeSettings(env: NodeJS.ProcessEnv = process.env): 
   return {
     integration,
     agent,
+    assignedPhoneNumber: assignedPhoneNumber || undefined,
     sarvamApiKey: completeAgent ? env.SARVAM_API_KEY!.trim() : undefined,
     recordingNotice: env.VOICE_RECORDING_NOTICE?.trim() || 'This call may be processed and recorded to help the clinic manage your appointment.',
     noticeVersion: env.VOICE_NOTICE_VERSION?.trim() || '2026-10-14',
