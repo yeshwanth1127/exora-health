@@ -1,0 +1,42 @@
+name: exora-health-platform
+
+services:
+  platform:
+    build:
+      context: ../..
+      dockerfile: Dockerfile.platform
+    image: exora/health-platform:${IMAGE_TAG:-production}
+    restart: unless-stopped
+    init: true
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3040
+      SERVE_PLATFORM_ASSETS: "1"
+      CONTROL_DATABASE_URL: ${CONTROL_DATABASE_URL:?CONTROL_DATABASE_URL is required}
+      SUPERADMIN_TOKEN: ${SUPERADMIN_TOKEN:?SUPERADMIN_TOKEN is required}
+      PROVISIONER_TOKEN: ${PROVISIONER_TOKEN:?PROVISIONER_TOKEN is required}
+      PUBLIC_BASE_URL: https://health.exora.solutions
+      TENANT_PUBLIC_URL_TEMPLATE: https://{slug}.health.exora.solutions
+      CORS_ORIGINS: https://health.exora.solutions
+      AUTO_PROVISION: "0"
+      AUTO_VOICE_PROVISION: ${AUTO_VOICE_PROVISION:-0}
+      SARVAM_PROVISIONER_URL: ${SARVAM_PROVISIONER_URL:-}
+      SARVAM_PROVISIONER_TOKEN: ${SARVAM_PROVISIONER_TOKEN:-}
+      SARVAM_TEMPLATE_AGENT_ID: ${SARVAM_TEMPLATE_AGENT_ID:-Exora-Healt-a2d5537f-9801}
+      SARVAM_TELEPHONY_CONNECTION_ID: ${SARVAM_TELEPHONY_CONNECTION_ID:-}
+    ports:
+      - "127.0.0.1:${PLATFORM_PORT:-8111}:3040"
+    mem_limit: 1g
+    cpus: 1.0
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3040/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }

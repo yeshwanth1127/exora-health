@@ -44,7 +44,10 @@ import {
   registerTelehealthRoutes,
   TELE_TOKEN_HEADER,
 } from "./http/routes/telehealth.ts";
-import { loadTelehealthSettings, type TelehealthSettings } from "./config.ts";
+import { registerVoiceIntegrationRoutes } from './http/routes/voice-integration.ts';
+import { registerPublicVoiceRoutes } from './http/routes/public-voice.ts';
+import { registerTenantPublicBookingRoutes } from './http/routes/tenant-public-booking.ts';
+import { loadTelehealthSettings, loadVoiceRuntimeSettings, type TelehealthSettings, type VoiceRuntimeSettings } from './config.ts';
 
 export interface ServerDeps {
   db: Kysely<DB>;
@@ -67,6 +70,10 @@ export interface ServerDeps {
   whatsappTemplateFetcher?: typeof fetch;
   /** Server-owned website bindings; absence loads disabled-by-default environment configuration. */
   publicBooking?: PublicBookingConfig;
+  /** Present only in a dedicated single-tenant runtime. */
+  publicTenantId?: string;
+  /** Tenant-bound voice integration and optional Sarvam web-call binding. */
+  voice?: VoiceRuntimeSettings;
 }
 
 const REQUEST_ID = /^[A-Za-z0-9_.:-]{8,128}$/;
@@ -86,6 +93,7 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   parseWhatsAppProviderConfig();
   const publicBooking = deps.publicBooking ?? loadPublicBookingConfig();
   const managed = { ...(deps.managed ?? loadManagedSettings()), booking: publicBooking };
+  const channels = deps.channels ?? loadChannelSettings();
   const trustedProxies = (process.env.TRUSTED_PROXY_CIDRS ?? "")
     .split(",")
     .map((v) => v.trim())
@@ -159,6 +167,8 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
           "idempotency-key",
           "x-request-id",
           "x-tenant-id",
+          "x-service-key",
+          "x-voice-session",
           TELE_TOKEN_HEADER,
         ],
         exposedHeaders: ["x-request-id"],
@@ -282,12 +292,14 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   });
   registerChannelOnboardingRoutes(app, deps.db);
   registerManagedIntegrationRoutes(app, deps.db, managed);
+  if (deps.publicTenantId) {
+    const voice = deps.voice ?? loadVoiceRuntimeSettings();
+    registerTenantPublicBookingRoutes(app, deps.db, deps.publicTenantId);
+    registerPublicVoiceRoutes(app, deps.db, voice, channels);
+    if (voice.integration) registerVoiceIntegrationRoutes(app, deps.db, deps.publicTenantId, voice.integration);
+  }
   registerCommsSummaryRoutes(app, deps.db);
-  registerVoiceGrowthRoutes(
-    app,
-    deps.db,
-    deps.channels ?? loadChannelSettings(),
-  );
+  registerVoiceGrowthRoutes(app, deps.db, channels);
   registerAccessRoutes(app, deps.db);
   registerDirectoryRoutes(app, deps.db);
   registerPatientRoutes(app, deps.db);

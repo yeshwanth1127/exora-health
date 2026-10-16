@@ -25,7 +25,21 @@
     "staff:dev": "pnpm --filter @hms/staff-web dev",
     "staff:build": "pnpm --filter @hms/staff-web build",
     "staff:test": "pnpm --filter @hms/staff-web test",
-    "integrations:check": "tsx --env-file-if-exists=.env scripts/check-managed-integrations.ts"
+    "integrations:check": "tsx --env-file-if-exists=.env scripts/check-managed-integrations.ts",
+    "platform:dev": "pnpm --filter @hms/platform-web dev",
+    "platform:build": "pnpm --filter @hms/platform-web build",
+    "control:dev": "tsx --env-file-if-exists=.env apps/control-api/src/main.ts",
+    "control:up": "docker compose -f compose.platform.yml up --build -d",
+    "control:down": "docker compose -f compose.platform.yml down",
+    "admin:dev": "pnpm --filter @hms/admin-web dev",
+    "admin:build": "pnpm --filter @hms/admin-web build",
+    "public:dev": "pnpm --filter @hms/public-web dev",
+    "public:build": "pnpm --filter @hms/public-web build",
+    "tenant:up": "docker compose -f compose.tenant.yml up --build -d",
+    "tenant:down": "docker compose -f compose.tenant.yml down",
+    "tenant:provision": "node scripts/provision-tenant.mjs",
+    "tenant:voice:prepare": "node scripts/prepare-tenant-voice.mjs",
+    "tenant:voice": "node scripts/configure-tenant-voice.mjs"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

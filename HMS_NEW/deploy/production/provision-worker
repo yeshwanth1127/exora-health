@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+config=${EXORA_PROVISIONER_CONFIG:-/etc/exora-health/provisioner.env}
+# shellcheck disable=SC1090
+source "$config"
+
+while true; do
+  if [[ ! -s /etc/letsencrypt/live/$WILDCARD_CERT_NAME/fullchain.pem ]]; then
+    echo "waiting for wildcard certificate: $WILDCARD_CERT_NAME"
+    sleep 30
+    continue
+  fi
+  claim="$(curl -fsS -X POST -H "Authorization: Bearer $PROVISIONER_TOKEN" "$CONTROL_URL/control/v1/internal/provisioning/claim")"
+  if [[ $claim == null ]]; then sleep 3; continue; fi
+  id="$(jq -er .id <<<"$claim")"
+  request_file="$(mktemp)"
+  result_file="$(mktemp)"
+  error_file="$(mktemp)"
+  printf '%s' "$claim" > "$request_file"
+  if "$PROVISION_COMMAND" "$request_file" >"$result_file" 2>"$error_file"; then
+    curl -fsS -X POST -H "Authorization: Bearer $PROVISIONER_TOKEN" -H 'Content-Type: application/json' --data-binary "@$result_file" "$CONTROL_URL/control/v1/internal/provisioning/$id/complete" >/dev/null
+    echo "tenant $id is ready"
+  else
+    message="$(tail -c 3500 "$error_file")"
+    jq -n --arg error "${message:-provisioning failed}" '{error:$error}' | curl -fsS -X POST -H "Authorization: Bearer $PROVISIONER_TOKEN" -H 'Content-Type: application/json' --data-binary @- "$CONTROL_URL/control/v1/internal/provisioning/$id/fail" >/dev/null || true
+    echo "tenant $id failed: $message" >&2
+  fi
+  rm -f "$request_file" "$result_file" "$error_file"
+done

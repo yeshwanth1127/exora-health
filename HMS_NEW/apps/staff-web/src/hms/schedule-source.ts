@@ -122,6 +122,9 @@ export function scheduleSource(
       ? addDays(String(b.effective_until), 1)
       : null,
     slotMinutes: b.slot_minutes,
+    ...(b.healthcare_service_id
+      ? { healthcareServiceId: b.healthcare_service_id }
+      : {}),
     sessions: (b.groups as Group[]).flatMap((g) =>
       g.days.flatMap((d) =>
         g.windows.map((w) => ({ weekday: d + 1, start: w.start, end: w.end })),

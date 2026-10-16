@@ -1,0 +1,49 @@
+name: exora-platform
+
+services:
+  control-db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: exora_control
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${CONTROL_POSTGRES_PASSWORD:-local-exora-control}
+    volumes: [control_pgdata:/var/lib/postgresql]
+    ports: ["127.0.0.1:${CONTROL_DB_PORT:-54330}:5432"]
+    networks: [control_private, platform_ingress]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d exora_control"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  platform:
+    build:
+      context: .
+      dockerfile: Dockerfile.platform
+    image: exora/platform:local
+    restart: unless-stopped
+    depends_on:
+      control-db: { condition: service_healthy }
+    environment:
+      CONTROL_DATABASE_URL: postgres://postgres:${CONTROL_POSTGRES_PASSWORD:-local-exora-control}@control-db:5432/exora_control?sslmode=disable
+      SUPERADMIN_TOKEN: ${SUPERADMIN_TOKEN:-local-superadmin-change-me}
+      SERVE_PLATFORM_ASSETS: "1"
+      AUTO_PROVISION: "0"
+      # Enable only when a production Sarvam provider adapter is reachable. Queued Voice publishes
+      # remain fail-closed when this is disabled.
+      AUTO_VOICE_PROVISION: ${AUTO_VOICE_PROVISION:-0}
+      SARVAM_PROVISIONER_URL: ${SARVAM_PROVISIONER_URL:-}
+      SARVAM_PROVISIONER_TOKEN: ${SARVAM_PROVISIONER_TOKEN:-}
+      PUBLIC_BASE_URL: http://127.0.0.1
+      SARVAM_TEMPLATE_AGENT_ID: ${SARVAM_TEMPLATE_AGENT_ID:-Exora-Healt-a2d5537f-9801}
+      SARVAM_TELEPHONY_CONNECTION_ID: ${SARVAM_TELEPHONY_CONNECTION_ID:-}
+    ports: ["127.0.0.1:${PLATFORM_PORT:-8090}:3040"]
+    networks: [control_private, platform_ingress]
+
+networks:
+  control_private: { internal: true }
+  platform_ingress:
+
+volumes:
+  control_pgdata:

@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+[[ ${EUID} -eq 0 ]] || { echo 'must run as root' >&2; exit 1; }
+[[ ${SSH_ORIGINAL_COMMAND:-provision} == provision ]] || { echo 'unsupported command' >&2; exit 2; }
+
+request="$(head -c 16384)"
+slug="$(jq -er '.slug | select(test("^[a-z0-9][a-z0-9-]{1,62}$"))' <<<"$request")"
+database_password="$(jq -er '.databasePassword | select(test("^[A-Za-z0-9_-]{32,128}$"))' <<<"$request")"
+base=/srv/data/exora-health
+tenant_dir="$base/$slug"
+state_path="$tenant_dir/state.json"
+template="$base/template/data.compose.yml"
+
+exec 9>"$base/.provision.lock"
+flock 9
+if [[ -f $state_path ]]; then
+  jq -c . "$state_path"
+  exit 0
+fi
+[[ -f $template ]] || { echo "missing $template" >&2; exit 3; }
+
+port=''
+for candidate in $(seq 15432 15999); do
+  if ! ss -H -ltn "sport = :$candidate" | grep -q . && ! grep -Rqs "POSTGRES_PORT=\"$candidate\"" "$base"/*/.env 2>/dev/null; then
+    port="$candidate"
+    break
+  fi
+done
+[[ -n $port ]] || { echo 'no database port available' >&2; exit 4; }
+
+install -d -m 700 "$tenant_dir"
+install -d -o 1000 -g 1000 -m 750 "$base/files/$slug"
+install -m 600 "$template" "$tenant_dir/compose.yml"
+umask 077
+{
+  printf 'DATA_SLUG="%s"\n' "$slug"
+  printf 'POSTGRES_DB="hms"\n'
+  printf 'POSTGRES_PORT="%s"\n' "$port"
+  printf 'POSTGRES_PASSWORD="%s"\n' "$database_password"
+} > "$tenant_dir/.env"
+
+docker compose --env-file "$tenant_dir/.env" -f "$tenant_dir/compose.yml" up -d
+container="exora-health-data-${slug}-postgres-1"
+for _ in $(seq 1 60); do
+  [[ $(docker inspect -f '{{.State.Health.Status}}' "$container" 2>/dev/null || true) == healthy ]] && break
+  sleep 2
+done
+[[ $(docker inspect -f '{{.State.Health.Status}}' "$container") == healthy ]] || { docker logs --tail 80 "$container" >&2; exit 5; }
+
+export_file=/etc/exports.d/exora-health.exports
+export_line="$base/files/$slug 10.0.0.5(rw,sync,no_subtree_check,root_squash,anonuid=1000,anongid=1000)"
+touch "$export_file"
+grep -Fqx "$export_line" "$export_file" || printf '%s\n' "$export_line" >> "$export_file"
+exportfs -ra
+
+jq -n --arg slug "$slug" --argjson databasePort "$port" --arg exportPath "$base/files/$slug" \
+  '{slug:$slug,databasePort:$databasePort,exportPath:$exportPath}' | tee "$state_path"
+chmod 600 "$state_path"
