@@ -47,7 +47,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { HmsError, request, setIdentity, setTenant } from "@/hms/client";
-import { devLoginEnabled, finishLogin, oidc } from "@/hms/auth";
+import {
+  devAutoSignInSubject,
+  devLoginEnabled,
+  finishLogin,
+  oidc,
+} from "@/hms/auth";
 import {
   fallbackTenantName,
   fetchTenantName,
@@ -434,6 +439,20 @@ function StaffApp() {
         })
         .catch((e) => {
           setError(e.message);
+          setBusy(false);
+        });
+    } else if (devAutoSignInSubject) {
+      setBusy(true);
+      void request<{ token: string }>("/dev/login", {
+        method: "POST",
+        body: { subject: devAutoSignInSubject },
+      })
+        .then((result) => {
+          if (alive) return accept(result.token);
+        })
+        .catch((e) => {
+          if (!alive) return;
+          setError(e instanceof Error ? e.message : "Sign-in failed.");
           setBusy(false);
         });
     }

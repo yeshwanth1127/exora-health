@@ -8,6 +8,9 @@ const authority = import.meta.env.VITE_OIDC_AUTHORITY,
   clientId = import.meta.env.VITE_OIDC_CLIENT_ID;
 export const devLoginEnabled =
   isDevelopmentLoginConfigured(import.meta.env.VITE_HMS_DEV_LOGIN);
+export const devAutoSignInSubject = devLoginEnabled
+  ? (import.meta.env.VITE_HMS_DEFAULT_SUBJECT?.trim() ?? "")
+  : "";
 export const oidc =
   authority && clientId
     ? new UserManager({
