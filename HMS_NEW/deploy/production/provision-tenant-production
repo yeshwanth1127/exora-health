@@ -32,8 +32,15 @@ if [[ ! -f $secrets ]]; then
     --arg jitsiSecret "$(openssl rand -hex 40)" \
     --arg voiceServiceKey "$(openssl rand -hex 40)" \
     --arg voiceSigningSecret "$(openssl rand -hex 40)" \
-    '{databasePassword:$databasePassword,appPassword:$appPassword,jwtSecret:$jwtSecret,jitsiSecret:$jitsiSecret,voiceServiceKey:$voiceServiceKey,voiceSigningSecret:$voiceSigningSecret}' > "$secrets"
+    --arg voiceCallbackSecret "$(openssl rand -hex 40)" \
+    '{databasePassword:$databasePassword,appPassword:$appPassword,jwtSecret:$jwtSecret,jitsiSecret:$jitsiSecret,voiceServiceKey:$voiceServiceKey,voiceSigningSecret:$voiceSigningSecret,voiceCallbackSecret:$voiceCallbackSecret}' > "$secrets"
   chmod 600 "$secrets"
+fi
+if [[ $(jq -r '.voiceCallbackSecret // empty' "$secrets") == '' ]]; then
+  secret_temp="$(mktemp "$tenant_dir/.secrets.XXXXXX")"
+  jq --arg value "$(openssl rand -hex 40)" '.voiceCallbackSecret=$value' "$secrets" > "$secret_temp"
+  chmod 600 "$secret_temp"
+  mv "$secret_temp" "$secrets"
 fi
 
 database_password="$(jq -r .databasePassword "$secrets")"
@@ -42,6 +49,7 @@ data_state="$(jq -n --arg slug "$slug" --arg databasePassword "$database_passwor
 database_port="$(jq -er .databasePort <<<"$data_state")"
 export_path="$(jq -er .exportPath <<<"$data_state")"
 tenant_id="$(node -e "const{createHash}=require('crypto');let b=createHash('sha256').update('exora-tenant:'+process.argv[1]).digest().subarray(0,16);b[6]=(b[6]&15)|80;b[8]=(b[8]&63)|128;let h=b.toString('hex');console.log([h.slice(0,8),h.slice(8,12),h.slice(12,16),h.slice(16,20),h.slice(20)].join('-'))" "$slug")"
+facility_id="$(node -e "const{createHash}=require('crypto');let b=createHash('sha256').update('exora-facility:'+process.argv[1]).digest().subarray(0,16);b[6]=(b[6]&15)|80;b[8]=(b[8]&63)|128;let h=b.toString('hex');console.log([h.slice(0,8),h.slice(8,12),h.slice(12,16),h.slice(16,20),h.slice(20)].join('-'))" "$slug")"
 origin="https://$slug.health.exora.solutions"
 voice_account="$(cat /proc/sys/kernel/random/uuid)"
 
@@ -59,6 +67,7 @@ umask 077
   env_line BOOTSTRAP_OWNER_NAME "$owner"
   env_line BOOTSTRAP_OWNER_EMAIL "$email"
   env_line BOOTSTRAP_FACILITY_NAME "$facility"
+  env_line BOOTSTRAP_FACILITY_ID "$facility_id"
   env_line BOOTSTRAP_CITY "$city"
   env_line ADMIN_DATABASE_URL "postgres://postgres:$database_password@10.0.0.1:$database_port/hms?sslmode=disable"
   env_line DATABASE_URL "postgres://postgres:$database_password@10.0.0.1:$database_port/hms?sslmode=disable"
@@ -79,6 +88,10 @@ umask 077
   env_line VOICE_SERVICE_ACCOUNT_ID "$voice_account"
   env_line VOICE_NOTICE_VERSION 2026-10-14
   env_line VOICE_SESSION_SECONDS 900
+  env_line VOICE_CALLBACK_TENANT_ID "$tenant_id"
+  env_line VOICE_CALLBACK_FACILITY_ID "$facility_id"
+  env_line VOICE_CALLBACK_ACCOUNT_ID "$voice_account"
+  env_line VOICE_CALLBACK_SECRET "$(jq -r .voiceCallbackSecret "$secrets")"
 } > "$env_path"
 
 docker compose --env-file "$env_path" -f "$REPO_ROOT/deploy/production/tenant.compose.yml" up -d --no-build

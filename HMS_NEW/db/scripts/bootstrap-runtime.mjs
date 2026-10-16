@@ -44,7 +44,7 @@ if (process.env.TENANT_BOOTSTRAP === 'custom') {
     if (!rows.length) {
       const tenantId = process.env.BOOTSTRAP_TENANT_ID || randomUUID();
       const organisationId = randomUUID();
-      const facilityId = randomUUID();
+      const facilityId = process.env.BOOTSTRAP_FACILITY_ID || randomUUID();
       const staffId = randomUUID();
       const voiceRequested = process.env.VOICE_REQUESTED === '1';
       const voiceStaffId = voiceRequested ? required('VOICE_SERVICE_ACCOUNT_ID') : null;

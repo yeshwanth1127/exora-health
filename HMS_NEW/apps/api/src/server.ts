@@ -76,6 +76,7 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   // Configuration mistakes fail before listening, without leaking credential values.
   parseWhatsAppProviderConfig();
   const publicBooking=deps.publicBooking??loadPublicBookingConfig();
+  const channels = deps.channels ?? loadChannelSettings();
   const trustedProxies=(process.env.TRUSTED_PROXY_CIDRS??'').split(',').map(v=>v.trim()).filter(Boolean);
   for(const value of trustedProxies) {
     const [address,prefix,...extra]=value.split('/'),version=isIP(address??'');
@@ -182,11 +183,11 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   if (deps.publicTenantId) {
     const voice = deps.voice ?? loadVoiceRuntimeSettings();
     registerTenantPublicBookingRoutes(app, deps.db, deps.publicTenantId);
-    registerPublicVoiceRoutes(app, voice);
+    registerPublicVoiceRoutes(app, deps.db, voice, channels);
     if (voice.integration) registerVoiceIntegrationRoutes(app, deps.db, deps.publicTenantId, voice.integration);
   }
   registerCommsSummaryRoutes(app, deps.db);
-  registerVoiceGrowthRoutes(app, deps.db, deps.channels ?? loadChannelSettings());
+  registerVoiceGrowthRoutes(app, deps.db, channels);
   registerAccessRoutes(app, deps.db);
   registerDirectoryRoutes(app, deps.db);
   registerPatientRoutes(app, deps.db);
