@@ -40,6 +40,51 @@ type BookingBootstrap = {
   practitioners: { staffId: string; name: string }[];
 };
 
+function AssignedVoiceNumber() {
+  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/public/v1/voice/config", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((runtime: VoiceRuntime | null) => {
+        if (!cancelled) setPhoneNumber(runtime?.phone_number ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!phoneNumber) return null;
+
+  return (
+    <Card className="mb-6 border-emerald-200 bg-emerald-50/40">
+      <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
+        <div className="flex items-center gap-3">
+          <span className="flex size-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+            <PhoneCall className="size-5" />
+          </span>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Your hospital&apos;s voice agent number
+            </p>
+            <a className="text-xl font-semibold hover:underline" href={`tel:${phoneNumber}`}>
+              {phoneNumber}
+            </a>
+            <p className="text-xs text-muted-foreground">
+              Patient calls to this number are answered by your dedicated voice agent.
+            </p>
+          </div>
+        </div>
+        <Badge variant="outline" className="border-emerald-300 text-emerald-700">
+          Active · Dedicated to this tenant
+        </Badge>
+      </CardContent>
+    </Card>
+  );
+}
+
 function VoiceControl() {
   const [runtime, setRuntime] = useState<VoiceRuntime | null>(null);
   const [booking, setBooking] = useState<BookingBootstrap | null>(null);
@@ -156,32 +201,6 @@ function VoiceControl() {
         </p>
       )}
 
-      {runtime?.phone_number && (
-        <Card className="border-emerald-200 bg-emerald-50/40">
-          <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
-            <div className="flex items-center gap-3">
-              <span className="flex size-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                <PhoneCall className="size-5" />
-              </span>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Assigned voice number
-                </p>
-                <a className="text-lg font-semibold hover:underline" href={`tel:${runtime.phone_number}`}>
-                  {runtime.phone_number}
-                </a>
-                <p className="text-xs text-muted-foreground">
-                  Calls to this number are routed to this hospital&apos;s voice agent.
-                </p>
-              </div>
-            </div>
-            <Badge variant="outline" className="border-emerald-300 text-emerald-700">
-              Dedicated to this tenant
-            </Badge>
-          </CardContent>
-        </Card>
-      )}
-
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {steps.map((step) => (
           <Card key={step.label}>
@@ -285,6 +304,7 @@ export function Voice() {
           Call history
         </Button>
       </div>
+      <AssignedVoiceNumber />
       {setup ? (
         <div className="space-y-8">
           <VoiceControl />
