@@ -1,3 +1,4 @@
+import { PatientHover } from "./PatientHover";
 import { patientDisplayName } from "./patient-presentation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ListOrdered, RefreshCw, UserPlus } from "lucide-react";
@@ -271,14 +272,10 @@ function QueuePatient({ patientId }: { patientId: string }) {
   );
   return result.data ? (
     <div>
-      <p className="font-sans text-sm">
-        {patientDisplayName(
-          patientId,
-          [result.data.givenName, result.data.familyName]
-            .filter(Boolean)
-            .join(" "),
-        )}
-      </p>
+      <div className="font-sans text-sm">
+        <PatientHover patientId={patientId} detail={result.data} name={patientDisplayName(patientId,
+          [result.data.givenName, result.data.familyName].filter(Boolean).join(" "))} />
+      </div>
       <p className="text-xs text-muted-foreground">{result.data.mrn}</p>
     </div>
   ) : (

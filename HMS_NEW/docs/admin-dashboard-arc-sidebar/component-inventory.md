@@ -1,4 +1,6 @@
-# Component inventory — 18 October 2026
+# Component inventory
+
+> **Approved five-component wave (19 Oct 2026):** Stepper, Dropdown menu, Timeline, Hover card and Radio cards are implemented. Current inventory is **37 adopted + 5 support = 42 folders**; see `arc-five-verification.md`. Earlier counts below describe their own passes. No new claim of rendered verification is made.
 
 > **Pro wave update (18 Oct 2026):** Split bar, Skeleton morph, Team directory and Release readiness were ported from the Pro references and integrated, with Avatar and Checkbox copied as support. That makes **29 adopted + 5 support = 34 component folders**, and **83 distinct assessed candidates** (Split bar added). The selection and the Pro survey are in `pro-wave-shortlist.md`. The counts below predate this wave.
 
@@ -65,14 +67,14 @@
 | Alert | Second documentation/source screening | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/alert/?theme=light) |
 | Tooltip | Second documentation/source screening | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/tooltip/?theme=light) |
 | Dialog | Second documentation/source screening | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/dialog/?theme=light) |
-| Dropdown menu | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/dropdown-menu/?theme=light) |
+| Dropdown menu | Second documentation/source screening | Integrated in the approved five-component wave; visual review retained by user | [Demo](http://localhost:4478/free-previews/dropdown-menu/?theme=light) |
 | Context menu | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/context-menu/?theme=light) |
 | Copy button | Second documentation/source screening | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/copy-button/?theme=light) |
 | Pagination | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/pagination/?theme=light) |
-| Timeline | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/timeline/?theme=light) |
+| Timeline | Second documentation/source screening | Integrated in the approved five-component wave; visual review retained by user | [Demo](http://localhost:4478/free-previews/timeline/?theme=light) |
 | Progress | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/progress/?theme=light) |
-| Stepper | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/stepper/?theme=light) |
-| Radio cards | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/radio-cards/?theme=light) |
+| Stepper | Second documentation/source screening | Integrated in the approved five-component wave; visual review retained by user | [Demo](http://localhost:4478/free-previews/stepper/?theme=light) |
+| Radio cards | Second documentation/source screening | Integrated in the approved five-component wave; visual review retained by user | [Demo](http://localhost:4478/free-previews/radio-cards/?theme=light) |
 | Time picker | Second documentation/source screening | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/time-picker/?theme=light) |
 | Money input | Second documentation/source screening | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/money-input/?theme=light) |
 | File upload | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/file-upload/?theme=light) |
@@ -82,7 +84,7 @@
 | Notification center | Wave 3: rendered reference, states exercised and integrated placement compared at 1440×900 light | Integrated: header Alerts bell (My alerts PRD) | [Demo](http://localhost:4478/free-previews/notification-center/?theme=light) |
 | Breadcrumb | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/breadcrumb/?theme=light) |
 | Accordion | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/accordion/?theme=light) |
-| Hover card | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/hover-card/?theme=light) |
+| Hover card | Second documentation/source screening | Integrated in the approved five-component wave; visual review retained by user | [Demo](http://localhost:4478/free-previews/hover-card/?theme=light) |
 | Hold to confirm | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/hold-to-confirm/?theme=light) |
 | Switch | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/switch/?theme=light) |
 | Checkbox | Second documentation/source screening | Support copy for Release readiness only; not adopted as a general field | [Demo](http://localhost:4478/free-previews/checkbox/?theme=light) |
@@ -111,6 +113,6 @@
 
 ## Integrated folder inventory
 
-`alert`, `animated-counter`, `availability-picker`, `avatar`, `badge`, `bar-chart`, `button`, `calendar`, `checkbox`, `combobox`, `command-palette`, `copy-button`, `date-picker`, `date-range-picker`, `dialog`, `empty-state`, `filter-toolbar`, `inbox-triage`, `input`, `line-chart`, `metric-card`, `money-input`, `notification-center`, `phone-input`, `release-readiness`, `search-field`, `select`, `sidebar`, `skeleton`, `skeleton-morph`, `split-bar`, `tabs`, `team-directory`, `textarea`, `time-picker`, `toast-stack`, `tooltip`.
+`alert`, `animated-counter`, `availability-picker`, `avatar`, `badge`, `bar-chart`, `button`, `calendar`, `checkbox`, `combobox`, `command-palette`, `copy-button`, `date-picker`, `date-range-picker`, `dialog`, `dropdown-menu`, `empty-state`, `filter-toolbar`, `hover-card`, `inbox-triage`, `input`, `line-chart`, `metric-card`, `money-input`, `notification-center`, `phone-input`, `radio-cards`, `release-readiness`, `search-field`, `select`, `sidebar`, `skeleton`, `skeleton-morph`, `split-bar`, `stepper`, `tabs`, `team-directory`, `textarea`, `time-picker`, `timeline`, `toast-stack`, `tooltip`.
 
 Selection rationale and deferred data/interaction conflicts remain in `component-shortlist.md` and `next-wave-shortlist.md`. In particular, Donut chart was assessed but not integrated. Roles permissions and Week calendar remain deferred (Team directory was adopted in the Pro wave, see `pro-wave-shortlist.md`); readable role descriptions and a wider doctor panel do not constitute those larger replacements.

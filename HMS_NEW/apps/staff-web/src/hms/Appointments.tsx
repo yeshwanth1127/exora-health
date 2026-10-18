@@ -1,3 +1,5 @@
+import { DropdownMenu } from "@/components/arc/dropdown-menu/dropdown-menu";
+import { PatientHover } from "./PatientHover";
 import { CopyButton } from "@/components/arc/copy-button/copy-button";
 import { useTodayVisits } from "./patient-visits-hooks";
 import { patientDisplayName } from "./patient-presentation";
@@ -192,7 +194,9 @@ export function Appointments() {
                 <TableRow key={a.appointmentId}>
                   <TableCell>
                     <div className="font-medium">
-                      {patientDisplayName(a.patientId, a.patientName)}{" "}
+                      {a.patientId && can("patients.read")
+                        ? <PatientHover patientId={a.patientId} name={patientDisplayName(a.patientId, a.patientName)} />
+                        : patientDisplayName(a.patientId, a.patientName)}{" "}
                       {a.patientId && (
                         <TestPatientBadge patientId={a.patientId} />
                       )}
@@ -450,56 +454,17 @@ function AppointmentDetails({
                     Patient details & medical history
                   </Button>
                 )}
-                {a.status === "confirmed" && (
-                  <>
-                    {can("appointments.reschedule") && (
-                      <Button
-                        variant="outline"
-                        disabled={locked || move}
-                        onClick={() =>
-                          requestLeave(() => {
-                            setAction("");
-                            setReason("");
-                            setMove(true);
-                          })
-                        }
-                      >
-                        <CalendarClock />
-                        Move appointment
-                      </Button>
-                    )}
-                    {can("appointments.cancel") && (
-                      <Button
-                        variant="destructive"
-                        disabled={locked || move}
-                        onClick={() =>
-                          requestLeave(() => {
-                            setAction("cancel");
-                            setReason("");
-                          })
-                        }
-                      >
-                        <XCircle />
-                        Cancel appointment
-                      </Button>
-                    )}
-                    {can("appointments.check_in") && (
-                      <Button
-                        variant="outline"
-                        className="border-red-200 text-red-700 hover:border-red-300 hover:bg-red-50 hover:text-red-800"
-                        disabled={locked || move}
-                        onClick={() =>
-                          requestLeave(() => {
-                            setAction("no-show");
-                            setReason("");
-                          })
-                        }
-                      >
-                        <UserX />
-                        Mark no-show
-                      </Button>
-                    )}
-                  </>
+                {a.status === "confirmed" && (can("appointments.reschedule") || can("appointments.cancel") || can("appointments.check_in")) && (
+                  <div className="arc-demo-scope">
+                    <DropdownMenu label="More actions" disabled={locked || move} items={[
+                      ...(can("appointments.reschedule") ? [{ label: "Move appointment", icon: <CalendarClock size={16} />, disabled: locked || move,
+                        onSelect: () => requestLeave(() => { setAction(""); setReason(""); setMove(true); }) }] : []),
+                      ...(can("appointments.cancel") ? [{ label: "Cancel appointment", icon: <XCircle size={16} />, destructive: true, separatorBefore: can("appointments.reschedule"), disabled: locked || move,
+                        onSelect: () => requestLeave(() => { setAction("cancel"); setReason(""); }) }] : []),
+                      ...(can("appointments.check_in") ? [{ label: "Mark no-show", icon: <UserX size={16} />, destructive: true, disabled: locked || move,
+                        onSelect: () => requestLeave(() => { setAction("no-show"); setReason(""); }) }] : []),
+                    ]} />
+                  </div>
                 )}
               </div>
             </header>

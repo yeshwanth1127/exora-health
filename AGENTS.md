@@ -49,3 +49,10 @@
 - Read `HMS_NEW/docs/admin-dashboard-arc-sidebar/takeover-review.md` before using older runtime instructions. The normal dashboard on 5198 now uses the isolated API on 3080, including the alert routes.
 - User explicitly requested direct Month/Year DOB choices, registration replacing patient lookup, removal of Focus search, improved appointment search and replacement of native chart-data triangles. These are approved refinements; keep ordinary date pickers' default behavior unchanged.
 - Preserve Claude's Pro/alerts/availability additions; current adopted/support folder count is 37. Review and verification boundaries are recorded in the takeover review. No new wave or phone optimization is authorized by these fixes.
+
+## Approved five-component implementation
+
+- User approved Stepper, Dropdown menu, Timeline, Hover card and Radio cards, including the optional two. Read `HMS_NEW/docs/admin-dashboard-arc-sidebar/arc-five-verification.md` for current placements and checks; the current Arc folder count is 42.
+- Keep booking progress read-only and mode choices locked for holds/pending commands. More actions opens existing guarded appointment flows; primary check-in/consultation remains visible. Activity Feed and Table share the same filtered records and export.
+- Patient previews require patients.read, use actual patient contacts (never the booking caller phone), and contain no clinical history or inferred next appointment. Queue reuses its detail read; Appointment detail reads start only while the source hover card is open.
+- Multi-step form, Settings page, Support conversation and Kanban were FYI suggestions, not additional implementation approval. Inbox triage is already used for My alerts. Preserve the user's retained visual verification preference.

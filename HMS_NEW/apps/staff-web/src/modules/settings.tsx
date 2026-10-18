@@ -1,3 +1,6 @@
+import { ActivityFeed } from "./ActivityFeed";
+import type { AuditItem } from "./activity-feed-data";
+import { Tabs as ArcTabs, TabsList as ArcTabsList, TabsTrigger as ArcTabsTrigger, TabsContent as ArcTabsContent } from "@/components/arc/tabs/tabs";
 import { useLegacyCommand } from "@/hms/operational-command";
 import { RecoveryNotice } from "@/hms/OperationalRecovery";
 import { useUnsaved, requestLeave } from "@/hms/leave";
@@ -448,16 +451,6 @@ function StaffPermissions() {
   );
 }
 
-type AuditItem = {
-  id: string;
-  created_at: string;
-  actor: string;
-  actor_type: string;
-  action: string;
-  targets: Record<string, string>;
-  change: Record<string, unknown>;
-  request_id: string;
-};
 const describe = (value: unknown): string =>
   Array.isArray(value) && value.length === 2 // [before, after]
     ? `${describe(value[0])} → ${describe(value[1])}`
@@ -469,6 +462,7 @@ const describe = (value: unknown): string =>
 
 export function ActivityLog() {
   const call = useApi();
+  const [view, setView] = useState("table");
   const [filters, setFilters] = useState({
       actor: "",
       target: "",
@@ -585,40 +579,55 @@ export function ActivityLog() {
       </Card>
       <Resource {...log}>
         <Card className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Time</TableHead>
-                <TableHead>Person</TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead>Records</TableHead>
-                <TableHead>Change</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {log.data?.items.map((e) => (
-                <TableRow key={e.id}>
-                  <TableCell className="whitespace-nowrap">
-                    {log.data?.dateBoundary ? new Intl.DateTimeFormat("en-IN", { timeZone: log.data.dateBoundary.timezone, dateStyle: "medium", timeStyle: "short" }).format(new Date(e.created_at)) : e.created_at}
-                  </TableCell>
-                  <TableCell className="whitespace-normal">{e.actor}</TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {e.action}
-                  </TableCell>
-                  <TableCell className="whitespace-normal text-xs">
-                    {Object.entries(e.targets)
-                      .map(([k, v]) => `${k}: ${v}`)
-                      .join(", ")}
-                  </TableCell>
-                  <TableCell className="whitespace-normal text-xs">
-                    {Object.entries(e.change)
-                      .map(([k, v]) => `${k}: ${describe(v)}`)
-                      .join("; ")}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <ArcTabs value={view} onValueChange={setView} className="arc-demo-scope">
+            <div className="px-5 pt-4">
+              <ArcTabsList aria-label="Activity presentation">
+                <ArcTabsTrigger value="table">Table</ArcTabsTrigger>
+                <ArcTabsTrigger value="feed">Feed</ArcTabsTrigger>
+              </ArcTabsList>
+            </div>
+            <ArcTabsContent value="table">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Person</TableHead>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Records</TableHead>
+                    <TableHead>Change</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {log.data?.items.map((e) => (
+                    <TableRow key={e.id}>
+                      <TableCell className="whitespace-nowrap">
+                        {log.data?.dateBoundary ? new Intl.DateTimeFormat("en-IN", { timeZone: log.data.dateBoundary.timezone, dateStyle: "medium", timeStyle: "short" }).format(new Date(e.created_at)) : e.created_at}
+                      </TableCell>
+                      <TableCell className="whitespace-normal">{e.actor}</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {e.action}
+                      </TableCell>
+                      <TableCell className="whitespace-normal text-xs">
+                        {Object.entries(e.targets)
+                          .map(([k, v]) => `${k}: ${v}`)
+                          .join(", ")}
+                      </TableCell>
+                      <TableCell className="whitespace-normal text-xs">
+                        {Object.entries(e.change)
+                          .map(([k, v]) => `${k}: ${describe(v)}`)
+                          .join("; ")}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ArcTabsContent>
+            <ArcTabsContent value="feed">
+              {log.data?.dateBoundary?.timezone
+                ? <ActivityFeed key={query} items={log.data.items} timezone={log.data.dateBoundary.timezone} />
+                : <p role="status" className="p-5 text-sm">Organisation timezone is unavailable. Use Table view to review these events.</p>}
+            </ArcTabsContent>
+          </ArcTabs>
           {log.data?.items.length === 0 && (
             <WorkspaceEmpty
               title="No matching activity"

@@ -1,3 +1,6 @@
+import { Stepper } from "@/components/arc/stepper/stepper";
+import { RadioCards } from "@/components/arc/radio-cards/radio-cards";
+import { Stethoscope, Video } from "lucide-react";
 import { CopyButton } from "@/components/arc/copy-button/copy-button";
 import { ArrowRight } from "lucide-react";
 import {
@@ -197,40 +200,24 @@ export function Booking({
     );
   return (
     <div className="space-y-5">
-      <ol
-        className="grid grid-cols-3 gap-3 border-b pb-5 text-sm"
-        aria-label="Booking steps"
-      >
-        {["Patient", "Doctor & time", "Review & confirm"].map((title, i) => (
-          <li key={title} aria-current={step === i + 1 ? "step" : undefined}>
-            <span
-              className={
-                step === i + 1
-                  ? "font-semibold text-primary"
-                  : "text-muted-foreground"
-              }
-            >
-              {i + 1}. {title}
-            </span>
-          </li>
-        ))}
-      </ol>
+      <div className="arc-demo-scope border-b pb-5">
+        <Stepper label="Booking progress" current={step - 1} steps={[
+          { id: "patient", label: "Patient", description: "Choose or register the patient." },
+          { id: "time", label: "Doctor & time", description: "Choose a doctor and hold a time." },
+          { id: "review", label: "Review & confirm", description: "Check the details before booking." },
+        ]} />
+      </div>
       <div className={`${step === 2 ? "max-w-6xl" : "max-w-3xl"} space-y-6`}>
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Appointment type</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {(["in_person", "virtual"] as const).map((mode) => (
-              <Button
-                key={mode}
-                variant={visitMode === mode ? "default" : "outline"}
-
-                aria-pressed={visitMode === mode}
-                disabled={!!hold || cmd.busy || cmd.unknown}
-                onClick={() => setVisitMode(mode)}
-              >
-                {appointmentModeLabel(mode)}
-              </Button>
-            ))}
+          <div className="arc-demo-scope">
+            <RadioCards aria-label="Appointment type" value={visitMode}
+              disabled={!!hold || cmd.busy || cmd.unknown || releasing}
+              onValueChange={(mode) => { if (mode === "in_person" || mode === "virtual") setVisitMode(mode); }}
+              options={[
+                { value: "in_person", label: "In person", description: "The patient visits the clinic.", icon: <Stethoscope size={20} /> },
+                { value: "virtual", label: "Video consultation", description: "The patient joins the doctor by video.", icon: <Video size={20} /> },
+              ]} />
           </div>
           {hold && (
             <p className="text-sm text-muted-foreground">

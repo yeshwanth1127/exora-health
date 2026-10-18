@@ -458,5 +458,67 @@
     "integratedSha256": "4af9c6e1b5d03160a4d26ab394d09a21fa014e8eb0f6ba8d88a8eff3f8fe5a66",
     "bindingAdaptation": "Approved by the user 18 Oct 2026. Booking slot step for one doctor: only free slots (busy/conflict marks and 'everyone is free' bars have no single-doctor meaning; legend kept); one attendee; next 10 open days in the 30 days from the Start date; slot length from the server slot; Confirm = 'Hold this time' places the real hold and 'Held' is controlled by it; slots heading takes the demo page's h3 display font, tracking and 1.1 line height. User-requested (18 Oct 2026): day numbers use --text-lg instead of --text-xl; an Arc date picker (existing DayNavigator, 'Start date') above the picker sets the first day, so the 5 open days come from the 30 days after it. User-requested (18 Oct 2026, second pass): 10 square day tiles; the slot list is replaced by the Booking pill time step (components/pro/booking-pill src/Component.cjs `eu` + dist/styles.css .slots/.highlight/.slot): 8-column chips (4 below 520px), sliding morph-spring highlight, struck-through taken times from the server's non-free slots, arrow/Home/End keys, 12-hour labels, 'N free' count in place of the legend. The pill's panel-entry stagger is not used.",
     "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/stepper/stepper.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/stepper/stepper.tsx",
+    "sha256": "7b4034915b0902b16e6dd2e54dfae4ce40fd9b2d4fd09e736f9e196d97fc6c17",
+    "integratedSha256": "7b4034915b0902b16e6dd2e54dfae4ce40fd9b2d4fd09e736f9e196d97fc6c17"
+  },
+  {
+    "file": "src/components/arc/stepper/stepper.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/stepper/stepper.module.css",
+    "sha256": "3762deb9d9cda692a33c81510c811cae11aebadcd82ce58d4ea3b84b3ed5c569",
+    "integratedSha256": "3762deb9d9cda692a33c81510c811cae11aebadcd82ce58d4ea3b84b3ed5c569"
+  },
+  {
+    "file": "src/components/arc/dropdown-menu/dropdown-menu.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/dropdown-menu/dropdown-menu.tsx",
+    "sha256": "93bcd4952628899159bfe984c43d3d23d91aa2eddbaec2ee8bea864e67406981",
+    "integratedSha256": "9fadafb4c3cc956d27720cf4652ed6ad45d8452959dd6fc71cb53b86dcbe5c24",
+    "bindingAdaptation": "Optional disabled prop binds the existing busy/unknown/move lock to the trigger. The portaled menu receives arc-demo-scope so its reference tokens remain scoped; action callbacks/geometry/keyboard/motion retained."
+  },
+  {
+    "file": "src/components/arc/dropdown-menu/dropdown-menu.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/dropdown-menu/dropdown-menu.module.css",
+    "sha256": "4a1a34dbbb4f327cd9843ae8df2b9ce55c3cac979cc2d5d164bd960d5bdc02ab",
+    "integratedSha256": "4a1a34dbbb4f327cd9843ae8df2b9ce55c3cac979cc2d5d164bd960d5bdc02ab"
+  },
+  {
+    "file": "src/components/arc/timeline/timeline.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/timeline/timeline.tsx",
+    "sha256": "71d91894d8337d7b163bb8b011fdc8d47039ae53e90b9e03afc01d845f76870c",
+    "integratedSha256": "71d91894d8337d7b163bb8b011fdc8d47039ae53e90b9e03afc01d845f76870c"
+  },
+  {
+    "file": "src/components/arc/timeline/timeline.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/timeline/timeline.module.css",
+    "sha256": "34712f6b90d29cbc326f1115ee2588d330d729f63d661d7c2c80432b3585115c",
+    "integratedSha256": "34712f6b90d29cbc326f1115ee2588d330d729f63d661d7c2c80432b3585115c"
+  },
+  {
+    "file": "src/components/arc/hover-card/hover-card.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/hover-card/hover-card.tsx",
+    "sha256": "8fe88d6df8541251d9827336614a5f7a87026992eb66a42d8f71679d274d89c2",
+    "integratedSha256": "61a7e6389da0b812628aeb9ca4bfa1f5f8659c3935bab0c407e0abba811566c5",
+    "bindingAdaptation": "Portaled Surface receives arc-demo-scope to retain reference tokens. Patient content is read-only and mounts only when the source card opens; original hover/focus timers, dismissal and motion unchanged."
+  },
+  {
+    "file": "src/components/arc/hover-card/hover-card.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/hover-card/hover-card.module.css",
+    "sha256": "2a847a6020215674247678354139cb7a9b7b5311f86f0a7d6403a3575c83ba2d",
+    "integratedSha256": "2a847a6020215674247678354139cb7a9b7b5311f86f0a7d6403a3575c83ba2d"
+  },
+  {
+    "file": "src/components/arc/radio-cards/radio-cards.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/radio-cards/radio-cards.tsx",
+    "sha256": "82084be52a5d5f9def1d517f3bcdbf8c26f046afc25b93d5dd8ff32543f8a8d4",
+    "integratedSha256": "82084be52a5d5f9def1d517f3bcdbf8c26f046afc25b93d5dd8ff32543f8a8d4"
+  },
+  {
+    "file": "src/components/arc/radio-cards/radio-cards.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/radio-cards/radio-cards.module.css",
+    "sha256": "5f6e5cd90a57fd7c31f301d6c1a9172b3386b2e4afdd0526573c4736836eca7a",
+    "integratedSha256": "5f6e5cd90a57fd7c31f301d6c1a9172b3386b2e4afdd0526573c4736836eca7a"
   }
 ]
