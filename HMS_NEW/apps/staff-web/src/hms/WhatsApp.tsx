@@ -1,3 +1,4 @@
+import { Stepper } from "@/components/arc/stepper/stepper";
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -9,7 +10,7 @@ import {
 import { toast } from "@/components/toast-events";
 import { PageTitle } from "@/components/workspace";
 import { WhatsAppIcon } from "@/components/brand-icons";
-import { Badge } from "@/components/ui/badge";
+import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -172,13 +173,8 @@ function Setup({ clinic }: { clinic: Clinic }) {
           Patients message your number, pick a doctor and a time, and the
           booking lands in Appointments. Four steps, about 15 minutes.
         </p>
-        <div className="mt-4 flex gap-1.5" aria-label={`Step ${reached + 1} of 4`}>
-          {stageOrder.slice(0, 4).map((s, i) => (
-            <span
-              key={s}
-              className={`h-1.5 flex-1 rounded-full ${i < reached ? "bg-primary" : i === reached ? "bg-primary/40" : "bg-muted"}`}
-            />
-          ))}
+        <div className="arc-demo-scope mt-4">
+          <Stepper label="WhatsApp setup" current={reached} steps={stageOrder.slice(0, 4).map(id => ({ id, label: titles[id as Exclude<Stage, "live">][0] }))} />
         </div>
       </div>
       {!canManage && (

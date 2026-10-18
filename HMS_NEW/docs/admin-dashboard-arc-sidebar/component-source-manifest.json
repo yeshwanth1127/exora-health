@@ -28,7 +28,8 @@
     "file": "src/components/arc/metric-card/metric-card.tsx",
     "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/metric-card/metric-card.tsx",
     "sha256": "ac550e49b6e9f680f32a694dd27cb42597795465d4709f2418230fbbde865906",
-    "integratedSha256": "ac550e49b6e9f680f32a694dd27cb42597795465d4709f2418230fbbde865906"
+    "integratedSha256": "e16f3bd6590391b869e16ad64e5e782c46093e68a6a53dffe63f1eb990f866cb",
+    "bindingAdaptation": "Optional decimals passes through to the existing AnimatedCounter; nullable application data renders an accessible unavailable dash using the existing counter typography. Numeric default demo output, geometry, motion and styles are unchanged."
   },
   {
     "file": "src/components/arc/metric-card/metric-card.module.css",

@@ -1,3 +1,4 @@
+import { GrowthMetric } from "./GrowthMetric";
 import { requestLeave } from "./leave";
 import { useState, type ReactNode } from "react";
 import {
@@ -10,13 +11,14 @@ import {
   Pencil,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/brand-icons";
-import { Badge } from "@/components/ui/badge";
+import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { SharedField } from "@/components/shared-field";
+import { TimeField } from "@/components/WorkspaceFields";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/arc/tabs/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useWorkspace } from "./hooks";
 import { today } from "./model";
@@ -78,30 +80,30 @@ export function Live({
   const canManage = can("comms.manage");
   return (
     <div className="space-y-6">
-      <Tabs value={tab} onValueChange={(v) => open(v as Tab)}>
-        <div className="-mx-1 overflow-x-auto px-1">
-          <TabsList variant="line">
+      <Tabs value={tab} onValueChange={(v) => open(v as Tab)} className="arc-workflow-root">
+        <div className="arc-demo-scope">
+          <TabsList aria-label="WhatsApp workspace">
             {tabs.map(([k, label]) => (
-              <TabsTrigger key={k} value={k} className="flex-none px-3">
-                {label}
+              <TabsTrigger key={k} value={k}>
+                <span className="inline-flex items-center gap-2">{label}
                 {k === "inbox" && waiting > 0 && (
                   <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[#25d366] px-1 text-[10px] font-semibold text-white">
                     {waiting}
                   </span>
-                )}
+                )}</span>
               </TabsTrigger>
             ))}
           </TabsList>
         </div>
-      </Tabs>
-      {tab === "overview" && <Overview data={data} change={change} setup={setup} update={update} open={open} canManage={canManage} />}
-      {tab === "inbox" && <Inbox data={data} change={change} clinicName={name} openAutomations={() => open("automations", "&id=staff_reply")} />}
-      {tab === "automations" && <Automations data={data} change={change} clinicName={name} doctor={clinic.doctors[0]?.name ?? ""} canManage={canManage} />}
-      {tab === "promotions" && <Promotions data={data} change={change} clinic={clinic} clinicName={name} canManage={canManage} />}
-      {tab === "log" && <Activity data={data} change={change} />}
-      {tab === "settings" && (
+      <TabsContent value="overview" className="arc-workflow-panel"><Overview data={data} change={change} setup={setup} update={update} open={open} canManage={canManage} /></TabsContent>
+      <TabsContent value="inbox" className="arc-workflow-panel"><Inbox data={data} change={change} clinicName={name} openAutomations={() => open("automations", "&id=staff_reply")} /></TabsContent>
+      <TabsContent value="automations" className="arc-workflow-panel"><Automations data={data} change={change} clinicName={name} doctor={clinic.doctors[0]?.name ?? ""} canManage={canManage} /></TabsContent>
+      <TabsContent value="promotions" className="arc-workflow-panel"><Promotions data={data} change={change} clinic={clinic} clinicName={name} canManage={canManage} /></TabsContent>
+      <TabsContent value="log" className="arc-workflow-panel"><Activity data={data} change={change} /></TabsContent>
+      <TabsContent value="settings" className="arc-workflow-panel">
         <SettingsTab data={data} change={change} clinic={clinic} setup={setup} update={update} edit={edit} canManage={canManage} />
-      )}
+      </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -170,11 +172,15 @@ function Overview({
   return (
     <div className="space-y-6">
       <StatusCard setup={setup} update={update} canManage={canManage} />
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat label="Booked on WhatsApp today" value={todayLog.filter((e) => e.kind === "Booking confirmed").length} />
-        <Stat label="Messages sent today" value={out.length} />
-        <Stat label="Delivered" value={settled.length ? `${Math.round((delivered / settled.length) * 100)}%` : "—"} />
-        <Stat label="Waiting for reply" value={waiting} onClick={() => open("inbox")} />
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold">Today on WhatsApp</h2>
+        <Button variant="outline" onClick={() => open("inbox")}>Open inbox · {waiting} waiting for reply</Button>
+      </div>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
+        <GrowthMetric label="Booked on WhatsApp today" value={todayLog.filter((e) => e.kind === "Booking confirmed").length} context="Today · browser preview" />
+        <GrowthMetric label="Messages sent today" value={out.length} context="Outbound messages · browser preview" />
+        <GrowthMetric label="Delivered" value={settled.length ? Math.round((delivered / settled.length) * 100) : null} suffix="%" context={settled.length ? "Of settled outbound messages · browser preview" : "No settled outbound messages yet"} />
+        <GrowthMetric label="Waiting for reply" value={waiting} context="Conversations needing staff · browser preview" />
       </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Card className="gap-0 p-0 shadow-none">
@@ -253,26 +259,6 @@ function Overview({
   );
 }
 
-function Stat({ label, value, onClick }: { label: string; value: ReactNode; onClick?: () => void }) {
-  const body = (
-    <>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">{value}</p>
-    </>
-  );
-  return (
-    <Card className="gap-0 p-4 shadow-none">
-      {onClick ? (
-        <button type="button" onClick={onClick} className="text-left">
-          {body}
-        </button>
-      ) : (
-        body
-      )}
-    </Card>
-  );
-}
-
 function SettingsTab({
   data,
   change,
@@ -347,10 +333,10 @@ function SettingsTab({
       <Section title="Reception and handover" text="When the bot hands a chat to your team, and what patients hear outside these hours.">
         <div className="grid gap-4 sm:grid-cols-3">
           <Field id="wa-open" label="Reception opens">
-            <Input id="wa-open" type="time" value={s.hours.from} onChange={(e) => set({ hours: { ...s.hours, from: e.target.value } })} />
+            <TimeField id="wa-open" label="Reception opens" value={s.hours.from} onValueChange={value => set({ hours: { ...s.hours, from: value } })} />
           </Field>
           <Field id="wa-close" label="Reception closes">
-            <Input id="wa-close" type="time" value={s.hours.to} onChange={(e) => set({ hours: { ...s.hours, to: e.target.value } })} />
+            <TimeField id="wa-close" label="Reception closes" value={s.hours.to} onValueChange={value => set({ hours: { ...s.hours, to: value } })} />
           </Field>
           <Field id="wa-words" label="Words that reach staff">
             <Input id="wa-words" value={s.handoffWords} onChange={(e) => set({ handoffWords: e.target.value })} />
@@ -375,10 +361,10 @@ function SettingsTab({
         {s.quiet.on && (
           <div className="mt-4 grid max-w-md gap-4 sm:grid-cols-2">
             <Field id="wa-quiet-from" label="From">
-              <Input id="wa-quiet-from" type="time" value={s.quiet.from} onChange={(e) => set({ quiet: { ...s.quiet, from: e.target.value } })} />
+              <TimeField id="wa-quiet-from" label="From" value={s.quiet.from} onValueChange={value => set({ quiet: { ...s.quiet, from: value } })} />
             </Field>
             <Field id="wa-quiet-to" label="Until">
-              <Input id="wa-quiet-to" type="time" value={s.quiet.to} onChange={(e) => set({ quiet: { ...s.quiet, to: e.target.value } })} />
+              <TimeField id="wa-quiet-to" label="Until" value={s.quiet.to} onValueChange={value => set({ quiet: { ...s.quiet, to: value } })} />
             </Field>
           </div>
         )}
@@ -428,10 +414,5 @@ function Section({ title, text, children }: { title: string; text: string; child
 }
 
 function Field({ id, label, children }: { id: string; label: string; children: ReactNode }) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-    </div>
-  );
+  return <SharedField id={id} label={label}>{children}</SharedField>;
 }

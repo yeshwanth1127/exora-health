@@ -1,3 +1,4 @@
+import { GrowthMetric } from "@/hms/GrowthMetric";
 import { useEffect, useRef, useState } from "react";
 import {
   Headphones,
@@ -35,7 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/arc/tabs/tabs";
 
 type Call = {
   id: string;
@@ -480,34 +481,27 @@ export function VoiceModule({
                   text="Verify the provider’s recording response and download host. Call history remains available."
                 />
               )}
-            <Card>
-              <CardContent className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 py-6">
-                {[
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
+                {([
                   ["Calls", r.data.summary.calls],
                   ["Bookings created", r.data.summary.bookings],
                   ["Call errors", r.data.summary.errors],
                   ["Completed calls", r.data.summary.completed],
                   ["Tool activity", r.data.summary.tool_calls],
-                ].map(([label, value]) => (
-                  <div key={label}>
-                    <p className="text-xs text-muted-foreground">
-                      {label} · 30 days
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold tabular-nums">
-                      {value}
-                    </p>
-                  </div>
+                ] as const).map(([label, value]) => (
+                  <GrowthMetric key={label} label={label} value={value} context={r.data ? `Last ${r.data.summary.period_days} days` : "Summary period unavailable"} />
                 ))}
-              </CardContent>
-            </Card>
-            <Tabs value={tab} onValueChange={(v) => setTab(String(v))}>
+            </div>
+            <Tabs value={tab} onValueChange={(v) => setTab(String(v))} className="arc-workflow-root">
+              <div className="arc-demo-scope">
               <TabsList>
                 <TabsTrigger value="calls">Call history</TabsTrigger>
                 {r.data.can_review_recordings && (
                   <TabsTrigger value="access">Review access</TabsTrigger>
                 )}
               </TabsList>
-              <TabsContent value="calls">
+              </div>
+              <TabsContent value="calls" className="arc-workflow-panel">
                 <Card>
                   <CardHeader>
                     <CardTitle>Recent calls</CardTitle>
@@ -643,7 +637,7 @@ export function VoiceModule({
                 </Card>
               </TabsContent>
               {tab === "access" && r.data.can_review_recordings && (
-                <TabsContent value="access">
+                <TabsContent value="access" className="arc-workflow-panel">
                   <Card>
                     <CardHeader>
                       <CardTitle>

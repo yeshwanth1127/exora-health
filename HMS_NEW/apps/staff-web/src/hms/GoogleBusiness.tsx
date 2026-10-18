@@ -1,3 +1,5 @@
+import { metricChange } from "./growth-metrics";
+import { GrowthMetric } from "./GrowthMetric";
 import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import {
   AlertTriangle,
@@ -18,11 +20,11 @@ import {
 import { GoogleIcon, WhatsAppIcon } from "@/components/brand-icons";
 import { toast } from "@/components/toast-events";
 import { PageTitle } from "@/components/workspace";
-import { Badge } from "@/components/ui/badge";
+import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/arc/tabs/tabs";
 import { request } from "./client";
 import { useQuery, useWorkspace } from "./hooks";
 import { today } from "./model";
@@ -199,27 +201,27 @@ function Google({ exora }: { exora: Exora }) {
     <>
       <PageTitle title="Google Business" icon={<GoogleIcon className="size-7" />} action={preview} />
       <div className="space-y-6">
-        <Tabs value={tab} onValueChange={(v) => open(v as GTab)}>
-          <div className="-mx-1 overflow-x-auto px-1">
-            <TabsList variant="line">
+        <Tabs value={tab} onValueChange={(v) => open(v as GTab)} className="arc-workflow-root">
+          <div className="arc-demo-scope">
+            <TabsList aria-label="Google Business workspace">
               {tabs.map(([k, label]) => (
-                <TabsTrigger key={k} value={k} className="flex-none px-3">
-                  {label}
+                <TabsTrigger key={k} value={k}>
+                  <span className="inline-flex items-center gap-2">{label}
                   {k === "reviews" && unreplied > 0 && (
                     <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[#1a73e8] px-1 text-[10px] font-semibold text-white">{unreplied}</span>
-                  )}
+                  )}</span>
                 </TabsTrigger>
               ))}
             </TabsList>
           </div>
-        </Tabs>
         {!canManage && <p className="rounded-md border bg-muted/40 p-3 text-sm">You can see the listing. Ask an administrator to make changes.</p>}
-        {tab === "overview" && <Overview data={data} change={change} exora={exora} open={open} canManage={canManage} />}
-        {tab === "profile" && <Profile key={section ?? ""} data={data} change={change} exora={exora} section={section} canManage={canManage} />}
-        {tab === "reviews" && <Reviews data={data} change={change} exora={exora} canManage={canManage} />}
-        {tab === "posts" && <Posts data={data} change={change} exora={exora} canManage={canManage} />}
-        {tab === "photos" && <Photos data={data} change={change} canManage={canManage} />}
-        {tab === "insights" && <Insights data={data} />}
+        <TabsContent value="overview" className="arc-workflow-panel"><Overview data={data} change={change} exora={exora} open={open} canManage={canManage} /></TabsContent>
+        <TabsContent value="profile" className="arc-workflow-panel"><Profile key={section ?? ""} data={data} change={change} exora={exora} section={section} canManage={canManage} /></TabsContent>
+        <TabsContent value="reviews" className="arc-workflow-panel"><Reviews data={data} change={change} exora={exora} canManage={canManage} /></TabsContent>
+        <TabsContent value="posts" className="arc-workflow-panel"><Posts data={data} change={change} exora={exora} canManage={canManage} /></TabsContent>
+        <TabsContent value="photos" className="arc-workflow-panel"><Photos data={data} change={change} canManage={canManage} /></TabsContent>
+        <TabsContent value="insights" className="arc-workflow-panel"><Insights data={data} /></TabsContent>
+        </Tabs>
       </div>
     </>
   );
@@ -434,16 +436,9 @@ function Overview({
       ))}
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-6">
+          <GrowthMetric label="Profile score" value={s} suffix="/100" context={todo.length ? `${Math.min(3, todo.length)} quick fixes to reach ${reach}.` : "Your listing is complete. Keep posting and replying to reviews."} />
           <Card className="gap-0 p-0 shadow-none">
-            <div className="flex items-center gap-5 border-b p-5">
-              <ScoreRing value={s} />
-              <div>
-                <p className="text-lg font-semibold">Profile score {s}/100</p>
-                <p className="text-sm text-muted-foreground">
-                  {todo.length ? `${Math.min(3, todo.length)} quick fix${todo.length === 1 ? "" : "es"} to reach ${reach}.` : "Your listing is complete. Keep posting and replying to reviews."}
-                </p>
-              </div>
-            </div>
+            <h2 className="border-b p-5 text-sm font-semibold">Profile checklist</h2>
             <ul className="divide-y">
               {todo.map((t) => {
                 const [label, run] = action(t);
@@ -485,7 +480,7 @@ function Overview({
                 Insights <ArrowRight />
               </Button>
             </div>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
               {(
                 [
                   ["Profile views", data.month.search + data.month.maps, data.lastMonth.search + data.lastMonth.maps],
@@ -495,11 +490,7 @@ function Overview({
                   ["Bookings", data.month.bookings, data.lastMonth.bookings],
                 ] as const
               ).map(([label, n, before]) => (
-                <Card key={label} className="gap-0 p-4 shadow-none">
-                  <p className="text-xs text-muted-foreground">{label}</p>
-                  <p className="text-xl font-semibold tabular-nums">{n.toLocaleString()}</p>
-                  <Delta now={n} before={before} />
-                </Card>
+                <GrowthMetric key={label} label={label} value={n} before={before} context="This month · compared with last month" />
               ))}
             </div>
           </div>
@@ -514,28 +505,8 @@ function Overview({
 }
 
 export function Delta({ now, before, label = "last month" }: { now: number; before: number; label?: string }) {
-  if (!before) return <p className="text-[11px] text-muted-foreground">{now ? "New" : "—"}</p>;
-  const pct = Math.round(((now - before) / before) * 100);
-  return (
-    <p className={`text-[11px] ${pct > 0 ? "text-emerald-700" : pct < 0 ? "text-destructive" : "text-muted-foreground"}`}>
-      {pct > 0 ? "▲" : pct < 0 ? "▼" : ""} {Math.abs(pct)}% vs {label}
-    </p>
-  );
-}
-
-function ScoreRing({ value }: { value: number }) {
-  const r = 26,
-    c = 2 * Math.PI * r;
-  const color = value >= 80 ? "#188038" : value >= 50 ? "#f9ab00" : "#d93025";
-  return (
-    <svg viewBox="0 0 64 64" className="size-16 shrink-0" role="img" aria-label={`Profile score ${value} out of 100`}>
-      <circle cx="32" cy="32" r={r} fill="none" stroke="currentColor" strokeOpacity=".1" strokeWidth="6" />
-      <circle cx="32" cy="32" r={r} fill="none" stroke={color} strokeWidth="6" strokeLinecap="round" strokeDasharray={`${(value / 100) * c} ${c}`} transform="rotate(-90 32 32)" />
-      <text x="32" y="37" textAnchor="middle" className="fill-foreground text-[15px] font-semibold">
-        {value}
-      </text>
-    </svg>
-  );
+  const change = metricChange(now, before);
+  return <Badge variant="outline">{change ?? "—"}{change && ` vs ${label}`}</Badge>;
 }
 
 /** A Google Search / Maps style card, so changes are seen the way patients see them. */

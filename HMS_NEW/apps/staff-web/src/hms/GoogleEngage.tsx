@@ -1,8 +1,13 @@
+import { GrowthDateTime } from "./GrowthDateTime";
+import { SharedField } from "@/components/shared-field";
+import { DateField } from "@/components/WorkspaceFields";
+import { GrowthBar, GrowthSplit } from "./GrowthCharts";
+import { GrowthMetric } from "./GrowthMetric";
 import { useRef, useState } from "react";
 import { AlertTriangle, CalendarCheck, Copy, ImagePlus, Phone, Send, Star, X } from "lucide-react";
 import { WhatsAppIcon } from "@/components/brand-icons";
 import { toast } from "@/components/toast-events";
-import { Badge } from "@/components/ui/badge";
+import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,7 +28,7 @@ import {
   type Post,
   type PostKind,
 } from "./google-profile";
-import { copy, Delta, PhotoThumb, photoUrls, type GChange } from "./GoogleBusiness";
+import { copy, PhotoThumb, photoUrls, type GChange } from "./GoogleBusiness";
 import { Chip } from "./GoogleProfile";
 
 const DAY = 86_400_000;
@@ -142,18 +147,9 @@ export function Reviews({ data, change, exora, canManage }: { data: GbpData; cha
               <p className="text-xs text-muted-foreground">{data.reviews.length} reviews</p>
             </div>
           </div>
-          {[5, 4, 3, 2, 1].map((n) => {
-            const c = data.reviews.filter((r) => r.stars === n).length;
-            return (
-              <div key={n} className="flex items-center gap-2 text-xs">
-                <span className="w-3">{n}</span>
-                <span className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                  <span className="block h-full bg-[#fbbc04]" style={{ width: `${(c / Math.max(data.reviews.length, 1)) * 100}%` }} />
-                </span>
-                <span className="w-4 text-right text-muted-foreground">{c}</span>
-              </div>
-            );
-          })}
+          <GrowthSplit label="Review ratings" segments={[5, 4, 3, 2, 1].map(stars => ({
+            id: String(stars), label: `${stars} star${stars === 1 ? "" : "s"}`, value: data.reviews.filter(r => r.stars === stars).length,
+          }))} />
         </Card>
         <Card className="gap-3 p-5 shadow-none">
           <h2 className="text-sm font-semibold">Get more reviews</h2>
@@ -252,14 +248,12 @@ export function Posts({ data, change, exora, canManage }: { data: GbpData; chang
               )}
               {kind !== "update" && (
                 <>
-                  <div className="space-y-2">
-                    <Label htmlFor="post-from">Starts</Label>
-                    <Input id="post-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="post-to">Ends</Label>
-                    <Input id="post-to" type="date" min={from} value={to} onChange={(e) => setTo(e.target.value)} />
-                  </div>
+                  <SharedField id="post-from" label="Starts">
+                    <DateField id="post-from" label="Starts" value={from} onValueChange={setFrom} />
+                  </SharedField>
+                  <SharedField id="post-to" label="Ends">
+                    <DateField id="post-to" label="Ends" min={from} value={to} onValueChange={setTo} />
+                  </SharedField>
                 </>
               )}
             </div>
@@ -288,7 +282,7 @@ export function Posts({ data, change, exora, canManage }: { data: GbpData; chang
                 <Label htmlFor="post-when">When</Label>
                 <Pick id="post-when" className="w-44" value={when} options={[["now", "Post now"], ["later", "Schedule"]]} onChange={setWhen} />
               </div>
-              {when === "later" && <Input type="datetime-local" className="w-56" aria-label="Post at" value={at} onChange={(e) => setAt(e.target.value)} />}
+              {when === "later" && <GrowthDateTime label="Post at" value={at} onValueChange={setAt} />}
             </div>
             {problems.length > 0 && text && (
               <ul className="space-y-1 text-xs text-muted-foreground">
@@ -453,11 +447,10 @@ export function Insights({ data }: { data: GbpData }) {
   const m = data.month,
     p = data.lastMonth;
   const views = m.search + m.maps;
-  const max = Math.max(...data.daily.map((d) => d.views), 1);
   const top = data.keywords[0];
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
         {(
           [
             ["Profile views", views, p.search + p.maps],
@@ -469,11 +462,7 @@ export function Insights({ data }: { data: GbpData }) {
             ["Bookings", m.bookings, p.bookings],
           ] as const
         ).map(([label, n, before]) => (
-          <Card key={label} className="gap-0 p-4 shadow-none">
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="text-xl font-semibold tabular-nums">{n.toLocaleString()}</p>
-            <Delta now={n} before={before} />
-          </Card>
+          <GrowthMetric key={label} label={label} value={n} before={before} context="This month · compared with last month" />
         ))}
       </div>
       <Card className="gap-3 p-5 shadow-none">
@@ -483,28 +472,16 @@ export function Insights({ data }: { data: GbpData }) {
             {Math.round((m.search / Math.max(views, 1)) * 100)}% found you on Google Search, the rest on Maps.
           </p>
         </div>
-        <div className="flex h-36 items-end gap-1" role="img" aria-label="Daily profile views">
-          {data.daily.map((d) => (
-            <div key={d.day} className="flex-1 rounded-t bg-[#1a73e8]/70 hover:bg-[#1a73e8]" style={{ height: `${(d.views / max) * 100}%` }} title={`${d.day}: ${d.views} views`} />
-          ))}
-        </div>
+        <GrowthBar label="Profile views" period="Last 30 days" category="Day" averageLabel="Daily average" showAverage
+          data={data.daily.map(d => ({ key: String(d.day), label: String(d.day), axisLabel: d.day.slice(8), value: d.views }))} />
       </Card>
       <Card className="gap-3 p-5 shadow-none">
         <div>
           <h2 className="text-sm font-semibold">What people searched to find you</h2>
           {top && <p className="text-xs text-muted-foreground">Most people found you searching “{top.term}”.</p>}
         </div>
-        <ul className="space-y-2">
-          {data.keywords.map((k) => (
-            <li key={k.term} className="flex items-center gap-3 text-sm">
-              <span className="w-56 truncate">{k.term}</span>
-              <span className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                <span className="block h-full bg-[#34a853]" style={{ width: `${(k.count / data.keywords[0].count) * 100}%` }} />
-              </span>
-              <span className="w-12 text-right tabular-nums text-muted-foreground">{k.count}</span>
-            </li>
-          ))}
-        </ul>
+        <GrowthBar label="Searches" period="This month" category="Search term" averageLabel="Average per search term"
+          data={data.keywords.map((k, index) => ({ key: k.term, label: k.term, axisLabel: String(index + 1), value: k.count }))} />
         <p className="text-xs text-muted-foreground">Bookings start counting once your Book button is live.</p>
       </Card>
     </div>

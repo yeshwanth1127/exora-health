@@ -1,13 +1,15 @@
+import { GrowthBar, GrowthSplit } from "./GrowthCharts";
+import { GrowthMetric } from "./GrowthMetric";
 import { LineChart as ArcLineChart } from "@/components/arc/line-chart/line-chart";
-import { useEffect, useState, type ComponentType } from "react";
-import { ArrowRight, Check, ExternalLink, Globe, Link2, Loader2, MapPin, Navigation, Phone, Share2, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, Check, ExternalLink, Loader2, Navigation, Phone, ShieldCheck } from "lucide-react";
 import { toast } from "@/components/toast-events";
 import { PageTitle } from "@/components/workspace";
-import { GoogleIcon, PostHogIcon, WhatsAppIcon } from "@/components/brand-icons";
-import { Badge } from "@/components/ui/badge";
+import { PostHogIcon, WhatsAppIcon } from "@/components/brand-icons";
+import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/arc/tabs/tabs";
 import { useQuery, useWorkspace } from "./hooks";
 import { Delta } from "./GoogleBusiness";
 import { Pick } from "./whatsapp-ui";
@@ -26,7 +28,6 @@ import {
   type Device,
   type PostHogLink,
   type Provider,
-  type Source,
 } from "./website-analytics";
 
 export type AChange = (fn: (d: AnalyticsData) => AnalyticsData) => void;
@@ -129,22 +130,24 @@ function Analytics({ clinic }: { clinic: Clinic }) {
     <>
       <PageTitle title="Website analytics" action={badge} />
       <div className="space-y-6">
-        <Tabs value={tab} onValueChange={(v) => open(v as ATab)}>
-          <TabsList variant="line">
+        <Tabs value={tab} onValueChange={(v) => open(v as ATab)} className="arc-workflow-root">
+          <div className="arc-demo-scope">
+          <TabsList aria-label="Website analytics workspace">
             {tabs.map(([k, label]) => (
-              <TabsTrigger key={k} value={k} className="flex-none px-3">
-                {label}
+              <TabsTrigger key={k} value={k}>
+                <span className="inline-flex items-center gap-2">{label}
                 {k === "websites" && waiting > 0 && (
                   <span className="grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold text-white">{waiting}</span>
-                )}
+                )}</span>
               </TabsTrigger>
             ))}
           </TabsList>
-        </Tabs>
+          </div>
         {!canManage && <p className="rounded-md border bg-muted/40 p-3 text-sm">You can see the numbers. Ask an administrator to change settings or add websites.</p>}
-        {tab === "overview" && <Overview data={data} open={open} />}
-        {tab === "websites" && <Websites data={data} change={change} clinic={clinic} canManage={canManage} />}
-        {tab === "settings" && <Settings data={data} canManage={canManage} onExora={() => (use("exora"), toast.success("Switched to Exora analytics"))} onPostHog={() => setConnecting(true)} />}
+        <TabsContent value="overview" className="arc-workflow-panel"><Overview data={data} open={open} /></TabsContent>
+        <TabsContent value="websites" className="arc-workflow-panel"><Websites data={data} change={change} clinic={clinic} canManage={canManage} /></TabsContent>
+        <TabsContent value="settings" className="arc-workflow-panel"><Settings data={data} canManage={canManage} onExora={() => (use("exora"), toast.success("Switched to Exora analytics"))} onPostHog={() => setConnecting(true)} /></TabsContent>
+        </Tabs>
       </div>
       {dialog}
     </>
@@ -203,15 +206,6 @@ const ranges = [
   ["30", "Last 30 days"],
   ["90", "Last 90 days"],
 ] as const;
-const sourceIcons: Record<Source, ComponentType<{ className?: string }>> = {
-  google: GoogleIcon,
-  maps: ({ className }) => <MapPin className={`${className} text-[#ea4335]`} />,
-  whatsapp: WhatsAppIcon,
-  social: Share2,
-  direct: Link2,
-  other: Globe,
-};
-const deviceColors: Record<Device, string> = { mobile: "bg-primary", desktop: "bg-primary/55", tablet: "bg-primary/25" };
 const n = (v: number) => v.toLocaleString("en-IN");
 
 function Overview({ data, open }: { data: AnalyticsData; open: (t: ATab) => void }) {
@@ -256,7 +250,7 @@ function Overview({ data, open }: { data: AnalyticsData; open: (t: ATab) => void
           <Pick id="analytics-range" className="w-40" value={range} options={ranges} onChange={setRange} />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
         {(
           [
             ["Visitors", n(now.visitors), now.visitors, before.visitors],
@@ -264,12 +258,8 @@ function Overview({ data, open }: { data: AnalyticsData; open: (t: ATab) => void
             ["Booked from your website", n(now.booked), now.booked, before.booked],
             ["Visitors who booked", `${rate.toFixed(1)}%`, rate, percent(before.booked, before.visitors)],
           ] as const
-        ).map(([title, shown, value, prev]) => (
-          <Card key={title} className="gap-1 p-4 shadow-none">
-            <p className="text-xs text-muted-foreground">{title}</p>
-            <p className="text-2xl font-semibold tabular-nums">{shown}</p>
-            <Delta now={value} before={prev} label={label} />
-          </Card>
+        ).map(([title, , value, prev]) => (
+          <GrowthMetric key={title} label={title} value={value} before={prev} suffix={title === "Visitors who booked" ? "%" : undefined} decimals={title === "Visitors who booked" ? 1 : 0} context={`Last ${days} days · compared with ${label}`} />
         ))}
       </div>
       {top && (
@@ -291,47 +281,18 @@ function Overview({ data, open }: { data: AnalyticsData; open: (t: ATab) => void
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="gap-4 p-5 shadow-none">
           <h2 className="text-sm font-semibold">Where visitors came from</h2>
-          <ul className="space-y-3">
-            {sources.map(([k, v]) => {
-              const Icon = sourceIcons[k];
-              return (
-                <li key={k} className="grid grid-cols-[1rem_7.5rem_1fr_2.5rem] items-center gap-2.5 sm:grid-cols-[1.25rem_10rem_1fr_3rem] sm:gap-3 text-sm">
-                  <Icon className="size-4 text-muted-foreground" />
-                  <span className="truncate">{sourceNames[k]}</span>
-                  <span className="h-2 overflow-hidden rounded-full bg-muted">
-                    <span className="block h-full rounded-full bg-primary/70" style={{ width: `${percent(v, sources[0][1])}%` }} />
-                  </span>
-                  <span className="text-right tabular-nums text-muted-foreground">{Math.round(percent(v, now.visitors))}%</span>
-                </li>
-              );
-            })}
-          </ul>
+          <GrowthSplit label="Visitor sources" segments={sources.map(([id, value]) => ({ id, label: sourceNames[id], value }))} />
           <p className="text-xs text-muted-foreground">Links from your Google listing and WhatsApp messages are tagged, so they show up by name.</p>
         </Card>
         <Card className="gap-4 p-5 shadow-none">
           <h2 className="text-sm font-semibold">From visit to booking</h2>
-          <ol className="space-y-4">
-            {(
-              [
-                ["Visited your website", now.visitors, null],
-                ["Opened booking", now.started, now.visitors],
-                ["Booked an appointment", now.booked, now.started],
-              ] as const
-            ).map(([title, v, prev]) => (
-              <li key={title} className="space-y-1.5">
-                <div className="flex items-baseline justify-between gap-3 text-sm">
-                  <span>{title}</span>
-                  <span className="tabular-nums">
-                    <span className="font-semibold">{n(v)}</span>
-                    {prev !== null && <span className="ml-2 text-xs text-muted-foreground">{Math.round(percent(v, prev))}% of the step before</span>}
-                  </span>
-                </div>
-                <span className="block h-3 overflow-hidden rounded bg-muted">
-                  <span className="block h-full rounded bg-emerald-600/80" style={{ width: `${Math.max(percent(v, now.visitors), 1.5)}%` }} />
-                </span>
-              </li>
-            ))}
-          </ol>
+          <GrowthBar label="People at each booking stage" period={`Last ${days} days`} category="Stage" averageLabel="Average per stage"
+            data={[
+              { key: "visit", label: "Visited your website", axisLabel: "Visited", value: now.visitors },
+              { key: "start", label: "Opened booking", axisLabel: "Opened booking", value: now.started },
+              { key: "book", label: "Booked an appointment", axisLabel: "Booked", value: now.booked },
+            ]} />
+          <p className="text-xs text-muted-foreground">Opened booking: {Math.round(percent(now.started, now.visitors))}% of visitors. Booked: {Math.round(percent(now.booked, now.started))}% of people who opened booking.</p>
           <p className="text-xs text-muted-foreground">Bookings are counted from your appointment book, so they match the Appointments page.</p>
         </Card>
       </div>
@@ -374,19 +335,7 @@ function Overview({ data, open }: { data: AnalyticsData; open: (t: ATab) => void
           </Card>
           <Card className="gap-3 p-5 shadow-none">
             <h2 className="text-sm font-semibold">Devices</h2>
-            <div className="flex h-3 overflow-hidden rounded-full bg-muted">
-              {(Object.keys(deviceNames) as Device[]).map((k) => (
-                <span key={k} className={deviceColors[k]} style={{ width: `${percent(now.devices[k], now.visitors)}%` }} />
-              ))}
-            </div>
-            <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              {(Object.keys(deviceNames) as Device[]).map((k) => (
-                <li key={k} className="flex items-center gap-1.5">
-                  <span className={`size-2 rounded-full ${deviceColors[k]}`} />
-                  {deviceNames[k]} {Math.round(percent(now.devices[k], now.visitors))}%
-                </li>
-              ))}
-            </ul>
+            <GrowthSplit label="Visitor devices" segments={(Object.keys(deviceNames) as Device[]).map(id => ({ id, label: deviceNames[id], value: now.devices[id] }))} />
           </Card>
         </div>
       </div>

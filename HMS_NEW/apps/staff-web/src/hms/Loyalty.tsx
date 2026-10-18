@@ -1,3 +1,4 @@
+import { GrowthMetric } from "./GrowthMetric";
 import { useEffect, useState } from "react";
 import {
   BadgeCheck,
@@ -33,7 +34,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/arc/tabs/tabs";
 import { useWorkspace } from "./hooks";
 import { Pick } from "./whatsapp-ui";
 import { preview } from "./WebsiteAnalyticsSetup";
@@ -152,27 +153,28 @@ function LoyaltyPage() {
         action={badge}
       />
       <div className="space-y-6">
-        <Tabs value={tab} onValueChange={(v) => open(v as LTab)}>
-          <TabsList variant="line">
+        <Tabs value={tab} onValueChange={(v) => open(v as LTab)} className="arc-workflow-root">
+          <div className="arc-demo-scope">
+          <TabsList aria-label="Loyalty workspace">
             {tabs.map(([k, label]) => (
-              <TabsTrigger key={k} value={k} className="flex-none px-3">
-                {label}
+              <TabsTrigger key={k} value={k}>
+                <span className="inline-flex items-center gap-2">{label}
                 {k === "members" && due > 0 && (
                   <span className="grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold text-white">
                     {due}
                   </span>
-                )}
+                )}</span>
               </TabsTrigger>
             ))}
           </TabsList>
-        </Tabs>
+          </div>
         {!preview && (
           <p className="rounded-md border bg-muted/40 p-3 text-sm">
             Loyalty programs open with the next update. You can look around;
             nothing can be set up yet.
           </p>
         )}
-        {tab === "programs" && (
+        <TabsContent value="programs" className="arc-workflow-panel">
           <Programs
             data={data}
             canEdit={canEdit}
@@ -196,16 +198,17 @@ function LoyaltyPage() {
             }}
             onSample={() => change(() => seed(clinic, Date.now()))}
           />
-        )}
-        {tab === "members" && (
+        </TabsContent>
+        <TabsContent value="members" className="arc-workflow-panel">
           <Members
             data={data}
             canDesk={canDesk}
             onOpen={setMemberId}
             onEnrol={() => setEnrolling(true)}
           />
-        )}
-        {tab === "patient" && <PatientView data={data} clinic={clinic} />}
+        </TabsContent>
+        <TabsContent value="patient" className="arc-workflow-panel"><PatientView data={data} clinic={clinic} /></TabsContent>
+        </Tabs>
       </div>
       <Editor
         program={editing?.program ?? null}
@@ -337,15 +340,9 @@ function Programs({
     <div className="space-y-8">
       {data.programs.length > 0 ? (
         <>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
             {stats.map(([label, value, hint]) => (
-              <Panel key={label} className="gap-1 p-4 shadow-none">
-                <p className="text-sm text-muted-foreground">{label}</p>
-                <p className="text-2xl font-semibold tabular-nums">
-                  {value.toLocaleString("en-IN")}
-                </p>
-                <p className="text-xs text-muted-foreground">{hint}</p>
-              </Panel>
+              <GrowthMetric key={label} label={label} value={value} context={hint} />
             ))}
           </div>
           <section className="space-y-3">

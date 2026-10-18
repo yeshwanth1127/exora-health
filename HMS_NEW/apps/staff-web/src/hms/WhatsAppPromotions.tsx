@@ -1,7 +1,8 @@
+import { GrowthDateTime } from "./GrowthDateTime";
 import { useState } from "react";
 import { Megaphone, Plus, Send } from "lucide-react";
 import { toast } from "@/components/toast-events";
-import { Badge } from "@/components/ui/badge";
+import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -223,7 +224,7 @@ function Composer({
           <Label htmlFor="promo-when">When</Label>
           <div className="flex flex-wrap gap-2">
             <Pick id="promo-when" className="w-56" value={when} options={[["now", "As soon as Meta approves"], ["later", "At a set time"]]} onChange={setWhen} />
-            {when === "later" && <Input type="datetime-local" className="w-56" aria-label="Send at" value={sendAt} onChange={(e) => setSendAt(e.target.value)} />}
+            {when === "later" && <GrowthDateTime label="Send at" value={sendAt} onValueChange={setSendAt} />}
           </div>
         </div>
         {issues.length > 0 && (

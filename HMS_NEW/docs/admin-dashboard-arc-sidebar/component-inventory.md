@@ -1,5 +1,7 @@
 # Component inventory
 
+Latest placement expansion: [growth-screens-wave.md](growth-screens-wave.md). The same 46 integrated components now cover additional WhatsApp, Google, Analytics, Voice and Loyalty placements. **Folder count does not imply every screen or state is migrated.**
+
 Current catalog coverage is reconciled in [catalog-audit-2026-10-19.md](catalog-audit-2026-10-19.md), with all per-entry evidence in [catalog-coverage.json](catalog-coverage.json).
 
 ## Current counts and evidence levels

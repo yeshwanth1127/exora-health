@@ -9,15 +9,14 @@ import {
   CalendarPlus,
   Clock,
   Inbox as InboxIcon,
-  Search,
   Send,
   UserCheck,
 } from "lucide-react";
 import { toast } from "@/components/toast-events";
-import { Badge } from "@/components/ui/badge";
+import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { SearchField } from "@/components/arc/search-field/search-field";
 import { useWorkspace } from "./hooks";
 import {
   automationInfo,
@@ -162,15 +161,8 @@ export function Inbox({
         className={`flex min-h-0 flex-col border-r ${c && picked ? "max-lg:hidden" : ""}`}
       >
         <div className="space-y-3 border-b p-3">
-          <div className="relative">
-            <Search className="absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
-            <Input
-              className="pl-8"
-              placeholder="Search name or number"
-              aria-label="Search chats"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
+          <div className="arc-demo-scope">
+            <SearchField label="Search chats" placeholder="Name or number" value={q} onValueChange={setQ} />
           </div>
           <div className="flex flex-wrap gap-1">
             {filters.map(([k, label]) => (

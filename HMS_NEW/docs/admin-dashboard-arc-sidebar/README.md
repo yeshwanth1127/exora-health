@@ -1,5 +1,7 @@
 # Admin dashboard Arc implementation
 
+Latest screen migration: [growth-screens-wave.md](growth-screens-wave.md) records the remaining growth charts/metrics/tabs and their real data bindings.
+
 Latest catalog scan/counts: [catalog-audit-2026-10-19.md](catalog-audit-2026-10-19.md). Machine-readable per-entry evidence: [catalog-coverage.json](catalog-coverage.json). First-pass documentation coverage is 249/249; integration remains 46 folders. Earlier count claims below are historical.
 
 Start with [HANDOFF.md](HANDOFF.md) for the current implementation and continuation guide. Earlier verification is recorded in [arc-five-verification.md](arc-five-verification.md) and [takeover-review.md](takeover-review.md).

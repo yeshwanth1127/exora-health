@@ -1,13 +1,13 @@
 import { useState, type ReactNode } from "react";
 import { AlertTriangle, CalendarCheck, Check, Copy, ExternalLink, Globe, Loader2, Mail, Plus, RefreshCw, ShieldCheck, X } from "lucide-react";
 import { PostHogIcon } from "@/components/brand-icons";
-import { Badge } from "@/components/ui/badge";
+import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/arc/tabs/tabs";
 import { copy } from "./GoogleBusiness";
 import { uid } from "./google-profile";
 import { Pick } from "./whatsapp-ui";
@@ -207,15 +207,17 @@ function Install({ site, code, clinic, onCheck }: { site: Site; code: string; cl
       </div>
       <div className="space-y-2">
         <p className="text-sm font-medium">2. Paste it on every page</p>
-        <Tabs value={platform} onValueChange={(v) => setPlatform(v as keyof typeof platforms)}>
-          <TabsList>
+        <Tabs value={platform} onValueChange={(v) => setPlatform(v as keyof typeof platforms)} className="arc-workflow-root">
+          <div className="arc-demo-scope">
+          <TabsList aria-label="Website installation platform">
             {Object.entries(platforms).map(([k, [label]]) => (
               <TabsTrigger key={k} value={k}>
                 {label}
               </TabsTrigger>
             ))}
           </TabsList>
-        </Tabs>
+          </div>
+          <TabsContent value={platform} className="arc-workflow-panel">
         <ol className="list-decimal space-y-1 pl-5 text-sm">
           {platforms[platform][1].map((s) => (
             <li key={s}>{s}</li>
@@ -231,6 +233,8 @@ function Install({ site, code, clinic, onCheck }: { site: Site; code: string; cl
             </Button>
           </div>
         )}
+          </TabsContent>
+        </Tabs>
       </div>
       <div className="space-y-2">
         <p className="text-sm font-medium">3. Check it works</p>

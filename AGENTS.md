@@ -72,3 +72,11 @@
 - WhatsApp preview Inbox uses the Arc Support conversation with the user-requested WhatsApp theme. Preserve browser-preview vs provider truth, reply permissions/window/template rules, existing drafts and real supplied statuses. Do not bring back the reference's fake agent replies, typing or attachments.
 - User explicitly requested Settings to look like a full professional dashboard. HMS Settings opts into full available width and normal page scrolling, with sticky navigation and no embedded frame; preserve individual command/save semantics. This supersedes the standalone reference frame only for this opted-in placement.
 - Queue Refresh belongs inside DayNavigator's aligned action row. Scope Board/Table to arc-demo-scope so the actual reference tabs render correctly. User retains visual verification; no further catalog/browser sweep is requested.
+
+
+## Growth screen coverage correction
+
+- The user explicitly identified legacy charts, metrics, tabs/indicator bars and controls on WhatsApp, Google Business and Website analytics. This authorizes migration of these existing placements using already adopted Arc components; preserve data and operations. Read `HMS_NEW/docs/admin-dashboard-arc-sidebar/growth-screens-wave.md`.
+- Current placements include scoped Arc tabs and panels, numeric metric cards, source/device/review Split bars, daily/category Bar charts, growth badges, setup Stepper and compatible date/time/search controls. Voice and Loyalty summary tiles/tabs follow the same presentation. The component-folder count stays 46; it is not a screen-completion metric.
+- Preserve browser-preview/sample/provider distinctions, zero versus unavailable values, exact category counts, comparison baselines, guarded WhatsApp navigation and local date/time strings. Conversion stages overlap and must not be treated as parts of a Split bar. Existing Google/WhatsApp patient-facing visual previews keep their recognizable brand presentation.
+- User retains visual verification. No browser sweeps, phone optimization, fabricated analytics/provider data, automatic catalog waves or dependency additions are needed for this correction.

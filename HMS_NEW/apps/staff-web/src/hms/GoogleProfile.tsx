@@ -1,3 +1,4 @@
+import { DateField, TimeField } from "@/components/WorkspaceFields";
 import { useEffect, useState, type ReactNode } from "react";
 import { Plus, Sparkles, X } from "lucide-react";
 import { toast } from "@/components/toast-events";
@@ -156,11 +157,11 @@ export function Profile({
                     }
                   />
                   {p ? (
-                    <span className="flex items-center gap-2">
-                      <Input type="time" className="w-28" aria-label={`${name} opens`} value={p.open} onChange={(e) => set({ hours: draft.hours.map((x) => (x.day === day ? { ...x, open: e.target.value } : x)) })} />
+                    <div className="flex items-end gap-2">
+                      <div className="w-44"><TimeField label={`${name} opens`} value={p.open} onValueChange={value => set({ hours: draft.hours.map((x) => (x.day === day ? { ...x, open: value } : x)) })} /></div>
                       to
-                      <Input type="time" className="w-28" aria-label={`${name} closes`} value={p.close} onChange={(e) => set({ hours: draft.hours.map((x) => (x.day === day ? { ...x, close: e.target.value } : x)) })} />
-                    </span>
+                      <div className="w-44"><TimeField label={`${name} closes`} value={p.close} onValueChange={value => set({ hours: draft.hours.map((x) => (x.day === day ? { ...x, close: value } : x)) })} /></div>
+                    </div>
                   ) : (
                     <span className="text-muted-foreground">Closed</span>
                   )}
@@ -335,7 +336,7 @@ function Holidays({ draft, set }: { draft: Listing; set: (p: Partial<Listing>) =
         </div>
       ))}
       <div className="flex flex-wrap gap-2">
-        <Input type="date" className="w-40" aria-label="Holiday date" value={date} onChange={(e) => setDate(e.target.value)} />
+        <div className="w-52"><DateField label="Holiday date" value={date} onValueChange={setDate} /></div>
         <Input className="w-48" placeholder="e.g. Diwali" aria-label="Holiday name" value={label} onChange={(e) => setLabel(e.target.value)} />
         <Button
           variant="outline"
