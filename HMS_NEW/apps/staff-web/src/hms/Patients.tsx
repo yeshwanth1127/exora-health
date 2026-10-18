@@ -1,8 +1,9 @@
+import { SearchField } from "@/components/arc/search-field/search-field";
 import { Input as ArcInput } from "@/components/arc/input/input";
 import { PatientVisitActions } from "./PatientVisits";
 import { appointmentModeLabel, type AppointmentMode } from "./booking-workflow";
 import { useEffect, useRef, useState } from "react";
-import { Search, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,16 +73,9 @@ export function PatientLookup({
   );
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <Search className="size-4 text-muted-foreground" />
-        <Input
-          aria-label="Patient search"
-          ref={searchInput}
-          placeholder="Type a name, MRN or phone"
-          autoComplete="off"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
+      <div className="arc-demo-scope">
+        <SearchField label="Patient search" ref={searchInput} placeholder="Type a name, MRN or phone"
+          autoComplete="off" value={text} onValueChange={setText} />
       </div>
       <ErrorMessage text={result.error} />
       {result.loading && <p className="text-sm">Searching…</p>}

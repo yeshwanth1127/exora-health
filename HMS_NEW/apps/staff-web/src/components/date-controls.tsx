@@ -1,6 +1,9 @@
 import { useId } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "./ui/button";
+import { Button } from "./arc/button/button";
+import { DatePicker } from "./arc/date-picker/date-picker";
+import { parseReportDay, formatReportDay } from "@/hms/arc-report-range";
+import { useCalendarToday } from "./use-calendar-today";
 import { Input } from "./ui/input";
 import { SharedField } from "./shared-field";
 import {
@@ -36,70 +39,31 @@ export function DayNavigator({
   const id = useId(),
     prev = shiftDay(value, -1),
     next = shiftDay(value, 1);
+  const calendarToday = useCalendarToday(timezone);
   const current = timezone ? localToday(timezone) : "";
-  return (
-    <SharedField label={label} id={id} hint={boundaryLabel ?? timezone}>
-      <div className="flex items-center gap-1.5">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label={`Previous ${label.toLowerCase()}`}
-          disabled={disabled || !dayInBounds(prev, min, max)}
-          onClick={() => onChange(prev)}
-        >
-          <ChevronLeft />
-        </Button>
-        <Input
-          id={id}
-          type="date"
-          className="w-40"
-          value={value}
-          min={min}
-          max={max}
-          disabled={disabled}
-          onChange={(e) => {
-            if (
-              (!e.target.value && allowClear) ||
-              dayInBounds(e.target.value, min, max)
-            )
-              onChange(e.target.value);
-          }}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label={`Next ${label.toLowerCase()}`}
-          disabled={disabled || !dayInBounds(next, min, max)}
-          onClick={() => onChange(next)}
-        >
-          <ChevronRight />
-        </Button>
-        {timezone && (
-          <Button
-            type="button"
-            variant="outline"
-            disabled={disabled || !dayInBounds(current, min, max)}
-            onClick={() => onChange(current)}
-          >
-            Today
-          </Button>
-        )}
-        {allowClear && value && (
-          <Button
-            type="button"
-            variant="ghost"
-            disabled={disabled}
-            onClick={() => onChange("")}
-          >
-            All dates
-          </Button>
-        )}
+  return <div className="arc-demo-scope arc-day-navigation">
+    <div className="flex items-end gap-2">
+      <div className="w-52">
+        <DatePicker id={id} label={label} value={parseReportDay(value) ?? undefined}
+          today={calendarToday ?? undefined} clearable={allowClear} placeholder="All dates"
+          minDate={parseReportDay(min ?? "") ?? undefined} maxDate={parseReportDay(max ?? "") ?? undefined}
+          disabled={disabled} showToday={!!timezone}
+          onChange={(day) => {
+            const nextValue = day ? formatReportDay(day) : "";
+            if ((!nextValue && allowClear) || dayInBounds(nextValue, min, max)) onChange(nextValue);
+          }} />
       </div>
-    </SharedField>
-  );
+      <Button type="button" variant="secondary" className="arc-icon-control" aria-label={`Previous ${label.toLowerCase()}`}
+        disabled={disabled || !dayInBounds(prev, min, max)} onClick={() => onChange(prev)}><ChevronLeft size={16} /></Button>
+      <Button type="button" variant="secondary" className="arc-icon-control" aria-label={`Next ${label.toLowerCase()}`}
+        disabled={disabled || !dayInBounds(next, min, max)} onClick={() => onChange(next)}><ChevronRight size={16} /></Button>
+      {timezone && <Button type="button" variant="secondary" disabled={disabled || !dayInBounds(current, min, max)} onClick={() => onChange(current)}>Today</Button>}
+      {allowClear && value && <Button type="button" variant="ghost" disabled={disabled} onClick={() => onChange("")}>All dates</Button>}
+    </div>
+    {(boundaryLabel || timezone) && <p className="mt-2 text-xs text-muted-foreground">{boundaryLabel ?? timezone}</p>}
+  </div>;
 }
+
 export function DateRangeField({
   from,
   to,

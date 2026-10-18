@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   CalendarPlus,
   RefreshCw,
-  Search,
   CalendarClock,
   XCircle,
   UserX,
@@ -12,10 +11,9 @@ import {
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/brand-icons";
 import { filterOptionValue, doctorFilterOptions } from "./arc-filter-data";
-import { Combobox } from "@/components/arc/combobox/combobox";
+import { SearchField } from "@/components/arc/search-field/search-field";
 import { FilterToolbar } from "@/components/arc/filter-toolbar/filter-toolbar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -127,18 +125,6 @@ export function Appointments() {
               timezone={facility.timezone}
               label="Appointment date"
             />
-            <div className="arc-demo-scope w-64">
-              <Combobox
-                label="Doctor"
-                value={staffId === "all" ? "" : staffId}
-                placeholder="All doctors"
-                onValueChange={(value) => setStaffId(value || "all")}
-                options={[
-                  { value: "all", label: "All doctors" },
-                  ...doctorOptions,
-                ]}
-              />
-            </div>
             <Button
               variant="outline"
               size="icon"
@@ -176,14 +162,9 @@ export function Appointments() {
               }}
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Search className="size-4 text-muted-foreground" />
-            <Input
-              aria-label="Search appointments"
-              placeholder="Search name, phone, MRN or confirmation code"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
+          <div className="arc-demo-scope">
+            <SearchField label="Search appointments" value={text} onValueChange={setText}
+              placeholder="Search name, phone, MRN or confirmation code" />
           </div>
         </CardContent>
         <LoadingState {...result}>

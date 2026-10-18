@@ -197,3 +197,29 @@ test("workflow tab variant retains selected foreground on hover/focus; standard 
   );
   assert.ok(!standard.includes("data-active:hover:text-primary-foreground"));
 });
+
+test("searchable choices reuse their outer label and retain required/error associations", () => {
+  const html = renderToStaticMarkup(h(Field, {
+    label: "Doctor", id: "arc-nested-doctor", hint: "Treating clinician", required: true,
+    serverError: "Choose an available doctor",
+  }, h(Choice, {
+    label: "Doctor", value: "doctor-2", onChange: () => {},
+    options: Array.from({ length: 10 }, (_, index) => ({ value: `doctor-${index}`, label: `Dr ${index}` })),
+  })));
+  assert.equal((html.match(/<label/g) ?? []).length, 1);
+  assert.ok(html.includes('role="combobox"'));
+  assert.ok(html.includes('value="Dr 2"'));
+  assert.ok(html.includes('aria-required="true"'));
+  assert.ok(html.includes('aria-invalid="true"'));
+  assert.ok(html.includes('aria-describedby="arc-nested-doctor-description arc-nested-doctor-error"'));
+});
+
+test("Arc button adapter retains native submit, disabled and link behavior", async () => {
+  const { Button } = await tsImport("../src/components/ui/button.tsx", { parentURL: import.meta.url, tsconfig: config });
+  const disabled = renderToStaticMarkup(h(Button, { type: "submit", disabled: true }, "Save"));
+  assert.ok(disabled.includes('type="submit"'));
+  assert.ok(disabled.includes('disabled=""'));
+  const link = renderToStaticMarkup(h(Button, { render: h("a", { href: "/staff/appointments" }), nativeButton: false }, "Appointments"));
+  assert.ok(link.startsWith('<a '));
+  assert.ok(link.includes('href="/staff/appointments"'));
+});

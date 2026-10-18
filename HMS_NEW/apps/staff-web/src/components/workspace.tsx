@@ -1,8 +1,8 @@
+import { WorkspaceChoice } from "./WorkspaceChoice";
 import {
   useCallback,
   useContext,
   useEffect,
-  useId,
   useState,
   type ReactNode,
 } from "react";
@@ -18,21 +18,12 @@ import { api } from "@/lib/api";
 import { OriginalResourceContext, isDraft } from "./resource-source";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { SharedField, type SharedFieldProps } from "./shared-field";
-import { useFieldContext } from "./field-context";
 import {
   loadPresentation,
-  describedBy,
   revealInvalidFields,
 } from "./form-feedback";
 
@@ -258,57 +249,13 @@ export function Choice({
   validationMode?: "onBlur" | "always";
   "aria-describedby"?: string;
 }) {
-  const generated = useId(),
-    parent = useFieldContext(),
-    control = controlId ?? id ?? parent?.controlId ?? generated;
-  const content = (
-    <Select
-      items={options.map(([value, label]) => ({ value, label }))}
-      value={value}
-      onValueChange={(v) => onChange(String(v ?? ""))}
-      disabled={disabled}
-    >
-      <SelectTrigger
-        id={control}
-        className="w-full"
-        aria-label={label}
-        aria-required={required ?? parent?.required}
-        aria-invalid={parent?.invalid || undefined}
-        aria-describedby={describedBy(
-          extraDescription,
-          parent?.descriptionId,
-          parent?.errorId,
-        )}
-      >
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map(([key, text]) => (
-          <SelectItem key={key} value={key}>
-            {text}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-  return parent?.controlId === control ? (
-    content
-  ) : (
-    <Field
-      label={label}
-      id={control}
-      hint={hint}
-      error={error}
-      serverError={serverError}
-      required={required}
-      touched={touched}
-      submitted={submitted}
-      validationMode={validationMode}
-    >
-      {content}
-    </Field>
-  );
+  return <WorkspaceChoice label={label} value={value} onChange={onChange}
+    options={options.map(([value, label]) => ({ value, label }))} disabled={disabled}
+    id={id} controlId={controlId} hint={hint} error={error} serverError={serverError}
+    required={required} touched={touched} submitted={submitted} validationMode={validationMode}
+    aria-describedby={extraDescription} />;
 }
+
 export function StateBadge({ value }: { value: string }) {
   const positive = [
     "confirmed",

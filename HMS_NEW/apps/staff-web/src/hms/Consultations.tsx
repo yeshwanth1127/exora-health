@@ -1,3 +1,4 @@
+import { DayNavigator } from "@/components/date-controls";
 import { useState } from "react";
 import { Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -158,16 +159,8 @@ export function Consultations() {
           ) : undefined
         }
       />
-      <div className="flex items-end gap-3 mb-5">
-        <label className="space-y-2 text-sm font-medium">
-          <span className="block">Date</span>
-          <Input
-            type="date"
-            className="w-44"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-        </label>
+      <div className="flex items-start gap-4 mb-5">
+        <DayNavigator label="Date" value={date} onChange={setDate} timezone={facility.timezone} />
         <div className="w-48">
           <Choice
             label="Visit status"
@@ -185,7 +178,7 @@ export function Consultations() {
             }))}
           />
         </div>
-        <Button variant="outline" onClick={result.refresh}>
+        <Button variant="outline" className="mt-7" onClick={result.refresh}>
           Refresh
         </Button>
       </div>

@@ -9,7 +9,8 @@
     "file": "src/components/arc/combobox/combobox.tsx",
     "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/combobox/combobox.tsx",
     "sha256": "12ae9a73956f4d4854259396fd377aa63321db18198e8816db5b1791ff9a56b7",
-    "integratedSha256": "12ae9a73956f4d4854259396fd377aa63321db18198e8816db5b1791ff9a56b7"
+    "integratedSha256": "1a2e28656eb5756c5ed86b1ef3670d084bff64a3f0f82bfe6e6e88962bc685eb",
+    "bindingAdaptation": "Optional hidden internal label and combined description IDs support existing shared-field labels and validation without duplicate labels. Default demo behavior unchanged."
   },
   {
     "file": "src/components/arc/input/input.tsx",
@@ -96,5 +97,80 @@
     "sha256": "4eaff3df866b28b91f54adeb13e06f98f8753e69a3baff64287e6edd1e74ec52",
     "integratedSha256": "ad0f3b4afed156b970b1bf703761373a0d0162aa2d25fc3eae6e63824ef7afd7",
     "bindingAdaptation": "Removed inherited trailing whitespace only; no CSS declarations or behavior changed."
+  },
+  {
+    "file": "src/components/arc/date-picker/date-picker.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/date-picker/date-picker.module.css",
+    "sha256": "fc3907dc484832ef441b367dd16135bf081ec77894ea1ae7c9c59508a2abe95a",
+    "integratedSha256": "fc3907dc484832ef441b367dd16135bf081ec77894ea1ae7c9c59508a2abe95a"
+  },
+  {
+    "file": "src/components/arc/date-picker/date-picker.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/date-picker/date-picker.tsx",
+    "sha256": "996d6b6703f7478c9ce286a3bbcd49a10aac0cb489b0d8915dfd89dad9c4efb8",
+    "integratedSha256": "38eb539b0ff6e3f39375e353e24b8108bd63352363b42de7a2cbe6d588f244dd",
+    "bindingAdaptation": "Optional supplied Today and clearable bind clinic dates and required selection; description IDs are combined with existing form feedback."
+  },
+  {
+    "file": "src/components/arc/calendar/calendar.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/calendar/calendar.module.css",
+    "sha256": "2e019a6ca658f124c7ea0303aac46aa615a4e6bb3bc485c57d3b85acb0d26adc",
+    "integratedSha256": "2e019a6ca658f124c7ea0303aac46aa615a4e6bb3bc485c57d3b85acb0d26adc"
+  },
+  {
+    "file": "src/components/arc/calendar/calendar.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/calendar/calendar.tsx",
+    "sha256": "cf09873e5d895e46129159e62f7e494f448cfd247aaddd6c9a54de45a5d6c108",
+    "integratedSha256": "27eeb230e30e0571409e7d3c532150e0cb8a0ff6872c1e8a4d0dcaa4f4ab5167",
+    "bindingAdaptation": "Optional supplied Today binds the calendar to the clinic timezone; undefined retains viewer-local Today."
+  },
+  {
+    "file": "src/components/arc/select/select.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/select/select.module.css",
+    "sha256": "f700250cfa39db22e974f417d6d776e70b037e031500ca85c3c94e0c558a2b04",
+    "integratedSha256": "f700250cfa39db22e974f417d6d776e70b037e031500ca85c3c94e0c558a2b04"
+  },
+  {
+    "file": "src/components/arc/select/select.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/select/select.tsx",
+    "sha256": "673dc0c887a255c87bfbabd1835606d87cfbf59ed6fd4909a28038f00f673eaa",
+    "integratedSha256": "0b5ba697410da9130517d902dd06387867f6239c4c0b45e02ca6811c6630df15",
+    "bindingAdaptation": "Optional hidden label and trigger attributes preserve existing field validation; the portalled menu receives the reference theme tokens. Default demo interaction and motion retained."
+  },
+  {
+    "file": "src/components/arc/search-field/search-field.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/search-field/search-field.module.css",
+    "sha256": "3b74ebb74a675ab8a0202d9234b8865fdd0d26033f056aa6e3de9bc9bffacce2",
+    "integratedSha256": "3b74ebb74a675ab8a0202d9234b8865fdd0d26033f056aa6e3de9bc9bffacce2"
+  },
+  {
+    "file": "src/components/arc/search-field/search-field.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/search-field/search-field.tsx",
+    "sha256": "d93a8d0778c83d33793bf3fe7e5b206a5d0c6e50948b83f39777b89899392d93",
+    "integratedSha256": "d93a8d0778c83d33793bf3fe7e5b206a5d0c6e50948b83f39777b89899392d93"
+  },
+  {
+    "file": "src/components/arc/button/button.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/button/button.module.css",
+    "sha256": "77323140c3f9fbad7b08dddba0db7260aa233c34c39a9d24cfa646fea287e140",
+    "integratedSha256": "77323140c3f9fbad7b08dddba0db7260aa233c34c39a9d24cfa646fea287e140"
+  },
+  {
+    "file": "src/components/arc/button/button.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/button/button.tsx",
+    "sha256": "6a56d78cb75a6fd5f5cfdd03be8b02bf96f0bc96790d3c81abeee10e089fecec",
+    "integratedSha256": "6a56d78cb75a6fd5f5cfdd03be8b02bf96f0bc96790d3c81abeee10e089fecec"
+  },
+  {
+    "file": "src/components/arc/textarea/textarea.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/textarea/textarea.module.css",
+    "sha256": "57a9294f6f7eea903296334bf1203982b41736aa1082a83af4dc2e8bbc6a144c",
+    "integratedSha256": "57a9294f6f7eea903296334bf1203982b41736aa1082a83af4dc2e8bbc6a144c"
+  },
+  {
+    "file": "src/components/arc/textarea/textarea.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/textarea/textarea.tsx",
+    "sha256": "1ed43b87e45b04180f1c6b8b3b7543e071bed3a6fcb2033e98015c77a8b7135a",
+    "integratedSha256": "1ed43b87e45b04180f1c6b8b3b7543e071bed3a6fcb2033e98015c77a8b7135a"
   }
 ]

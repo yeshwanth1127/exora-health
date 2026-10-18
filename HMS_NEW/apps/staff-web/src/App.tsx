@@ -26,7 +26,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { WorkspaceCommands } from "@/components/WorkspaceCommands";
 import { ClinicPicker } from "@/components/ClinicPicker";
-import { ModePicker } from "@/components/ModePicker";
 import { Card, CardContent } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -523,7 +522,6 @@ function StaffApp() {
                 ]}
                 onNavigate={go}
               />
-              <ModePicker />
               <ClinicPicker key={facilityId} value={facilityId} options={facilities.map((f) => ({ value: f.facilityId, label: f.name }))}
                 onChange={(id) => requestLeave(() => { setTenant(me.tenantId); setFacilityId(id); })} />
               {devLoginEnabled && (

@@ -102,3 +102,22 @@
 
 .workspace-header > div { flex-shrink: 0; }
 .arc-command-trigger { white-space: nowrap; flex-shrink: 0; }
+
+/* Shared desktop field geometry: all catalog controls use the same label slot. */
+.workspace-field { display: grid; align-content: start; gap: 8px; min-width: 0; }
+.workspace-field > [data-slot="label"], .workspace-control-label {
+  display: block; font-family: "Arc Sidebar Inter", sans-serif; font-size: 14px;
+  font-weight: 500; line-height: 20px; letter-spacing: -.01em;
+}
+.arc-day-navigation label { line-height: 20px; }
+.arc-day-navigation > div > div > div { gap: 8px; }
+.arc-icon-control { width: 44px; height: 44px; min-height: 44px; padding: 0; flex: none; }
+.arc-workspace-button svg { width: 16px; height: 16px; flex-shrink: 0; }
+.arc-native-input[data-slot="input"] { box-sizing: border-box; height: 44px; min-height: 44px; border-radius: 18px; padding: 0 12px; }
+.arc-native-textarea[data-slot="textarea"] { box-sizing: border-box; border-radius: 18px; padding: 12px; }
+[data-slot="card"]:has([aria-haspopup="dialog"]), [data-slot="card"]:has([role="combobox"]) { overflow: visible; }
+/* Width remains the host layout's choice; geometry comes from the Arc field. */
+.arc-native-input, .arc-native-textarea { width: revert-layer; }
+.arc-report-picker { min-width: 100%; }
+.arc-report-picker > button { width: 100%; justify-content: flex-start; }
+.arc-report-picker > button > :last-child { margin-left: auto; }

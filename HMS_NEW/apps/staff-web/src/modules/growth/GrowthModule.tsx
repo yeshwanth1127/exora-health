@@ -656,13 +656,7 @@ export function GrowthModule({
   );
 }
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { WorkspaceChoice } from "@/components/WorkspaceChoice";
 function BranchSelect({
   id,
   value,
@@ -676,30 +670,9 @@ function BranchSelect({
   branches: Branch[];
   all?: boolean;
 }) {
-  return (
-    <Select
-      items={[
-        { value: "none", label: all ? "All clinics" : "Choose a clinic" },
-        ...branches.map((b) => ({ value: b.id, label: b.name })),
-      ]}
-      value={value || "none"}
-      onValueChange={(v) => onChange(!v || v === "none" ? "" : v)}
-    >
-      <SelectTrigger id={id} className="min-w-48">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="none">
-          {all ? "All clinics" : "Choose a clinic"}
-        </SelectItem>
-        {branches.map((b) => (
-          <SelectItem key={b.id} value={b.id}>
-            {b.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
+  return <WorkspaceChoice id={id} label="Clinic" value={value} onChange={onChange}
+    options={[{ value: "", label: all ? "All clinics" : "Choose a clinic" }, ...branches.map((branch) => ({ value: branch.id, label: branch.name }))]} />;
+
 }
 function CountTable({
   title,

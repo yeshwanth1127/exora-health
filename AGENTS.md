@@ -24,3 +24,10 @@
 ## Current rollout scope
 
 - The approved rollout covers desktop sidebar, workflow tabs, searchable choices, filter toolbar, registration fields, metric cards, individual charts, report date range and command palette. Keep changes focused on these small components. Do not expand into phone optimization, full analytics blocks, scheduling calendar, permissions matrix or other larger replacements.
+
+## Desktop control consistency refinements
+
+- Use the catalog's matching controls for shared desktop forms and filters: 44px standard control height, 18px control radius, 12px field horizontal padding, and one 20px label line with an 8px gap. Keep explicit compact buttons and calendar day cells at their demonstrated sizes.
+- Keep the appointment doctor selection in the filter toolbar; do not add a duplicate doctor field. Place report date range alongside the other report fields. The theme picker belongs under Workspace settings / Appearance.
+- Use comboboxes for searchable entity selections, selects for short fixed lists, and search fields for free-text record filtering. Preserve IDs, validation, permissions, timezone boundaries and existing command recovery.
+- Prefer source inspection and automated checks; keep browser verification to a small set of targeted checks and one final review capture.

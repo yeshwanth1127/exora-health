@@ -24,7 +24,6 @@ import { Button } from "@/components/ui/button";
 import { Status } from "@/hms/ui";
 import { Input } from "@/components/ui/input";
 import { ReportDateRange } from "@/components/ReportDateRange";
-import { DayNavigator } from "@/components/date-controls";
 import { dateRangeError } from "@/components/date-controls-model";
 import { WorkspaceEmpty } from "@/hms/WorkspaceEmpty";
 import {
@@ -550,7 +549,7 @@ export function ActivityLog() {
         }
       />
       <Card className="mb-5 overflow-visible">
-        <CardContent className="grid sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-6">
+        <CardContent className="arc-activity-filters grid grid-cols-[repeat(3,minmax(0,1fr))_minmax(250px,1.25fr)] items-start gap-4 pt-5">
           <Field label="Person" id="audit-actor">
             <Input
               id="audit-actor"
@@ -572,17 +571,6 @@ export function ActivityLog() {
               onChange={(e) => set("action")(e.target.value)}
             />
           </Field>
-          <div className="lg:col-span-3 space-y-3">
-            <DayNavigator
-              label="Single day"
-              boundaryLabel={log.data?.dateBoundary ? `Organisation dates · ${log.data.dateBoundary.timezone}` : "Organisation timezone unavailable"}
-              allowClear
-              value={filters.start === filters.end ? filters.start : ""}
-              onChange={(day) => {
-                setFilters({ ...filters, start: day, end: day });
-                setLimit(50);
-              }}
-            />
             <ReportDateRange
               from={filters.start}
               to={filters.end}
@@ -592,7 +580,6 @@ export function ActivityLog() {
                 setLimit(50);
               }}
             />
-          </div>
         </CardContent>
       </Card>
       <Resource {...log}>

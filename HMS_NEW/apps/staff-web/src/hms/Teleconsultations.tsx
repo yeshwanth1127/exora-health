@@ -1,3 +1,4 @@
+import { DayNavigator } from "@/components/date-controls";
 import { useEffect, useState } from "react";
 import { Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -58,13 +59,7 @@ export function Teleconsultations() {
       <PageTitle
         title="Teleconsultations"
       />
-      <Input
-        aria-label="Teleconsultation date"
-        className="w-44 mb-5"
-        type="date"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
-      />
+      <div className="mb-5"><DayNavigator label="Teleconsultation date" value={date} onChange={setDate} timezone={facility.timezone} /></div>
       <LoadingState {...result}>
         <Card>
           <Table>

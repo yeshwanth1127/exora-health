@@ -25,6 +25,7 @@ export interface ComboboxOption {
 export interface ComboboxProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "defaultValue" | "onChange" | "placeholder"> {
   label: string;
+  hideLabel?: boolean;
   options: ComboboxOption[];
   value?: string;
   defaultValue?: string;
@@ -52,6 +53,7 @@ function AutoHeight({ children, reduceMotion }: { children: ReactNode; reduceMot
 export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Combobox(
   {
     label,
+    hideLabel,
     options,
     value: controlledValue,
     defaultValue = "",
@@ -195,7 +197,7 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
 
   return (
     <div ref={rootRef} className={styles.field}>
-      <label htmlFor={controlId}>{label}</label>
+      {!hideLabel && <label htmlFor={controlId}>{label}</label>}
       <div className={[styles.control, open ? styles.open : "", disabled ? styles.disabled : "", className ?? ""].filter(Boolean).join(" ")}>
         <Search className={styles.searchIcon} size={16} strokeWidth={1.75} aria-hidden="true" />
         <input
@@ -208,7 +210,7 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
           // While searching, the chosen label stays in place as muted placeholder copy instead of vanishing.
           placeholder={selectedOption?.label ?? placeholder}
           disabled={disabled}
-          aria-describedby={hintId}
+          aria-describedby={[hintId, inputProps["aria-describedby"]].filter(Boolean).join(" ") || undefined}
           aria-expanded={open}
           aria-controls={open ? listboxId : undefined}
           aria-autocomplete="list"

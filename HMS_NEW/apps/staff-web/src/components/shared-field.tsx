@@ -133,6 +133,7 @@ export function SharedField({
     <FieldContext.Provider
       value={{
         controlId: control,
+        label,
         descriptionId,
         errorId,
         invalid: !!shown,
@@ -141,7 +142,7 @@ export function SharedField({
     >
       <div
         ref={host}
-        className="space-y-2"
+        className="workspace-field"
         data-field-error={shown ? "true" : undefined}
         data-field-control={control}
         onBlurCapture={() => setBlurred(true)}

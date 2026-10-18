@@ -1,3 +1,5 @@
+import { ModePicker } from "@/components/ModePicker";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 // Mounts Workspace settings (original layout) on the HMS API (G16, G17 overbooking): staff invited by
 // work email, roles granted per clinic, role copies with permission switches, and the booking policy.
 // The server enforces every rule; `allowed` only hides controls the user can't use.
@@ -75,6 +77,7 @@ export function SettingsPage() {
     ...((me.permissions["consent_documents.manage"] ?? []).includes("*")
       ? (["consent-documents"] as SettingsSection[])
       : []),
+    "appearance",
     "account",
   ];
   const requested = new URLSearchParams(location.search).get("section"),
@@ -269,6 +272,10 @@ export function SettingsPage() {
           account={{ name: me.displayName, detail: titleCase(me.staffType) }}
         />
       )}
+      {section === "appearance" && <Card>
+        <CardHeader><CardTitle>Appearance</CardTitle><CardDescription>Choose the colour theme for this browser.</CardDescription></CardHeader>
+        <CardContent><ModePicker /></CardContent>
+      </Card>}
       {section === "modules" && <ModuleSwitches />}
       {section === "registrations" && <Registrations />}
       {section === "consent-documents" && <ConsentDocuments />}
