@@ -3,7 +3,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type ComponentProps,
 } from "react";
 import {
   LayoutDashboard,
@@ -30,22 +29,7 @@ import { ModePicker } from "@/components/ModePicker";
 import { Card, CardContent } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-  useSidebar,
-} from "@/components/ui/sidebar";
+import { ArcSidebarLayout, type SidebarSection } from "@/components/arc/sidebar/sidebar";
 import { HmsError, request, setIdentity, setTenant } from "@/hms/client";
 import { devLoginEnabled, finishLogin, oidc } from "@/hms/auth";
 import { can, permittedFacilities, practitionersFor } from "@/hms/model";
@@ -108,21 +92,6 @@ function Brand() {
     </div>
   );
 }
-function NavigationButton({
-  onClick,
-  ...props
-}: ComponentProps<typeof SidebarMenuButton>) {
-  const { setOpenMobile } = useSidebar();
-  return (
-    <SidebarMenuButton
-      {...props}
-      onClick={(e) => {
-        setOpenMobile(false);
-        onClick?.(e);
-      }}
-    />
-  );
-}
 
 export default function App() {
   return location.pathname === "/staff/video-consult" ? (
@@ -159,7 +128,7 @@ function StaffApp() {
   } | null>(null);
   const [listedClinics, setListedClinics] = useState(0);
   const [bootstrap, setBootstrap] = useState<{ state: string; canCreateClinic: boolean; organizationProvisioned: boolean } | null>(null);
-  function go(next: string) {
+  function go(next: string, onNavigated?: () => void) {
     requestLeave(() => {
       const index = route.current.index + 1;
       history.pushState({ hmsIndex: index }, "", `/staff/${next}`);
@@ -169,6 +138,7 @@ function StaffApp() {
       };
       if (next.split("?")[0] === page) setNavVersion((n) => n + 1);
       setPage(next.split("?")[0]);
+      onNavigated?.();
     });
   }
   function signout() {
@@ -463,116 +433,67 @@ function StaffApp() {
   ];
   const allowed =
     extraPages.includes(page) || visible.some((n) => n.key === page);
+  const sidebarSections: SidebarSection[] = [...groups, "Workspace"]
+    .map((group) => ({
+      id: group.toLowerCase(),
+      heading: group,
+      items: visible
+        .filter((item) => item.group === group)
+        .map((item) => ({
+          id: item.key === "appointments" ? "appointment-group" : item.key,
+          label: item.name,
+          icon: item.icon,
+          ...(item.key === "appointments"
+            ? {
+                children: [
+                  { id: "appointments", label: "All appointments" },
+                  { id: "waitlist", label: "Waitlist" },
+                  { id: "queue", label: "Queue" },
+                ],
+              }
+            : {}),
+        })),
+    }))
+    .filter((section) => section.items.length > 0);
   return (
     <TooltipProvider>
-      <SidebarProvider>
-        <Sidebar>
-          <SidebarHeader className="px-5 py-6">
-            <Brand />
-          </SidebarHeader>
-          <SidebarContent>
-            {groups.map((g) => {
-              const items = visible.filter((n) => n.group === g);
-              return (
-                items.length > 0 && (
-                  <SidebarGroup key={g}>
-                    <SidebarGroupLabel>{g}</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                      <SidebarMenu>
-                        {items.map((n) => (
-                          <SidebarMenuItem key={n.key}>
-                            <NavigationButton
-                              isActive={
-                                page === n.key ||
-                                (n.key === "appointments" &&
-                                  ["waitlist", "queue"].includes(page))
-                              }
-                              onClick={() => go(n.key)}
-                            >
-                              <n.icon />
-                              <span>{n.name}</span>
-                            </NavigationButton>
-                          </SidebarMenuItem>
-                        ))}
-                      </SidebarMenu>
-                    </SidebarGroupContent>
-                  </SidebarGroup>
-                )
-              );
-            })}
-            <SidebarGroup className="mt-auto">
-              <SidebarGroupLabel>Workspace</SidebarGroupLabel>
-              <SidebarMenu>
-                {visible
-                  .filter((n) => n.group === "Workspace")
-                  .map((n) => (
-                    <SidebarMenuItem key={n.key}>
-                      <NavigationButton
-                        isActive={page === n.key}
-                        onClick={() => go(n.key)}
-                      >
-                        <n.icon />
-                        <span>{n.name}</span>
-                      </NavigationButton>
-                    </SidebarMenuItem>
-                  ))}
-                <SidebarMenuItem>
-                  <NavigationButton
-                    isActive={page === "settings"}
-                    onClick={() => go("settings")}
-                  >
-                    <Settings2 />
-                    Workspace settings
-                  </NavigationButton>
-                </SidebarMenuItem>
-                {auditor && (
-                  <SidebarMenuItem>
-                    <NavigationButton
-                      isActive={page === "activity" || page === "operations"}
-                      onClick={() => go("activity")}
-                    >
-                      <ScrollText />
-                      Activity
-                    </NavigationButton>
-                  </SidebarMenuItem>
-                )}
-              </SidebarMenu>
-            </SidebarGroup>
-          </SidebarContent>
-          <SidebarFooter className="p-4 border-t border-sidebar-border">
-            <div className="flex items-center gap-3 px-2 mb-2">
-              <div className="size-9 rounded-full bg-muted flex items-center justify-center text-xs font-semibold">
-                {me.displayName
-                  .split(" ")
-                  .map((n) => n[0])
-                  .slice(0, 2)
-                  .join("")}
-              </div>
-              <div>
-                <p className="text-xs font-medium">{me.displayName}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {me.staffType === "admin"
-                    ? can(me, "tenant.manage")
-                      ? "Clinic administrator"
-                      : "Clinic staff"
-                    : me.staffType.replaceAll("_", " ")}
-                </p>
-              </div>
-            </div>
-            <NavigationButton
-              onClick={() => {
-                requestLeave(signout);
-              }}
-            >
-              <LogOut />
-              Sign out
-            </NavigationButton>
-          </SidebarFooter>
-        </Sidebar>
-        <SidebarInset className="min-w-0">
+      <ArcSidebarLayout
+        key={`${me.tenantId}:${me.staffId}`}
+        sections={sidebarSections}
+        footer={[
+          { id: "settings", label: "Workspace settings", icon: Settings2 },
+          ...(auditor
+            ? [{ id: "activity", label: "Activity", icon: ScrollText }]
+            : []),
+          { id: "signout", label: "Sign out", icon: LogOut },
+        ]}
+        active={page === "operations" ? "activity" : page}
+        brand={{
+          name: "Exora Health",
+          detail: facility.name,
+          icon: <HeartPulse />,
+        }}
+        person={{
+          name: me.displayName,
+          role:
+            me.staffType === "admin"
+              ? can(me, "tenant.manage")
+                ? "Clinic administrator"
+                : "Clinic staff"
+              : me.staffType.replaceAll("_", " "),
+        }}
+        onNavigate={(target, accepted) => {
+          if (target === "signout")
+            requestLeave(() => {
+              accepted();
+              signout();
+            });
+          else go(target, accepted);
+        }}
+        renderHeader={(toggle) => (
           <header className="workspace-header">
             <div className="flex items-center gap-3">
-              <SidebarTrigger />
+              {toggle}
               <span className="text-sm text-muted-foreground hidden md:block">
                 Clinic workspace
               </span>
@@ -613,20 +534,21 @@ function StaffApp() {
               )}
             </div>
           </header>
-          <Directory
-            key={`${me.tenantId}:${facilityId}:${navVersion}`}
-            me={me}
-            facility={facility}
-            page={page}
-            allowed={allowed}
-            go={go}
-          />
-          <footer className="workspace-footer">
-            <span>Exora Health · {facility.name}</span>
-            <span>{facility.timezone}</span>
-          </footer>
-        </SidebarInset>
-      </SidebarProvider>
+        )}
+      >
+        <Directory
+          key={`${me.tenantId}:${facilityId}:${navVersion}`}
+          me={me}
+          facility={facility}
+          page={page}
+          allowed={allowed}
+          go={go}
+        />
+        <footer className="workspace-footer">
+          <span>Exora Health · {facility.name}</span>
+          <span>{facility.timezone}</span>
+        </footer>
+      </ArcSidebarLayout>
       <Toaster />
     </TooltipProvider>
   );
