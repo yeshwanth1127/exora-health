@@ -8,3 +8,7 @@ export { patientPreview } from "../src/hms/patient-preview";
 export { WorkspaceContext } from "../src/hms/hooks";
 export { MultiStepForm } from "../src/components/arc/multi-step-form/multi-step-form";
 export { SettingsPage, SettingsSaveBar } from "../src/components/arc/settings-page/settings-page";
+export { KanbanBoard } from "../src/components/arc/kanban-board/kanban-board";
+export { SupportConversation, ConversationComposer } from "../src/components/arc/support-conversation/support-conversation";
+export { QueueBoard } from "../src/hms/QueueBoard";
+export { queueMove, queueColumns } from "../src/hms/queue-board";

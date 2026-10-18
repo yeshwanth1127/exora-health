@@ -258,8 +258,9 @@ export function SettingsPage({
   }, [me, facility]);
   return (
     <OriginalResourceContext.Provider value={source}>
-      <h1 className="mb-2 text-2xl font-semibold">Workspace settings</h1>
+      <h1 className="mb-6 text-2xl font-semibold">Workspace settings</h1>
       <ArcSettingsPage
+        fullPage
         current={section}
         onChange={(id) => go(`settings?section=${id}`)}
         account={{ name: me.displayName, detail: titleCase(me.staffType) }}

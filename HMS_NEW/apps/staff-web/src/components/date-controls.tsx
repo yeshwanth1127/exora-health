@@ -1,6 +1,6 @@
 import { Tooltip } from "./arc/tooltip/tooltip";
 import { TimeField } from "./WorkspaceFields";
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./arc/button/button";
 import { DatePicker } from "./arc/date-picker/date-picker";
@@ -27,6 +27,7 @@ export function DayNavigator({
   max,
   disabled,
   allowClear = false,
+  actions,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -37,6 +38,7 @@ export function DayNavigator({
   max?: string;
   disabled?: boolean;
   allowClear?: boolean;
+  actions?: ReactNode;
 }) {
   const id = useId(),
     prev = shiftDay(value, -1),
@@ -61,6 +63,7 @@ export function DayNavigator({
         disabled={disabled || !dayInBounds(next, min, max)} onClick={() => onChange(next)}><ChevronRight size={16} /></Button></Tooltip>
       {timezone && <Button type="button" variant="secondary" disabled={disabled || !dayInBounds(current, min, max)} onClick={() => onChange(current)}>Today</Button>}
       {allowClear && value && <Button type="button" variant="ghost" disabled={disabled} onClick={() => onChange("")}>All dates</Button>}
+      {actions}
     </div>
     {(boundaryLabel || timezone) && <p className="mt-2 text-xs text-muted-foreground">{boundaryLabel ?? timezone}</p>}
   </div>;

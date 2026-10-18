@@ -541,16 +541,64 @@
     "file": "src/components/arc/settings-page/settings-page.tsx",
     "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/settings-page/src/SettingsPage.cjs",
     "sha256": "f48e1f07dd745e3c37df5e4b7ab2db40fbbd8e9ba1b57ac0e00a6206b734fd7e",
-    "integratedSha256": "11af6cddb686b1fdf198500b50393ebe3d85f13731174a829702af2741bba19a",
-    "bindingAdaptation": "User-approved Settings section navigation and per-form save semantics. Existing permitted sections/guarded routes, original section motion/highlight/keyboard and measured save-bar shell. Staff name/phone count/discard and existing versioned Action only; no Save all or simulated saved outcome. Existing AnimatedCounter and compact Action size reused; CSS namespaces extracted with media/container/keyframe rules.",
+    "integratedSha256": "34e5831e82d893e4bfe0ab339f498a2190a8807406483f8a7dfb70a12b316ecc",
+    "bindingAdaptation": "User-approved Settings section navigation and per-form save semantics. Existing permitted sections/guarded routes, original section motion/highlight/keyboard and measured save-bar shell. Staff name/phone count/discard and existing versioned Action only; no Save all or simulated saved outcome. Existing AnimatedCounter and compact Action size reused; CSS namespaces extracted with media/container/keyframe rules. User-requested 19 Oct full-page opt-in for HMS Settings: full available width, page scrolling, sticky section navigation, no embedded frame/duplicate account chrome. Default reference frame remains available.",
     "kind": "pro-port"
   },
   {
     "file": "src/components/arc/settings-page/settings-page.module.css",
     "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/settings-page/dist/styles.css",
     "sha256": "3790a65058cc4ab6c0cdd72e5eaa608fb7cf1c00c34c77f69f2baf3819aa2bd1",
-    "integratedSha256": "2457fc9d5d6d8a7f4cafecf96d758feeeb05d4850fc23ed1dc1bf4637bcb63a8",
-    "bindingAdaptation": "User-approved Settings section navigation and per-form save semantics. Existing permitted sections/guarded routes, original section motion/highlight/keyboard and measured save-bar shell. Staff name/phone count/discard and existing versioned Action only; no Save all or simulated saved outcome. Existing AnimatedCounter and compact Action size reused; CSS namespaces extracted with media/container/keyframe rules.",
+    "integratedSha256": "05df97fd42e41503f00b421a368827bc549410ce3f7225b218aa1c274e27bb07",
+    "bindingAdaptation": "User-approved Settings section navigation and per-form save semantics. Existing permitted sections/guarded routes, original section motion/highlight/keyboard and measured save-bar shell. Staff name/phone count/discard and existing versioned Action only; no Save all or simulated saved outcome. Existing AnimatedCounter and compact Action size reused; CSS namespaces extracted with media/container/keyframe rules. User-requested 19 Oct full-page opt-in for HMS Settings: full available width, page scrolling, sticky section navigation, no embedded frame/duplicate account chrome. Default reference frame remains available.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/support-conversation/support-conversation.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/support-conversation/src/Component.cjs",
+    "sha256": "2ceb9b0fc19d1c28439944a1b08e08f14a533afade6cebc8a01e2be8312fbd2a",
+    "integratedSha256": "85137735855a5be79d6580e176452213e48a0325abc272a3fd54ee4072d153d6",
+    "bindingAdaptation": "User-approved WhatsApp theme/full inbox placement. Supplied messages/actions/composer replace seeded history, reply timers, typing and fake attachments. Source message springs, reduced motion, scroll-follow and measured composer height retained; existing preview guards, explicit preview statuses and multiline/length bindings.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/support-conversation/support-conversation.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/support-conversation/dist/styles.css",
+    "sha256": "e18aa025729da7ce814dffeaa18b30a820a99daad12f9c1bf6134ef1f1c1e78e",
+    "integratedSha256": "7eae71888294a042d5fd0f304c90cab4675484b7351497593e6343ba65556cba",
+    "bindingAdaptation": "User-approved WhatsApp theme/full inbox placement. Supplied messages/actions/composer replace seeded history, reply timers, typing and fake attachments. Source message springs, reduced motion, scroll-follow and measured composer height retained; existing preview guards, explicit preview statuses and multiline/length bindings.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/kanban-board/kanban-board-source.js",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kanban-board/src/KanbanBoard.cjs",
+    "sha256": "c75fb0bd48b56bbe544ae3b8a079631c18a8c09bd2ed7bf03355accd3a226963",
+    "integratedSha256": "28540525777af4b2b8a7a988436990097e05f22a92ade6d8b804b269e6e7bc52",
+    "bindingAdaptation": "User-confirmed Queue placement. Captured compiled JSX/gesture engine ported to ESM with existing React/Motion/Lucide/Arc dependencies. No sample defaults. Optional read-only/create/grouping/open/move-request bindings, display ID/patient slot, and unmounted callback guard. Queue keyboard motion previews until drop; explicit moved ID prevents another polled token becoming the target. Host review/real command controls saved state; no queue reordering or doctor reassignment; native hidden semantics preserved.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/kanban-board/kanban-board-source.d.ts",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kanban-board/src/KanbanBoard.cjs",
+    "sha256": "c75fb0bd48b56bbe544ae3b8a079631c18a8c09bd2ed7bf03355accd3a226963",
+    "integratedSha256": "44ebd3ea038dffd0390f212b72c3a94b44645f162ad790584e5ba668d1c999e5",
+    "bindingAdaptation": "User-confirmed Queue placement. Captured compiled JSX/gesture engine ported to ESM with existing React/Motion/Lucide/Arc dependencies. No sample defaults. Optional read-only/create/grouping/open/move-request bindings, display ID/patient slot, and unmounted callback guard. Queue keyboard motion previews until drop; explicit moved ID prevents another polled token becoming the target. Host review/real command controls saved state; no queue reordering or doctor reassignment; native hidden semantics preserved.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/kanban-board/kanban-board.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kanban-board/src/KanbanBoard.cjs",
+    "sha256": "c75fb0bd48b56bbe544ae3b8a079631c18a8c09bd2ed7bf03355accd3a226963",
+    "integratedSha256": "018cef9f00a1342efc5bd50a10336c4a42923d31ea28f87251aeaa32060921bd",
+    "bindingAdaptation": "User-confirmed Queue placement. Captured compiled JSX/gesture engine ported to ESM with existing React/Motion/Lucide/Arc dependencies. No sample defaults. Optional read-only/create/grouping/open/move-request bindings, display ID/patient slot, and unmounted callback guard. Queue keyboard motion previews until drop; explicit moved ID prevents another polled token becoming the target. Host review/real command controls saved state; no queue reordering or doctor reassignment; native hidden semantics preserved.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/kanban-board/kanban-board.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kanban-board/dist/styles.css",
+    "sha256": "d7d9aa6b96afc544c25272065da621494f8304ca97befb8be60961ff21875da0",
+    "integratedSha256": "2b9fb5dd1e5c28b94dd902169a9ace13424c2bc5e23bd3e0058e975021529985",
+    "bindingAdaptation": "User-confirmed Queue placement. Captured compiled JSX/gesture engine ported to ESM with existing React/Motion/Lucide/Arc dependencies. No sample defaults. Optional read-only/create/grouping/open/move-request bindings, display ID/patient slot, and unmounted callback guard. Queue keyboard motion previews until drop; explicit moved ID prevents another polled token becoming the target. Host review/real command controls saved state; no queue reordering or doctor reassignment; native hidden semantics preserved.",
     "kind": "pro-port"
   }
 ]

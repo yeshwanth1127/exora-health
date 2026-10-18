@@ -1,5 +1,8 @@
 # Component inventory
 
+> **Latest chat/Queue wave (19 Oct):** Support conversation and Kanban board are implemented: **41 adopted + 5 support = 46 folders**. Kanban is on Queue; WhatsApp Inbox uses the themed Support conversation. Settings now has the explicitly requested full-page placement. Source and automated verification are recorded in `whatsapp-queue-settings-wave.md`; rendered verification remains with the user. These were already documentation-screened; no additional unique survey count is claimed.
+
+
 > **Latest context/setup update (19 Oct):** Multi-step form and Settings page are now adopted: **39 adopted + 5 support = 44 folders**. Hover content is refined without adding another component. Read `context-and-setup-wave.md`; WhatsApp Support conversation and Kanban are requested next turn, as recorded in `next-whatsapp-kanban.md`. These were already documentation-screened; this does not add to a deduplicated candidate-survey count.
 
 
@@ -65,7 +68,8 @@
 | Cancel flow | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/cancel-flow/demo/) |
 | Sheet stack | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/sheet-stack/demo/) |
 | Action morph | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/action-morph/demo/) |
-| Support conversation | Initial documentation screening; current WhatsApp source checked | Requested for next turn with WhatsApp theme | [Demo](http://localhost:4477/components/pro/support-conversation/demo/) |
+| Support conversation | Initial documentation screening; current WhatsApp source checked | Integrated: WhatsApp preview Inbox with WhatsApp theme; visual review retained by user | [Demo](http://localhost:4477/components/pro/support-conversation/demo/) |
+| Kanban board | Earlier Pro documentation screening; current source/API review | Integrated: Queue Board, guarded commands and Table fallback; visual review retained by user | [Demo](http://localhost:4477/components/pro/kanban-board/demo/?theme=light) |
 | Badge | Second documentation/source screening | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/badge/?theme=light) |
 | Alert | Second documentation/source screening | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/alert/?theme=light) |
 | Tooltip | Second documentation/source screening | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/tooltip/?theme=light) |
@@ -116,6 +120,6 @@
 
 ## Integrated folder inventory
 
-`alert`, `animated-counter`, `availability-picker`, `avatar`, `badge`, `bar-chart`, `button`, `calendar`, `checkbox`, `combobox`, `command-palette`, `copy-button`, `date-picker`, `date-range-picker`, `dialog`, `dropdown-menu`, `empty-state`, `filter-toolbar`, `hover-card`, `inbox-triage`, `input`, `line-chart`, `metric-card`, `money-input`, `multi-step-form`, `notification-center`, `phone-input`, `radio-cards`, `release-readiness`, `search-field`, `select`, `settings-page`, `sidebar`, `skeleton`, `skeleton-morph`, `split-bar`, `stepper`, `tabs`, `team-directory`, `textarea`, `time-picker`, `timeline`, `toast-stack`, `tooltip`.
+`alert`, `animated-counter`, `availability-picker`, `avatar`, `badge`, `bar-chart`, `button`, `calendar`, `checkbox`, `combobox`, `command-palette`, `copy-button`, `date-picker`, `date-range-picker`, `dialog`, `dropdown-menu`, `empty-state`, `filter-toolbar`, `hover-card`, `inbox-triage`, `input`, `kanban-board`, `line-chart`, `metric-card`, `money-input`, `multi-step-form`, `notification-center`, `phone-input`, `radio-cards`, `release-readiness`, `search-field`, `select`, `settings-page`, `sidebar`, `skeleton`, `skeleton-morph`, `split-bar`, `stepper`, `support-conversation`, `tabs`, `team-directory`, `textarea`, `time-picker`, `timeline`, `toast-stack`, `tooltip`.
 
 Selection rationale and deferred data/interaction conflicts remain in `component-shortlist.md` and `next-wave-shortlist.md`. In particular, Donut chart was assessed but not integrated. Roles permissions and Week calendar remain deferred (Team directory was adopted in the Pro wave, see `pro-wave-shortlist.md`); readable role descriptions and a wider doctor panel do not constitute those larger replacements.

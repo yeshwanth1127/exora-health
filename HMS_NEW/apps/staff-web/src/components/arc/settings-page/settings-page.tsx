@@ -67,12 +67,14 @@ export function SettingsPage({
   onChange,
   account,
   children,
+  fullPage = false,
 }: {
   sections: SettingsItem[];
   current: string;
   onChange: (id: string) => void;
   account: { name: string; detail: string };
   children: ReactNode;
+  fullPage?: boolean;
 }) {
   const id = useId(),
     reduced = useReducedMotion() ?? false,
@@ -115,7 +117,7 @@ export function SettingsPage({
   }, [current]);
   return (
     <section
-      className={`arc-demo-scope ${styles.root}`}
+      className={`arc-demo-scope ${styles.root} ${fullPage ? styles.workspace : ""}`}
       aria-labelledby={`${id}-title`}
     >
       <div className={styles.settings}>

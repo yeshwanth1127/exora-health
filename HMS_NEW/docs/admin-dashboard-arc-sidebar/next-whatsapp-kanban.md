@@ -1,5 +1,7 @@
 # Requested next turn: WhatsApp-themed Arc chat and Kanban
 
+> Implemented: see `whatsapp-queue-settings-wave.md`. The user explicitly confirmed **Queue** as the Kanban placement. The remaining text records the earlier planning baseline, not outstanding work.
+
 User instruction, 19 Oct 2026: “can you see that the whatsapp chat (moded for whatsapp theme) uses the arc ui component as well as the kanban next turn”. This is the next requested phase; neither component was implemented during the context/doctor/Settings wave. Do not redo the catalog survey or browser verification the user retained.
 
 ## WhatsApp chat: source-confirmed starting point

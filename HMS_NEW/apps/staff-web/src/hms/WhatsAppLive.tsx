@@ -1,3 +1,4 @@
+import { requestLeave } from "./leave";
 import { useState, type ReactNode } from "react";
 import {
   AlertTriangle,
@@ -68,8 +69,10 @@ export function Live({
   });
   /** Tabs live in the URL so staff can share `whatsapp?tab=inbox`. */
   const open = (t: Tab, extra = "") => {
-    setTab(t);
-    history.replaceState(history.state, "", `?tab=${t}${extra}`);
+    requestLeave(() => {
+      setTab(t);
+      history.replaceState(history.state, "", `?tab=${t}${extra}`);
+    });
   };
   const waiting = data.conversations.filter(needsReply).length;
   const canManage = can("comms.manage");
