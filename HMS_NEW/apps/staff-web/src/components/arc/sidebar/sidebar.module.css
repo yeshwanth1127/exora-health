@@ -780,3 +780,6 @@
   transform: translateX(-2px);
   transition-duration: 110ms;
 }
+
+/* User-requested desktop placement; the original header placement remains the default. */
+.toggleRow { display: flex; flex: none; align-items: center; height: 40px; padding-inline: 16px; }

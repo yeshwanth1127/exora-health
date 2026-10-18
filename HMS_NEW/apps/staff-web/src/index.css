@@ -183,12 +183,14 @@ body {
   color: white;
 }
 .workspace-header {
-  height: 64px;
+  position: relative;
+  height: 72px;
+  flex: 0 0 72px;
   padding: 0 28px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 12px;
 }
 .workspace-content {
@@ -481,13 +483,4 @@ body {
   outline: 1px solid var(--destructive);
   outline-offset: 4px;
   border-radius: 4px;
-}
-/* The clinic switcher's trigger carries aria-label="Clinic"; its visible label overflowed the 64px header. */
-.workspace-header [data-slot="label"] {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
 }

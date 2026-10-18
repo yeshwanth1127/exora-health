@@ -1,6 +1,7 @@
 import { CopyButton } from "@/components/arc/copy-button/copy-button";
-import { PhoneField } from "@/components/WorkspaceFields";
-import { SearchField } from "@/components/arc/search-field/search-field";
+import { DateField, PhoneField } from "@/components/WorkspaceFields";
+import { Combobox } from "@/components/arc/combobox/combobox";
+import { toast } from "@/components/toast-events";
 import { Input as ArcInput } from "@/components/arc/input/input";
 import { PatientVisitActions } from "./PatientVisits";
 import { appointmentModeLabel, type AppointmentMode } from "./booking-workflow";
@@ -73,35 +74,21 @@ export function PatientLookup({
   const result = useQuery<{ items: Patient[] }>(
     search.length >= 2 ? `/v1/patients?${query(params)}` : null,
   );
+  const pending = text.trim() !== search || result.loading;
+  const patients = search.length >= 2 && !pending && !result.error ? result.data?.items ?? [] : [];
   return (
     <div className="space-y-3">
       <div className="arc-demo-scope">
-        <SearchField label="Patient search" ref={searchInput} placeholder="Type a name, MRN or phone"
-          autoComplete="off" value={text} onValueChange={setText} />
+        <Combobox label="Patient search" ref={searchInput} placeholder="Type a name, MRN or phone"
+          autoComplete="off" value="" onQueryChange={setText} filterOptions={false}
+          aria-busy={text.trim().length >= 2 && pending}
+          options={patients.map((patient) => ({ value: patient.patientId,
+            label: `${patientDisplayName(patient.patientId, patient.name)} · MRN ${patient.mrn} · ${patient.phone ?? "No phone recorded"}${isTestPatient(patient.patientId) ? " · Test patient" : ""}${patient.status !== "active" ? " · Inactive" : ""}`,
+            disabled: patient.status !== "active" }))}
+          emptyMessage={text.trim().length < 2 ? "Type at least 2 characters" : pending ? "Searching…" : result.error ? "Search could not load. Try again." : "No patient found"}
+          onValueChange={(id) => { const patient = patients.find((p) => p.patientId === id); if (patient?.status === "active") onSelect(patient); }} />
       </div>
       <ErrorMessage text={result.error} />
-      {result.loading && <p className="text-sm">Searching…</p>}
-      {result.data?.items.map((p) => (
-        <Button
-          key={p.patientId}
-          type="button"
-          variant="outline"
-          className="h-auto w-full justify-between py-3"
-          disabled={p.status !== "active"}
-          onClick={() => onSelect(p)}
-        >
-          <span className="text-left">
-            <span className="flex items-center gap-2">
-              {patientDisplayName(p.patientId, p.name)}
-              <TestPatientBadge patientId={p.patientId} />
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {p.mrn} · {p.phone ?? "No phone recorded"}
-            </span>
-          </span>
-          <span>Select</span>
-        </Button>
-      ))}
       {search.length < 2 && (
         <WorkspaceEmpty
           title="Find the patient first"
@@ -169,7 +156,8 @@ export function RegisterPatient({
           },
           true,
         );
-        if (result)
+        if (result) {
+          toast.success("Patient registered");
           onCreated({
             patientId: result.patientId,
             mrn: result.mrn,
@@ -179,6 +167,7 @@ export function RegisterPatient({
             sex,
             status: "active",
           });
+        }
       }}
     >
       <div className="grid grid-cols-2 gap-4">
@@ -215,14 +204,7 @@ export function RegisterPatient({
           }))}
         />
       </Field>
-      <Field title="Date of birth (optional)" id="birth-date">
-        <Input
-          id="birth-date"
-          type="date"
-          value={birthDate}
-          onChange={(e) => setBirthDate(e.target.value)}
-        />
-      </Field>
+      <DateField id="birth-date" label="Date of birth (optional)" value={birthDate} onValueChange={setBirthDate} />
       <PhoneField label="Phone (optional, with country code)" id="patient-phone" value={phone} onValueChange={setPhone}
         error={touched.phone && phone && !E164.test(phone) ? "Enter a phone number with its country code." : undefined}
         onBlur={() => touch("phone")} />
@@ -842,8 +824,10 @@ function EditPatient({
               }
             : {}),
         };
-        if (await cmd.run(`/v1/patients/${d.patientId}`, body, false, "PATCH"))
+        if (await cmd.run(`/v1/patients/${d.patientId}`, body, false, "PATCH")) {
+          toast.success("Patient details saved");
           onDone(true);
+        }
       }}
     >
       <h3 className="font-semibold">Edit details</h3>
@@ -863,7 +847,7 @@ function EditPatient({
             }))}
           />
         </Field>
-        {text("birthDate", "Date of birth", { type: "date" })}
+        <DateField id="pt-birthDate" label="Date of birth" value={f.birthDate} onValueChange={set("birthDate")} />
       </div>
       <label className="flex items-center gap-2 text-sm">
         <input

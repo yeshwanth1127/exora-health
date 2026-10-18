@@ -11,6 +11,7 @@ import styles from "./date-picker.module.css";
 
 export interface DatePickerProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "value" | "onChange"> {
   label: string;
+  hideLabel?: boolean;
   today?: Date | null;
   clearable?: boolean;
   value?: Date;
@@ -44,7 +45,7 @@ const statusRise: Variants = {
   exit: { opacity: 0, y: "-0.3em", filter: `blur(${blur.subtle}px)`, transition: { duration: 0.14, ease: ease.standard } },
 };
 
-export function DatePicker({ label, value, onChange, description, placeholder = "Select a date", minDate, maxDate, disabledDates, locale = "en-US", format = { month: "short", day: "numeric", year: "numeric" }, showToday, today, clearable = true, id, className, disabled, ...buttonProps }: DatePickerProps) {
+export function DatePicker({ label, hideLabel, value, onChange, description, placeholder = "Select a date", minDate, maxDate, disabledDates, locale = "en-US", format = { month: "short", day: "numeric", year: "numeric" }, showToday, today, clearable = true, id, className, disabled, ...buttonProps }: DatePickerProps) {
   const generatedId = useId();
   const controlId = id ?? generatedId;
   const hintId = description ? `${controlId}-description` : undefined;
@@ -102,7 +103,7 @@ export function DatePicker({ label, value, onChange, description, placeholder = 
   };
 
   return <div className={[styles.field, className].filter(Boolean).join(" ")} ref={rootRef} onBlur={onBlur}>
-    <label className={styles.label} htmlFor={controlId}>{label}</label>
+    {!hideLabel && <label className={styles.label} htmlFor={controlId}>{label}</label>}
     <div className={styles.anchor}>
       <button {...buttonProps} ref={triggerRef} id={controlId} type="button" disabled={disabled} aria-haspopup="dialog" aria-expanded={open} aria-describedby={[hintId, buttonProps["aria-describedby"]].filter(Boolean).join(" ") || undefined} className={styles.trigger} onClick={() => (open ? close() : show())} onKeyDown={onTriggerKeyDown}>
         <CalendarDays size={16} strokeWidth={1.75} aria-hidden="true" />

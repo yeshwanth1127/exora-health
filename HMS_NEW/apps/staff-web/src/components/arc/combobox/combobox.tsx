@@ -30,6 +30,9 @@ export interface ComboboxProps
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
+  /** Bind the same demonstrated search interaction to a remote entity query. */
+  onQueryChange?: (query: string) => void;
+  filterOptions?: boolean;
   description?: string;
   placeholder?: string;
   emptyMessage?: string;
@@ -58,6 +61,8 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
     value: controlledValue,
     defaultValue = "",
     onValueChange,
+    onQueryChange,
+    filterOptions = true,
     description,
     placeholder = "Search or select…",
     emptyMessage = "No matches found",
@@ -102,11 +107,11 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
 
   const filteredOptions = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
-    if (!normalizedQuery) return options;
+    if (!filterOptions || !normalizedQuery) return options;
     return options.filter((option) =>
       [option.label, ...(option.keywords ?? [])].some((term) => term.toLocaleLowerCase().includes(normalizedQuery)),
     );
-  }, [options, query]);
+  }, [options, query, filterOptions]);
 
   const enabledIndices = filteredOptions.reduce<number[]>((indices, option, index) => {
     if (!option.disabled) indices.push(index);
@@ -131,17 +136,19 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
       if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
         setOpen(false);
         setQuery("");
+        onQueryChange?.("");
       }
     };
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, []);
+  }, [onQueryChange]);
 
   const choose = (option: ComboboxOption) => {
     if (option.disabled) return;
     setUncontrolledValue(option.value);
     onValueChange?.(option.value);
     setQuery("");
+    onQueryChange?.("");
     setOpen(false);
     inputRef.current?.focus();
   };
@@ -151,6 +158,7 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
     setUncontrolledValue("");
     onValueChange?.("");
     setQuery("");
+    onQueryChange?.("");
     setOpen(true);
     inputRef.current?.focus();
   };
@@ -159,6 +167,7 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
     if (disabled) return;
     setOpen(true);
     setQuery("");
+    onQueryChange?.("");
     setActiveIndex(-1);
   };
 
@@ -188,6 +197,7 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
       event.preventDefault();
       setOpen(false);
       setQuery("");
+      onQueryChange?.("");
       return;
     }
   };
@@ -222,6 +232,7 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
           onClick={openMenu}
           onChange={(event) => {
             setQuery(event.target.value);
+            onQueryChange?.(event.target.value);
             setOpen(true);
             setActiveIndex(-1);
           }}

@@ -98,7 +98,12 @@
 .arc-command-trigger:hover { background: var(--surface-muted); }
 .arc-command-trigger kbd { font-size: 11px; color: var(--text-muted); }
 
-.workspace-header:has(.arc-demo-scope [role="combobox"]) { height: 96px; flex-shrink: 0; }
+/* The header owns a stable row; scrolling content cannot shrink it over the title. */
+.workspace-sidebar-toggle { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); }
+.workspace-search { width: min(480px, calc(100% - 128px)); }
+.workspace-search .arc-command-trigger { width: 100%; justify-content: flex-start; height: 44px; }
+.workspace-search .arc-command-trigger kbd { margin-left: auto; }
+.workspace-content { flex-shrink: 0; }
 
 .workspace-header > div { flex-shrink: 0; }
 .arc-command-trigger { white-space: nowrap; flex-shrink: 0; }
@@ -124,3 +129,9 @@
 /* Specialist fees share the user-approved compact desktop field geometry. */
 .arc-money-field { --money-input-height: 44px; --radius-panel: 18px; --text-3xl: 14px; --tracking-display: -.01em; --font-display: var(--font-body); }
 .arc-money-field > div:first-of-type { padding-inline: 12px; }
+
+/* Room for doctor setup, permission review and fee forms on desktop. */
+[data-slot="sheet-content"].doctor-workspace-panel { width: min(960px, calc(100vw - 80px)); max-width: none; }
+.doctor-workspace-panel > [data-slot="sheet-header"] { padding: 28px 64px 20px 28px; border-bottom: 1px solid var(--border); }
+.arc-date-field > label, .arc-schedule-search label { line-height: 20px; }
+.arc-date-field { gap: 8px; }

@@ -3,6 +3,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
 } from "react";
 import {
   LayoutDashboard,
@@ -458,6 +459,7 @@ function StaffApp() {
   return (
     <TooltipProvider>
       <ArcSidebarLayout
+        togglePlacement="sidebar"
         key={`${me.tenantId}:${me.staffId}`}
         sections={sidebarSections}
         footer={[
@@ -492,22 +494,8 @@ function StaffApp() {
         }}
         renderHeader={(toggle) => (
           <header className="workspace-header">
-            <div className="flex items-center gap-3">
-              {toggle}
-              <span className="text-xs font-medium hidden md:block">
-                {(["appointments", "waitlist", "queue"].includes(page)
-                  ? "Appointments"
-                  : ["activity", "operations"].includes(page)
-                    ? "Activity"
-                    : navigation.find((n) => n.key === page)?.name) ??
-                  (page === "settings"
-                    ? "Workspace settings"
-                    : page === "activity"
-                      ? "Activity log"
-                      : page.replaceAll("_", " "))}
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
+            {toggle && <div className="workspace-sidebar-toggle">{toggle}</div>}
+            <div className="workspace-search">
               <WorkspaceCommands
                 key={`${me.staffId}:${facilityId}`}
                 items={[
@@ -522,11 +510,6 @@ function StaffApp() {
                 ]}
                 onNavigate={go}
               />
-              <ClinicPicker key={facilityId} value={facilityId} options={facilities.map((f) => ({ value: f.facilityId, label: f.name }))}
-                onChange={(id) => requestLeave(() => { setTenant(me.tenantId); setFacilityId(id); })} />
-              {devLoginEnabled && (
-                <Badge variant="outline">Local preview</Badge>
-              )}
             </div>
           </header>
         )}
@@ -538,6 +521,9 @@ function StaffApp() {
           page={page}
           allowed={allowed}
           go={go}
+          clinicPicker={<ClinicPicker key={facilityId} value={facilityId}
+            options={facilities.map((f) => ({ value: f.facilityId, label: f.name }))}
+            onChange={(id) => requestLeave(() => { setTenant(me.tenantId); setFacilityId(id); })} />}
         />
         <footer className="workspace-footer">
           <span>Exora Health · {facility.name}</span>
@@ -604,6 +590,7 @@ function DevSignIn({
   );
 }
 type DirectoryProps = {
+  clinicPicker?: ReactNode;
   me: Me;
   facility: Facility;
   page: string;
@@ -624,19 +611,7 @@ function Directory(props: DirectoryProps) {
     </WorkspaceContext.Provider>
   );
 }
-function DirectoryContent({
-  me,
-  facility,
-  page,
-  allowed,
-  go,
-}: {
-  me: Me;
-  facility: Facility;
-  page: string;
-  allowed: boolean;
-  go: (page: string) => void;
-}) {
+function DirectoryContent({ me, facility, page, allowed, go, clinicPicker }: DirectoryProps) {
   const canReadDoctors = can(me, "catalog.read", facility.facilityId);
   const doctors = useQuery<{ items: Practitioner[] }>(
     canReadDoctors
@@ -712,7 +687,7 @@ function DirectoryContent({
         ) : page === "loyalty" ? (
           <Loyalty />
         ) : (
-          <SettingsPage />
+          <SettingsPage clinicPicker={clinicPicker} />
         )}
       </main>
     </WorkspaceContext.Provider>

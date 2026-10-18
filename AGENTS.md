@@ -36,3 +36,10 @@
 
 - Integrate Time picker, Phone input, Money input, Badge, Tooltip, Empty state, Skeleton, Copy button, Alert, Toast stack and Dialog with existing application data and guarded actions.
 - The user explicitly retained visual verification for this wave. Do not drive the browser or capture comparison screenshots; use source review, compilation and meaningful automated tests. Report visual parity as awaiting user review.
+
+## Latest desktop review and continuation
+
+- Current implementation/handoff: `HMS_NEW/docs/admin-dashboard-arc-sidebar/HANDOFF.md`; deduplicated selection ledger: `component-inventory.md`. Read these before repeating component exploration or continuing this branch.
+- User-approved header: centered command search, no duplicate page name or Local preview badge; desktop collapse control in the left sidebar; clinic switching under Settings / My account. Keep routing, permissions and unsaved guards intact.
+- Latest refinements include aligned schedule search, patient entity Combobox, Arc DOB picker, wider doctor panels, readable permission descriptions and confirmed-result toasts. Preserve their actual value/permission/command bindings.
+- The user retains visual verification and asked to minimize usage. Finish source/automated checks and hand off; do not start further component waves automatically.

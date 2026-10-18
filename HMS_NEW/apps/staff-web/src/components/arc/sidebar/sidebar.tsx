@@ -45,6 +45,7 @@ type Props = {
   /** Call accepted only when routing/leave guards have accepted the action. */
   onNavigate: (id: string, accepted: () => void) => void;
   renderHeader: (toggle: ReactNode) => ReactNode;
+  togglePlacement?: "header" | "sidebar";
   children: ReactNode;
 };
 
@@ -467,6 +468,7 @@ export function ArcSidebarLayout({
   person,
   onNavigate,
   renderHeader,
+  togglePlacement = "header",
   children,
 }: Props) {
   const id = useId();
@@ -477,6 +479,7 @@ export function ArcSidebarLayout({
   const [collapsed, setCollapsed] = useState(false);
   const [compact, setCompact] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobile, setMobile] = useState(false);
   const [groups, setGroups] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
       sections.flatMap((section) =>
@@ -504,6 +507,7 @@ export function ArcSidebarLayout({
     if (!shell) return;
     function resize() {
       const width = shell!.clientWidth;
+      setMobile(width < 480);
       if (width >= 480) setMobileOpen(false);
       const compact = width >= 480 && width < 640;
       setCompact(compact);
@@ -683,6 +687,7 @@ export function ArcSidebarLayout({
               data-floating={floating || undefined}
             >
               <Brand brand={brand} collapsed={collapsed} reduce={reduce} />
+              {togglePlacement === "sidebar" && <div className={styles.toggleRow}>{toggleButton}</div>}
               <Navigation
                 {...nav}
                 variant="side"
@@ -709,7 +714,7 @@ export function ArcSidebarLayout({
             )}
           </AnimatePresence>
           <main className={styles.main}>
-            {renderHeader(toggleButton)}
+            {renderHeader(togglePlacement === "sidebar" && !mobile ? null : toggleButton)}
             <div className={styles.page}>{children}</div>
           </main>
           <p className={styles.srOnly} role="status" aria-live="polite">

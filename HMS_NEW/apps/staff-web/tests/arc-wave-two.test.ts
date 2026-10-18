@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { toast, attachToastStack } from "../src/components/toast-events.ts";
 import type { ToastOptions } from "../src/components/arc/toast-stack/toast-stack.tsx";
 const opts = { parentURL: import.meta.url, tsconfig: fileURLToPath(new URL("../tsconfig.app.json", import.meta.url)) };
-const { PhoneField, MoneyField, TimeField, SharedField, ErrorMessage, LoadingState, Status } = await tsImport("./arc-wave-fixtures.ts", opts);
+const { PhoneField, MoneyField, TimeField, DateField, SharedField, ErrorMessage, LoadingState, Status } = await tsImport("./arc-wave-fixtures.ts", opts);
 const render = renderToStaticMarkup;
 
 test("phone picker preserves unsupported and overlength persisted numbers without reinterpreting them", () => {
@@ -71,4 +71,26 @@ test("dismissed buffered toasts do not appear after a stack mounts", () => {
   const notices: ToastOptions[] = [];
   const detach = attachToastStack({ toast: (notice) => { notices.push(notice); return "id"; }, update: () => {}, dismiss: () => {} });
   try { assert.equal(notices.length, 0); } finally { detach(); toast.dismiss(); }
+});
+
+
+test("birth date uses one labelled calendar trigger and preserves calendar-day form constraints", () => {
+  const html = render(h(DateField, { label: "Date of birth", id: "dob", value: "1968-02-14", onValueChange: () => assert.fail("render must not change DOB") }));
+  assert.equal((html.match(/<label/g) ?? []).length, 1);
+  assert.match(html, /<label[^>]+for="dob"/);
+  assert.match(html, /<button[^>]+id="dob"[^>]+aria-haspopup="dialog"/);
+  assert.match(html, /<input[^>]+aria-hidden="true"[^>]+type="date"[^>]+value="1968-02-14"/);
+  assert.ok(html.includes("1968"));
+  assert.ok(!html.includes('type="date" id="dob"'));
+});
+
+test("date picker shares parent validation and keeps required bounds when disabled", () => {
+  const html = render(h(SharedField, { label: "Date of birth", id: "dob", required: true, serverError: "Check this date" },
+    h(DateField, { label: "Date of birth", id: "dob", value: "", min: "1900-01-01", max: "2026-10-18", disabled: true, onValueChange: () => {} })));
+  assert.equal((html.match(/<label/g) ?? []).length, 1);
+  const trigger = html.match(/<button[^>]+id="dob"[^>]*>/)?.[0] ?? "";
+  assert.ok(trigger.includes('disabled=""'));
+  assert.ok(trigger.includes('aria-describedby="dob-error"'));
+  assert.ok(!html.includes('field="[object Object]"'));
+  assert.match(html, /<input[^>]+required=""[^>]+disabled=""[^>]+min="1900-01-01"[^>]+max="2026-10-18"/);
 });

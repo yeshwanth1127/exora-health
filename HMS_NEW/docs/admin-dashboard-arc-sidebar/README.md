@@ -1,21 +1,11 @@
-# Desktop sidebar: first Arc component
+# Admin dashboard Arc implementation
 
-Scope: the HMS_NEW staff dashboard's desktop sidebar only. Subsequent components and phone optimization are outside this tranche.
+Start with [HANDOFF.md](HANDOFF.md). It is the current implementation and continuation guide, updated after the desktop review fixes on 18 October 2026.
 
-- Branch: `codex/admin-dashboard-arc`, based on `b2cf1a5`.
-- Workspace: `/Users/deepakonda/.codex/worktrees/admin-dashboard-arc/HMS_NEW`.
-- Preview: `http://127.0.0.1:5198/staff/appointments`.
-- Reference: `http://localhost:4477/components/pro/sidebar/demo/?theme=light` in the user's local recreated Arc library.
+- [Component inventory and exact counts](component-inventory.md): 82 distinct assessed candidates; 25 adopted candidates plus 3 support components = 28 local component folders. Surveying, implementation and rendered verification are separate counts.
+- [Latest desktop fixes and validation](desktop-review-fixes.md).
+- [Source manifest](component-source-manifest.json): original reference SHA256 and current integrated SHA256 for copied component files. Sidebar is a typed application adapter, documented separately.
+- [First selection pass](component-shortlist.md), [second selection pass](next-wave-shortlist.md).
+- Historical verification: [sidebar](sidebar-verification.md), [first rollout](rollout-verification.md), [control consistency](control-consistency.md), [specialist fields and feedback](wave-two-verification.md).
 
-The typed component adapter retains the reference's sidebar styles, font asset and motion presets. It supplies clinic navigation, permission-filtered sections, appointment subroutes and the current staff identity instead of sample workspace data. Routing and sign-out still pass through the existing unsaved-change guard. The application supplies the viewport and retains its existing page content and header controls; the demo's outer showcase frame and sample pages are not installed.
-
-## Verification
-
-- PASS: production build, TypeScript build, sidebar lint, `git diff --check`, and all 163 existing frontend tests.
-- PASS: observed desktop open/folded widths of 240px/64px, 32px navigation rows, 13px type, matching padding, colors and the same Inter font asset. Browser zoom introduces subpixel rounding under 0.01px.
-- PASS: desktop collapse/expand, opening a nested group from the folded rail, route selection and current-item indication, keyboard tooltips and the `[` toggle.
-- PASS: `[` remains ordinary text inside a form field. An unsaved patient registration draft blocked sidebar navigation; Keep editing preserved the draft. The verification text was cleared without saving a record.
-- Visual review: [open sidebar](sidebar-desktop.jpg), [folded sidebar](sidebar-desktop-folded.jpg), captured at a 1280x900 CSS viewport.
-- Limits: motion presets match the local reference; frame-by-frame animation identity and OS reduced-motion behavior have not been independently measured. This is local frontend verification, with no deployment performed.
-
-The primary checkout's existing onboarding edits were not modified. No other Arc component was migrated in this change.
+Historical documents describe their own point in time. Current header placement, patient search, DOB fields, doctor panel widths and clinic-switch location are documented in the latest fixes. Do not interpret older screenshots as the current UI. The user owns visual verification of the newest waves.

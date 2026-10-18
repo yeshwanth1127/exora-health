@@ -1,3 +1,5 @@
+import { toast } from "@/components/toast-events";
+import { describeRolePermissions, type PermissionDescription } from "./role-permissions";
 import { MoneyField, PhoneField } from "@/components/WorkspaceFields";
 // Doctors at the selected clinic, and everything about them that booking uses: the booking profile
 // (specialty, qualifications, languages, video visits), name and phone, the clinics they work at, their
@@ -205,7 +207,7 @@ export function Doctors() {
             });
         }}
       >
-        <SheetContent className="overflow-y-auto sm:max-w-xl">
+        <SheetContent className="doctor-workspace-panel overflow-y-auto">
           <SheetHeader>
             <SheetTitle>{selected?.name}</SheetTitle>
             <SheetDescription>
@@ -228,7 +230,7 @@ export function Doctors() {
           else requestLeave(() => setAdding(false));
         }}
       >
-        <SheetContent className="overflow-y-auto sm:max-w-lg">
+        <SheetContent className="doctor-workspace-panel overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Add doctor to {facility.name}</SheetTitle>
             <SheetDescription>
@@ -273,8 +275,10 @@ function SetUpCalendar({
               undefined,
               true,
             )
-          )
+          ) {
+            toast.success("Doctor calendar ready");
             onDone();
+          }
         }}
       >
         <CalendarPlus />
@@ -467,6 +471,7 @@ function AddDoctor({ onAdded }: { onAdded: () => void }) {
           true,
         );
         if (!added) return;
+        toast.success("Doctor added to this clinic");
         // A calendar lets the doctor be given weekly hours; it's shared by every clinic they work at.
         setAffiliated(staffId);
         if (
@@ -700,7 +705,10 @@ function ProfileForm({
           false,
           "PUT",
         );
-        if (ok) onSaved();
+        if (ok) {
+          toast.success("Doctor profile saved");
+          onSaved();
+        }
       }}
     >
       <h3 className="font-semibold">Booking profile</h3>
@@ -845,8 +853,10 @@ function ContactForm({
             : {}),
           ...(phone !== (d.phone ?? "") ? { phone: phone || null } : {}),
         };
-        if (await cmd.run(`/v1/staff/${d.staffId}`, body, false, "PATCH"))
+        if (await cmd.run(`/v1/staff/${d.staffId}`, body, false, "PATCH")) {
+          toast.success("Doctor contact details saved");
           onSaved();
+        }
       }}
     >
       <h3 className="font-semibold">Name and contact</h3>
@@ -944,6 +954,7 @@ function Clinics({
                       { validTo: until, reason: reason.trim() },
                     )
                   ) {
+                    toast.success("Clinic affiliation updated");
                     setEnding(null);
                     onChanged();
                   }
@@ -1071,6 +1082,7 @@ function DoctorFees({ staffId }: { staffId: string }) {
                 "PUT",
               )
             ) {
+              toast.success("Doctor fee saved");
               setFeeText("");
               setServiceId("");
               setMode("any");
@@ -1205,6 +1217,7 @@ function DoctorPrerequisite({
       : can("facility.manage");
   const roles = useQuery<{
     roles: { roleId: string; name: string; permissions: string[] }[];
+    permissions: PermissionDescription[];
   }>(kind === "staff" && allowed ? "/v1/roles" : null);
   const specialties = useQuery<{ items: Specialty[] }>(
     kind === "department" && allowed ? "/v1/specialties" : null,
@@ -1326,6 +1339,7 @@ function DoctorPrerequisite({
           );
           return;
         }
+        toast.success(kind === "staff" ? "Doctor staff account created" : "Clinical department created");
         setSavedId(id);
         await resume(id);
       }}
@@ -1403,11 +1417,17 @@ function DoctorPrerequisite({
                   <summary className="text-sm cursor-pointer">
                     Review role permissions
                   </summary>
-                  <p className="text-xs text-muted-foreground">
-                    {roles.data?.roles
-                      .find((r) => r.roleId === role)
-                      ?.permissions.join(", ")}
-                  </p>
+                  <p className="mt-3 text-sm text-muted-foreground">This role applies at {facility.name}. It allows:</p>
+                  <div className="mt-3 grid grid-cols-2 gap-4">
+                    {describeRolePermissions(roles.data?.roles.find((r) => r.roleId === role)?.permissions ?? [], roles.data?.permissions ?? []).map((group) => (
+                      <section key={group.module}>
+                        <h4 className="text-sm font-medium">{group.module}</h4>
+                        <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-muted-foreground">
+                          {group.permissions.map((permission) => <li key={permission.code}>{permission.description}</li>)}
+                        </ul>
+                      </section>
+                    ))}
+                  </div>
                 </details>
               )}
             </LoadingState>

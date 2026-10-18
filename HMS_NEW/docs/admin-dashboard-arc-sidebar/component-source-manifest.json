@@ -9,8 +9,8 @@
     "file": "src/components/arc/combobox/combobox.tsx",
     "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/combobox/combobox.tsx",
     "sha256": "12ae9a73956f4d4854259396fd377aa63321db18198e8816db5b1791ff9a56b7",
-    "integratedSha256": "1a2e28656eb5756c5ed86b1ef3670d084bff64a3f0f82bfe6e6e88962bc685eb",
-    "bindingAdaptation": "Optional hidden internal label and combined description IDs support existing shared-field labels and validation without duplicate labels. Default demo behavior unchanged."
+    "integratedSha256": "737f5de266a18a87fae7011c1639b353b5e7b0265f4f7332fee9a0b4aef965c4",
+    "bindingAdaptation": "Optional external label/feedback bindings; onQueryChange and filterOptions=false bind the demonstrated search/listbox to remote patient queries without filtering authorized server results a second time. Default local filtering and demo interactions unchanged."
   },
   {
     "file": "src/components/arc/input/input.tsx",
@@ -108,8 +108,8 @@
     "file": "src/components/arc/date-picker/date-picker.tsx",
     "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/date-picker/date-picker.tsx",
     "sha256": "996d6b6703f7478c9ce286a3bbcd49a10aac0cb489b0d8915dfd89dad9c4efb8",
-    "integratedSha256": "38eb539b0ff6e3f39375e353e24b8108bd63352363b42de7a2cbe6d588f244dd",
-    "bindingAdaptation": "Optional supplied Today and clearable bind clinic dates and required selection; description IDs are combined with existing form feedback."
+    "integratedSha256": "914e4f5df717e048420781e7a86b82f3d32298e30b0df0a7473e65d8b05a60c5",
+    "bindingAdaptation": "Optional supplied Today and clearable bind clinic dates and required selection. hideLabel supports one external shared label for DOB; description IDs combine existing validation. Default demo appearance and interactions unchanged."
   },
   {
     "file": "src/components/arc/calendar/calendar.module.css",

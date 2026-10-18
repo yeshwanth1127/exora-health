@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 // Mounts Workspace settings (original layout) on the HMS API (G16, G17 overbooking): staff invited by
 // work email, roles granted per clinic, role copies with permission switches, and the booking policy.
 // The server enforces every rule; `allowed` only hides controls the user can't use.
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { WorkspaceSettings } from "@/modules/settings";
 import {
   OriginalResourceContext,
@@ -58,7 +58,7 @@ const paths = {
 const titleCase = (s: string) =>
   s.charAt(0).toUpperCase() + s.slice(1).replaceAll("_", " ");
 
-export function SettingsPage() {
+export function SettingsPage({ clinicPicker }: { clinicPicker?: ReactNode } = {}) {
   const { me, facility, go } = useWorkspace();
   const permitted: SettingsSection[] = [
     ...(can(me, "access.manage", facility.facilityId)
@@ -264,6 +264,10 @@ export function SettingsPage() {
           {SETTINGS_SECTIONS.find(([id]) => id === section)?.[1]}.
         </p>
       )}
+      {section === "account" && clinicPicker && <Card className="mb-6">
+        <CardHeader><CardTitle>Current clinic</CardTitle><CardDescription>Choose the clinic workspace you want to use.</CardDescription></CardHeader>
+        <CardContent><div className="max-w-sm">{clinicPicker}</div></CardContent>
+      </Card>}
       {["team", "roles", "booking", "account"].includes(section) && (
         <WorkspaceSettings
           key={section}
