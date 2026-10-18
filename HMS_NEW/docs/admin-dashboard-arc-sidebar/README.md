@@ -1,6 +1,8 @@
 # Admin dashboard Arc implementation
 
-Start with [arc-five-verification.md](arc-five-verification.md), then [takeover-review.md](takeover-review.md), then [HANDOFF.md](HANDOFF.md). It is the current implementation and continuation guide, updated after the desktop review fixes on 18 October 2026.
+Latest catalog scan/counts: [catalog-audit-2026-10-19.md](catalog-audit-2026-10-19.md). Machine-readable per-entry evidence: [catalog-coverage.json](catalog-coverage.json). First-pass documentation coverage is 249/249; integration remains 46 folders. Earlier count claims below are historical.
+
+Start with [HANDOFF.md](HANDOFF.md) for the current implementation and continuation guide. Earlier verification is recorded in [arc-five-verification.md](arc-five-verification.md) and [takeover-review.md](takeover-review.md).
 
 - [Next review shortlist](next-review-shortlist.md): eight candidates reassessed, exact placements and the recommended Stepper / Dropdown menu / Timeline batch. Availability picker is already integrated.
 - [Component inventory and exact counts](component-inventory.md): Current integration: 37 adopted candidates plus 5 support components = 42 folders after Claude's waves; earlier survey counts are recorded separately. Surveying, implementation and rendered verification are separate counts.

@@ -1,25 +1,17 @@
 # Component inventory
 
-> **Latest chat/Queue wave (19 Oct):** Support conversation and Kanban board are implemented: **41 adopted + 5 support = 46 folders**. Kanban is on Queue; WhatsApp Inbox uses the themed Support conversation. Settings now has the explicitly requested full-page placement. Source and automated verification are recorded in `whatsapp-queue-settings-wave.md`; rendered verification remains with the user. These were already documentation-screened; no additional unique survey count is claimed.
+Current catalog coverage is reconciled in [catalog-audit-2026-10-19.md](catalog-audit-2026-10-19.md), with all per-entry evidence in [catalog-coverage.json](catalog-coverage.json).
 
+## Current counts and evidence levels
 
-> **Latest context/setup update (19 Oct):** Multi-step form and Settings page are now adopted: **39 adopted + 5 support = 44 folders**. Hover content is refined without adding another component. Read `context-and-setup-wave.md`; WhatsApp Support conversation and Kanban are requested next turn, as recorded in `next-whatsapp-kanban.md`. These were already documentation-screened; this does not add to a deduplicated candidate-survey count.
+- **249 local catalog entries:** 133 free + 116 Pro, excluding two infrastructure entries. This counts registry/demo names, including shared-source variants, not unique original implementations.
+- **249 / 249 first-pass documentation screens complete:** 166 previously recorded + 83 in the latest pass. **0 remain for first-pass docs screening**.
+- **46 integrated component folders:** 41 adopted + 5 support. **203 catalog entries are not integrated**, including deliberate exclusions and deferred candidates.
+- **40 named references have recorded historical rendered-demo observations**; 209 do not. These are not exhaustive behavioral/fidelity checks, and this latest scan used no browser automation.
+- Documentation screening, source/API assessment, rendered observation and actual integration are separate evidence levels. The old 82/83 counts describe earlier subsets and must not be added to the later all-Pro survey.
+- Latest implementation remains [whatsapp-queue-settings-wave.md](whatsapp-queue-settings-wave.md): WhatsApp-themed Support conversation, Queue Kanban and full-page Settings. This scan changed documentation only.
 
-
-> **Approved five-component wave (19 Oct 2026):** Stepper, Dropdown menu, Timeline, Hover card and Radio cards are implemented. Current inventory is **37 adopted + 5 support = 42 folders**; see `arc-five-verification.md`. Earlier counts below describe their own passes. No new claim of rendered verification is made.
-
-> **Pro wave update (18 Oct 2026):** Split bar, Skeleton morph, Team directory and Release readiness were ported from the Pro references and integrated, with Avatar and Checkbox copied as support. That makes **29 adopted + 5 support = 34 component folders**, and **83 distinct assessed candidates** (Split bar added). The selection and the Pro survey are in `pro-wave-shortlist.md`. The counts below predate this wave.
-
-> **Wave 3 update (18 Oct 2026):** Notification center (free) and Inbox triage (pro-port) are integrated for My alerts, and the Availability picker (pro-port) replaces the Booking slot calendar. That makes **32 adopted + 5 support = 37 folders**. See `wave-3-shortlist.md` and `HANDOFF.md` › Wave 3.
-
-## Counts and evidence levels
-
-- **82 distinct assessed candidates**: 24 in the first rendered survey + 22 additional documentation-screened candidates + 33 new documentation/source-screened candidates + 2 additional implementation-control candidates (Date picker and Button) + the initial Sidebar. Select and Search field were revisited, not counted twice.
-- **29 distinct rendered references documented across the earlier passes**, including Sidebar and four later controls. This means the reference was observed, not that every state was tested. The specialist/feedback wave and latest fixes were not browser-verified.
-- **25 assessed candidates adopted**, plus **3 support components** (Animated counter, Calendar, Textarea), yielding **28 component folders** currently under `src/components/arc/`. Copied support code is not an extra independent demo review.
-- Documentation/source screening does not establish rendered parity. Folder presence does not establish all application placements are migrated. This is not a count of the complete Arc catalog.
-
-## Candidate ledger
+## Earlier candidate ledger
 
 | Component | Evidence recorded | Current disposition | Demo |
 | --- | --- | --- | --- |
