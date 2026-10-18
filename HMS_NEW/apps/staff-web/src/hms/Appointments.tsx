@@ -11,6 +11,9 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/brand-icons";
+import { filterOptionValue, doctorFilterOptions } from "./arc-filter-data";
+import { Combobox } from "@/components/arc/combobox/combobox";
+import { FilterToolbar } from "@/components/arc/filter-toolbar/filter-toolbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,7 +30,7 @@ import { PageTitle } from "@/components/workspace";
 import { useCommand, useQuery, useWorkspace } from "./hooks";
 import { query } from "./client";
 import { today, time, money, label } from "./model";
-import { Choice, ErrorMessage, Field, LoadingState, Status } from "./ui";
+import { ErrorMessage, Field, LoadingState, Status } from "./ui";
 import { PatientLookup, RegisterPatient, TestPatientBadge } from "./Patients";
 import { WorkspaceEmpty } from "./WorkspaceEmpty";
 import { DayNavigator } from "@/components/date-controls";
@@ -56,6 +59,7 @@ export function Appointments() {
     const timer = setTimeout(() => setSearch(text.trim()), 300);
     return () => clearTimeout(timer);
   }, [text]);
+  const doctorOptions = doctorFilterOptions(practitioners);
   const filters = JSON.stringify([date, staffId, status, search, mode]);
   const [pagedFor, setPagedFor] = useState(filters);
   if (pagedFor !== filters) {
@@ -114,7 +118,7 @@ export function Appointments() {
           ) : undefined
         }
       />
-      <Card>
+      <Card className="overflow-visible">
         <CardContent className="pt-5 space-y-4">
           <div className="flex flex-wrap items-start gap-3">
             <DayNavigator
@@ -123,47 +127,15 @@ export function Appointments() {
               timezone={facility.timezone}
               label="Appointment date"
             />
-            <div className="w-48 space-y-2">
-              <Choice
+            <div className="arc-demo-scope w-64">
+              <Combobox
                 label="Doctor"
-                value={staffId}
-                onChange={setStaffId}
+                value={staffId === "all" ? "" : staffId}
+                placeholder="All doctors"
+                onValueChange={(value) => setStaffId(value || "all")}
                 options={[
                   { value: "all", label: "All doctors" },
-                  ...practitioners.map((p) => ({
-                    value: p.staffId,
-                    label: p.name,
-                  })),
-                ]}
-              />
-            </div>
-            <div className="w-40 space-y-2">
-              <Choice
-                label="Booking status"
-                value={status}
-                onChange={setStatus}
-                options={[
-                  "all",
-                  "confirmed",
-                  "checked_in",
-                  "completed",
-                  "cancelled",
-                  "no_show",
-                ].map((v) => ({
-                  value: v,
-                  label: v === "all" ? "All statuses" : label(v),
-                }))}
-              />
-            </div>
-            <div className="w-44 space-y-2">
-              <Choice
-                label="Appointment type"
-                value={mode}
-                onChange={setMode}
-                options={[
-                  { value: "all", label: "All visits" },
-                  { value: "in_person", label: "In person" },
-                  { value: "virtual", label: "Video" },
+                  ...doctorOptions,
                 ]}
               />
             </div>
@@ -176,6 +148,33 @@ export function Appointments() {
             >
               <RefreshCw />
             </Button>
+          </div>
+          <div className="arc-demo-scope">
+            <FilterToolbar
+              label="Appointment filters"
+              filters={[
+                ...(staffId !== "all" ? [{ id: "doctor", label: "Doctor", value: doctorOptions.find((option) => option.value === staffId)?.label ?? "Selected doctor" }] : []),
+                ...(status !== "all" ? [{ id: "status", label: "Booking status", value: label(status) }] : []),
+                ...(mode !== "all" ? [{ id: "mode", label: "Appointment type", value: mode === "virtual" ? "Video" : "In person" }] : []),
+              ]}
+              onRemove={(id) => { if (id === "doctor") setStaffId("all"); else if (id === "status") setStatus("all"); else if (id === "mode") setMode("all"); }}
+              onClearAll={() => { setStaffId("all"); setStatus("all"); setMode("all"); }}
+              addFilter={{
+                fields: [
+                  { id: "doctor", label: "Doctor", options: doctorOptions },
+                  { id: "status", label: "Booking status", options: ["confirmed", "checked_in", "completed", "cancelled", "no_show"].map((value) => ({ value, label: label(value) })) },
+                  { id: "mode", label: "Appointment type", options: [{ value: "in_person", label: "In person" }, { value: "virtual", label: "Video" }] },
+                ],
+                onAdd: (chip, field) => {
+                  // Arc emits the visible label; API filters require the stable option value.
+                  const value = filterOptionValue(chip, field);
+                  if (value === undefined) return;
+                  if (chip.id === "doctor") setStaffId(value);
+                  else if (chip.id === "status") setStatus(value);
+                  else if (chip.id === "mode") setMode(value);
+                },
+              }}
+            />
           </div>
           <div className="flex items-center gap-2">
             <Search className="size-4 text-muted-foreground" />

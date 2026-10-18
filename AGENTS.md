@@ -23,4 +23,4 @@
 
 ## Current rollout scope
 
-- The current implementation tranche is the desktop admin-dashboard sidebar only. Do not expand into phone optimization or other components in this tranche.
+- The approved rollout covers desktop sidebar, workflow tabs, searchable choices, filter toolbar, registration fields, metric cards, individual charts, report date range and command palette. Keep changes focused on these small components. Do not expand into phone optimization, full analytics blocks, scheduling calendar, permissions matrix or other larger replacements.

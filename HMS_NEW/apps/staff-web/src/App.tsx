@@ -10,7 +10,6 @@ import {
   ChartNoAxesCombined,
   ScrollText,
   Ticket,
-  ChevronRight,
   Building2,
   CalendarDays,
   Clock3,
@@ -25,6 +24,8 @@ import {
 import { GoogleIcon, WhatsAppIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { WorkspaceCommands } from "@/components/WorkspaceCommands";
+import { ClinicPicker } from "@/components/ClinicPicker";
 import { ModePicker } from "@/components/ModePicker";
 import { Card, CardContent } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/sonner";
@@ -494,10 +495,6 @@ function StaffApp() {
           <header className="workspace-header">
             <div className="flex items-center gap-3">
               {toggle}
-              <span className="text-sm text-muted-foreground hidden md:block">
-                Clinic workspace
-              </span>
-              <ChevronRight className="size-3 text-muted-foreground hidden md:block" />
               <span className="text-xs font-medium hidden md:block">
                 {(["appointments", "waitlist", "queue"].includes(page)
                   ? "Appointments"
@@ -512,23 +509,23 @@ function StaffApp() {
               </span>
             </div>
             <div className="flex items-center gap-3">
+              <WorkspaceCommands
+                key={`${me.staffId}:${facilityId}`}
+                items={[
+                  ...visible.map((item) => ({ id: item.key, label: item.name, group: item.group, icon: <item.icon className="size-4" /> })),
+                  { id: "settings", label: "Workspace settings", group: "Workspace", icon: <Settings2 className="size-4" /> },
+                  ...(auditor ? [{ id: "activity", label: "Staff activity", group: "Workspace", icon: <ScrollText className="size-4" /> }] : []),
+                  ...(can(me, "appointments.read", facilityId) ? [
+                    { id: "waitlist", label: "Waitlist", group: "Clinic" },
+                    { id: "queue", label: "Queue", group: "Clinic" },
+                  ] : []),
+                  ...(can(me, "appointments.book", facilityId) ? [{ id: "appointments?book=1", label: "Book appointment", group: "Actions", icon: <CalendarDays className="size-4" /> }] : []),
+                ]}
+                onNavigate={go}
+              />
               <ModePicker />
-              <div className="w-52 max-w-[55vw]">
-                <Choice
-                  label="Clinic"
-                  value={facilityId}
-                  options={facilities.map((f) => ({
-                    value: f.facilityId,
-                    label: f.name,
-                  }))}
-                  onChange={(id) => {
-                    requestLeave(() => {
-                      setTenant(me.tenantId);
-                      setFacilityId(id);
-                    });
-                  }}
-                />
-              </div>
+              <ClinicPicker key={facilityId} value={facilityId} options={facilities.map((f) => ({ value: f.facilityId, label: f.name }))}
+                onChange={(id) => requestLeave(() => { setTenant(me.tenantId); setFacilityId(id); })} />
               {devLoginEnabled && (
                 <Badge variant="outline">Local preview</Badge>
               )}

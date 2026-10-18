@@ -23,7 +23,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Status } from "@/hms/ui";
 import { Input } from "@/components/ui/input";
-import { DayNavigator, DateRangeField } from "@/components/date-controls";
+import { ReportDateRange } from "@/components/ReportDateRange";
+import { DayNavigator } from "@/components/date-controls";
 import { dateRangeError } from "@/components/date-controls-model";
 import { WorkspaceEmpty } from "@/hms/WorkspaceEmpty";
 import {
@@ -548,7 +549,7 @@ export function ActivityLog() {
           </Action>
         }
       />
-      <Card className="mb-5">
+      <Card className="mb-5 overflow-visible">
         <CardContent className="grid sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-6">
           <Field label="Person" id="audit-actor">
             <Input
@@ -582,10 +583,10 @@ export function ActivityLog() {
                 setLimit(50);
               }}
             />
-            <DateRangeField
+            <ReportDateRange
               from={filters.start}
               to={filters.end}
-              boundaryLabel={log.data?.dateBoundary ? `Organisation dates · ${log.data.dateBoundary.timezone}` : "Organisation timezone unavailable"}
+              timezone={log.data?.dateBoundary?.timezone}
               onChange={({ from, to }) => {
                 setFilters({ ...filters, start: from, end: to });
                 setLimit(50);

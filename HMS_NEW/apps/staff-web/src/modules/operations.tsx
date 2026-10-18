@@ -1,3 +1,5 @@
+import { MetricCard } from "@/components/arc/metric-card/metric-card";
+import { BarChart as ArcBarChart } from "@/components/arc/bar-chart/bar-chart";
 import type { ReactNode } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
@@ -146,19 +148,19 @@ function ActivityPage({
         refresh={refresh}
       >
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
-          {metrics.map(([label, value, detail]) => (
-            <Card key={String(label)}>
-              <CardHeader>
-                <CardDescription>{label}</CardDescription>
-                <CardTitle className="text-3xl tabular-nums">
-                  {value ?? "—"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-xs text-muted-foreground">
-                {detail}
-              </CardContent>
-            </Card>
-          ))}
+          {metrics.map(([label, value, detail]) => {
+            const numeric = typeof value === "number" ? value : typeof value === "string" && /^\d+(?:\.\d+)?%$/.test(value) ? Number(value.slice(0, -1)) : null;
+            return numeric !== null ? (
+              <div key={String(label)} className="arc-demo-scope">
+                <MetricCard label={String(label)} value={numeric} suffix={typeof value === "string" && value.endsWith("%") ? "%" : undefined} context={String(detail)} />
+              </div>
+            ) : (
+              <Card key={String(label)}>
+                <CardHeader><CardDescription>{label}</CardDescription><CardTitle className="text-3xl tabular-nums">{value ?? "—"}</CardTitle></CardHeader>
+                <CardContent className="text-xs text-muted-foreground">{detail}</CardContent>
+              </Card>
+            );
+          })}
         </div>
         {overview ? (
           <div className="space-y-6">
@@ -171,38 +173,16 @@ function ActivityPage({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer
-                    className="h-52 w-full mb-5"
-                    config={{
-                      bookings: { label: "Bookings", color: "var(--primary)" },
-                    }}
-                  >
-                    <BarChart
-                      accessibilityLayer
-                      data={r.data?.daily_bookings ?? []}
-                    >
-                      <CartesianGrid vertical={false} />
-                      <XAxis
-                        dataKey="date"
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(value) => String(value).slice(5)}
-                      />
-                      <YAxis
-                        allowDecimals={false}
-                        tickLine={false}
-                        axisLine={false}
-                        width={30}
-                      />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar
-                        dataKey="bookings"
-                        fill="var(--color-bookings)"
-                        radius={[3, 3, 0, 0]}
-                        isAnimationActive={false}
-                      />
-                    </BarChart>
-                  </ChartContainer>
+                  <div className="arc-demo-scope mb-5">
+                    <ArcBarChart
+                      label="Daily bookings"
+                      period="Last 14 days · clinic dates"
+                      unit="bookings"
+                      averageLabel="Daily average"
+                      valueLabel="Bookings"
+                      data={(r.data?.daily_bookings ?? []).map((day) => ({ key: day.date, label: day.date, axisLabel: day.date.slice(5), value: day.bookings }))}
+                    />
+                  </div>
                   <details>
                     <summary className="text-sm font-medium cursor-pointer mb-3">
                       View data

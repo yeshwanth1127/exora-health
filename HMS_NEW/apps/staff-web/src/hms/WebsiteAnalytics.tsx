@@ -1,3 +1,4 @@
+import { LineChart as ArcLineChart } from "@/components/arc/line-chart/line-chart";
 import { useEffect, useState, type ComponentType } from "react";
 import { ArrowRight, Check, ExternalLink, Globe, Link2, Loader2, MapPin, Navigation, Phone, Share2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -221,7 +222,7 @@ function Overview({ data, open }: { data: AnalyticsData; open: (t: ATab) => void
   const rate = percent(now.booked, now.visitors);
   const sources = ranked(now.sources);
   const top = sources[0];
-  const max = Math.max(...series.map((d) => d.visitors), 1);
+
   const ph = data.posthog;
   const ownSites = data.sites.filter((s) => s.kind === "own");
   return (
@@ -279,19 +280,12 @@ function Overview({ data, open }: { data: AnalyticsData; open: (t: ATab) => void
       )}
       <Card className="gap-3 p-5 shadow-none">
         <h2 className="text-sm font-semibold">Visitors each day</h2>
-        <div className="flex h-40 items-end gap-px" role="img" aria-label={`Visitors each day, ${ranges.find(([k]) => k === range)?.[1].toLowerCase()}`}>
-          {series.map((d) => (
-            <div
-              key={d.date}
-              className="flex-1 rounded-t-sm bg-primary/70 transition-colors hover:bg-primary"
-              style={{ height: `${(d.visitors / max) * 100}%` }}
-              title={`${new Date(d.date).toLocaleDateString([], { day: "numeric", month: "short" })}: ${d.visitors} visitors`}
-            />
-          ))}
-        </div>
-        <div className="flex justify-between text-[11px] text-muted-foreground">
-          <span>{series[0] && new Date(series[0].date).toLocaleDateString([], { day: "numeric", month: "short" })}</span>
-          <span>Today</span>
+        <div className="arc-demo-scope">
+          <ArcLineChart
+            label="Visitors each day"
+            series={[{ key: "visitors", label: "Visitors" }]}
+            data={series.map((day) => ({ key: day.date, label: day.date, axisLabel: day.date.slice(5), values: { visitors: day.visitors } }))}
+          />
         </div>
       </Card>
       <div className="grid gap-6 lg:grid-cols-2">

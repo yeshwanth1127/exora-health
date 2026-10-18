@@ -1,0 +1,100 @@
+[
+  {
+    "file": "src/components/arc/combobox/combobox.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/combobox/combobox.module.css",
+    "sha256": "d6515c41a6d61e713100ae5f2723d50a6afa2622629d685728dcf13d85a8f896",
+    "integratedSha256": "d6515c41a6d61e713100ae5f2723d50a6afa2622629d685728dcf13d85a8f896"
+  },
+  {
+    "file": "src/components/arc/combobox/combobox.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/combobox/combobox.tsx",
+    "sha256": "12ae9a73956f4d4854259396fd377aa63321db18198e8816db5b1791ff9a56b7",
+    "integratedSha256": "12ae9a73956f4d4854259396fd377aa63321db18198e8816db5b1791ff9a56b7"
+  },
+  {
+    "file": "src/components/arc/input/input.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/input/input.tsx",
+    "sha256": "16a4e761b51482e9c066f284a38171085e71ae390e4b26f9f0c18dd8af21c8f2",
+    "integratedSha256": "16a4e761b51482e9c066f284a38171085e71ae390e4b26f9f0c18dd8af21c8f2"
+  },
+  {
+    "file": "src/components/arc/input/input.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/input/input.module.css",
+    "sha256": "ef6716aa7b9f45898859735f416ac932517b94e66bed6b3d23d7aed180529bdf",
+    "integratedSha256": "ef6716aa7b9f45898859735f416ac932517b94e66bed6b3d23d7aed180529bdf"
+  },
+  {
+    "file": "src/components/arc/metric-card/metric-card.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/metric-card/metric-card.tsx",
+    "sha256": "ac550e49b6e9f680f32a694dd27cb42597795465d4709f2418230fbbde865906",
+    "integratedSha256": "ac550e49b6e9f680f32a694dd27cb42597795465d4709f2418230fbbde865906"
+  },
+  {
+    "file": "src/components/arc/metric-card/metric-card.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/metric-card/metric-card.module.css",
+    "sha256": "733ad2b10292f583f11a7b4e21c09b0d9334bfff15c8abb52baab965dc851235",
+    "integratedSha256": "733ad2b10292f583f11a7b4e21c09b0d9334bfff15c8abb52baab965dc851235"
+  },
+  {
+    "file": "src/components/arc/animated-counter/animated-counter.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/animated-counter/animated-counter.tsx",
+    "sha256": "2542f8bcd8a413c7a846d440d917a3c11a77f4e016014dfdd242c4549df01750",
+    "integratedSha256": "2542f8bcd8a413c7a846d440d917a3c11a77f4e016014dfdd242c4549df01750"
+  },
+  {
+    "file": "src/components/arc/animated-counter/animated-counter.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/animated-counter/animated-counter.module.css",
+    "sha256": "33b7d7f0081f4fd3907a4fafcff64444581845a58cb7b0b7844c394a2e254adf",
+    "integratedSha256": "33b7d7f0081f4fd3907a4fafcff64444581845a58cb7b0b7844c394a2e254adf"
+  },
+  {
+    "file": "src/components/arc/bar-chart/bar-chart.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/bar-chart/bar-chart.tsx",
+    "sha256": "cca5e519cc0ed8588f9a7e087c5e8b449a0960f8cc66e6d64544d336382d042e",
+    "integratedSha256": "cca5e519cc0ed8588f9a7e087c5e8b449a0960f8cc66e6d64544d336382d042e"
+  },
+  {
+    "file": "src/components/arc/bar-chart/bar-chart.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/bar-chart/bar-chart.module.css",
+    "sha256": "e647e55f0622ff4f8f17d7890a987138d185aadb4bda1dd0ab83b456d48acd1c",
+    "integratedSha256": "e647e55f0622ff4f8f17d7890a987138d185aadb4bda1dd0ab83b456d48acd1c"
+  },
+  {
+    "file": "src/components/arc/line-chart/line-chart.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/line-chart/line-chart.tsx",
+    "sha256": "f05816e33d5d7b323e2cf63d16863919f9c4b633ba6bdef99dc45c85d0da59ed",
+    "integratedSha256": "f05816e33d5d7b323e2cf63d16863919f9c4b633ba6bdef99dc45c85d0da59ed"
+  },
+  {
+    "file": "src/components/arc/line-chart/line-chart.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/line-chart/line-chart.module.css",
+    "sha256": "6ab0971d5471b39ea9b03a78fefb8bb4f641326160299943a2983b72133dfb55",
+    "integratedSha256": "6ab0971d5471b39ea9b03a78fefb8bb4f641326160299943a2983b72133dfb55"
+  },
+  {
+    "file": "src/components/arc/date-range-picker/date-range-picker.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/date-range-picker/date-range-picker.tsx",
+    "sha256": "ca4172b1125a3ac22ff06e17b599a6dbbe496247a75f7be46fa340de20d54a2f",
+    "integratedSha256": "bab9e38ecf11a6d7b5319f6a4fa439054060a563fa06a3b8b9da990f1d315ced",
+    "bindingAdaptation": "Optional today prop supplies the server-confirmed organisation calendar day; undefined retains the original viewer-local default. Visual, interaction and motion code unchanged."
+  },
+  {
+    "file": "src/components/arc/date-range-picker/date-range-picker.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/date-range-picker/date-range-picker.module.css",
+    "sha256": "e83b9b26c0bc702dcfe613fe39b3a8cc75e44a5a354f5bca579bd36979e20597",
+    "integratedSha256": "e83b9b26c0bc702dcfe613fe39b3a8cc75e44a5a354f5bca579bd36979e20597"
+  },
+  {
+    "file": "src/components/arc/command-palette/command-palette.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/command-palette/command-palette.tsx",
+    "sha256": "2a4bd0804f3be91c9bf3f900c6dc0e2f0c889ff5f37863cfcbc81fe7931f7dca",
+    "integratedSha256": "2a4bd0804f3be91c9bf3f900c6dc0e2f0c889ff5f37863cfcbc81fe7931f7dca"
+  },
+  {
+    "file": "src/components/arc/command-palette/command-palette.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/command-palette/command-palette.module.css",
+    "sha256": "4eaff3df866b28b91f54adeb13e06f98f8753e69a3baff64287e6edd1e74ec52",
+    "integratedSha256": "ad0f3b4afed156b970b1bf703761373a0d0162aa2d25fc3eae6e63824ef7afd7",
+    "bindingAdaptation": "Removed inherited trailing whitespace only; no CSS declarations or behavior changed."
+  }
+]

@@ -1,3 +1,4 @@
+import { Input as ArcInput } from "@/components/arc/input/input";
 import { PatientVisitActions } from "./PatientVisits";
 import { appointmentModeLabel, type AppointmentMode } from "./booking-workflow";
 import { useEffect, useRef, useState } from "react";
@@ -147,6 +148,8 @@ export function RegisterPatient({
     [phone, setPhone] = useState(""),
     [birthDate, setBirthDate] = useState(""),
     [sex, setSex] = useState("unknown");
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const touch = (key: string) => setTouched((current) => ({ ...current, [key]: true }));
   useUnsaved(
     !!(givenName || familyName || phone || birthDate) || sex !== "unknown",
     { pending: cmd.busy || cmd.unknown },
@@ -182,23 +185,27 @@ export function RegisterPatient({
       }}
     >
       <div className="grid grid-cols-2 gap-4">
-        <Field title="Given name" id="given-name">
-          <Input
+        <div className="arc-demo-scope">
+          <ArcInput
+            label="Given name (required)"
+            error={touched.given && !givenName.trim() ? "Enter the patient’s given name." : undefined}
+            onBlur={() => touch("given")}
             id="given-name"
             required
             maxLength={100}
             value={givenName}
             onChange={(e) => setGivenName(e.target.value)}
           />
-        </Field>
-        <Field title="Family name" id="family-name">
-          <Input
+        </div>
+        <div className="arc-demo-scope">
+          <ArcInput
+            label="Family name"
             id="family-name"
             maxLength={100}
             value={familyName}
             onChange={(e) => setFamilyName(e.target.value)}
           />
-        </Field>
+        </div>
       </div>
       <Field title="Sex" id="patient-sex">
         <Choice
@@ -219,8 +226,12 @@ export function RegisterPatient({
           onChange={(e) => setBirthDate(e.target.value)}
         />
       </Field>
-      <Field title="Phone (optional, with country code)" id="patient-phone">
-        <Input
+      <div className="arc-demo-scope">
+        <ArcInput
+          label="Phone (optional, with country code)"
+          description="Use international format, for example +919876543210."
+          error={touched.phone && phone && !/^\+[1-9][0-9]{6,14}$/.test(phone) ? "Enter a phone number with its country code." : undefined}
+          onBlur={() => touch("phone")}
           id="patient-phone"
           type="tel"
           placeholder="+919876543210"
@@ -228,7 +239,7 @@ export function RegisterPatient({
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
         />
-      </Field>
+      </div>
       <ErrorMessage text={cmd.error} />
       <Button type="submit" disabled={cmd.busy || !givenName.trim()}>
         {cmd.busy ? "Registering…" : (submitLabel ?? "Register patient")}
