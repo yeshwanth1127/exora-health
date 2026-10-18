@@ -89,16 +89,8 @@ export function PatientLookup({
           onValueChange={(id) => { const patient = patients.find((p) => p.patientId === id); if (patient?.status === "active") onSelect(patient); }} />
       </div>
       <ErrorMessage text={result.error} />
-      {search.length < 2 && (
-        <WorkspaceEmpty
-          title="Find the patient first"
-          action={{
-            label: "Focus search",
-            onClick: () => searchInput.current?.focus(),
-          }}
-        />
-      )}
       {search.length >= 2 &&
+        !pending &&
         !result.loading &&
         !result.error &&
         result.data?.items.length === 0 && (
@@ -177,6 +169,7 @@ export function RegisterPatient({
             error={touched.given && !givenName.trim() ? "Enter the patient’s given name." : undefined}
             onBlur={() => touch("given")}
             id="given-name"
+            autoFocus
             required
             maxLength={100}
             value={givenName}
@@ -204,7 +197,7 @@ export function RegisterPatient({
           }))}
         />
       </Field>
-      <DateField id="birth-date" label="Date of birth (optional)" value={birthDate} onValueChange={setBirthDate} />
+      <DateField monthYearSelection id="birth-date" label="Date of birth (optional)" value={birthDate} onValueChange={setBirthDate} />
       <PhoneField label="Phone (optional, with country code)" id="patient-phone" value={phone} onValueChange={setPhone}
         error={touched.phone && phone && !E164.test(phone) ? "Enter a phone number with its country code." : undefined}
         onBlur={() => touch("phone")} />
@@ -847,7 +840,7 @@ function EditPatient({
             }))}
           />
         </Field>
-        <DateField id="pt-birthDate" label="Date of birth" value={f.birthDate} onValueChange={set("birthDate")} />
+        <DateField monthYearSelection id="pt-birthDate" label="Date of birth" value={f.birthDate} onValueChange={set("birthDate")} />
       </div>
       <label className="flex items-center gap-2 text-sm">
         <input

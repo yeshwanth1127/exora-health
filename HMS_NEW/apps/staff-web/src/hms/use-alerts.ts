@@ -1,6 +1,7 @@
+import { toast } from "@/components/toast-events";
 // Loads the alert sources the signed-in person may read (docs/prd/staff-alerts.md) and their saved marks.
 // One instance sits above the header and pages (AlertsProvider) so the bell and the Alerts page share reads.
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { query, request } from "./client";
 import { useQuery, useWorkspace } from "./hooks";
 import { today } from "./model";
@@ -57,7 +58,7 @@ export function useAlertsSource() {
     on.clinical ? `/v1/encounters?${query({ facilityId: at, date: day, staffId: me.staffId, status: "in_progress" })}` : null, POLL);
   const referrals = useQuery<{ items: Referral[] }>(
     on.clinical ? `/v1/referrals?${query({ facilityId: at, staffId: me.staffId, status: "sent" })}` : null, POLL);
-  const accounts = useQuery<{ items: StaffAccount[] }>(on.accounts ? `/v1/staff-accounts?facilityId=${at}` : null);
+  const accounts = useQuery<{ items: StaffAccount[] }>(on.accounts ? `/v1/staff-accounts?facilityId=${at}` : null, POLL);
   const marks = useQuery<{ states: AlertMark[]; registrations: Registration[]; teamRegistrations: TeamRegistration[] | null }>("/v1/me/alerts", POLL);
   const setup = useSetupItems("in_person", "");
   const [pending, setPending] = useState<Record<string, AlertMark>>({});
@@ -87,44 +88,65 @@ export function useAlertsSource() {
     return { alerts: applyMarks(derived.alerts, [...saved.values()], now), unavailable: derived.unavailable };
   }, [now, facility.timezone, me.staffId, on.appointments, on.waitlist, on.teleconsults, on.clinical, on.accounts, appointments, waitlist, teleconsults, encounters, referrals, accounts, setup.admin, setup.items, marks, pending]);
 
+  // Save rapid Read/Done/Undo operations in order so older responses cannot overwrite the latest choice.
+  const saveQueue = useRef(Promise.resolve());
+  const active = useRef(true);
+  useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
   /** Applies the mark at once and saves it; on failure the mark is rolled back and the error shown. */
   const mark = useCallback(
-    async (targets: MarkedAlert[], patch: Patch) => {
-      if (targets.length === 0) return;
-      setError("");
-      const stamp = new Date().toISOString();
-      setPending((p) => {
-        const next = { ...p };
-        for (const a of targets) {
-          const base = next[a.key] ?? marks.data?.states.find((m) => m.key === a.key) ?? { key: a.key, readAt: null, dismissedAt: null, snoozedUntil: null };
-          next[a.key] = {
-            ...base,
-            ...(patch.read !== undefined ? { readAt: patch.read ? (base.readAt ?? stamp) : null } : {}),
-            ...(patch.dismissed !== undefined ? { dismissedAt: patch.dismissed ? stamp : null } : {}),
-            ...(patch.snoozedUntil !== undefined ? { snoozedUntil: patch.snoozedUntil } : {}),
-          };
+    (targets: MarkedAlert[], patch: Patch) => {
+      const save = async () => {
+        if (!active.current) return;
+        if (targets.length === 0) return;
+        setError("");
+        const stamp = new Date().toISOString();
+        setPending((p) => {
+          const next = { ...p };
+          for (const a of targets) {
+            const base = next[a.key] ?? marks.data?.states.find((m) => m.key === a.key) ?? { key: a.key, readAt: null, dismissedAt: null, snoozedUntil: null };
+            next[a.key] = {
+              ...base,
+              ...(patch.read !== undefined ? { readAt: patch.read ? (base.readAt ?? stamp) : null } : {}),
+              ...(patch.dismissed !== undefined ? { dismissedAt: patch.dismissed ? stamp : null } : {}),
+              ...(patch.snoozedUntil !== undefined ? { snoozedUntil: patch.snoozedUntil } : {}),
+            };
+          }
+          return next;
+        });
+        try {
+          if (targets.length > 1 && Object.keys(patch).length === 1 && patch.read === true)
+            await request("/v1/me/alerts/read", { method: "POST", body: { keys: targets.map((a) => a.key) } });
+          else
+            await Promise.all(targets.map((a) => request(`/v1/me/alerts/${encodeURIComponent(a.key)}`, { method: "PUT", body: patch })));
+          if (!(await marks.refresh())) throw new Error("Saved marks could not be reloaded");
+        } catch {
+          if (!active.current) return;
+          const message = "Could not confirm the alert change. Open My alerts and try again.";
+          setError(message);
+          toast.error(message);
         }
-        return next;
-      });
-      try {
-        if (targets.length > 1 && Object.keys(patch).length === 1 && patch.read === true)
-          await request("/v1/me/alerts/read", { method: "POST", body: { keys: targets.map((a) => a.key) } });
-        else
-          await Promise.all(targets.map((a) => request(`/v1/me/alerts/${encodeURIComponent(a.key)}`, { method: "PUT", body: patch })));
-        await marks.refresh();
-      } catch {
-        setError("Could not save that change. Try again.");
-      }
-      setPending((p) => {
-        const next = { ...p };
-        for (const a of targets) delete next[a.key];
-        return next;
-      });
+        setPending((p) => {
+          const next = { ...p };
+          for (const a of targets) delete next[a.key];
+          return next;
+        });
+      };
+      const result = saveQueue.current.then(save, save);
+      saveQueue.current = result;
+      return result;
     },
     [marks],
   );
 
-  return { alerts, unavailable, error, now, loading: marks.loading, mark };
+  const sources = [marks, ...(on.appointments ? [appointments] : []), ...(on.waitlist ? [waitlist] : []),
+    ...(on.teleconsults ? [teleconsults] : []), ...(on.clinical ? [encounters, referrals] : []), ...(on.accounts ? [accounts] : [])];
+  const loading = sources.some((source) => source.loading) || (setup.admin && setup.items.some((item) => item.state === "loading"));
+  const refresh = async () => {
+    await Promise.all([marks.refresh(), ...(on.appointments ? [appointments.refresh()] : []), ...(on.waitlist ? [waitlist.refresh()] : []),
+      ...(on.teleconsults ? [teleconsults.refresh()] : []), ...(on.clinical ? [encounters.refresh(), referrals.refresh()] : []),
+      ...(on.accounts ? [accounts.refresh()] : []), ...(setup.admin ? [setup.recheck().catch(() => false)] : [])]);
+  };
+  return { alerts, unavailable, error, now, loading, mark, refresh };
 }
 
 export type AlertsState = ReturnType<typeof useAlertsSource>;

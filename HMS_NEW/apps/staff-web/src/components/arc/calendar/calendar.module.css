@@ -49,3 +49,7 @@
   .navButton, .todayButton, .day, .day::before, .dayNumber, .highlightFill { transition: none; }
   .navButton:active, .todayButton:active, .day:active::before, .monthBody:has(.day.selected:active) .highlightFill, .day:active .dayNumber { scale: none; }
 }
+
+/* Explicit DOB refinement: searchable month and year columns above the existing day grid. */
+.monthYearControls { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 8px; margin-bottom: 12px; }
+.monthYearControls label { line-height: 20px; }

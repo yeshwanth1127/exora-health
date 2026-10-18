@@ -9,17 +9,19 @@ const UNAVAILABLE = "unavailable";
 
 export function AlertsBell() {
   const { facility, go } = useWorkspace();
-  const { alerts, unavailable, now, mark } = useAlerts();
+  const { alerts, unavailable, error, loading, now, mark } = useAlerts();
   const open = useMemo(() => alerts.filter((a) => a.bucket === "now" && a.folder === "open"), [alerts]);
   const items = useMemo<NotificationItem[]>(
     () => [
+      ...(loading ? [{ id: "loading", title: "Checking alerts…", description: "Checking the current clinic’s saved records.", time: "Now", read: true }] : []),
+      ...(error ? [{ id: "save_error", title: "Alert change could not be confirmed", description: error, time: "Now", tone: "warning" as const }] : []),
       // The bell never shows "All clear" when a source could not be checked.
       ...(unavailable.length
         ? [{ id: UNAVAILABLE, title: "Some alerts could not be checked", description: `${unavailable.join(", ")} unavailable. Open Alerts to retry.`, time: "Now", tone: "warning" as const }]
         : []),
       ...open.map((a) => ({ id: a.key, title: a.title, description: `${a.who} · ${a.detail}`, time: whenLabel(a, now, facility.timezone), read: a.read, tone: a.tone })),
     ],
-    [open, unavailable, now, facility.timezone],
+    [open, unavailable, error, loading, now, facility.timezone],
   );
   const find = (n: NotificationItem) => open.filter((a) => a.key === n.id);
   // Mark all read and Clear read call back once per item in the same tick; save them together.

@@ -108,21 +108,22 @@
     "file": "src/components/arc/date-picker/date-picker.tsx",
     "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/date-picker/date-picker.tsx",
     "sha256": "996d6b6703f7478c9ce286a3bbcd49a10aac0cb489b0d8915dfd89dad9c4efb8",
-    "integratedSha256": "914e4f5df717e048420781e7a86b82f3d32298e30b0df0a7473e65d8b05a60c5",
-    "bindingAdaptation": "Optional supplied Today and clearable bind clinic dates and required selection. hideLabel supports one external shared label for DOB; description IDs combine existing validation. Default demo appearance and interactions unchanged."
+    "integratedSha256": "0a021d14a805e5300fb2156a8706423226c7e8628d40208fedef7c116139e62f",
+    "bindingAdaptation": "Optional supplied Today and clearable bind clinic dates and required selection. hideLabel supports one external shared label for DOB; description IDs combine existing validation. Default demo appearance and interactions unchanged. Optional monthYearSelection forwards the explicitly requested DOB navigation enhancement; defaults unchanged."
   },
   {
     "file": "src/components/arc/calendar/calendar.module.css",
     "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/calendar/calendar.module.css",
     "sha256": "2e019a6ca658f124c7ea0303aac46aa615a4e6bb3bc485c57d3b85acb0d26adc",
-    "integratedSha256": "2e019a6ca658f124c7ea0303aac46aa615a4e6bb3bc485c57d3b85acb0d26adc"
+    "integratedSha256": "432a1b57a5ac86703ebb5dcce7f92d2dd3181fe8e985654ff275605a0cf5b102",
+    "bindingAdaptation": " User-requested optional DOB month/year column geometry; default calendar styles retained."
   },
   {
     "file": "src/components/arc/calendar/calendar.tsx",
     "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/calendar/calendar.tsx",
     "sha256": "cf09873e5d895e46129159e62f7e494f448cfd247aaddd6c9a54de45a5d6c108",
-    "integratedSha256": "27eeb230e30e0571409e7d3c532150e0cb8a0ff6872c1e8a4d0dcaa4f4ab5167",
-    "bindingAdaptation": "Optional supplied Today binds the calendar to the clinic timezone; undefined retains viewer-local Today."
+    "integratedSha256": "f315a5b2f5598a1f2b31f6dd17179a758b1c7e8f8194de97e5d92e88bf1552a0",
+    "bindingAdaptation": "Optional supplied Today binds the calendar to the clinic timezone; undefined retains viewer-local Today. User-requested DOB enhancement: optional monthYearSelection adds searchable Month/Year columns using the existing Arc Combobox; caption navigation changes displayed month only. Default calendar caption unchanged."
   },
   {
     "file": "src/components/arc/select/select.module.css",
@@ -141,13 +142,15 @@
     "file": "src/components/arc/search-field/search-field.module.css",
     "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/search-field/search-field.module.css",
     "sha256": "3b74ebb74a675ab8a0202d9234b8865fdd0d26033f056aa6e3de9bc9bffacce2",
-    "integratedSha256": "3b74ebb74a675ab8a0202d9234b8865fdd0d26033f056aa6e3de9bc9bffacce2"
+    "integratedSha256": "b365b084caeab5365e285098e8cdf407921f485a058fef5809ca959850834a5c",
+    "bindingAdaptation": " Optional soft appointment variant adjusts resting border/shadow and focus feedback without changing height, clear action or search semantics."
   },
   {
     "file": "src/components/arc/search-field/search-field.tsx",
     "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/search-field/search-field.tsx",
     "sha256": "d93a8d0778c83d33793bf3fe7e5b206a5d0c6e50948b83f39777b89899392d93",
-    "integratedSha256": "d93a8d0778c83d33793bf3fe7e5b206a5d0c6e50948b83f39777b89899392d93"
+    "integratedSha256": "7607a0d944343d99da09ea402e6806d059d4a32358a38866b298ef4ac82d0c42",
+    "bindingAdaptation": " User-requested appointment search refinement adds optional soft variant; other SearchField placements keep the default source appearance and interactions."
   },
   {
     "file": "src/components/arc/button/button.module.css",
@@ -444,8 +447,8 @@
     "file": "src/components/arc/availability-picker/availability-picker.tsx",
     "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/availability-picker/src/Component.cjs",
     "sha256": "4ecd43cc0c5975e744771f7867266c1113033beb83eac2a295a67a9b672c917a",
-    "integratedSha256": "c3b261cdef7484a4fddc4e227843c3f77cc0db3ecca259561ffa8d5b29bed5ca",
-    "bindingAdaptation": "Approved by the user 18 Oct 2026. Booking slot step for one doctor: only free slots (busy/conflict marks and 'everyone is free' bars have no single-doctor meaning; legend kept); one attendee; next 10 open days in the 30 days from the Start date; slot length from the server slot; Confirm = 'Hold this time' places the real hold and 'Held' is controlled by it; slots heading takes the demo page's h3 display font, tracking and 1.1 line height. User-requested (18 Oct 2026): day numbers use --text-lg instead of --text-xl; an Arc date picker (existing DayNavigator, 'Start date') above the picker sets the first day, so the 5 open days come from the 30 days after it. User-requested (18 Oct 2026, second pass): 10 square day tiles; the slot list is replaced by the Booking pill time step (components/pro/booking-pill src/Component.cjs `eu` + dist/styles.css .slots/.highlight/.slot): 8-column chips (4 below 520px), sliding morph-spring highlight, struck-through taken times from the server's non-free slots, arrow/Home/End keys, 12-hour labels, 'N free' count in place of the legend. The pill's panel-entry stagger is not used.",
+    "integratedSha256": "8d5aaa36861ba10822bca21acb5c8ce1edcf862751d127d9dd750ab0d4a72c30",
+    "bindingAdaptation": "Approved by the user 18 Oct 2026. Booking slot step for one doctor: only free slots (busy/conflict marks and 'everyone is free' bars have no single-doctor meaning; legend kept); one attendee; next 10 open days in the 30 days from the Start date; slot length from the server slot; Confirm = 'Hold this time' places the real hold and 'Held' is controlled by it; slots heading takes the demo page's h3 display font, tracking and 1.1 line height. User-requested (18 Oct 2026): day numbers use --text-lg instead of --text-xl; an Arc date picker (existing DayNavigator, 'Start date') above the picker sets the first day, so the 5 open days come from the 30 days after it. User-requested (18 Oct 2026, second pass): 10 square day tiles; the slot list is replaced by the Booking pill time step (components/pro/booking-pill src/Component.cjs `eu` + dist/styles.css .slots/.highlight/.slot): 8-column chips (4 below 520px), sliding morph-spring highlight, struck-through taken times from the server's non-free slots, arrow/Home/End keys, 12-hour labels, 'N free' count in place of the legend. The pill's panel-entry stagger is not used. Takeover fix: disabled state now reaches the day buttons, time radios and time-grid keyboard navigation, preventing selection from moving during an in-flight hold/release.",
     "kind": "pro-port"
   },
   {

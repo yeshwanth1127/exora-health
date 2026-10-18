@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { toast, attachToastStack } from "../src/components/toast-events.ts";
 import type { ToastOptions } from "../src/components/arc/toast-stack/toast-stack.tsx";
 const opts = { parentURL: import.meta.url, tsconfig: fileURLToPath(new URL("../tsconfig.app.json", import.meta.url)) };
-const { PhoneField, MoneyField, TimeField, DateField, SharedField, ErrorMessage, LoadingState, Status } = await tsImport("./arc-wave-fixtures.ts", opts);
+const { PhoneField, MoneyField, TimeField, DateField, Calendar, AvailabilityPicker, SharedField, ErrorMessage, LoadingState, Status } = await tsImport("./arc-wave-fixtures.ts", opts);
 const render = renderToStaticMarkup;
 
 test("phone picker preserves unsupported and overlength persisted numbers without reinterpreting them", () => {
@@ -93,4 +93,27 @@ test("date picker shares parent validation and keeps required bounds when disabl
   assert.ok(trigger.includes('aria-describedby="dob-error"'));
   assert.ok(!html.includes('field="[object Object]"'));
   assert.match(html, /<input[^>]+required=""[^>]+disabled=""[^>]+min="1900-01-01"[^>]+max="2026-10-18"/);
+});
+
+
+test("DOB caption exposes searchable Month and Year choices without selecting a date", () => {
+  const html = render(h(Calendar, { monthYearSelection: true, month: new Date(1968, 1, 1), today: new Date(2026, 9, 18),
+    onMonthChange: () => assert.fail("render cannot navigate"), onChange: () => assert.fail("caption cannot select a DOB") }));
+  assert.equal((html.match(/role="combobox"/g) ?? []).length, 2);
+  assert.ok(html.includes('value="February"'));
+  assert.ok(html.includes('value="1968"'));
+  assert.ok(html.includes('>Year</label>'));
+  const regular = render(h(Calendar, { month: new Date(2026, 9, 1) }));
+  assert.ok(!regular.includes('role="combobox"'), "ordinary appointment date pickers keep their existing caption");
+});
+
+test("pending booking holds lock both the day strip and time selection", () => {
+  const html = render(h(AvailabilityPicker, { title: "Book", subtitle: "Clinic time", attendees: [], weekLabel: "Open days", disabled: true,
+    days: [{ id: "2026-10-19", short: "Mon", date: "19", full: "Monday 19 October", slots: [{ time: "10:00" }, { time: "11:00" }] }],
+    onSelect: () => assert.fail("disabled selection cannot change") }));
+  const day = html.match(/<button[^>]+aria-pressed="true"[^>]*>/)?.[0] ?? "";
+  assert.ok(day.includes('disabled=""'));
+  const times = html.match(/<button[^>]+role="radio"[^>]*>/g) ?? [];
+  assert.equal(times.length, 2);
+  assert.ok(times.every((button: string) => button.includes('disabled=""')));
 });

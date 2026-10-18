@@ -1,5 +1,7 @@
 # Admin dashboard Arc handoff
 
+> **Latest takeover update:** read `takeover-review.md` first. Current normal dashboard 5198 uses the worktree API **3080**. DOB now has direct Month/Year columns; registration replaces search; appointment search and chart-table disclosures are refined. 196 frontend tests and 7 alert API tests pass. This supersedes the earlier runtime commands and DOB keyboard-only limitation below. Claude's 37 component folders are preserved.
+
 Updated 18 October 2026 after the approved desktop component waves, local login repair and browser-comment refinements. This file is the continuation entry point. Read the repository-root `AGENTS.md`, then this file and `desktop-review-fixes.md` before changing anything. The latest UI work is complete at source/build/test level; the user retained visual verification.
 
 ## Exact target

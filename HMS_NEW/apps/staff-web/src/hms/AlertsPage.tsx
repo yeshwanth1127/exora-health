@@ -1,3 +1,5 @@
+import { Button as WorkspaceButton } from "@/components/ui/button";
+import { WorkspaceLoading } from "@/components/WorkspaceLoading";
 // My alerts (Arc Inbox triage): what needs the signed-in person now and what is coming up (docs/prd/staff-alerts.md).
 // Folders keep the component's Inbox / Snoozed / Archive model, labelled Open / Snoozed / Done.
 import { useMemo } from "react";
@@ -30,7 +32,7 @@ const PAGE: Record<string, string> = {
 
 export function AlertsPage() {
   const { facility, go } = useWorkspace();
-  const { alerts, unavailable, error, now, mark } = useAlerts();
+  const { alerts, unavailable, error, loading, now, mark, refresh } = useAlerts();
   const byKey = useMemo(() => new Map(alerts.map((a) => [a.key, a])), [alerts]);
   const messages = useMemo<TriageMessage[]>(
     () =>
@@ -49,12 +51,12 @@ export function AlertsPage() {
   const target = (m: TriageMessage) => byKey.get(m.id);
   return (
     <>
-      <PageTitle title="My alerts" />
+      <PageTitle title="My alerts" action={<WorkspaceButton variant="outline" onClick={() => void refresh()}>Refresh alerts</WorkspaceButton>} />
       <div className="mb-5 space-y-3">
         <ErrorMessage text={error} />
         {unavailable.length > 0 && <Hint>{unavailable.join(", ")} could not be checked, so this list may be incomplete.</Hint>}
       </div>
-      <div className="arc-demo-scope arc-section-frame">
+      {loading && alerts.length === 0 ? <WorkspaceLoading /> : <div className="arc-demo-scope arc-section-frame">
         <InboxTriage
           title={`Alerts · ${facility.name}`}
           messages={messages}
@@ -76,7 +78,7 @@ export function AlertsPage() {
             ) : null;
           }}
         />
-      </div>
+      </div>}
     </>
   );
 }

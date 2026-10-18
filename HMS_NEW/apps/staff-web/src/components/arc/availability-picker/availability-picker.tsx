@@ -64,9 +64,9 @@ const clock = (time: string) => {
   return `${h! % 12 || 12}:${String(m ?? 0).padStart(2, "0")} ${h! < 12 ? "AM" : "PM"}`;
 };
 /** Booking pill time step (`eu`): free times are radios, taken ones are struck through; one highlight slides between them. */
-function TimeGrid({ slots, value, label, reduced, freeLabel, busyLabel, durationMin, onChange }: {
+function TimeGrid({ slots, value, label, reduced, freeLabel, busyLabel, durationMin, disabled, onChange }: {
   slots: PickerSlot[]; value: string; label: string; reduced: boolean; durationMin: number;
-  freeLabel: string; busyLabel: (who: string) => string; onChange: (time: string) => void;
+  disabled?: boolean; freeLabel: string; busyLabel: (who: string) => string; onChange: (time: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0), y = useMotionValue(0), width = useMotionValue(0), height = useMotionValue(0);
@@ -93,6 +93,7 @@ function TimeGrid({ slots, value, label, reduced, freeLabel, busyLabel, duration
     return () => observer.disconnect();
   }, [index, reduced, x, y, width, height]);
   const move = (event: KeyboardEvent, from: number) => {
+    if (disabled) return;
     // The pill steps a row with ArrowUp/Down; the row length is read from the grid, which reflows by width.
     const columns = ref.current ? getComputedStyle(ref.current).gridTemplateColumns.split(" ").length : 4;
     const step: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: columns, ArrowUp: -columns };
@@ -116,6 +117,7 @@ function TimeGrid({ slots, value, label, reduced, freeLabel, busyLabel, duration
           <motion.button
             key={s.time}
             type="button"
+            disabled={disabled}
             role="radio"
             className={styles.slot}
             data-slot={n}
@@ -182,6 +184,7 @@ export function AvailabilityPicker({ title, subtitle, attendees, days, weekLabel
                 type="button"
                 className={styles.day}
                 data-selected={selected || undefined}
+                disabled={disabled}
                 aria-pressed={selected}
                 aria-label={`${d.full}, ${copy.dayOpen(open)}`}
                 onClick={() => {
@@ -224,6 +227,7 @@ export function AvailabilityPicker({ title, subtitle, attendees, days, weekLabel
               transition={reduce ? { duration: T.duration.instant } : { x: T.spring.smooth, opacity: { duration: T.duration.fast } }}
             >
               <TimeGrid
+                disabled={disabled}
                 slots={day.slots}
                 value={slot?.time ?? ""}
                 label={`Times on ${day.full}`}

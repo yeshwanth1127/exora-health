@@ -15,3 +15,7 @@
 .shell button { display: grid; width: 24px; height: 24px; flex: 0 0 auto; place-items: center; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--text-muted); transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard); }
 @media (hover: hover) and (pointer: fine) { .shell button:hover { background: var(--surface-muted); color: var(--foreground); } }
 @media (prefers-reduced-motion: reduce) { .shell, .shell > svg, .shell button { transition: none; } }
+
+/* User-requested appointment variant; the default reference skin remains unchanged. */
+.soft { border-color: var(--border); box-shadow: var(--shadow-resting); }
+.soft:focus-within { border-color: var(--foreground); box-shadow: 0 0 0 3px var(--surface-muted); }

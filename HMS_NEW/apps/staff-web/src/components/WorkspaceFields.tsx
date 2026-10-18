@@ -64,13 +64,13 @@ export function TimeField({ label = "Time", id, value, onValueChange, disabled, 
 }
 
 /** Calendar-day values stay YYYY-MM-DD; no UTC conversion is involved. */
-export function DateField({ label = "Date", id, value, onValueChange, disabled, required, min, max }: {
+export function DateField({ label = "Date", id, value, onValueChange, disabled, required, min, max, monthYearSelection }: {
   label?: string; id?: string; value: string; onValueChange: (value: string) => void;
-  disabled?: boolean; required?: boolean; min?: string; max?: string;
+  disabled?: boolean; required?: boolean; min?: string; max?: string; monthYearSelection?: boolean;
 }) {
   const { field, ...attributes } = useAttributes(id);
   return <FieldShell label={label} id={attributes.id}><div className="arc-demo-scope">
-    <DatePicker {...attributes} className="arc-date-field" hideLabel label={label}
+    <DatePicker {...attributes} className="arc-date-field" monthYearSelection={monthYearSelection} hideLabel label={label}
       value={parseReportDay(value) ?? undefined} onChange={(date) => onValueChange(date ? formatReportDay(date) : "")}
       placeholder="Select a date" clearable={!(required ?? field?.required)} disabled={disabled}
       minDate={parseReportDay(min ?? "") ?? undefined} maxDate={parseReportDay(max ?? "") ?? undefined} />

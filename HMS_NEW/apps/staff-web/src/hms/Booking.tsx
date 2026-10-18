@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCommand, useQuery, useWorkspace } from "./hooks";
 import { query, request } from "./client";
 import { today, time, money } from "./model";
-import { useUnsaved } from "./leave";
+import { requestLeave, useUnsaved } from "./leave";
 import { PatientLookup, RegisterPatient } from "./Patients";
 import { WorkspaceEmpty } from "./WorkspaceEmpty";
 import { DayNavigator } from "@/components/date-controls";
@@ -256,15 +256,15 @@ export function Booking({
         {step === 1 && (
           <section className="space-y-5">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="shrink-0 text-lg font-semibold">Choose the patient</h2>
+              <h2 className="shrink-0 text-lg font-semibold">{register ? "Register a new patient" : "Choose the patient"}</h2>
               {!move && !patient && !caller && (
                 <div className="flex items-center gap-2">
                   {can("patients.register") && (
-                    <Button variant="outline" onClick={() => setRegister((v) => !v)}>
+                    <Button variant="outline" onClick={() => requestLeave(() => setRegister((v) => !v))}>
                       {register ? "Back to search" : "Register a new patient"}
                     </Button>
                   )}
-                  <Button variant="outline" onClick={() => setCaller(true)}>
+                  <Button variant="outline" onClick={() => requestLeave(() => { setRegister(false); setCaller(true); })}>
                     Book for a caller who isn't registered
                   </Button>
                 </div>
@@ -328,18 +328,10 @@ export function Booking({
                   Find a registered patient instead
                 </Button>
               </div>
+            ) : register ? (
+              <RegisterPatient onCreated={(p) => { setPatient(p); setRegister(false); }} />
             ) : (
-              <>
-                <PatientLookup onSelect={setPatient} />
-                {register && (
-                  <RegisterPatient
-                    onCreated={(p) => {
-                      setPatient(p);
-                      setRegister(false);
-                    }}
-                  />
-                )}
-              </>
+              <PatientLookup onSelect={setPatient} />
             )}
             <div className="flex items-center justify-between gap-4 border-t pt-5">
               <p className="font-medium">

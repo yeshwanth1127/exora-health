@@ -1,3 +1,4 @@
+import { ChartDataDisclosure } from "@/components/ChartDataDisclosure";
 import { MetricCard } from "@/components/arc/metric-card/metric-card";
 import { BarChart as ArcBarChart } from "@/components/arc/bar-chart/bar-chart";
 import type { ReactNode } from "react";
@@ -194,10 +195,7 @@ function ActivityPage({
                       data={(r.data?.daily_bookings ?? []).map((day) => ({ key: day.date, label: day.date, axisLabel: day.date.slice(5), value: day.bookings }))}
                     />
                   </MorphBlock>
-                  <details>
-                    <summary className="text-sm font-medium cursor-pointer mb-3">
-                      View data
-                    </summary>
+                  <ChartDataDisclosure>
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -214,7 +212,7 @@ function ActivityPage({
                         ))}
                       </TableBody>
                     </Table>
-                  </details>
+                  </ChartDataDisclosure>
                 </CardContent>
               </Card>
               <Card>
@@ -232,10 +230,7 @@ function ActivityPage({
                       <HealthSplit title="By channel" rows={r.data?.by_channel ?? []} />
                     </div>
                   </MorphBlock>
-                  <details>
-                    <summary className="text-sm font-medium cursor-pointer mb-3">
-                      View data
-                    </summary>
+                  <ChartDataDisclosure>
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -272,7 +267,7 @@ function ActivityPage({
                         ))}
                       </TableBody>
                     </Table>
-                  </details>
+                  </ChartDataDisclosure>
                 </CardContent>
               </Card>
             </div>

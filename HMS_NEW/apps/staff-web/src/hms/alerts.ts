@@ -1,3 +1,5 @@
+import { localToday, shiftDay } from "@/components/date-controls-model";
+import { clinicDateInstant } from "./notification-time";
 // Per-person alerts (docs/prd/staff-alerts.md): derived in the browser from reads the person is already allowed,
 // for the selected clinic. Nothing here acts on a record; each alert only names the page where the work is done.
 import type { Appointment, EncounterRow } from "./types";
@@ -164,14 +166,14 @@ export function deriveAlerts(s: AlertSources): { alerts: Alert[]; unavailable: s
 
   const registration = (r: { registrationId: string; council: string; validUntil: string | null }, who: string, mine: boolean) => {
     if (!r.validUntil) return;
-    const ends = ms(`${r.validUntil}T23:59:59Z`);
-    if (ends > s.now + REGISTRATION_DAYS * DAY) return;
-    const gone = ends < s.now;
+    const currentDay = localToday(tz, new Date(s.now));
+    if (r.validUntil > shiftDay(currentDay, REGISTRATION_DAYS)) return;
+    const gone = r.validUntil < currentDay;
     alerts.push({
       key: `${gone ? "reg_expired" : "reg"}:${r.registrationId}:${r.validUntil}`, bucket: gone ? "now" : "upcoming", tone: gone ? "warning" : "info",
       source: "Registration", who, title: `${mine ? "Your " : ""}${r.council} registration ${gone ? "has expired" : "expires soon"}`,
       detail: `Valid until ${new Date(`${r.validUntil}T12:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`,
-      at: r.validUntil, destination: "settings?section=team",
+      at: r.validUntil, destination: mine ? "settings?section=account" : "settings?section=registrations",
     });
   };
   for (const r of known("Registration", s.registrations) ?? []) registration(r, "You", true);
@@ -208,9 +210,6 @@ export function whenLabel(a: Alert, now: number, timezone: string) {
 
 /** The clinic's next local midnight, as an instant: when "Snooze until tomorrow" ends. */
 export function tomorrowStart(now: number, timezone: string) {
-  const day = new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(now));
-  const guess = new Date(`${day}T00:00:00Z`);
-  guess.setUTCDate(guess.getUTCDate() + 1);
-  const offset = Date.parse(guess.toLocaleString("en-US", { timeZone: timezone })) - Date.parse(guess.toLocaleString("en-US", { timeZone: "UTC" }));
-  return new Date(guess.getTime() - offset).toISOString();
+  const nextDay = shiftDay(localToday(timezone, new Date(now)), 1);
+  return clinicDateInstant(`${nextDay}T00:00`, timezone);
 }

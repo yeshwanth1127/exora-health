@@ -153,3 +153,8 @@
 .arc-section-frame.arc-section-frame > * { width: 100%; min-width: 0; max-width: 100%; }
 /* Skeleton morph placeholders over non-Arc content: only the two tokens its stylesheet reads, so shadcn tokens stay untouched. */
 .arc-morph-tokens { --surface-muted: oklch(97.8% 0 0); --ease-in-out: cubic-bezier(.65,0,.35,1); }
+
+/* Requested appointment search refinement; reference interactions and clear action remain intact. */
+.appointment-search label { line-height: 20px; }
+.appointment-search input { font-size: 14px; }
+.appointment-search:focus-within { --border-strong: var(--foreground); }

@@ -484,3 +484,9 @@ body {
   outline-offset: 4px;
   border-radius: 4px;
 }
+
+.chart-data-disclosure > summary { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 18px; background: var(--card); color: var(--muted-foreground); font-size: 13px; cursor: pointer; list-style: none; }
+.chart-data-disclosure > summary::-webkit-details-marker { display: none; }
+.chart-data-disclosure > summary:hover { color: var(--foreground); background: var(--muted); }
+.chart-data-disclosure > summary:focus-visible { outline: 2px solid var(--foreground); outline-offset: 3px; }
+.chart-data-disclosure[open] > summary > svg:last-child { transform: rotate(180deg); }

@@ -5,7 +5,7 @@ import { useCommand, useWorkspace } from "./hooks";
 import { PatientLookup, RegisterPatient } from "./Patients";
 import { Choice, ErrorMessage, Field, Hint } from "./ui";
 import { label } from "./model";
-import { useUnsaved } from "./leave";
+import { requestLeave, useUnsaved } from "./leave";
 import type { Patient } from "./types";
 
 export function WalkIn({
@@ -33,13 +33,13 @@ export function WalkIn({
       </Hint>
       {!patient ? (
         <>
-          <PatientLookup onSelect={setPatient} />
+          {!register && <PatientLookup onSelect={setPatient} />}
           {can("patients.register") && (
-            <Button variant="ghost" onClick={() => setRegister((v) => !v)}>
-              {register ? "Hide registration" : "Register new patient"}
+            <Button variant="ghost" onClick={() => requestLeave(() => setRegister((v) => !v))}>
+              {register ? "Back to patient search" : "Register new patient"}
             </Button>
           )}
-          {register && <RegisterPatient onCreated={setPatient} />}
+          {register && <RegisterPatient onCreated={(patient) => { setPatient(patient); setRegister(false); }} />}
         </>
       ) : (
         <>

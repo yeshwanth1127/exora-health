@@ -43,3 +43,9 @@
 - User-approved header: centered command search, no duplicate page name or Local preview badge; desktop collapse control in the left sidebar; clinic switching under Settings / My account. Keep routing, permissions and unsaved guards intact.
 - Latest refinements include aligned schedule search, patient entity Combobox, Arc DOB picker, wider doctor panels, readable permission descriptions and confirmed-result toasts. Preserve their actual value/permission/command bindings.
 - The user retains visual verification and asked to minimize usage. Finish source/automated checks and hand off; do not start further component waves automatically.
+
+## Takeover refinements
+
+- Read `HMS_NEW/docs/admin-dashboard-arc-sidebar/takeover-review.md` before using older runtime instructions. The normal dashboard on 5198 now uses the isolated API on 3080, including the alert routes.
+- User explicitly requested direct Month/Year DOB choices, registration replacing patient lookup, removal of Focus search, improved appointment search and replacement of native chart-data triangles. These are approved refinements; keep ordinary date pickers' default behavior unchanged.
+- Preserve Claude's Pro/alerts/availability additions; current adopted/support folder count is 37. Review and verification boundaries are recorded in the takeover review. No new wave or phone optimization is authorized by these fixes.

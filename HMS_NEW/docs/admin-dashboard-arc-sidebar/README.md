@@ -1,8 +1,8 @@
 # Admin dashboard Arc implementation
 
-Start with [HANDOFF.md](HANDOFF.md). It is the current implementation and continuation guide, updated after the desktop review fixes on 18 October 2026.
+Start with [takeover-review.md](takeover-review.md), then [HANDOFF.md](HANDOFF.md). It is the current implementation and continuation guide, updated after the desktop review fixes on 18 October 2026.
 
-- [Component inventory and exact counts](component-inventory.md): 82 distinct assessed candidates; 25 adopted candidates plus 3 support components = 28 local component folders. Surveying, implementation and rendered verification are separate counts.
+- [Component inventory and exact counts](component-inventory.md): Current integration: 32 adopted candidates plus 5 support components = 37 folders after Claude's waves; earlier survey counts are recorded separately. Surveying, implementation and rendered verification are separate counts.
 - [Latest desktop fixes and validation](desktop-review-fixes.md).
 - [Source manifest](component-source-manifest.json): original reference SHA256 and current integrated SHA256 for copied component files. Sidebar is a typed application adapter, documented separately.
 - [First selection pass](component-shortlist.md), [second selection pass](next-wave-shortlist.md).

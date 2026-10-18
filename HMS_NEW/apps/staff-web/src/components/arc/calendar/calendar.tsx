@@ -6,6 +6,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { animate, AnimatePresence, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useTransform } from "motion/react";
 import type { AnimationPlaybackControls, MotionValue, Variants } from "motion/react";
 import { motionTokens } from "../lib/motion-tokens";
+import { Combobox } from "../combobox/combobox";
+import { calendarMonths, calendarYears, changeCalendarMonth } from "./calendar-navigation";
 import { useToday } from "../lib/use-today";
 import styles from "./calendar.module.css";
 
@@ -13,6 +15,7 @@ export type CalendarDateMatcher = (date: Date) => boolean;
 
 export interface CalendarProps {
   today?: Date | null;
+  monthYearSelection?: boolean;
   value?: Date;
   onChange?: (date: Date) => void;
   month?: Date;
@@ -106,6 +109,7 @@ function MonthPane({ index, position, present, children }: { index: number; posi
 export function Calendar({
   value,
   onChange,
+  monthYearSelection = false,
   month: controlledMonth,
   onMonthChange,
   minDate,
@@ -289,6 +293,13 @@ export function Calendar({
   </>;
 
   return <section className={cx(styles.calendar, className)} aria-labelledby={titleId}>
+      {monthYearSelection && month && <div className={styles.monthYearControls}>
+        <Combobox label="Month" value={String(month.getMonth())} options={calendarMonths(locale)}
+          onValueChange={(value) => { if (value) changeMonth(changeCalendarMonth(month, month.getFullYear(), Number(value))); }} />
+        <Combobox label="Year" value={String(month.getFullYear())}
+          options={calendarYears(month, today, minDate, maxDate)}
+          onValueChange={(value) => { if (value) changeMonth(changeCalendarMonth(month, Number(value), month.getMonth())); }} />
+      </div>}
       <div className={styles.header}>
         <h2 id={titleId} className={styles.heading}>
           <span className={styles.srOnly}>{monthLabel}</span>

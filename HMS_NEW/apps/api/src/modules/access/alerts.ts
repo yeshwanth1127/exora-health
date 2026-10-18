@@ -1,6 +1,6 @@
 // Per-person marks on derived alerts (docs/prd/staff-alerts.md). Alerts are computed in the staff app from
 // records the person may already read; only who read, dismissed or snoozed which alert key is stored here.
-import type { DB, Kysely } from '@hms/db';
+import { sql, type DB, type Kysely } from '@hms/db';
 import { runCommand, runQuery } from '@hms/platform';
 import { clock, type Caller } from '../../caller.ts';
 
@@ -86,8 +86,17 @@ export interface ExpiringRegistrationView {
 }
 
 /** Other staff members' registrations ending within `days` (or already ended), for people who manage staff. */
-export async function listExpiringRegistrations(db: Kysely<DB>, caller: Caller, days: number): Promise<ExpiringRegistrationView[]> {
+export async function listExpiringRegistrations(db: Kysely<DB>, caller: Caller, days: number, facilities: Set<string> | null): Promise<ExpiringRegistrationView[]> {
   const until = new Date(clock(caller).getTime() + days * 86_400_000).toISOString().slice(0, 10);
+  // Registration management reaches every active clinic where the staff member works.
+  // A clinic-scoped manager must not receive registrations for unrelated or cross-clinic staff.
+  const visible = facilities === null ? sql<boolean>`true` : facilities.size === 0 ? sql<boolean>`false` : sql<boolean>`
+    EXISTS (SELECT 1 FROM platform.role_grant g WHERE g.staff_id = s.id
+      AND g.revoked_at IS NULL AND g.valid_from <= ${clock(caller)} AND (g.valid_to IS NULL OR g.valid_to > ${clock(caller)})
+      AND g.facility_id IN (${sql.join([...facilities])}))
+    AND NOT EXISTS (SELECT 1 FROM platform.role_grant g WHERE g.staff_id = s.id
+      AND g.revoked_at IS NULL AND g.valid_from <= ${clock(caller)} AND (g.valid_to IS NULL OR g.valid_to > ${clock(caller)})
+      AND (g.facility_id IS NULL OR g.facility_id NOT IN (${sql.join([...facilities])})))`;
   return runQuery(db, caller.tenantId, (tx) =>
     tx
       .selectFrom('platform.staff_registration as r')
@@ -97,6 +106,7 @@ export async function listExpiringRegistrations(db: Kysely<DB>, caller: Caller, 
       .where('r.valid_until', '<=', until)
       .where('r.staff_id', '!=', staffOf(caller))
       .where('s.is_system_account', '=', false)
+      .where(visible)
       .orderBy('r.valid_until')
       .limit(200)
       .execute() as Promise<ExpiringRegistrationView[]>,

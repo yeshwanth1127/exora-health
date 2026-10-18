@@ -135,6 +135,16 @@ export function Appointments() {
             >
               <RefreshCw />
             </Button>
+            <div className="arc-demo-scope appointment-search ml-auto min-w-[360px] max-w-xl flex-1">
+              <SearchField variant="soft" label="Search appointments" value={text} onValueChange={setText}
+                autoComplete="off" placeholder="Patient name, phone, MRN or confirmation code"
+                aria-describedby="appointment-search-hint" aria-busy={text.trim().length >= 2 && (text.trim() !== search || result.loading)} />
+              <p id="appointment-search-hint" className="mt-2 text-xs text-muted-foreground" role="status">
+                {text.trim().length === 1 ? "Type at least 2 characters to search." : text.trim().length >= 2
+                  ? text.trim() !== search || result.loading ? "Searching appointments…" : result.error ? "Search could not load. Try again." : `${items.length}${result.data?.nextCursor ? "+" : ""} matching ${items.length === 1 ? "appointment" : "appointments"} for the selected date and filters.`
+                  : "Search within the selected date and filters."}
+              </p>
+            </div>
           </div>
           <div className="arc-demo-scope">
             <FilterToolbar
@@ -163,10 +173,7 @@ export function Appointments() {
               }}
             />
           </div>
-          <div className="arc-demo-scope">
-            <SearchField label="Search appointments" value={text} onValueChange={setText}
-              placeholder="Search name, phone, MRN or confirmation code" />
-          </div>
+
         </CardContent>
         <LoadingState {...result}>
           <Table>
@@ -650,15 +657,15 @@ function AppointmentDetails({
                                 Change
                               </Button>
                             </p>
-                          ) : (
+                          ) : !register ? (
                             <PatientLookup onSelect={setPatient} />
-                          )}
+                          ) : null}
                           {can("patients.register") && !patient && (
                             <Button
                               variant="ghost"
-                              onClick={() => setRegister((v) => !v)}
+                              onClick={() => requestLeave(() => setRegister((v) => !v))}
                             >
-                              Register patient
+                              {register ? "Back to patient search" : "Register patient"}
                             </Button>
                           )}
                           {register && !patient && (

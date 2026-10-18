@@ -43,6 +43,28 @@ afterAll(async () => {
 });
 
 describe('/v1/me/alerts', () => {
+  it('limits a clinic-scoped staff manager to registrations they can manage', async () => {
+    const facility2 = (await admin.query(`INSERT INTO platform.facility (tenant_id, organization_id, code, name, facility_type, state_code) VALUES ($1, $2, 'F2', 'Other clinic', 'hospital', '29') RETURNING id`, [t.tenantId, t.organizationId])).rows[0]!.id;
+    const manager = (await admin.query(`INSERT INTO platform.staff (tenant_id, employee_no, given_name, display_name, staff_type) VALUES ($1, 'manager', 'Manager', 'Manager', 'admin') RETURNING id`, [t.tenantId])).rows[0]!.id;
+    const role = (await admin.query(`INSERT INTO platform.role (tenant_id, code, name) VALUES ($1, 'registration_manager', 'Registration manager') RETURNING id`, [t.tenantId])).rows[0]!.id;
+    await admin.query(`INSERT INTO platform.role_permission (role_id, permission_id) SELECT $1, id FROM platform.permission WHERE code = 'staff.manage'`, [role]);
+    await admin.query(`INSERT INTO platform.role_grant (tenant_id, staff_id, role_id, facility_id) VALUES ($1, $2, $3, $4)`, [t.tenantId, manager, role, t.facilityId]);
+    await admin.query(`INSERT INTO platform.user_account (tenant_id, staff_id, identity_issuer, identity_subject, status) VALUES ($1, $2, $3, $4, 'active')`, [t.tenantId, manager, DEV_ISSUER, `manager-${run}`]);
+    const token = await signDevToken(`manager-${run}`);
+    const added: { id: string }[] = [];
+    for (const [name, clinics] of [['only_here', [t.facilityId]], ['only_elsewhere', [facility2]], ['both_clinics', [t.facilityId, facility2]], ['everywhere', [null]]] as const) {
+      const id = (await admin.query(`INSERT INTO platform.staff (tenant_id, employee_no, given_name, display_name, staff_type) VALUES ($1, $2, $2, $2, 'doctor') RETURNING id`, [t.tenantId, name])).rows[0]!.id;
+      for (const clinic of clinics) await admin.query(`INSERT INTO platform.role_grant (tenant_id, staff_id, role_id, facility_id) SELECT $1, $2, id, $3 FROM platform.role WHERE tenant_id IS NULL AND code = 'doctor'`, [t.tenantId, id, clinic]);
+      await admin.query(`INSERT INTO platform.staff_registration (tenant_id, staff_id, council, registration_no, valid_until) VALUES ($1, $2, 'KMC', $3, $4)`, [t.tenantId, id, `${name}-${run}`, soon]);
+      added.push({ id });
+    }
+    const response = await call('GET', '/v1/me/alerts', token);
+    expect(response.status).toBe(200);
+    const ids = response.body.teamRegistrations.map((r: { staffId: string }) => r.staffId);
+    expect(ids).toContain(added[0]!.id);
+    for (const item of added.slice(1)) expect(ids).not.toContain(item.id);
+  });
+
   it('returns only the caller’s own marks and registrations', async () => {
     const key = `queue:${randomUUID()}`;
     expect((await call('PUT', `/v1/me/alerts/${key}`, tokens.desk, { read: true })).status).toBe(200);

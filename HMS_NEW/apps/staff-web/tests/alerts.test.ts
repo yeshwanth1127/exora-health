@@ -93,3 +93,17 @@ test("snooze runs to the clinic's next local midnight", () => {
   assert.equal(tomorrowStart(now, "Asia/Kolkata"), "2026-10-18T18:30:00.000Z");
   assert.equal(tomorrowStart(Date.parse("2026-10-18T19:00:00Z"), "Asia/Kolkata"), "2026-10-19T18:30:00.000Z");
 });
+
+
+test("registration expiry follows the clinic day rather than UTC midnight", () => {
+  const input = { ...base, now: Date.parse("2026-10-18T19:00:00Z"), registrations: known([{ registrationId: "r", council: "KMC", validUntil: "2026-10-18" }]) };
+  const india = deriveAlerts(input).alerts[0];
+  assert.ok(india.key.startsWith("reg_expired:"));
+  assert.equal(india.destination, "settings?section=account");
+  const west = deriveAlerts({ ...input, timezone: "America/Los_Angeles" }).alerts[0];
+  assert.ok(west.key.startsWith("reg:"));
+});
+test("snooze uses the clinic's next midnight through DST changes", () => {
+  assert.equal(tomorrowStart(Date.parse("2026-03-08T05:30:00Z"), "America/New_York"), "2026-03-09T04:00:00.000Z");
+  assert.equal(tomorrowStart(Date.parse("2026-11-01T04:30:00Z"), "America/New_York"), "2026-11-02T05:00:00.000Z");
+});

@@ -21,7 +21,7 @@ export function registerAlertRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const [states, registrations, team] = await Promise.all([
       listAlertState(db, caller),
       listRegistrations(db, caller, principal.staffId),
-      staffManage === null || staffManage.size > 0 ? listExpiringRegistrations(db, caller, REGISTRATION_DAYS) : null,
+      staffManage === null || staffManage.size > 0 ? listExpiringRegistrations(db, caller, REGISTRATION_DAYS, staffManage) : null,
     ]);
     // team is null (not []) without staff.manage, so the app can say it could not check rather than "none due".
     return { states, registrations, teamRegistrations: team };
