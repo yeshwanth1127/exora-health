@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Megaphone, Plus, Send } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/toast-events";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

@@ -9,7 +9,7 @@ import {
   Undo2,
   UserPlus,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/toast-events";
 import { PageTitle } from "@/components/workspace";
 import { WhatsAppIcon } from "@/components/brand-icons";
 import { Badge } from "@/components/ui/badge";

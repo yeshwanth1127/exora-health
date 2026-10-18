@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert } from "@/components/arc/alert/alert";
 import type { MutationIntent } from "./operational-intent";
 import type { RecoverableCommand } from "./operational-command";
 export function RecoveryNotice({
@@ -15,9 +15,7 @@ export function RecoveryNotice({
   const [error, setError] = useState("");
   if (!command.unknown) return null;
   return (
-    <Alert className="my-3" role="alert">
-      <AlertTitle>We couldn’t confirm this change</AlertTitle>
-      <AlertDescription>
+    <div className="arc-demo-scope my-3"><Alert tone="warning" title="We couldn’t confirm this change" role="alert">
         <p>
           The original request is kept in this open workspace. Other changes are
           paused until its outcome is confirmed.
@@ -68,7 +66,6 @@ export function RecoveryNotice({
         {(error || command.error) && (
           <p className="mt-2 text-destructive">{error || command.error}</p>
         )}
-      </AlertDescription>
-    </Alert>
+    </Alert></div>
   );
 }

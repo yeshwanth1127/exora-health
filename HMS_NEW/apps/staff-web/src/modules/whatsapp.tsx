@@ -17,7 +17,7 @@ import {
   ChevronRight,
   RefreshCw,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/toast-events";
 import {
   wa,
   dateTime,

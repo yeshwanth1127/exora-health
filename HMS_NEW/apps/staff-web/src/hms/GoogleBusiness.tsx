@@ -16,7 +16,7 @@ import {
   Star,
 } from "lucide-react";
 import { GoogleIcon, WhatsAppIcon } from "@/components/brand-icons";
-import { toast } from "sonner";
+import { toast } from "@/components/toast-events";
 import { PageTitle } from "@/components/workspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -1,3 +1,5 @@
+import { Tooltip } from "./arc/tooltip/tooltip";
+import { TimeField } from "./WorkspaceFields";
 import { useId } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./arc/button/button";
@@ -53,10 +55,10 @@ export function DayNavigator({
             if ((!nextValue && allowClear) || dayInBounds(nextValue, min, max)) onChange(nextValue);
           }} />
       </div>
-      <Button type="button" variant="secondary" className="arc-icon-control" aria-label={`Previous ${label.toLowerCase()}`}
-        disabled={disabled || !dayInBounds(prev, min, max)} onClick={() => onChange(prev)}><ChevronLeft size={16} /></Button>
-      <Button type="button" variant="secondary" className="arc-icon-control" aria-label={`Next ${label.toLowerCase()}`}
-        disabled={disabled || !dayInBounds(next, min, max)} onClick={() => onChange(next)}><ChevronRight size={16} /></Button>
+      <Tooltip content={`Previous ${label.toLowerCase()}`}><Button type="button" variant="secondary" className="arc-icon-control" aria-label={`Previous ${label.toLowerCase()}`}
+        disabled={disabled || !dayInBounds(prev, min, max)} onClick={() => onChange(prev)}><ChevronLeft size={16} /></Button></Tooltip>
+      <Tooltip content={`Next ${label.toLowerCase()}`}><Button type="button" variant="secondary" className="arc-icon-control" aria-label={`Next ${label.toLowerCase()}`}
+        disabled={disabled || !dayInBounds(next, min, max)} onClick={() => onChange(next)}><ChevronRight size={16} /></Button></Tooltip>
       {timezone && <Button type="button" variant="secondary" disabled={disabled || !dayInBounds(current, min, max)} onClick={() => onChange(current)}>Today</Button>}
       {allowClear && value && <Button type="button" variant="ghost" disabled={disabled} onClick={() => onChange("")}>All dates</Button>}
     </div>
@@ -171,14 +173,8 @@ export function TimeRangeField({
         required={required}
         submitted={submitted}
       >
-        <Input
-          id={`${id}-start`}
-          type="time"
-          value={start}
-          disabled={disabled}
-          required={required}
-          onChange={(e) => onChange({ start: e.target.value, end })}
-        />
+        <TimeField label="Start time" id={`${id}-start`} value={start}
+          disabled={disabled} required={required} onValueChange={(value) => onChange({ start: value, end })} />
       </SharedField>
       <SharedField
         label="End time"
@@ -188,14 +184,8 @@ export function TimeRangeField({
         required={required}
         submitted={submitted}
       >
-        <Input
-          id={`${id}-end`}
-          type="time"
-          value={end}
-          disabled={disabled}
-          required={required}
-          onChange={(e) => onChange({ start, end: e.target.value })}
-        />
+        <TimeField label="End time" id={`${id}-end`} value={end}
+          disabled={disabled} required={required} onValueChange={(value) => onChange({ end: value, start })} />
       </SharedField>
     </div>
   );

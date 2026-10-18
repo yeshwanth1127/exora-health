@@ -1,3 +1,4 @@
+import { CopyButton } from "@/components/arc/copy-button/copy-button";
 import { useTodayVisits } from "./patient-visits-hooks";
 import { patientDisplayName } from "./patient-presentation";
 import { useEffect, useState } from "react";
@@ -368,6 +369,7 @@ function AppointmentDetails({
                       ? "Teleconsultation"
                       : "In-person visit"}{" "}
                     · MRN {a.mrn ?? "Not linked"} · Booking {a.confirmationCode}
+                    <span className="arc-demo-scope ml-2"><CopyButton value={a.confirmationCode} label="Copy booking code" iconOnly variant="plain" /></span>
                     {a.tokenNo ? ` · Token ${a.tokenNo}` : ""}
                   </p>
                   {a.originChannel === "whatsapp" && (

@@ -1,3 +1,4 @@
+import { CopyButton } from "@/components/arc/copy-button/copy-button";
 import { DayNavigator } from "@/components/date-controls";
 import { useEffect, useState } from "react";
 import { Video } from "lucide-react";
@@ -202,12 +203,7 @@ function TeleDetail({ sessionId }: { sessionId: string }) {
                         readOnly
                         value={link}
                       />
-                      <Button
-                        variant="outline"
-                        onClick={() => void navigator.clipboard.writeText(link)}
-                      >
-                        Copy patient link
-                      </Button>
+                      <div className="arc-demo-scope"><CopyButton value={link} label="Copy patient link" /></div>
                       <p className="text-xs text-muted-foreground">
                         Shown only in this sheet. It cannot be retrieved after
                         closing.

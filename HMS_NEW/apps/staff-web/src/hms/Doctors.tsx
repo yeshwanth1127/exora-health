@@ -1,3 +1,4 @@
+import { MoneyField, PhoneField } from "@/components/WorkspaceFields";
 // Doctors at the selected clinic, and everything about them that booking uses: the booking profile
 // (specialty, qualifications, languages, video visits), name and phone, the clinics they work at, their
 // own fees, and their calendar. Each change is authorised by the API at the clinic it affects:
@@ -40,6 +41,7 @@ import {
   listFromText,
   refusal,
   rupeesToMinor,
+  minorToRupees,
 } from "./forms";
 import { Choice, Empty, ErrorMessage, Field, Hint, LoadingState, Status } from "./ui";
 import { WorkspaceEmpty } from "./WorkspaceEmpty";
@@ -858,13 +860,7 @@ function ContactForm({
           />
         </Field>
         <Field title="Work phone" id="doc-phone">
-          <Input
-            id="doc-phone"
-            type="tel"
-            value={phone}
-            placeholder="+919876543210"
-            onChange={(e) => setPhone(e.target.value.trim())}
-          />
+          <PhoneField id="doc-phone" label="Work phone" value={phone} onValueChange={setPhone} />
         </Field>
       </div>
       <p className="text-xs text-muted-foreground">
@@ -1104,12 +1100,8 @@ function DoctorFees({ staffId }: { staffId: string }) {
               />
             </Field>
             <Field title="Their fee (₹, blank = service fee)" id="fee-amount">
-              <Input
-                id="fee-amount"
-                inputMode="decimal"
-                value={feeText}
-                onChange={(e) => setFeeText(e.target.value)}
-              />
+              <MoneyField id="fee-amount" label="Their fee (₹, blank = service fee)" value={feeMinor ?? null}
+                onValueChange={(minor) => setFeeText(minorToRupees(minor))} />
             </Field>
             <Field title="From" id="fee-from">
               <Input

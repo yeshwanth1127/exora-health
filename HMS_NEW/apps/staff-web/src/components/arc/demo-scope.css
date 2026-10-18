@@ -121,3 +121,6 @@
 .arc-report-picker { min-width: 100%; }
 .arc-report-picker > button { width: 100%; justify-content: flex-start; }
 .arc-report-picker > button > :last-child { margin-left: auto; }
+/* Specialist fees share the user-approved compact desktop field geometry. */
+.arc-money-field { --money-input-height: 44px; --radius-panel: 18px; --text-3xl: 14px; --tracking-display: -.01em; --font-display: var(--font-body); }
+.arc-money-field > div:first-of-type { padding-inline: 12px; }

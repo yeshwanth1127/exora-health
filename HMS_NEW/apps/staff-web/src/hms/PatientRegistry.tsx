@@ -1,3 +1,4 @@
+import { PhoneField } from "@/components/WorkspaceFields";
 // Patient overview keeps related people and duplicate records together. Clinical flags belong in history.
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -446,13 +447,7 @@ function Related({
             onChange={(v) => setF({ ...f, relationship: v })}
             options={RELATIONSHIPS.map((v) => ({ value: v, label: label(v) }))}
           />
-          <Input
-            aria-label="Phone"
-            type="tel"
-            placeholder="+919876543210"
-            value={f.phone}
-            onChange={(e) => setF({ ...f, phone: e.target.value.trim() })}
-          />
+          <PhoneField label="Phone" value={f.phone} onValueChange={(phone) => setF({ ...f, phone })} />
           <div />
           {(
             [

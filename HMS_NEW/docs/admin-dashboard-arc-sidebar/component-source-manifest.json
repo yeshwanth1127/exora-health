@@ -172,5 +172,148 @@
     "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/textarea/textarea.tsx",
     "sha256": "1ed43b87e45b04180f1c6b8b3b7543e071bed3a6fcb2033e98015c77a8b7135a",
     "integratedSha256": "1ed43b87e45b04180f1c6b8b3b7543e071bed3a6fcb2033e98015c77a8b7135a"
+  },
+  {
+    "file": "src/components/arc/time-picker/time-picker.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/time-picker/time-picker.module.css",
+    "sha256": "571d5dd081caa1bb5903278489aa4c4daba9e7077a58f33b12ad0f08d1826812",
+    "integratedSha256": "571d5dd081caa1bb5903278489aa4c4daba9e7077a58f33b12ad0f08d1826812"
+  },
+  {
+    "file": "src/components/arc/time-picker/time-picker.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/time-picker/time-picker.tsx",
+    "sha256": "0acb7e628b37a1e9eff3039ce93aab24e14cb71cec4ba25ea3c684c4d9448ccf",
+    "integratedSha256": "946066ad8aeb4f31ed4992faebcceb7e33d15c0cbf46a82a2379d2fdb7e39f8a",
+    "bindingAdaptation": "Optional external control ID, hidden duplicate label and accessibility attributes support the existing field wrapper. Source 24-hour and one-minute options preserve precision."
+  },
+  {
+    "file": "src/components/arc/phone-input/phone-input.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/phone-input/phone-input.module.css",
+    "sha256": "d0f27fe2f5492773faae5f019b16295796e461dcfbca3ca4d3dc7f85069554c4",
+    "integratedSha256": "d0f27fe2f5492773faae5f019b16295796e461dcfbca3ca4d3dc7f85069554c4"
+  },
+  {
+    "file": "src/components/arc/phone-input/phone-input.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/phone-input/phone-input.tsx",
+    "sha256": "e1130be3b8aea675646bf99483a5c88d5897bfd4b8c5f629bac2d0a53868e816",
+    "integratedSha256": "d332db676615b59673decc9f4514230b300115847305cf7cc09c2966a87a3d79",
+    "bindingAdaptation": "External description, invalid and required attributes bind existing field feedback to the real input. Data-format, country-picker and animation logic retained."
+  },
+  {
+    "file": "src/components/arc/money-input/money-input.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/money-input/money-input.module.css",
+    "sha256": "88559c08f38ebd4fbd2a9cc0c7fae0d2078ab018267ac907dab93586306fc0a7",
+    "integratedSha256": "88559c08f38ebd4fbd2a9cc0c7fae0d2078ab018267ac907dab93586306fc0a7"
+  },
+  {
+    "file": "src/components/arc/money-input/money-input.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/money-input/money-input.tsx",
+    "sha256": "c1e7e02920e8ffdfba05079ff20bae0974e181f39fae3105dd00cd7bb4a29c21",
+    "integratedSha256": "4a67db5e9bbd5d4676d7de795d5ff243433616a444f1dc30cfdc5dcda52d977e",
+    "bindingAdaptation": "External description, invalid and required attributes bind existing field feedback. INR/minor-unit/null bindings and compact desktop tokens are supplied by the host."
+  },
+  {
+    "file": "src/components/arc/badge/badge.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/badge/badge.module.css",
+    "sha256": "3306e97600585992b6dbc19db1d55961cbfacd24f5942d80ac3078d6887b3644",
+    "integratedSha256": "3306e97600585992b6dbc19db1d55961cbfacd24f5942d80ac3078d6887b3644"
+  },
+  {
+    "file": "src/components/arc/badge/badge.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/badge/badge.tsx",
+    "sha256": "3c55d03480156cd7636e171ce8649ddc9616db7484dea50063d8b589810c4aad",
+    "integratedSha256": "3c55d03480156cd7636e171ce8649ddc9616db7484dea50063d8b589810c4aad"
+  },
+  {
+    "file": "src/components/arc/tooltip/tooltip.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/tooltip/tooltip.tsx",
+    "sha256": "25ad5ea2b707da617e055f0c2fd9bcf8776775ad658e67f3e9176f3030855f9b",
+    "integratedSha256": "dd48e8cc8d91a3621cf3fb92e0150751770c5b092ac1489272a37939b6662a5e",
+    "bindingAdaptation": "A foundation wrapper around portalled content supplies the reference theme tokens."
+  },
+  {
+    "file": "src/components/arc/tooltip/tooltip.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/tooltip/tooltip.module.css",
+    "sha256": "a6126eda83bbbc1164018ad9df811f437098167077ca493ec5c06538e7f901f4",
+    "integratedSha256": "a6126eda83bbbc1164018ad9df811f437098167077ca493ec5c06538e7f901f4"
+  },
+  {
+    "file": "src/components/arc/empty-state/empty-state.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/empty-state/empty-state.tsx",
+    "sha256": "e99e39c02b03e77738e8e8a69d12f24b6e9d5b3b66f12f1425cec32700fa69ef",
+    "integratedSha256": "e99e39c02b03e77738e8e8a69d12f24b6e9d5b3b66f12f1425cec32700fa69ef"
+  },
+  {
+    "file": "src/components/arc/empty-state/empty-state.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/empty-state/empty-state.module.css",
+    "sha256": "e65e4c4b6e3bd31b8925cb6a5d58e8c4826ffca6efb100f786c70428f98afc1a",
+    "integratedSha256": "e65e4c4b6e3bd31b8925cb6a5d58e8c4826ffca6efb100f786c70428f98afc1a"
+  },
+  {
+    "file": "src/components/arc/skeleton/skeleton.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/skeleton/skeleton.module.css",
+    "sha256": "ba4b3fa1d7f9df341c4c3a5e302d43178015f15030715ddb3ced2116cecf0588",
+    "integratedSha256": "ba4b3fa1d7f9df341c4c3a5e302d43178015f15030715ddb3ced2116cecf0588"
+  },
+  {
+    "file": "src/components/arc/skeleton/skeleton.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/skeleton/skeleton.tsx",
+    "sha256": "73b97715698fa54f6f0eaeefb6a8d795977297dd998439d1e595361e5da6d3b5",
+    "integratedSha256": "73b97715698fa54f6f0eaeefb6a8d795977297dd998439d1e595361e5da6d3b5"
+  },
+  {
+    "file": "src/components/arc/copy-button/copy-button.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/copy-button/copy-button.module.css",
+    "sha256": "090ea463f90ebe80e5fbe9abaa22b8c5ed1daec2068e7bcd18baab09e39dc08e",
+    "integratedSha256": "090ea463f90ebe80e5fbe9abaa22b8c5ed1daec2068e7bcd18baab09e39dc08e"
+  },
+  {
+    "file": "src/components/arc/copy-button/copy-button.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/copy-button/copy-button.tsx",
+    "sha256": "a6faac2922a48cc05ec72650ed63aee9b3871446df683cb7de6790f9bb19744a",
+    "integratedSha256": "a6faac2922a48cc05ec72650ed63aee9b3871446df683cb7de6790f9bb19744a"
+  },
+  {
+    "file": "src/components/arc/alert/alert.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/alert/alert.tsx",
+    "sha256": "ddcd481e2ebc6a1cbf6f053d6de1817d5dfd40b347e0bea561cc9fda2ea54950",
+    "integratedSha256": "ddcd481e2ebc6a1cbf6f053d6de1817d5dfd40b347e0bea561cc9fda2ea54950"
+  },
+  {
+    "file": "src/components/arc/alert/alert.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/alert/alert.module.css",
+    "sha256": "938cddc734989a721d38e92ed62c40df3a911cc3c6af6d9da313daaaf57965a6",
+    "integratedSha256": "938cddc734989a721d38e92ed62c40df3a911cc3c6af6d9da313daaaf57965a6"
+  },
+  {
+    "file": "src/components/arc/toast-stack/toast-stack.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/toast-stack/toast-stack.tsx",
+    "sha256": "ba422f5d6e330c49b9f2a110af7cf91e46e20697490ef7f103909e982adde49a",
+    "integratedSha256": "ba422f5d6e330c49b9f2a110af7cf91e46e20697490ef7f103909e982adde49a"
+  },
+  {
+    "file": "src/components/arc/toast-stack/toast-stack.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/toast-stack/toast-stack.module.css",
+    "sha256": "68ea14b271d2af559f90dd2e972b20591092b1dff9ef5e6a408f6082c015379a",
+    "integratedSha256": "68ea14b271d2af559f90dd2e972b20591092b1dff9ef5e6a408f6082c015379a"
+  },
+  {
+    "file": "src/components/arc/dialog/dialog.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/dialog/dialog.module.css",
+    "sha256": "a71ce7476732e9a996ddf6f765585cd2c7fab6168b8715bad464916c0a36168d",
+    "integratedSha256": "a71ce7476732e9a996ddf6f765585cd2c7fab6168b8715bad464916c0a36168d"
+  },
+  {
+    "file": "src/components/arc/dialog/dialog.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/dialog/dialog.tsx",
+    "sha256": "eb84a7eb2ac864dc07f2825eab252eac78e9c6b889d0e9f00bf6b2b799975ade",
+    "integratedSha256": "3810a09c26b1f0592cdb40815d31641c0e92601efde7f4fd1bd1a5fe244b6bf1",
+    "bindingAdaptation": "A foundation wrapper around portalled content supplies the reference theme tokens. Default source dialog motion and focus behavior retained."
+  },
+  {
+    "file": "src/components/arc/lib/use-copy-feedback.ts",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/lib/use-copy-feedback.ts",
+    "sha256": "88d0ae55bb3e241f529912a4802bbf014e4ba437025acc90ab13e012702273c5",
+    "integratedSha256": "88d0ae55bb3e241f529912a4802bbf014e4ba437025acc90ab13e012702273c5"
   }
 ]

@@ -1,3 +1,4 @@
+import { CopyButton } from "@/components/arc/copy-button/copy-button";
 import { ArrowRight } from "lucide-react";
 import {
   activeAppointments,
@@ -169,7 +170,7 @@ export function Booking({
         <Badge variant="secondary">
           {move ? "Appointment moved" : "Appointment confirmed"}
         </Badge>
-        <h3 className="text-xl font-semibold">{result.confirmationCode}</h3>
+        <div className="arc-demo-scope flex items-center gap-3"><h3 className="text-xl font-semibold">{result.confirmationCode}</h3><CopyButton value={result.confirmationCode} label="Copy confirmation code" iconOnly variant="plain" /></div>
         <p className="text-sm">Booked fee: {money(result.feeMinor)}</p>
         <Hint>
           Contact the patient to confirm the change. Automatic notifications are

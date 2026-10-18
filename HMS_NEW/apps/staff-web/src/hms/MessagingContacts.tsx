@@ -1,3 +1,4 @@
+import { PhoneField } from "@/components/WorkspaceFields";
 import { useState } from "react";
 import {
   ContactPointCreateSchema,
@@ -99,15 +100,8 @@ export function MessagingContacts(owner: Owner) {
             title="WhatsApp phone (with country code)"
             id="messaging-address"
           >
-            <Input
-              id="messaging-address"
-              type="tel"
-              autoComplete="off"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="+919876543210"
-              disabled={!writable || cmd.busy || cmd.unknown}
-            />
+            <PhoneField id="messaging-address" label="WhatsApp phone (with country code)" value={address}
+              onValueChange={setAddress} disabled={!writable || cmd.busy || cmd.unknown} />
           </Field>
           <ErrorMessage text={error || cmd.error} />
           <Button

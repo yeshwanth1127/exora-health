@@ -11,16 +11,15 @@ import {
   Check,
   LoaderCircle,
   RefreshCw,
-  TriangleAlert,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/toast-events";
 import { api } from "@/lib/api";
 import { OriginalResourceContext, isDraft } from "./resource-source";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { WorkspaceLoading } from "./WorkspaceLoading";
+import { Alert } from "@/components/arc/alert/alert";
 import { SharedField, type SharedFieldProps } from "./shared-field";
 import {
   loadPresentation,
@@ -172,11 +171,7 @@ export function Resource({
     );
   if (state === "loading")
     return (
-      <div aria-label="Loading workspace" className="space-y-4">
-        <Skeleton className="h-12 w-64" />
-        <Skeleton className="h-44 w-full" />
-        <Skeleton className="h-44 w-full" />
-      </div>
+      <WorkspaceLoading />
     );
   return children;
 }
@@ -292,14 +287,9 @@ export function Notice({
   action?: ReactNode;
 }) {
   return (
-    <Alert className="notice">
-      <TriangleAlert className="size-4" />
-      <AlertTitle>{title}</AlertTitle>
-      <AlertDescription>
-        {text}
-        {action && <div className="mt-3">{action}</div>}
-      </AlertDescription>
-    </Alert>
+    <div className="arc-demo-scope"><Alert tone="warning" title={title}>
+      {text}{action && <div className="mt-3">{action}</div>}
+    </Alert></div>
   );
 }
 export function Empty({

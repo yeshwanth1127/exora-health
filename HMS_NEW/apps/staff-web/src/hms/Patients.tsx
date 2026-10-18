@@ -1,3 +1,5 @@
+import { CopyButton } from "@/components/arc/copy-button/copy-button";
+import { PhoneField } from "@/components/WorkspaceFields";
 import { SearchField } from "@/components/arc/search-field/search-field";
 import { Input as ArcInput } from "@/components/arc/input/input";
 import { PatientVisitActions } from "./PatientVisits";
@@ -153,6 +155,7 @@ export function RegisterPatient({
       className="space-y-4"
       onSubmit={async (e) => {
         e.preventDefault();
+        if (phone && !E164.test(phone)) { touch("phone"); return; }
         const result = await cmd.run<{ patientId: string; mrn: string }>(
           "/v1/patients",
           {
@@ -220,20 +223,9 @@ export function RegisterPatient({
           onChange={(e) => setBirthDate(e.target.value)}
         />
       </Field>
-      <div className="arc-demo-scope">
-        <ArcInput
-          label="Phone (optional, with country code)"
-          description="Use international format, for example +919876543210."
-          error={touched.phone && phone && !/^\+[1-9][0-9]{6,14}$/.test(phone) ? "Enter a phone number with its country code." : undefined}
-          onBlur={() => touch("phone")}
-          id="patient-phone"
-          type="tel"
-          placeholder="+919876543210"
-          pattern="\+[1-9][0-9]{6,14}"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
-      </div>
+      <PhoneField label="Phone (optional, with country code)" id="patient-phone" value={phone} onValueChange={setPhone}
+        error={touched.phone && phone && !E164.test(phone) ? "Enter a phone number with its country code." : undefined}
+        onBlur={() => touch("phone")} />
       <ErrorMessage text={cmd.error} />
       <Button type="submit" disabled={cmd.busy || !givenName.trim()}>
         {cmd.busy ? "Registering…" : (submitLabel ?? "Register patient")}
@@ -382,7 +374,7 @@ function ClinicPatients({
                     </Button>
                     <TestPatientBadge patientId={p.patientId} />
                   </TableCell>
-                  <TableCell>{p.mrn}</TableCell>
+                  <TableCell><span className="arc-demo-scope inline-flex items-center gap-2">{p.mrn}<CopyButton value={p.mrn} label="Copy MRN" iconOnly variant="plain" /></span></TableCell>
                   <TableCell>{p.phone ?? "—"}</TableCell>
                   <TableCell>
                     {label(p.sex)} · {p.birthDate ?? "not recorded"}
@@ -882,10 +874,9 @@ function EditPatient({
         Date of birth is estimated
       </label>
       <div className="grid grid-cols-2 gap-3">
-        {text("phone", "Phone (with country code)", {
-          type: "tel",
-          placeholder: "+919876543210",
-        })}
+        <Field title="Phone (with country code)" id="pt-phone">
+          <PhoneField id="pt-phone" label="Phone (with country code)" value={f.phone} onValueChange={set("phone")} />
+        </Field>
         {text("email", "Email", { type: "email", maxLength: 254 })}
       </div>
       <div className="grid grid-cols-2 gap-3">

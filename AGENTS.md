@@ -31,3 +31,8 @@
 - Keep the appointment doctor selection in the filter toolbar; do not add a duplicate doctor field. Place report date range alongside the other report fields. The theme picker belongs under Workspace settings / Appearance.
 - Use comboboxes for searchable entity selections, selects for short fixed lists, and search fields for free-text record filtering. Preserve IDs, validation, permissions, timezone boundaries and existing command recovery.
 - Prefer source inspection and automated checks; keep browser verification to a small set of targeted checks and one final review capture.
+
+## Current approved wave
+
+- Integrate Time picker, Phone input, Money input, Badge, Tooltip, Empty state, Skeleton, Copy button, Alert, Toast stack and Dialog with existing application data and guarded actions.
+- The user explicitly retained visual verification for this wave. Do not drive the browser or capture comparison screenshots; use source review, compilation and meaningful automated tests. Report visual parity as awaiting user review.

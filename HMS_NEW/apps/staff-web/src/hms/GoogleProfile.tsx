@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Plus, Sparkles, X } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/toast-events";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

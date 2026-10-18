@@ -1,3 +1,4 @@
+import { Tooltip } from "../arc/tooltip/tooltip";
 import { Button as ArcButton } from "../arc/button/button";
 import arcStyles from "../arc/button/button.module.css";
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
@@ -48,7 +49,7 @@ function Button({
   render,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
-  return (
+  const button = (
     <ButtonPrimitive
       data-slot="button"
       data-size={size}
@@ -57,7 +58,9 @@ function Button({
       className={cn("arc-demo-scope arc-workspace-button", render && [arcStyles.button, variant === "default" ? arcStyles.primary : variant === "ghost" || variant === "link" ? arcStyles.ghost : arcStyles.secondary], size?.startsWith("icon") && "arc-icon-control", variant === "link" && "underline underline-offset-4", className)}
       {...props}
     />
-  )
+  );
+  return size?.startsWith("icon") && typeof props["aria-label"] === "string"
+    ? <Tooltip content={props["aria-label"]}>{button}</Tooltip> : button;
 }
 
 export { Button, buttonVariants }

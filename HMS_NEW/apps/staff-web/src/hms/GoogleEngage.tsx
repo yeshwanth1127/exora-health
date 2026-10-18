@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { AlertTriangle, CalendarCheck, Copy, ImagePlus, Phone, Send, Star, X } from "lucide-react";
 import { WhatsAppIcon } from "@/components/brand-icons";
-import { toast } from "sonner";
+import { toast } from "@/components/toast-events";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

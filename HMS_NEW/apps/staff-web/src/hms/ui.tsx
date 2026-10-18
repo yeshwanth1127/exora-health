@@ -1,55 +1,24 @@
 import type { ReactNode } from "react";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/arc/badge/badge";
+import { Alert } from "@/components/arc/alert/alert";
+import { WorkspaceLoading } from "@/components/WorkspaceLoading";
 import { label } from "./model";
 import { SharedField, type SharedFieldProps } from "../components/shared-field";
 import { loadPresentation } from "../components/form-feedback";
 export function ErrorMessage({ text }: { text?: string }) {
-  return text ? (
-    <Alert variant="destructive" role="alert">
-      <AlertDescription>{text}</AlertDescription>
-    </Alert>
-  ) : null;
+  return text ? <div className="arc-demo-scope"><Alert tone="danger" title="Something needs attention" role="alert">{text}</Alert></div> : null;
 }
 export function Hint({ children }: { children: ReactNode }) {
-  return (
-    <Alert>
-      <AlertDescription>{children}</AlertDescription>
-    </Alert>
-  );
+  return <div className="arc-demo-scope"><Alert tone="info" title="Please note">{children}</Alert></div>;
 }
 export function Status({ value, text }: { value: string; text?: string }) {
-  return (
-    <Badge
-      className={
-        ["completed", "finished", "active"].includes(value)
-          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-          : [
-                "confirmed",
-                "in_progress",
-                "checked_in",
-                "called",
-                "in_service",
-              ].includes(value)
-            ? "border-blue-200 bg-blue-50 text-blue-800"
-            : ["no_show", "cancelled", "entered_in_error"].includes(value)
-              ? "border-red-200 bg-red-50 text-red-800"
-              : ["attention", "invited"].includes(value)
-                ? "border-amber-200 bg-amber-50 text-amber-800"
-                : "border-slate-200 bg-slate-100 text-slate-700"
-      }
-      variant={
-        ["in_progress", "checked_in", "called", "in_service"].includes(value)
-          ? "default"
-          : "secondary"
-      }
-    >
-      {text ?? label(value)}
-    </Badge>
-  );
+  const tone = ["completed", "finished", "active"].includes(value) ? "success"
+    : ["confirmed", "in_progress", "checked_in", "called", "in_service"].includes(value) ? "info"
+    : ["no_show", "cancelled", "entered_in_error"].includes(value) ? "danger"
+    : ["attention", "invited"].includes(value) ? "warning" : "neutral";
+  return <span className="arc-demo-scope"><Badge tone={tone} size="sm">{text ?? label(value)}</Badge></span>;
 }
 export function Field({
   title,
@@ -87,13 +56,7 @@ export function LoadingState({
     </div>
   );
   if (state === "error") return failed;
-  if (state === "loading")
-    return (
-      <div aria-label="Loading" className="space-y-4">
-        <Skeleton className="h-12 w-64" />
-        <Skeleton className="h-48 w-full" />
-      </div>
-    );
+  if (state === "loading") return <WorkspaceLoading />;
   if (state === "stale")
     return (
       <>

@@ -1,7 +1,7 @@
 import { useFieldContext } from "@/components/field-context";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Check, CheckCheck, Clock, FileText, ImageIcon, Paperclip, Upload, X, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/toast-events";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WorkspaceChoice } from "@/components/WorkspaceChoice";

@@ -1,7 +1,7 @@
 import { LineChart as ArcLineChart } from "@/components/arc/line-chart/line-chart";
 import { useEffect, useState, type ComponentType } from "react";
 import { ArrowRight, Check, ExternalLink, Globe, Link2, Loader2, MapPin, Navigation, Phone, Share2, ShieldCheck } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/toast-events";
 import { PageTitle } from "@/components/workspace";
 import { GoogleIcon, PostHogIcon, WhatsAppIcon } from "@/components/brand-icons";
 import { Badge } from "@/components/ui/badge";
