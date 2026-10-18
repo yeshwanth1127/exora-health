@@ -84,6 +84,65 @@ All requested code changes are implemented. `desktop-review-fixes.md` records de
 7. Feedback: patient registration/edit; doctor clinic affiliation, calendar, profile, contact, fee, staff-account creation and department creation. Toasts report only confirmed saved steps. Errors/recovery remain persistent. Do not create disposable clinical/fee records merely to demonstrate a toast; use a user-authorized real edit or a future test fixture.
 8. The rest of the prior specialist/feedback wave still awaits the user's review: time/phone/money, badges, tooltips, empty/skeleton, clipboard feedback, alerts, toast stack and unsaved-change dialog. Latest automated results do not establish visual/keyboard/motion parity.
 
+## Pro wave (18 Oct 2026): Split bar, Skeleton morph, Team directory, Release readiness
+
+Selection and conflicts: `pro-wave-shortlist.md`. Pro packages ship compiled reconstructions (`src/*.cjs` + captured `dist/styles.css`), not TSX, so each one was hand-ported to TSX. Logic, markup and motion follow the source. CSS was extracted from the captured stylesheet with class hashes removed. Digests and the binding notes are in the manifest (`kind: "pro-port"`).
+
+| Placement | Component | Data binding |
+| --- | --- | --- |
+| Overview › Appointment health | `arc/split-bar` | Two bars, `by_status` and `by_channel`, from `/api/v1/admin/analytics` (`src/modules/split-segments.ts`). A zero total shows the existing Empty state; the View data tables stay. |
+| Overview loading | `arc/skeleton-morph` | Wraps the metric cards, Daily bookings, Appointment health and Recent appointments. `Resource` no longer swaps Overview for `WorkspaceLoading`; errors and stale data are unchanged. Blocks get `width:100%` because they wrap cards, charts and a table rather than fit-content text. |
+| Workspace settings › Team | `arc/team-directory` (+ `arc/avatar`) | Staff rows are mapped in `src/modules/staff-directory.ts`: team is the staff type, status text comes from the server status, and facts are Employee no. and Access. The email row appears only when an email exists. The existing Manage dialog is the profile action, and Add staff member is unchanged. |
+| Overview booking setup guide | `arc/release-readiness` (+ `arc/checkbox`) | Approved adaptation: checks are read-only and come from `deriveSetup` evidence (`readinessTasks` in `setup-readiness.ts`). The final action is "Recheck saved setup", which reports an error if any active read fails. There is no notify switch, owner avatars or Start release. Hide guide, the visit type and Setup doctor go in the header/toolbar slots, and each check keeps its Continue/Review button. |
+
+Shared additions in `arc/demo-scope.css`:
+
+- the `--series-1..4` chart tokens;
+- `.arc-section-frame`, which reproduces the demo frame's full-width stretch (the doubled class outranks the module width caps);
+- `.arc-morph-tokens`, the two skeleton tokens, so shadcn content keeps its own tokens.
+
+Browser check at 1440×900 light against the demos:
+
+- **Release readiness:** layout, progress fill and the Recheck loading → success message.
+- **Split bar:** mounted with sample-shaped data in a scratch container, because the seed DB has zero appointments, so the live card shows the empty state. Checked inside/short/outside labels with leaders, hover expansion with readout swap, and the legend toggle with total recompute.
+- **Skeleton morph:** skeleton boxes match the content boxes (metric 368×194, chart 522×304), and blocks resolve in document order at 40 ms steps.
+- **Team directory:** search, Escape-to-clear, team filter, selection, the empty state with Clear filters, and Manage opening the existing dialog.
+
+Not verified:
+
+- reduced-motion paths;
+- Split bar keyboard navigation;
+- copy-to-clipboard success in a real browser;
+- a visual capture of the skeleton frame, because local data resolves in about 80 ms.
+
+The deferred Doctor details skeleton was not done.
+
+## Wave 3 (18 Oct 2026): My alerts, and the Availability picker in Booking
+
+PRD: `docs/prd/staff-alerts.md` (approved; "As built" lists the real sources). Shortlist: `wave-3-shortlist.md`.
+
+| Placement | Component | Data binding |
+| --- | --- | --- |
+| Header bell, beside search | `arc/notification-center` (free) | Open *Now* alerts from `src/hms/alerts.ts`, plus one "Some alerts could not be checked" item when a source failed. Read and dismiss go to `PUT /v1/me/alerts/:key` and `POST /v1/me/alerts/read`; the added Open action goes to the alert's page. |
+| Sidebar footer › My alerts (`/staff/alerts`) | `arc/inbox-triage` (pro-port) | Every alert, in Open / Snoozed / Done (the component's Inbox / Snoozed / Archive). S snoozes until the clinic's next midnight, E marks done, U and Undo move back. The detail action is "Open <page>". |
+| Booking › Doctor & time | `arc/availability-picker` (pro-port, approved by the user 18 Oct 2026) | Replaces the month calendar and slot buttons in `src/hms/Booking.tsx` (the old `AvailabilityCalendar` was removed; the teleconsultation-hours guidance is kept below the picker). A "Start date" Arc date picker (the existing `DayNavigator`) sits above it. The picker shows one doctor's first 10 open days in the 30 days from that date (`src/hms/booking-picker.ts`, `BookingPicker.tsx`). At the user's request, day numbers are smaller (`--text-lg`), the strip shows 10 square days, and times use the Booking pill's time step: chips with a sliding highlight, taken times struck through and arrow-key movement. The Booking pill was looked at as an alternative and not chosen: its date step is also a fixed 5-day strip and it begins with a guest count. "Hold this time" places the real hold; "Held" follows it; choosing another time releases it. |
+
+Server: migration `db/migrations/20261018100000_m01_staff_alert_state.sql` (applied to the shared dev DB `hms`), routes in `apps/api/src/http/routes/alerts.ts`, own and team registrations in `apps/api/src/modules/access/alerts.ts` (team needs staff.manage). Client polling is `src/hms/use-alerts.ts` (60 s while visible), shared through `AlertsProvider` in `App.tsx`.
+
+Browser check at 1440×900 light against the demos:
+
+- **Bell:** trigger, badge, panel (424 px, radius 26) and item (63 px) match. Expand, Mark read (PUT 200, badge clears), Clear read → "All clear", and no requests while idle for 10 s.
+- **My alerts:** row 48 px and the 6/28/132/1fr/64 grid match. U restore, S snooze (saved as the IST midnight), Undo with focus back on the row, and the status line.
+- **Availability picker:** day tile 84 px, slot 48 px, heading 15.4 px line height, and the selected-day fill, slot check and footer match. Day switch, slot select, Hold (POST /v1/holds 201) → Held, and reselect → release (DELETE 200). Width follows the container (1136 vs the demo's 1312). Neither demo nor port has custom key handling.
+
+Not verified:
+
+- doctor and front-desk sessions (the seed DB has no appointments, so appointment, queue and waitlist alerts are unit-tested only, in `tests/alerts.test.ts`);
+- reduced motion;
+- the picker with busy slots, because only free slots are bound.
+
+The user's API on 3079 runs the primary checkout without these routes, so its bell may say alerts are unavailable. The worktree API on 3080 (`hms-arc-api` in `.claude/launch.json`, Vite on 5199) has them.
+
 ## Local runtime and login
 
 At handoff the dashboard, API, database and reference viewers are already listening. Inspect listeners first; do not start duplicate servers. PIDs are transient. Check with:
@@ -120,7 +179,9 @@ corepack pnpm build
 node_modules/.bin/oxlint src/App.tsx src/components/WorkspaceFields.tsx src/components/arc/combobox/combobox.tsx src/components/arc/date-picker/date-picker.tsx src/components/arc/sidebar/sidebar.tsx src/hms/Doctors.tsx src/hms/Patients.tsx src/hms/Settings.tsx src/hms/role-permissions.ts src/modules/schedule-timeline.tsx
 ```
 
-- PASS: 178 staff tests; TypeScript project compilation and production Vite build; focused lint without errors; whitespace and copied-component digest checks.
+- PASS (wave 3): 190 staff tests incl. `tests/alerts.test.ts` and `tests/booking-picker.test.ts`; API `apps/api/src/http/alerts.test.ts` 6/6 (run with vitest from the repo root, PG_PORT=54339); build; oxlint with no new warnings.
+- PASS (Pro wave): 182 staff tests incl. `tests/arc-pro-wave.test.ts`; build; focused oxlint (only the reference measure-cache purity warning in split-bar).
+- PASS (earlier): 178 staff tests; TypeScript project compilation and production Vite build; focused lint without errors; whitespace and copied-component digest checks.
 - Existing large JS chunk advisory, App effect warning and reference render-purity warnings remain. Bundle splitting and reference animation rewrites were outside scope.
 - Tests use `tests/register-assets.mjs` before tsx for CSS-module SSR. Use `corepack pnpm test`; running raw `tsx --test` without the loader breaks CSS imports. Vite builds the real styles.
 - `pnpm` may not be in PATH; `corepack pnpm` works. Node is available and dependencies are installed. Do not reinstall dependencies just because bare pnpm fails.
@@ -139,4 +200,4 @@ Earlier completed milestones:
 
 The next commit on this same branch contains the current desktop review fixes and this handoff. Resolve it with `git log -1 --oneline` rather than assuming a copied SHA. Inspect `git status --short` before starting; local `.env.local` runtime configuration is intentionally ignored. There is no new PR or deployment for this handoff.
 
-Resume from the user's new visual comments. Do not repeat the first/second catalog survey, reopen every demo, redesign phone layouts, or begin a new batch automatically. If the user wants more components, use the candidate ledger and rationale to shortlist a bounded next wave first. Dropdown menu, chronology-only Timeline, and uploads tied to real existing endpoints were possible next choices, not approved work. Roles permissions, Team directory, Week calendar, notification center and provider-integration overviews remain deferred because their demo data/interaction contracts do not yet map directly to the app.
+Resume from the user's new visual comments. Do not repeat the first/second catalog survey, reopen every demo, redesign phone layouts, or begin a new batch automatically. If the user wants more components, use the candidate ledger and rationale to shortlist a bounded next wave first. Dropdown menu, chronology-only Timeline, and uploads tied to real existing endpoints were possible next choices, not approved work. Roles permissions, Week calendar, notification center and provider-integration overviews remain deferred because their demo data/interaction contracts do not yet map directly to the app.

@@ -1,5 +1,9 @@
 # Component inventory — 18 October 2026
 
+> **Pro wave update (18 Oct 2026):** Split bar, Skeleton morph, Team directory and Release readiness were ported from the Pro references and integrated, with Avatar and Checkbox copied as support. That makes **29 adopted + 5 support = 34 component folders**, and **83 distinct assessed candidates** (Split bar added). The selection and the Pro survey are in `pro-wave-shortlist.md`. The counts below predate this wave.
+
+> **Wave 3 update (18 Oct 2026):** Notification center (free) and Inbox triage (pro-port) are integrated for My alerts, and the Availability picker (pro-port) replaces the Booking slot calendar. That makes **32 adopted + 5 support = 37 folders**. See `wave-3-shortlist.md` and `HANDOFF.md` › Wave 3.
+
 ## Counts and evidence levels
 
 - **82 distinct assessed candidates**: 24 in the first rendered survey + 22 additional documentation-screened candidates + 33 new documentation/source-screened candidates + 2 additional implementation-control candidates (Date picker and Button) + the initial Sidebar. Select and Search field were revisited, not counted twice.
@@ -29,7 +33,7 @@
 | Metric explorer | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/metric-explorer/demo/) |
 | KPI drilldown | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/kpi-drilldown/demo/) |
 | Metrics dashboard | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/metrics-dashboard/demo/) |
-| Team directory | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/team-directory/demo/) |
+| Team directory | Pro wave: rendered reference, states exercised and integrated placement compared at 1440×900 light | Integrated: Workspace settings › Team | [Demo](http://localhost:4477/components/pro/team-directory/demo/) |
 | Roles permissions | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/roles-permissions/demo/) |
 | Settings command | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/settings-command/demo/) |
 | Settings page | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/settings-page/demo/) |
@@ -42,10 +46,10 @@
 | Number field | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/number-field/?theme=light) |
 | Inline edit | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/inline-edit/?theme=light) |
 | Skeleton | Initial documentation screening | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/skeleton/?theme=light) |
-| Skeleton morph | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/skeleton-morph/demo/) |
+| Skeleton morph | Pro wave: rendered reference, states exercised and integrated placement compared at 1440×900 light | Integrated: Overview loading | [Demo](http://localhost:4477/components/pro/skeleton-morph/demo/) |
 | Team members | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/team-members/demo/) |
 | Invite people | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/invite-people/demo/) |
-| Availability picker | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/availability-picker/demo/) |
+| Availability picker | Wave 3: rendered reference, states exercised and integrated placement compared at 1440×900 light | Integrated: Booking › Doctor & time (user-approved adaptations: Start date calendar, 10 square days, Booking pill time chips) | [Demo](http://localhost:4477/components/pro/availability-picker/demo/) |
 | Booking pill | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/booking-pill/demo/) |
 | Data grid | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/data-grid/demo/) |
 | Search results | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/search-results/demo/) |
@@ -75,23 +79,24 @@
 | File dropzone | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/file-dropzone/?theme=light) |
 | Toast | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/toast/?theme=light) |
 | Toast stack | Second documentation/source screening | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/toast-stack/?theme=light) |
-| Notification center | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/notification-center/?theme=light) |
+| Notification center | Wave 3: rendered reference, states exercised and integrated placement compared at 1440×900 light | Integrated: header Alerts bell (My alerts PRD) | [Demo](http://localhost:4478/free-previews/notification-center/?theme=light) |
 | Breadcrumb | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/breadcrumb/?theme=light) |
 | Accordion | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/accordion/?theme=light) |
 | Hover card | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/hover-card/?theme=light) |
 | Hold to confirm | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/hold-to-confirm/?theme=light) |
 | Switch | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/switch/?theme=light) |
-| Checkbox | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/checkbox/?theme=light) |
+| Checkbox | Second documentation/source screening | Support copy for Release readiness only; not adopted as a general field | [Demo](http://localhost:4478/free-previews/checkbox/?theme=light) |
 | Security settings | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/security-settings/demo/) |
-| Release readiness | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/release-readiness/demo/) |
+| Release readiness | Pro wave: rendered reference, states exercised and integrated placement compared at 1440×900 light | Integrated: Overview booking setup guide (approved read-only adaptation) | [Demo](http://localhost:4477/components/pro/release-readiness/demo/) |
 | Share access | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/share-access/demo/) |
-| Inbox triage | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/inbox-triage/demo/) |
+| Inbox triage | Wave 3: rendered reference, states exercised and integrated placement compared at 1440×900 light | Integrated: My alerts page | [Demo](http://localhost:4477/components/pro/inbox-triage/demo/) |
 | Help center | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/help-center/demo/) |
 | Support widget | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/support-widget/demo/) |
 | Activity terrain | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/activity-terrain/demo/) |
 | Realtime stream | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/realtime-stream/demo/) |
 | Date picker | Rendered reference; selected interactions only | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/date-picker/?theme=light) |
 | Button | Rendered reference; selected interactions only | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/button/?theme=light) |
+| Split bar | Pro wave: rendered reference, states exercised and integrated placement compared at 1440×900 light | Integrated: Overview › Appointment health | [Demo](http://localhost:4477/components/pro/split-bar/demo/?theme=light) |
 | Sidebar | Rendered reference; selected interactions only | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4477/components/pro/sidebar/demo/) |
 
 ## Additional integrated support code
@@ -101,9 +106,11 @@
 | Animated counter | Metric values |
 | Calendar | Date picker and date ranges |
 | Textarea | Existing multiline fields, through the shared adapter |
+| Avatar | Team directory rows and profile |
+| Checkbox | Release readiness read-only checks |
 
 ## Integrated folder inventory
 
-`alert`, `animated-counter`, `badge`, `bar-chart`, `button`, `calendar`, `combobox`, `command-palette`, `copy-button`, `date-picker`, `date-range-picker`, `dialog`, `empty-state`, `filter-toolbar`, `input`, `line-chart`, `metric-card`, `money-input`, `phone-input`, `search-field`, `select`, `sidebar`, `skeleton`, `tabs`, `textarea`, `time-picker`, `toast-stack`, `tooltip`.
+`alert`, `animated-counter`, `availability-picker`, `avatar`, `badge`, `bar-chart`, `button`, `calendar`, `checkbox`, `combobox`, `command-palette`, `copy-button`, `date-picker`, `date-range-picker`, `dialog`, `empty-state`, `filter-toolbar`, `inbox-triage`, `input`, `line-chart`, `metric-card`, `money-input`, `notification-center`, `phone-input`, `release-readiness`, `search-field`, `select`, `sidebar`, `skeleton`, `skeleton-morph`, `split-bar`, `tabs`, `team-directory`, `textarea`, `time-picker`, `toast-stack`, `tooltip`.
 
-Selection rationale and deferred data/interaction conflicts remain in `component-shortlist.md` and `next-wave-shortlist.md`. In particular, Donut chart was assessed but not integrated. Roles permissions, Team directory and Week calendar remain deferred; readable role descriptions and a wider doctor panel do not constitute those larger replacements.
+Selection rationale and deferred data/interaction conflicts remain in `component-shortlist.md` and `next-wave-shortlist.md`. In particular, Donut chart was assessed but not integrated. Roles permissions and Week calendar remain deferred (Team directory was adopted in the Pro wave, see `pro-wave-shortlist.md`); readable role descriptions and a wider doctor panel do not constitute those larger replacements.

@@ -5,8 +5,11 @@ import {
   appointmentModeLabel,
   type AppointmentMode,
 } from "./booking-workflow";
-import { dailyAvailability, monthRange } from "./availability-calendar";
-import { AvailabilityCalendar } from "./AvailabilityCalendar";
+import { dailyAvailability } from "./availability-calendar";
+import { BookingPicker } from "./BookingPicker";
+import { pickerDays } from "./booking-picker";
+import { addDays } from "./forms";
+
 import { ExistingAppointments } from "./PatientVisits";
 import { usePatientAppointments } from "./patient-visits-hooks";
 import { patientDisplayName } from "./patient-presentation";
@@ -21,6 +24,7 @@ import { today, time, money } from "./model";
 import { useUnsaved } from "./leave";
 import { PatientLookup, RegisterPatient } from "./Patients";
 import { WorkspaceEmpty } from "./WorkspaceEmpty";
+import { DayNavigator } from "@/components/date-controls";
 import { Choice, ErrorMessage, Field, Hint, LoadingState } from "./ui";
 import type {
   Appointment,
@@ -50,7 +54,9 @@ export function Booking({
   const [acknowledged, setAcknowledged] = useState("");
   const bookable = practitioners.filter((p) => p.calendarId);
   const [chosen, setStaffId] = useState(move?.practitionerStaffId ?? ""),
-    [date, setDate] = useState(move?.sessionOn ?? today(facility.timezone));
+    [date, setDate] = useState(move?.sessionOn ?? today(facility.timezone)),
+    // First day the Availability picker looks from (Arc date picker), so staff can book weeks ahead.
+    [from, setFrom] = useState(date);
   // The doctor list loads after the sheet can open, so the first bookable doctor is the default once known.
   const staffId = chosen || bookable[0]?.staffId || "";
   const [patient, setPatient] = useState<Patient | null>(null),
@@ -120,7 +126,8 @@ export function Booking({
     { pending: releasing || cmd.busy || cmd.unknown },
   );
   const activeHold = useRef<Hold | null>(null);
-  const range = monthRange(date.slice(0, 7), clinicToday);
+  const start = from < clinicToday ? clinicToday : from;
+  const range = { from: start, to: addDays(start, 30) };
   const slots = useQuery<{ items: Slot[] }>(
     staffId && step === 2 && range.from <= range.to
       ? `/v1/practitioners/${staffId}/slots?${query({ facilityId: facility.facilityId, ...range, includeUnavailable: true })}`
@@ -144,7 +151,14 @@ export function Booking({
     facility.timezone,
     clock,
   );
-  const availableSlots = availability.get(date)?.available ?? [];
+  const nextDays = pickerDays(availability, facility.timezone);
+  async function placeHold(slotStart: string) {
+    const value = await cmd.run<Hold>("/v1/holds", { staffId, slotStart }, true);
+    if (value) {
+      setHold(value);
+      activeHold.current = value;
+    }
+  }
   const seconds = hold
     ? Math.max(0, Math.floor((Date.parse(hold.holdExpiresAt) - clock) / 1000))
     : 0;
@@ -366,120 +380,84 @@ export function Booking({
                 page, then give them weekly hours in Schedules.
               </Hint>
             )}
-            <div className="grid grid-cols-[minmax(0,1.25fr)_minmax(260px,1fr)] items-start gap-6">
-              <AvailabilityCalendar
-                date={date}
-                today={clinicToday}
-                mode={visitMode}
-                days={availability}
-                loading={slots.loading}
-                failed={!!slots.error}
-                disabled={!staffId || !!hold || cmd.busy || cmd.unknown}
-                onSelect={setDate}
+            <div className="space-y-4">
+              <ErrorMessage text={cmd.error} />
+              <DayNavigator
+                label="Start date"
+                value={range.from}
+                min={clinicToday}
+                timezone={facility.timezone}
+                disabled={cmd.busy || releasing}
+                onChange={(day) => {
+                  setFrom(day);
+                  setDate(day);
+                  void release();
+                }}
               />
-              <div className="space-y-4 rounded-lg border p-4">
-                <div>
-                  <h3 className="font-semibold">
-                    {appointmentModeLabel(visitMode)} times
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {new Intl.DateTimeFormat("en-IN", {
-                      dateStyle: "full",
-                      timeZone: "UTC",
-                    }).format(new Date(`${date}T12:00:00Z`))}{" "}
-                    · {facility.timezone}
-                  </p>
-                </div>
-                <ErrorMessage text={cmd.error} />
-                {hold ? (
-                  <div className="space-y-3 border rounded-lg p-4">
-                    <p className="font-medium">
-                      {time(hold.slotStart, facility.timezone)} –{" "}
-                      {time(hold.slotEnd, facility.timezone)}
-                    </p>
-                    <p role="status" className="text-sm">
-                      {seconds
-                        ? `Held for ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} more`
-                        : "Hold expired. Choose a slot again."}
-                    </p>
-                    <Button
-                      variant="outline"
-                      disabled={releasing || cmd.busy || cmd.unknown}
-                      onClick={() => void release()}
-                    >
-                      Choose another slot
-                    </Button>
+              <LoadingState {...slots}>
+                {nextDays.length ? (
+                  <div className="arc-demo-scope arc-section-frame" key={`${staffId}:${visitMode}:${range.from}`}>
+                    <BookingPicker
+                      doctor={bookable.find((p) => p.staffId === staffId)?.name ?? "this doctor"}
+                      mode={visitMode}
+                      timezone={facility.timezone}
+                      days={nextDays}
+                      held={!!hold && seconds > 0}
+                      disabled={!who || !staffId || cmd.busy || cmd.unknown || releasing}
+                      onSelect={(day) => {
+                        setDate(day);
+                        void release();
+                      }}
+                      onHold={async (slot, day) => {
+                        setDate(day);
+                        await release();
+                        await placeHold(slot.slotStart);
+                      }}
+                    />
                   </div>
                 ) : (
-                  <LoadingState {...slots}>
-                    <div className="grid grid-cols-2 gap-2">
-                      {availableSlots.map((s) => (
-                        <Button
-                          key={s.slotStart}
-                          variant="outline"
-                          disabled={cmd.busy || !who}
-                          className="h-auto py-3 flex-col"
-                          onClick={async () => {
-                            const value = await cmd.run<Hold>(
-                              "/v1/holds",
-                              { staffId, slotStart: s.slotStart },
-                              true,
-                            );
-                            if (value) {
-                              setHold(value);
-                              activeHold.current = value;
-                            }
-                          }}
-                        >
-                          <span>{time(s.slotStart, facility.timezone)}</span>
-                          <span className="text-sm text-muted-foreground">
-                            {appointmentModeLabel(s.visitMode)}
-                          </span>
-                        </Button>
-                      ))}
-                    </div>
-                    {availableSlots.length === 0 && (
-                      <WorkspaceEmpty
-                        title={`No open ${appointmentModeLabel(visitMode).toLowerCase()} times on ${date}`}
-                      />
-                    )}
-                  </LoadingState>
+                  <WorkspaceEmpty title={`No open ${appointmentModeLabel(visitMode).toLowerCase()} times in the 30 days from ${range.from}`} />
                 )}
-                {slots.error && (
-                  <Button
-                    variant="outline"
-                    onClick={() => void slots.refresh()}
-                  >
-                    Retry availability
-                  </Button>
-                )}
-                {visitMode === "virtual" && !hold && (
-                  <div className="space-y-3 border-t pt-4">
+              </LoadingState>
+              {hold && (
+                <p role="status" className="text-sm">
+                  {seconds
+                    ? `Held for ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} more. Choose another time to release it.`
+                    : "Hold expired. Hold the time again."}
+                </p>
+              )}
+              {!who && <p className="text-sm text-muted-foreground">Choose the patient or caller first.</p>}
+              {slots.error && (
+                <Button variant="outline" onClick={() => void slots.refresh()}>
+                  Retry availability
+                </Button>
+              )}
+              {visitMode === "virtual" && !hold && (
+                <div className="space-y-3 border-t pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    {bookable.find((p) => p.staffId === staffId)
+                      ?.acceptsVirtual
+                      ? "Teleconsultation availability comes from this doctor’s published weekly hours."
+                      : "Teleconsultations are not enabled on this doctor’s booking profile. Enable them and publish weekly hours before booking."}
+                  </p>
+                  {can("schedules.manage") ? (
+                    <Button
+                      variant="outline"
+                      disabled={!staffId || cmd.busy || cmd.unknown}
+                      onClick={() =>
+                        go(`schedules?doctor=${staffId}&mode=virtual`)
+                      }
+                    >
+                      Set teleconsultation hours
+                    </Button>
+                  ) : (
                     <p className="text-sm text-muted-foreground">
-                      {bookable.find((p) => p.staffId === staffId)
-                        ?.acceptsVirtual
-                        ? "Teleconsultation availability comes from this doctor’s published weekly hours."
-                        : "Teleconsultations are not enabled on this doctor’s booking profile. Enable them and publish weekly hours before booking."}
+                      Ask the clinic administrator to publish teleconsultation
+                      hours.
                     </p>
-                    {can("schedules.manage") ? (
-                      <Button
-                        variant="outline"
-                        disabled={!staffId || cmd.busy || cmd.unknown}
-                        onClick={() =>
-                          go(`schedules?doctor=${staffId}&mode=virtual`)
-                        }
-                      >
-                        Set teleconsultation hours
-                      </Button>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        Ask the clinic administrator to publish teleconsultation
-                        hours.
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-between gap-4 border-t pt-5">
               <div className="flex items-center gap-3">

@@ -31,7 +31,7 @@ export function dailyAvailability(
   timezone: string,
   now: number,
 ) {
-  const days = new Map<string, { available: Slot[]; published: number }>();
+  const days = new Map<string, { available: Slot[]; taken: Slot[]; published: number }>();
   const date = new Intl.DateTimeFormat("en-CA", {
     timeZone: timezone,
     year: "numeric",
@@ -46,9 +46,9 @@ export function dailyAvailability(
     )
       continue;
     const day = date.format(new Date(slot.slotStart));
-    const entry = days.get(day) ?? { available: [], published: 0 };
+    const entry = days.get(day) ?? { available: [], taken: [], published: 0 };
     entry.published++;
-    if (slot.status === "free") entry.available.push(slot);
+    (slot.status === "free" ? entry.available : entry.taken).push(slot);
     days.set(day, entry);
   }
   for (const day of days.values())

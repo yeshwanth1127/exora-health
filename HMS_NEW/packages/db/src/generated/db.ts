@@ -1949,6 +1949,19 @@ export interface PlatformStaff {
   version: Generated<number>;
 }
 
+export interface PlatformStaffAlertState {
+  alert_key: string;
+  created_at: Generated<Timestamp>;
+  dismissed_at: Timestamp | null;
+  id: Generated<string>;
+  read_at: Timestamp | null;
+  snoozed_until: Timestamp | null;
+  staff_id: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
 export interface PlatformStaffPermission {
   facility_id: string | null;
   permission: string | null;
@@ -2122,6 +2135,7 @@ export interface DB {
   "platform.role_grant": PlatformRoleGrant;
   "platform.role_permission": PlatformRolePermission;
   "platform.staff": PlatformStaff;
+  "platform.staff_alert_state": PlatformStaffAlertState;
   "platform.staff_permission": PlatformStaffPermission;
   "platform.staff_registration": PlatformStaffRegistration;
   "platform.tenant": PlatformTenant;

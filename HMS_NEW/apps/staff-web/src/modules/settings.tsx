@@ -5,6 +5,8 @@ import type { MutationIntent } from "@/hms/operational-intent";
 import { DemoControls } from "./DemoControls";
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import { TeamDirectory } from "@/components/arc/team-directory/team-directory";
+import { directoryPeople, type StaffRow } from "./staff-directory";
 import { api, type StaffUser } from "@/lib/api";
 import { toCsv } from "@/lib/csv";
 import {
@@ -21,7 +23,6 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Status } from "@/hms/ui";
 import { Input } from "@/components/ui/input";
 import { ReportDateRange } from "@/components/ReportDateRange";
 import { dateRangeError } from "@/components/date-controls-model";
@@ -658,18 +659,6 @@ export function ActivityLog() {
   );
 }
 
-type StaffRow = {
-  id: string;
-  name: string;
-  employee_no: string;
-  email: string | null;
-  staff_type: string;
-  status: "active" | "invited" | "disabled" | "no_login";
-  is_you: boolean;
-  grants: { id: string; role: string; clinic: string }[];
-  phone?: string | null;
-  version?: number;
-};
 type RoleRow = {
   version: number;
   id: string;
@@ -907,71 +896,38 @@ export function WorkspaceSettings({
                 }
               />
               <Resource {...users}>
-                <Card className="p-0 mb-7">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Work email</TableHead>
-                        <TableHead>Roles</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead />
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {users.data?.map((u) => (
-                        <TableRow key={u.id}>
-                          <TableCell className="whitespace-normal">
-                            {u.name}
-                            {u.is_you && " (you)"}
-                            <span className="block text-xs text-muted-foreground">
-                              {u.employee_no} · {titleCase(u.staff_type)}
-                            </span>
-                          </TableCell>
-                          <TableCell>{u.email ?? "—"}</TableCell>
-                          <TableCell className="whitespace-normal text-xs">
-                            {u.grants
-                              .map((g) => `${g.role} · ${g.clinic}`)
-                              .join(", ") || "No access"}
-                          </TableCell>
-                          <TableCell>
-                            <Status
-                              value={u.status === "invited" ? "invited" : u.status === "active" ? "active" : "inactive"}
-                              text={
-                                {
-                                  active: "Active",
-                                  invited: "Invited (not signed in yet)",
-                                  disabled: "Disabled",
-                                  no_login: "No sign-in",
-                                }[u.status]
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={command.busy || command.unknown}
-                              onClick={() => {
-                                setAccessReview(null);
-                                setPerson(u);
-                                setDetails({
-                                  name: u.name,
-                                  phone: u.phone ?? "",
-                                });
-                                setReason("");
-                                setGrantRoleId("");
-                                setGrantScope("here");
-                              }}
-                            >
-                              Manage
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </Card>
+                <div className="arc-demo-scope arc-section-frame mb-7">
+                  <TeamDirectory
+                    title="Staff"
+                    searchPlaceholder="Search name, role, email"
+                    filterLabel="Filter by staff type"
+                    people={directoryPeople(users.data ?? [])}
+                    actions={(p) => {
+                      const u = users.data?.find((x) => x.id === p.id);
+                      return u && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-4 self-start justify-self-start"
+                          disabled={command.busy || command.unknown}
+                          onClick={() => {
+                            setAccessReview(null);
+                            setPerson(u);
+                            setDetails({
+                              name: u.name,
+                              phone: u.phone ?? "",
+                            });
+                            setReason("");
+                            setGrantRoleId("");
+                            setGrantScope("here");
+                          }}
+                        >
+                          Manage
+                        </Button>
+                      );
+                    }}
+                  />
+                </div>
               </Resource>
             </>
           )}

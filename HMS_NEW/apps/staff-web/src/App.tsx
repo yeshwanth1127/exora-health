@@ -7,6 +7,7 @@ import {
 } from "react";
 import {
   LayoutDashboard,
+  Bell,
   Headphones,
   ChartNoAxesCombined,
   ScrollText,
@@ -57,6 +58,9 @@ import { Schedules } from "@/hms/Schedules";
 import { Overview } from "@/hms/Overview";
 import { Catalogue } from "@/hms/Catalogue";
 import { Consultations } from "@/hms/Consultations";
+import { AlertsProvider } from "@/hms/AlertsProvider";
+import { AlertsBell } from "@/hms/AlertsBell";
+import { AlertsPage } from "@/hms/AlertsPage";
 import { Teleconsultations } from "@/hms/Teleconsultations";
 import { Loyalty } from "@/hms/Loyalty";
 import { PatientVideo } from "@/hms/PatientVideo";
@@ -426,6 +430,7 @@ function StaffApp() {
   const auditor = (me.permissions["audit.read"] ?? []).includes("*");
   const extraPages = [
     "settings",
+    "alerts",
     ...(auditor ? ["activity"] : []),
     ...(can(me, "appointments.read", facilityId) ? ["waitlist", "queue"] : []),
     ...(auditor && can(me, "appointments.read", facilityId)
@@ -458,11 +463,14 @@ function StaffApp() {
     .filter((section) => section.items.length > 0);
   return (
     <TooltipProvider>
+     <WorkspaceContext.Provider value={{ me, facility, practitioners: [], go }}>
+     <AlertsProvider key={`${me.tenantId}:${me.staffId}:${facilityId}`}>
       <ArcSidebarLayout
         togglePlacement="sidebar"
         key={`${me.tenantId}:${me.staffId}`}
         sections={sidebarSections}
         footer={[
+          { id: "alerts", label: "My alerts", icon: Bell },
           { id: "settings", label: "Workspace settings", icon: Settings2 },
           ...(auditor
             ? [{ id: "activity", label: "Activity", icon: ScrollText }]
@@ -500,6 +508,7 @@ function StaffApp() {
                 key={`${me.staffId}:${facilityId}`}
                 items={[
                   ...visible.map((item) => ({ id: item.key, label: item.name, group: item.group, icon: <item.icon className="size-4" /> })),
+                  { id: "alerts", label: "My alerts", group: "Workspace", icon: <Bell className="size-4" /> },
                   { id: "settings", label: "Workspace settings", group: "Workspace", icon: <Settings2 className="size-4" /> },
                   ...(auditor ? [{ id: "activity", label: "Staff activity", group: "Workspace", icon: <ScrollText className="size-4" /> }] : []),
                   ...(can(me, "appointments.read", facilityId) ? [
@@ -511,6 +520,7 @@ function StaffApp() {
                 onNavigate={go}
               />
             </div>
+            <AlertsBell />
           </header>
         )}
       >
@@ -530,6 +540,8 @@ function StaffApp() {
           <span>{facility.timezone}</span>
         </footer>
       </ArcSidebarLayout>
+     </AlertsProvider>
+     </WorkspaceContext.Provider>
       <Toaster />
     </TooltipProvider>
   );
@@ -664,6 +676,8 @@ function DirectoryContent({ me, facility, page, allowed, go, clinicPicker }: Dir
           <ActivityWorkspace page={page} />
         ) : page === "overview" ? (
           <Overview />
+        ) : page === "alerts" ? (
+          <AlertsPage />
         ) : ["appointments", "waitlist", "queue"].includes(page) ? (
           <AppointmentWorkspace page={page} />
         ) : page === "patients" ? (

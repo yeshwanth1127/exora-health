@@ -1,12 +1,9 @@
 import { MetricCard } from "@/components/arc/metric-card/metric-card";
 import { BarChart as ArcBarChart } from "@/components/arc/bar-chart/bar-chart";
 import type { ReactNode } from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
+import { SplitBar } from "@/components/arc/split-bar/split-bar";
+import { splitSegments } from "./split-segments";
+import { MorphBlock, SkeletonMorph } from "@/components/arc/skeleton-morph/skeleton-morph";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +46,17 @@ type Event = {
   status: string;
 };
 type Doctor = { id: string; name: string; departments: { id: string }[] };
+
+const METRIC_SKELETON = 194;
+// Demo blocks wrap text and size to it; these wrap cards, charts and a table, so they keep the column width.
+const FILL = { width: "100%" };
+function HealthSplit({ title, rows }: { title: string; rows: { label: string; value: number }[] }) {
+  return rows.some((d) => d.value > 0) ? (
+    <SplitBar title={title} segments={splitSegments(rows)} unit="appointments" />
+  ) : (
+    <Empty title="No appointments yet" />
+  );
+}
 
 export function OperationsModule({
   page,
@@ -143,17 +151,20 @@ function ActivityPage({
       />
       {overview && setup}
       <Resource
-        loading={r.loading || (!overview && events.loading)}
+        loading={!overview && (r.loading || events.loading)}
         error={r.error || (!overview ? events.error || health.error : "")}
         refresh={refresh}
       >
+        <SkeletonMorph loading={overview && r.loading} loadingLabel="Loading overview" className="arc-morph-tokens">
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
           {metrics.map(([label, value, detail]) => {
             const numeric = typeof value === "number" ? value : typeof value === "string" && /^\d+(?:\.\d+)?%$/.test(value) ? Number(value.slice(0, -1)) : null;
             return numeric !== null ? (
-              <div key={String(label)} className="arc-demo-scope">
+              <MorphBlock style={FILL} key={String(label)} height={METRIC_SKELETON} radius={34} className="arc-demo-scope">
                 <MetricCard label={String(label)} value={numeric} suffix={typeof value === "string" && value.endsWith("%") ? "%" : undefined} context={String(detail)} />
-              </div>
+              </MorphBlock>
+            ) : overview && r.loading ? (
+              <MorphBlock style={FILL} key={String(label)} height={METRIC_SKELETON} radius={34} className="arc-demo-scope" />
             ) : (
               <Card key={String(label)}>
                 <CardHeader><CardDescription>{label}</CardDescription><CardTitle className="text-3xl tabular-nums">{value ?? "—"}</CardTitle></CardHeader>
@@ -173,7 +184,7 @@ function ActivityPage({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="arc-demo-scope mb-5">
+                  <MorphBlock style={FILL} height={304} className="arc-demo-scope mb-5">
                     <ArcBarChart
                       label="Daily bookings"
                       period="Last 14 days · clinic dates"
@@ -182,7 +193,7 @@ function ActivityPage({
                       valueLabel="Bookings"
                       data={(r.data?.daily_bookings ?? []).map((day) => ({ key: day.date, label: day.date, axisLabel: day.date.slice(5), value: day.bookings }))}
                     />
-                  </div>
+                  </MorphBlock>
                   <details>
                     <summary className="text-sm font-medium cursor-pointer mb-3">
                       View data
@@ -215,43 +226,12 @@ function ActivityPage({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer
-                    className="h-52 w-full mb-5"
-                    config={{
-                      value: { label: "Appointments", color: "var(--primary)" },
-                    }}
-                  >
-                    <BarChart
-                      accessibilityLayer
-                      layout="vertical"
-                      data={r.data?.by_status ?? []}
-                    >
-                      <CartesianGrid horizontal={false} />
-                      <XAxis
-                        type="number"
-                        allowDecimals={false}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <YAxis
-                        type="category"
-                        dataKey="label"
-                        tickLine={false}
-                        axisLine={false}
-                        width={90}
-                        tickFormatter={(value) =>
-                          String(value).replaceAll("_", " ")
-                        }
-                      />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar
-                        dataKey="value"
-                        fill="var(--color-value)"
-                        radius={[0, 3, 3, 0]}
-                        isAnimationActive={false}
-                      />
-                    </BarChart>
-                  </ChartContainer>
+                  <MorphBlock style={FILL} height={196} className="arc-demo-scope arc-section-frame mb-5">
+                    <div className="space-y-8">
+                      <HealthSplit title="By status" rows={r.data?.by_status ?? []} />
+                      <HealthSplit title="By channel" rows={r.data?.by_channel ?? []} />
+                    </div>
+                  </MorphBlock>
                   <details>
                     <summary className="text-sm font-medium cursor-pointer mb-3">
                       View data
@@ -301,6 +281,7 @@ function ActivityPage({
                 <CardTitle>Recent appointments</CardTitle>
               </CardHeader>
               <CardContent>
+                <MorphBlock style={FILL} lines={4} lineHeight={36}>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -346,6 +327,7 @@ function ActivityPage({
                     title="No appointments yet"
                   />
                 )}
+                </MorphBlock>
               </CardContent>
             </Card>
           </div>
@@ -391,6 +373,7 @@ function ActivityPage({
             </CardContent>
           </Card>
         )}
+        </SkeletonMorph>
       </Resource>
     </>
   );

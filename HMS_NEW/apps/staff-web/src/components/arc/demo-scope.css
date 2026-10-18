@@ -100,6 +100,7 @@
 
 /* The header owns a stable row; scrolling content cannot shrink it over the title. */
 .workspace-sidebar-toggle { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); }
+.workspace-alerts { position: absolute; right: 24px; top: 50%; transform: translateY(-50%); }
 .workspace-search { width: min(480px, calc(100% - 128px)); }
 .workspace-search .arc-command-trigger { width: 100%; justify-content: flex-start; height: 44px; }
 .workspace-search .arc-command-trigger kbd { margin-left: auto; }
@@ -135,3 +136,20 @@
 .doctor-workspace-panel > [data-slot="sheet-header"] { padding: 28px 64px 20px 28px; border-bottom: 1px solid var(--border); }
 .arc-date-field > label, .arc-schedule-search label { line-height: 20px; }
 .arc-date-field { gap: 8px; }
+
+/* Pro chart series (captured Arc light tokens; oklch-from form where supported). */
+.arc-demo-scope { --series-1: #1f7dcf; --series-2: #7128a5; --series-3: #e58f00; --series-4: #009e84; }
+@supports (color: oklch(from red clamp(.4, l * sign(max(c - .02, 0)) + .5, .8) c h)) {
+  .arc-demo-scope {
+    --series-1: oklch(from var(--accent) calc(l * sign(max(c - .02, 0)) + .58 * (1 - sign(max(c - .02, 0)))) calc(c * sign(max(c - .02, 0)) + .15 * (1 - sign(max(c - .02, 0)))) calc(h * sign(max(c - .02, 0)) + 250 * (1 - sign(max(c - .02, 0)))));
+    --series-2: oklch(from var(--accent) clamp(.45, l * sign(max(c - .02, 0)) + .58 * (1 - sign(max(c - .02, 0))) - .25, .76) .19 calc(h * sign(max(c - .02, 0)) + 250 * (1 - sign(max(c - .02, 0))) + 57));
+    --series-3: oklch(from var(--accent) clamp(.45, l * sign(max(c - .02, 0)) + .58 * (1 - sign(max(c - .02, 0))) + .14, .76) .18 calc(h * sign(max(c - .02, 0)) + 250 * (1 - sign(max(c - .02, 0))) + 184));
+    --series-4: oklch(from var(--accent) clamp(.45, l * sign(max(c - .02, 0)) + .58 * (1 - sign(max(c - .02, 0))), .76) .21 calc(h * sign(max(c - .02, 0)) + 250 * (1 - sign(max(c - .02, 0))) + 292));
+  }
+}
+/* Pro demos render inside a "section" frame that stretches the block to its container. */
+.arc-section-frame { display: grid; min-width: 0; }
+/* Doubled class outranks the module's single-class width cap, as the demo frame's rule does. */
+.arc-section-frame.arc-section-frame > * { width: 100%; min-width: 0; max-width: 100%; }
+/* Skeleton morph placeholders over non-Arc content: only the two tokens its stylesheet reads, so shadcn tokens stay untouched. */
+.arc-morph-tokens { --surface-muted: oklch(97.8% 0 0); --ease-in-out: cubic-bezier(.65,0,.35,1); }

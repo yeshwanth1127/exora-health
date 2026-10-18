@@ -315,5 +315,145 @@
     "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/lib/use-copy-feedback.ts",
     "sha256": "88d0ae55bb3e241f529912a4802bbf014e4ba437025acc90ab13e012702273c5",
     "integratedSha256": "88d0ae55bb3e241f529912a4802bbf014e4ba437025acc90ab13e012702273c5"
+  },
+  {
+    "file": "src/components/arc/avatar/avatar.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/avatar/avatar.tsx",
+    "sha256": "94c22aa1f558a72d3dae928b35516fe182c296636cc8c24ea9fee194718e166c",
+    "integratedSha256": "94c22aa1f558a72d3dae928b35516fe182c296636cc8c24ea9fee194718e166c"
+  },
+  {
+    "file": "src/components/arc/avatar/avatar.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/avatar/avatar.module.css",
+    "sha256": "7a24bd77c83d3c14ac2c90905dc7d64eea7b60e8bf6eddd2e5d30dd6c96bd816",
+    "integratedSha256": "7a24bd77c83d3c14ac2c90905dc7d64eea7b60e8bf6eddd2e5d30dd6c96bd816"
+  },
+  {
+    "file": "src/components/arc/checkbox/checkbox.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/checkbox/checkbox.tsx",
+    "sha256": "4759251a0b2a83320cb4078e840f61481a23be0b38b9aa7c077c2e85e6dde00d",
+    "integratedSha256": "4759251a0b2a83320cb4078e840f61481a23be0b38b9aa7c077c2e85e6dde00d"
+  },
+  {
+    "file": "src/components/arc/checkbox/checkbox.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/checkbox/checkbox.module.css",
+    "sha256": "6cc8ae35edbd99dac2ea3768a6db0932429ecb06febab06e048a4b94974251b6",
+    "integratedSha256": "6cc8ae35edbd99dac2ea3768a6db0932429ecb06febab06e048a4b94974251b6"
+  },
+  {
+    "file": "src/components/arc/lib/arc-provider.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/lib/arc-provider.tsx",
+    "sha256": "bcc7358163968a9508d81586134bf8d921d75783033182f81ca9015985815884",
+    "integratedSha256": "bcc7358163968a9508d81586134bf8d921d75783033182f81ca9015985815884"
+  },
+  {
+    "file": "src/components/arc/split-bar/split-bar.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/split-bar/src/SplitBarDemo.cjs",
+    "sha256": "79024e6ed8a5e2ede3aba76d28b13aed19fd78ca06fb96fa563ebd6f1ce54390",
+    "integratedSha256": "8ae64e4cbb255671bf28e1b08a23ea9660d8e3a140dbed0624d59e56fc426a91",
+    "kind": "pro-port",
+    "bindingAdaptation": "Hand port of the reconstructed demo to TSX; CSS extracted from the captured stylesheet with class hashes removed. Removed only the demo sample traffic data and its 7/30/90-day segmented control. Overview \u203a Appointment health renders two bars (by status, by channel) from /api/v1/admin/analytics with humanized labels; zero totals use the existing Empty state."
+  },
+  {
+    "file": "src/components/arc/split-bar/split-bar.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/split-bar/dist/styles.css",
+    "sha256": "3a32809502413a1062d810b751f7c4e4fb167ad152bc7868a2ba026ea5b12ebd",
+    "integratedSha256": "76d020bda5cc06217a945efe96d60312bda11be9ae0b739bb3ba96ebb18c2997",
+    "kind": "pro-port",
+    "bindingAdaptation": "Hand port of the reconstructed demo to TSX; CSS extracted from the captured stylesheet with class hashes removed. Removed only the demo sample traffic data and its 7/30/90-day segmented control. Overview \u203a Appointment health renders two bars (by status, by channel) from /api/v1/admin/analytics with humanized labels; zero totals use the existing Empty state."
+  },
+  {
+    "file": "src/components/arc/skeleton-morph/skeleton-morph.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/skeleton-morph/src/SkeletonMorphDemo.cjs",
+    "sha256": "edbecff7c4018c771d2407d0abf2d0a48a62896403d9eafe5146d4a72958fa33",
+    "integratedSha256": "d9b89b0331d4e8061c991f8cada20bc05e8ca49f6768ed823d0456d3e4b70bea",
+    "kind": "pro-port",
+    "bindingAdaptation": "SkeletonMorph and MorphBlock ported; demo profile/payout sample cards removed; keyframe renamed to pulse. Overview metric cards, Daily bookings, Appointment health and Recent appointments resolve from skeleton in document order. Host passes width:100% on blocks because these wrap cards/charts/tables rather than fit-content text."
+  },
+  {
+    "file": "src/components/arc/skeleton-morph/skeleton-morph.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/skeleton-morph/dist/styles.css",
+    "sha256": "2915fce28aa34075b6648e3785ca0aa2bbda1dcc40026542f90caddbf0cf93c4",
+    "integratedSha256": "c23894c04bb27f054e0ecd546f67a8916f5b35c667d276b1a69e3601183add39",
+    "kind": "pro-port",
+    "bindingAdaptation": "SkeletonMorph and MorphBlock ported; demo profile/payout sample cards removed; keyframe renamed to pulse. Overview metric cards, Daily bookings, Appointment health and Recent appointments resolve from skeleton in document order. Host passes width:100% on blocks because these wrap cards/charts/tables rather than fit-content text."
+  },
+  {
+    "file": "src/components/arc/team-directory/team-directory.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/team-directory/src/Component.cjs",
+    "sha256": "af46696cef56b2e583e5a2fd0ca409f793abe465ab92c1fa836a0cca13c75231",
+    "integratedSha256": "d11afc2cdacfd2f92c0de0837a20f2c0cedfac4fcf55c5000bc082199220d586",
+    "kind": "pro-port",
+    "bindingAdaptation": "Demo people become a people prop; Working on/Location rows become facts; team filters derive from data; email row only when an email exists; actions slot hosts the existing Manage button. Workspace settings \u203a Team maps staff rows (team = staff type, status text from the server status)."
+  },
+  {
+    "file": "src/components/arc/team-directory/team-directory.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/team-directory/dist/styles.css",
+    "sha256": "55b901eeb5352d0266a80204724e94fe5f11679ebb723f1d9e6eb50c5b41b1ac",
+    "integratedSha256": "beb1a1028db024e4ed7b5e1f913ad24afdff804003f5303c6266009f668b9167",
+    "kind": "pro-port",
+    "bindingAdaptation": "Demo people become a people prop; Working on/Location rows become facts; team filters derive from data; email row only when an email exists; actions slot hosts the existing Manage button. Workspace settings \u203a Team maps staff rows (team = staff type, status text from the server status)."
+  },
+  {
+    "file": "src/components/arc/release-readiness/release-readiness.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/release-readiness/src/Component.cjs",
+    "sha256": "e2e12e4de09c26a75759a1dea77c78b6b9148a7bef9905c508873c6db2268bea",
+    "integratedSha256": "98dc1b23bc2058d7c6cfecacd3883981f0cd9148e06e9482ab6b5f2bbfa3572c",
+    "kind": "pro-port",
+    "bindingAdaptation": "User-approved: checks are read-only and derived from server evidence (deriveSetup); final action is Recheck saved setup (always enabled, reports failure of any active read); notify switch, owner avatars and Start release removed; headerAction/toolbar/collapsed host the existing Hide guide, visit-type and doctor controls; per-check Continue/Review buttons in a third grid column."
+  },
+  {
+    "file": "src/components/arc/release-readiness/release-readiness.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/release-readiness/dist/styles.css",
+    "sha256": "0c28c473544dd9fe62000c20b25b75fa7b8c2fadf6bc495bc11365bd54ab2928",
+    "integratedSha256": "05c080fdd934a7b63c717561a02496715796ba4c5ba66fd7f53c2274dd6b7d32",
+    "kind": "pro-port",
+    "bindingAdaptation": "User-approved: checks are read-only and derived from server evidence (deriveSetup); final action is Recheck saved setup (always enabled, reports failure of any active read); notify switch, owner avatars and Start release removed; headerAction/toolbar/collapsed host the existing Hide guide, visit-type and doctor controls; per-check Continue/Review buttons in a third grid column."
+  },
+  {
+    "file": "src/components/arc/notification-center/notification-center.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/notification-center/notification-center.tsx",
+    "sha256": "189f98adcdbb6fb398079409bcf62133dae18635e35c5eee4cc2d919306ee090",
+    "integratedSha256": "e0c7f274287dc3bb5d1abe88d61f511667d77f02ad7cbf1a3e0716bffbde2f3e",
+    "bindingAdaptation": "Open action (ArrowUpRight, after Dismiss) links each item to its page and closes the panel; items re-sync from props; portalled panel carries arc-demo-scope tokens; panel heading uses the demo page's display font. Bell lists only open Now alerts plus one 'Some alerts could not be checked' item when a source failed. Read/dismiss persist via /v1/me/alerts."
+  },
+  {
+    "file": "src/components/arc/notification-center/notification-center.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/notification-center/notification-center.module.css",
+    "sha256": "4411f6909360d67898017f266305e38e8a552f219cf5c33cf43b5bb6b872b7c9",
+    "integratedSha256": "706c1d9f24c4f82fda05aef20d04ccfbfd6b9670c8a5132174f0ebb2783f9129",
+    "bindingAdaptation": "Open action (ArrowUpRight, after Dismiss) links each item to its page and closes the panel; items re-sync from props; portalled panel carries arc-demo-scope tokens; panel heading uses the demo page's display font. Bell lists only open Now alerts plus one 'Some alerts could not be checked' item when a source failed. Read/dismiss persist via /v1/me/alerts."
+  },
+  {
+    "file": "src/components/arc/inbox-triage/inbox-triage.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/inbox-triage/src/Component.cjs",
+    "sha256": "6014efff09ae5a88edaa2b21d4a3df9b3274fef672d05f77f2a50bab942ed994",
+    "integratedSha256": "ac9449f8746f299727ec91489c472981e46c2b916d9513d6ef600c847a709444",
+    "bindingAdaptation": "Messages, folder labels (Open/Snoozed/Done), action labels and empty-state copy are props; onMove/onRead persist to /v1/me/alerts (Snooze = until the clinic's next midnight); Undo reverts through onMove; detailAction renders 'Open <page>'; heading focus ring suppressed as in the demo; rendered in arc-section-frame like the demo's section frame.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/inbox-triage/inbox-triage.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/inbox-triage/dist/styles.css",
+    "sha256": "1b9bb7f5c3033d7adb638cae58da1a4fbb47532b540de7cc37c0dd1c7c0516d5",
+    "integratedSha256": "9ee7e602fb06212fb83e4aee79d44634e04fb39c2c312f4ec2f9b38d6e6abb9b",
+    "bindingAdaptation": "Messages, folder labels (Open/Snoozed/Done), action labels and empty-state copy are props; onMove/onRead persist to /v1/me/alerts (Snooze = until the clinic's next midnight); Undo reverts through onMove; detailAction renders 'Open <page>'; heading focus ring suppressed as in the demo; rendered in arc-section-frame like the demo's section frame.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/availability-picker/availability-picker.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/availability-picker/src/Component.cjs",
+    "sha256": "4ecd43cc0c5975e744771f7867266c1113033beb83eac2a295a67a9b672c917a",
+    "integratedSha256": "c3b261cdef7484a4fddc4e227843c3f77cc0db3ecca259561ffa8d5b29bed5ca",
+    "bindingAdaptation": "Approved by the user 18 Oct 2026. Booking slot step for one doctor: only free slots (busy/conflict marks and 'everyone is free' bars have no single-doctor meaning; legend kept); one attendee; next 10 open days in the 30 days from the Start date; slot length from the server slot; Confirm = 'Hold this time' places the real hold and 'Held' is controlled by it; slots heading takes the demo page's h3 display font, tracking and 1.1 line height. User-requested (18 Oct 2026): day numbers use --text-lg instead of --text-xl; an Arc date picker (existing DayNavigator, 'Start date') above the picker sets the first day, so the 5 open days come from the 30 days after it. User-requested (18 Oct 2026, second pass): 10 square day tiles; the slot list is replaced by the Booking pill time step (components/pro/booking-pill src/Component.cjs `eu` + dist/styles.css .slots/.highlight/.slot): 8-column chips (4 below 520px), sliding morph-spring highlight, struck-through taken times from the server's non-free slots, arrow/Home/End keys, 12-hour labels, 'N free' count in place of the legend. The pill's panel-entry stagger is not used.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/availability-picker/availability-picker.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/availability-picker/dist/styles.css",
+    "sha256": "054ce4d4fdee7c9e9c913c92c3ec11e0e24f8282953569ed1cbf0a128ea3e247",
+    "integratedSha256": "4af9c6e1b5d03160a4d26ab394d09a21fa014e8eb0f6ba8d88a8eff3f8fe5a66",
+    "bindingAdaptation": "Approved by the user 18 Oct 2026. Booking slot step for one doctor: only free slots (busy/conflict marks and 'everyone is free' bars have no single-doctor meaning; legend kept); one attendee; next 10 open days in the 30 days from the Start date; slot length from the server slot; Confirm = 'Hold this time' places the real hold and 'Held' is controlled by it; slots heading takes the demo page's h3 display font, tracking and 1.1 line height. User-requested (18 Oct 2026): day numbers use --text-lg instead of --text-xl; an Arc date picker (existing DayNavigator, 'Start date') above the picker sets the first day, so the 5 open days come from the 30 days after it. User-requested (18 Oct 2026, second pass): 10 square day tiles; the slot list is replaced by the Booking pill time step (components/pro/booking-pill src/Component.cjs `eu` + dist/styles.css .slots/.highlight/.slot): 8-column chips (4 below 520px), sliding morph-spring highlight, struck-through taken times from the server's non-free slots, arrow/Home/End keys, 12-hour labels, 'N free' count in place of the legend. The pill's panel-entry stagger is not used.",
+    "kind": "pro-port"
   }
 ]

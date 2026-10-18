@@ -22,6 +22,7 @@ import { registerCommsSummaryRoutes } from './http/routes/comms-summary.ts';
 import { registerVoiceGrowthRoutes } from './http/routes/voice-growth.ts';
 import { loadChannelSettings, type ChannelSettings } from './modules/comms/voice-growth.ts';
 import { registerAccessRoutes } from './http/routes/access.ts';
+import { registerAlertRoutes } from './http/routes/alerts.ts';
 import { registerAdminRoutes } from './http/routes/admin.ts';
 import { registerBoardRoutes } from './http/routes/board.ts';
 import { registerRecordRoutes } from './http/routes/records.ts';
@@ -183,6 +184,7 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   registerQueueRoutes(app, deps.db);
   registerClinicalRoutes(app, deps.db);
   registerAdminRoutes(app, deps.db);
+  registerAlertRoutes(app, deps.db);
   registerRegistryRoutes(app, deps.db);
   registerRecordRoutes(app, deps.db);
   registerBoardRoutes(app, deps.db);
