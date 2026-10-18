@@ -6,3 +6,5 @@ export { activityEvents } from "../src/modules/activity-feed-data";
 export { PatientHover } from "../src/hms/PatientHover";
 export { patientPreview } from "../src/hms/patient-preview";
 export { WorkspaceContext } from "../src/hms/hooks";
+export { MultiStepForm } from "../src/components/arc/multi-step-form/multi-step-form";
+export { SettingsPage, SettingsSaveBar } from "../src/components/arc/settings-page/settings-page";

@@ -1,3 +1,4 @@
+import { SettingsSaveBar } from "@/components/arc/settings-page/settings-page";
 import { ActivityFeed } from "./ActivityFeed";
 import type { AuditItem } from "./activity-feed-data";
 import { Tabs as ArcTabs, TabsList as ArcTabsList, TabsTrigger as ArcTabsTrigger, TabsContent as ArcTabsContent } from "@/components/arc/tabs/tabs";
@@ -1314,30 +1315,42 @@ export function WorkspaceSettings({
                     />
                   </Field>
                 </div>
-                <Action
-                  variant="outline"
-                  disabled={
-                    details.name.trim().length < 2 ||
-                    (!!details.phone &&
-                      !/^\+[1-9][0-9]{7,14}$/.test(details.phone)) ||
-                    (details.name.trim() === person.name &&
-                      details.phone === (person.phone ?? ""))
+                <SettingsSaveBar
+                  count={
+                    Number(details.name !== person.name) +
+                    Number(details.phone !== (person.phone ?? ""))
                   }
-                  run={async () => {
-                    await call(`/api/v1/staff/users/${person.id}`, {
-                      method: "PATCH",
-                      body: {
-                        version: person.version,
-                        name: details.name.trim(),
-                        phone: details.phone,
-                      },
-                    });
-                    refreshPerson(person.id);
-                  }}
-                  success="Details saved"
+                  busy={command.busy || command.unknown || !!accessReview}
+                  onDiscard={() =>
+                    setDetails({ name: person.name, phone: person.phone ?? "" })
+                  }
                 >
-                  Save name and phone
-                </Action>
+                  <Action
+                    size="sm"
+                    disabled={
+                      details.name.trim().length < 2 ||
+                      (!!details.phone &&
+                        !/^\+[1-9][0-9]{7,14}$/.test(details.phone)) ||
+                      (details.name.trim() === person.name &&
+                        details.phone === (person.phone ?? ""))
+                    }
+                    run={async () => {
+                      await call(`/api/v1/staff/users/${person.id}`, {
+                        method: "PATCH",
+                        body: {
+                          version: person.version,
+                          name: details.name.trim(),
+                          phone: details.phone,
+                        },
+                      });
+                      refreshPerson(person.id);
+                    }}
+                    success="Details saved"
+                  >
+                    Save changes
+                  </Action>
+                </SettingsSaveBar>
+                {command.error && !command.unknown && <p role="alert" className="text-sm text-destructive">{command.error}</p>}
               </div>
             )}
             <div className="space-y-3">

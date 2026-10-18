@@ -1,5 +1,8 @@
 # Component inventory
 
+> **Latest context/setup update (19 Oct):** Multi-step form and Settings page are now adopted: **39 adopted + 5 support = 44 folders**. Hover content is refined without adding another component. Read `context-and-setup-wave.md`; WhatsApp Support conversation and Kanban are requested next turn, as recorded in `next-whatsapp-kanban.md`. These were already documentation-screened; this does not add to a deduplicated candidate-survey count.
+
+
 > **Approved five-component wave (19 Oct 2026):** Stepper, Dropdown menu, Timeline, Hover card and Radio cards are implemented. Current inventory is **37 adopted + 5 support = 42 folders**; see `arc-five-verification.md`. Earlier counts below describe their own passes. No new claim of rendered verification is made.
 
 > **Pro wave update (18 Oct 2026):** Split bar, Skeleton morph, Team directory and Release readiness were ported from the Pro references and integrated, with Avatar and Checkbox copied as support. That makes **29 adopted + 5 support = 34 component folders**, and **83 distinct assessed candidates** (Split bar added). The selection and the Pro survey are in `pro-wave-shortlist.md`. The counts below predate this wave.
@@ -38,7 +41,7 @@
 | Team directory | Pro wave: rendered reference, states exercised and integrated placement compared at 1440×900 light | Integrated: Workspace settings › Team | [Demo](http://localhost:4477/components/pro/team-directory/demo/) |
 | Roles permissions | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/roles-permissions/demo/) |
 | Settings command | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/settings-command/demo/) |
-| Settings page | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/settings-page/demo/) |
+| Settings page | Rendered reference; selected interactions only | Integrated in context/setup wave; visual review retained by user | [Demo](http://localhost:4477/components/pro/settings-page/demo/) |
 | Week calendar | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/week-calendar/demo/) |
 | Integrations | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/integrations/demo/) |
 | Select | Rendered reference; selected interactions only | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/select/?theme=light) |
@@ -58,11 +61,11 @@
 | Revenue explorer | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/revenue-explorer/demo/) |
 | Funnel chart | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/funnel-chart/demo/) |
 | Small multiples | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/small-multiples/demo/) |
-| Multi-step form | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/multi-step-form/demo/) |
+| Multi-step form | Initial documentation screening | Integrated in context/setup wave; visual review retained by user | [Demo](http://localhost:4477/components/pro/multi-step-form/demo/) |
 | Cancel flow | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/cancel-flow/demo/) |
 | Sheet stack | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/sheet-stack/demo/) |
 | Action morph | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/action-morph/demo/) |
-| Support conversation | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/support-conversation/demo/) |
+| Support conversation | Initial documentation screening; current WhatsApp source checked | Requested for next turn with WhatsApp theme | [Demo](http://localhost:4477/components/pro/support-conversation/demo/) |
 | Badge | Second documentation/source screening | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/badge/?theme=light) |
 | Alert | Second documentation/source screening | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/alert/?theme=light) |
 | Tooltip | Second documentation/source screening | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/tooltip/?theme=light) |
@@ -113,6 +116,6 @@
 
 ## Integrated folder inventory
 
-`alert`, `animated-counter`, `availability-picker`, `avatar`, `badge`, `bar-chart`, `button`, `calendar`, `checkbox`, `combobox`, `command-palette`, `copy-button`, `date-picker`, `date-range-picker`, `dialog`, `dropdown-menu`, `empty-state`, `filter-toolbar`, `hover-card`, `inbox-triage`, `input`, `line-chart`, `metric-card`, `money-input`, `notification-center`, `phone-input`, `radio-cards`, `release-readiness`, `search-field`, `select`, `sidebar`, `skeleton`, `skeleton-morph`, `split-bar`, `stepper`, `tabs`, `team-directory`, `textarea`, `time-picker`, `timeline`, `toast-stack`, `tooltip`.
+`alert`, `animated-counter`, `availability-picker`, `avatar`, `badge`, `bar-chart`, `button`, `calendar`, `checkbox`, `combobox`, `command-palette`, `copy-button`, `date-picker`, `date-range-picker`, `dialog`, `dropdown-menu`, `empty-state`, `filter-toolbar`, `hover-card`, `inbox-triage`, `input`, `line-chart`, `metric-card`, `money-input`, `multi-step-form`, `notification-center`, `phone-input`, `radio-cards`, `release-readiness`, `search-field`, `select`, `settings-page`, `sidebar`, `skeleton`, `skeleton-morph`, `split-bar`, `stepper`, `tabs`, `team-directory`, `textarea`, `time-picker`, `timeline`, `toast-stack`, `tooltip`.
 
 Selection rationale and deferred data/interaction conflicts remain in `component-shortlist.md` and `next-wave-shortlist.md`. In particular, Donut chart was assessed but not integrated. Roles permissions and Week calendar remain deferred (Team directory was adopted in the Pro wave, see `pro-wave-shortlist.md`); readable role descriptions and a wider doctor panel do not constitute those larger replacements.

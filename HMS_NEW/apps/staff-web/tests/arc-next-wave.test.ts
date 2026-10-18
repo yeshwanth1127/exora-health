@@ -4,7 +4,7 @@ import { createElement as h } from "react";
 import { renderToStaticMarkup as render } from "react-dom/server";
 import { tsImport } from "tsx/esm/api";
 import { fileURLToPath } from "node:url";
-const { Stepper, RadioCards, DropdownMenu, ActivityFeed, activityEvents, PatientHover, patientPreview, WorkspaceContext } = await tsImport("./arc-next-fixtures.ts", {
+const { Stepper, RadioCards, DropdownMenu, ActivityFeed, activityEvents, PatientHover, patientPreview, WorkspaceContext, MultiStepForm, SettingsPage, SettingsSaveBar } = await tsImport("./arc-next-fixtures.ts", {
   parentURL: import.meta.url, tsconfig: fileURLToPath(new URL("../tsconfig.app.json", import.meta.url)),
 });
 
@@ -55,12 +55,24 @@ test("Activity feed retains exact audit IDs, raw action, changes and request met
 
 const detail = { patientId: "pt", givenName: "Riya", familyName: "Shah", mrn: "000123", status: "active",
   contacts: [{ kind: "email", value: "private@example.test", is_primary: true }, { kind: "phone", value: "+919000000001", is_primary: false }, { kind: "phone", value: "+919000000002", is_primary: true }] };
-test("patient identity preview uses the recorded primary patient phone and has an explicit missing-phone value", () => {
-  const preview = patientPreview(detail);
+test("patient hover context uses recorded visit reason, DOB and language without repeating table identifiers", () => {
+  const preview = patientPreview({ ...detail, birthDate: "1990-10-20", birthDateEstimated: true, preferredLanguage: "Kannada" }, "Review dizziness", "2026-10-19");
   assert.equal(preview.name, "Riya Shah");
-  assert.deepEqual(preview.stats, [{ label: "MRN", value: "000123" }, { label: "Phone", value: "+919000000002" }]);
-  assert.ok(!JSON.stringify(preview).includes("private@example.test"));
-  assert.equal(patientPreview({ ...detail, contacts: [] }).stats[1].value, "Not recorded");
+  assert.deepEqual(preview.stats, [{ label: "Date of birth", value: "1990-10-20 (estimated)" }, { label: "Language", value: "Kannada" }]);
+  assert.equal(preview.meta, "Approximately 35 years old");
+  assert.equal(preview.bio, "Visit reason: Review dizziness");
+  for (const value of ["000123", "+919000000002", "private@example.test", "active"]) assert.ok(!JSON.stringify(preview).includes(value));
+  const empty = patientPreview({ ...detail, contacts: [] });
+  assert.deepEqual(empty.stats, []);
+  assert.equal(empty.bio, "No additional context recorded.");
+  assert.ok(!JSON.stringify(empty).includes("note"), "do not invent a note when the patient endpoint has no notes field");
+});
+
+test("DOB age respects the clinic day, birthday boundary and exact/estimated distinction", () => {
+  const patient = { ...detail, birthDate: "2025-10-20", birthDateEstimated: false };
+  assert.equal(patientPreview(patient, null, "2026-10-19").meta, "0 years old");
+  assert.equal(patientPreview(patient, null, "2026-10-20").meta, "1 year old");
+  assert.equal(patientPreview(patient, null, "2024-10-20").meta, undefined);
 });
 
 test("patient previews respect patient-read permission and do not preload contact data into closed cards", () => {
@@ -73,4 +85,42 @@ test("patient previews respect patient-read permission and do not preload contac
   assert.ok(permitted.includes("Open patient Riya Shah"));
   assert.ok(!permitted.includes("+919000000002"));
   assert.ok(!permitted.includes('role="tooltip"'));
+});
+
+test("doctor wizard shows saved stages without clickable bypass, nested forms or an unconfirmed success screen", () => {
+  const html = render(h(MultiStepForm, { current: 1,
+    steps: [{ id: "staff", title: "Staff account", content: "Selected account" }, { id: "clinic", title: "Clinic", content: h("form", { id: "clinic-write" }, h("input", { name: "departmentId", required: true })) }, { id: "calendar", title: "Calendar", content: "Unfinished" }],
+    nextForm: "clinic-write", nextLabel: "Save clinic affiliation", onBack: () => assert.fail("render cannot navigate") }));
+  assert.equal(html.match(/<form/g)?.length, 1, "stage owns the sole real write form");
+  assert.match(html, /<button[^>]+type="submit"[^>]+form="clinic-write"/);
+  const progress = html.slice(html.indexOf("<nav"), html.indexOf("</nav>"));
+  assert.ok(!progress.includes("<button"));
+  assert.ok(progress.includes('aria-current="step"'));
+  assert.ok(!html.includes("Your response has been saved") && !html.includes("All set"));
+  assert.ok(!html.includes("Unfinished"), "future stage content is not actionable");
+});
+
+test("busy doctor stage blocks both forward and backward navigation", () => {
+  const html = render(h(MultiStepForm, { steps: [{ id: "calendar", title: "Calendar", content: "Recover original request" }], current: 0, busy: true,
+    onNext: () => assert.fail("must not create a calendar"), onBack: () => assert.fail("must not leave a pending command") }));
+  const buttons = html.match(/<button[^>]*>/g) ?? [];
+  assert.equal(buttons.length, 2);
+  assert.ok(buttons.every((button: string) => button.includes('disabled=""')));
+});
+
+test("Settings navigation exposes only supplied permitted sections and the real account", () => {
+  const html = render(h(SettingsPage, { current: "appearance", sections: [{ id: "appearance", label: "Appearance", description: "This browser", icon: null }, { id: "account", label: "My account", description: "Clinic", icon: null }],
+    account: { name: "Priya", detail: "Clinic administrator" }, onChange: () => assert.fail("render cannot navigate") }, "Existing settings forms"));
+  assert.ok(html.includes('aria-current="page"'));
+  assert.ok(html.includes("Priya") && html.includes("Existing settings forms"));
+  assert.ok(!html.includes("Billing") && !html.includes("Save all") && !html.includes("Northwind"));
+});
+
+test("scoped settings save bar appears only for dirty fields and blocks discard during recovery", () => {
+  const bar = (count: number, busy: boolean) => render(h(SettingsSaveBar, { count, busy, onDiscard: () => assert.fail("render cannot discard") }, h("button", { disabled: busy }, "Save changes")));
+  assert.ok(!bar(0, false).includes("Save changes"));
+  const html = bar(2, true);
+  assert.ok(html.includes("Unsaved name and phone changes"));
+  assert.ok((html.match(/<button[^>]*>/g) ?? []).every((button: string) => button.includes('disabled=""')));
+  assert.ok(!html.includes("Changes saved"), "no simulated successful outcome");
 });

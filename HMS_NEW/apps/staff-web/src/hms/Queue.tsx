@@ -169,7 +169,7 @@ export function Queue() {
                       <Status value={t.status} />
                     </TableCell>
                     <TableCell className="font-mono text-xs">
-                      <QueuePatient patientId={t.patientId} />
+                      <QueuePatient patientId={t.patientId} appointmentId={t.appointmentId} />
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
@@ -265,7 +265,7 @@ export function Queue() {
   );
 }
 
-function QueuePatient({ patientId }: { patientId: string }) {
+function QueuePatient({ patientId, appointmentId }: { patientId: string; appointmentId?: string | null }) {
   const { can } = useWorkspace();
   const result = useQuery<PatientDetail>(
     can("patients.read") ? `/v1/patients/${patientId}` : null,
@@ -273,7 +273,7 @@ function QueuePatient({ patientId }: { patientId: string }) {
   return result.data ? (
     <div>
       <div className="font-sans text-sm">
-        <PatientHover patientId={patientId} detail={result.data} name={patientDisplayName(patientId,
+        <PatientHover patientId={patientId} appointmentId={appointmentId} detail={result.data} name={patientDisplayName(patientId,
           [result.data.givenName, result.data.familyName].filter(Boolean).join(" "))} />
       </div>
       <p className="text-xs text-muted-foreground">{result.data.mrn}</p>

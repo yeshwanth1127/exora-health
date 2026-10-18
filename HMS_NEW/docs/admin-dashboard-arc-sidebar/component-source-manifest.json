@@ -520,5 +520,37 @@
     "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/radio-cards/radio-cards.module.css",
     "sha256": "5f6e5cd90a57fd7c31f301d6c1a9172b3386b2e4afdd0526573c4736836eca7a",
     "integratedSha256": "5f6e5cd90a57fd7c31f301d6c1a9172b3386b2e4afdd0526573c4736836eca7a"
+  },
+  {
+    "file": "src/components/arc/multi-step-form/multi-step-form.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/multi-step-form/src/dependencies/44818.cjs",
+    "sha256": "8934d98fa2f1b8722adde639adea4b9dcb85dee1ad2bc0b8f029ba7572f8d2cb",
+    "integratedSha256": "6cad3794cc124bd24ee142edfe2a5a41fd8074d50a5b05a64c1d474f88376277",
+    "bindingAdaptation": "User-approved staged doctor setup. Controlled current stage, independent stage forms inside a section, form-ID footer submission, actual guarded commands/receipts, no unconditional demo success screen. Source CSS/step slides/progress/height/label motion ported; disabled Next mirrors disabled Back.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/multi-step-form/multi-step-form.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/multi-step-form/dist/styles.css",
+    "sha256": "20432f238623fba2cded79a6af69ad2be27d05ecba4f9d3ab545125ada4d5759",
+    "integratedSha256": "db7b8c77f5f942cf8c29f8fb750f90f000928c6b91aae1dce4423af51c5adee7",
+    "bindingAdaptation": "User-approved staged doctor setup. Controlled current stage, independent stage forms inside a section, form-ID footer submission, actual guarded commands/receipts, no unconditional demo success screen. Source CSS/step slides/progress/height/label motion ported; disabled Next mirrors disabled Back.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/settings-page/settings-page.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/settings-page/src/SettingsPage.cjs",
+    "sha256": "f48e1f07dd745e3c37df5e4b7ab2db40fbbd8e9ba1b57ac0e00a6206b734fd7e",
+    "integratedSha256": "11af6cddb686b1fdf198500b50393ebe3d85f13731174a829702af2741bba19a",
+    "bindingAdaptation": "User-approved Settings section navigation and per-form save semantics. Existing permitted sections/guarded routes, original section motion/highlight/keyboard and measured save-bar shell. Staff name/phone count/discard and existing versioned Action only; no Save all or simulated saved outcome. Existing AnimatedCounter and compact Action size reused; CSS namespaces extracted with media/container/keyframe rules.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/settings-page/settings-page.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/settings-page/dist/styles.css",
+    "sha256": "3790a65058cc4ab6c0cdd72e5eaa608fb7cf1c00c34c77f69f2baf3819aa2bd1",
+    "integratedSha256": "2457fc9d5d6d8a7f4cafecf96d758feeeb05d4850fc23ed1dc1bf4637bcb63a8",
+    "bindingAdaptation": "User-approved Settings section navigation and per-form save semantics. Existing permitted sections/guarded routes, original section motion/highlight/keyboard and measured save-bar shell. Staff name/phone count/discard and existing versioned Action only; no Save all or simulated saved outcome. Existing AnimatedCounter and compact Action size reused; CSS namespaces extracted with media/container/keyframe rules.",
+    "kind": "pro-port"
   }
 ]

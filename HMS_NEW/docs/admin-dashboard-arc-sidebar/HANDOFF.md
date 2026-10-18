@@ -1,5 +1,7 @@
 # Admin dashboard Arc handoff
 
+> **Latest phase (19 Oct):** read `context-and-setup-wave.md` first. Extra patient hover context, staged doctor setup and Arc Settings navigation/scoped save bar are implemented. **44 Arc folders (39 adopted + 5 support), 207 frontend tests**. User retains visual review. Dashboard5198 → API3080. The user requested WhatsApp-themed Arc chat and Kanban **next turn**; source findings and continuation packet: `next-whatsapp-kanban.md`. This supersedes older counts/FYI status below.
+
 > **Current approved wave (19 Oct):** read `arc-five-verification.md` first. Stepper, Dropdown menu, Timeline, Hover card and Radio cards are implemented; 42 Arc folders and 202 frontend tests. Runtime remains dashboard 5198 → worktree API 3080. Visual verification is retained by the user. The five FYI Pro suggestions are assessed in that document; Inbox triage was already built and the others were not added.
 
 > **Latest takeover update:** read `takeover-review.md` first. Current normal dashboard 5198 uses the worktree API **3080**. DOB now has direct Month/Year columns; registration replaces search; appointment search and chart-table disclosures are refined. 196 frontend tests and 7 alert API tests pass. This supersedes the earlier runtime commands and DOB keyboard-only limitation below. Claude's 37 component folders are preserved.

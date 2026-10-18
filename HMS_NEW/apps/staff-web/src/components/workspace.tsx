@@ -318,10 +318,12 @@ export function Action({
   disabled = false,
   variant = "default",
   validate = false,
+  size = "default",
 }: {
   children: ReactNode;
   run: () => Promise<unknown>;
   validate?: boolean;
+  size?: "default" | "sm";
   success?: string;
   disabled?: boolean;
   variant?: "default" | "outline" | "ghost" | "destructive";
@@ -331,6 +333,7 @@ export function Action({
   return (
     <Button
       variant={variant}
+      size={size}
       disabled={disabled || busy || isDraft(source)}
       title={isDraft(source) ? source!.unavailableWrite : undefined}
       onClick={async (event) => {

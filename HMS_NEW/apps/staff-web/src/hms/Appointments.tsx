@@ -195,7 +195,7 @@ export function Appointments() {
                   <TableCell>
                     <div className="font-medium">
                       {a.patientId && can("patients.read")
-                        ? <PatientHover patientId={a.patientId} name={patientDisplayName(a.patientId, a.patientName)} />
+                        ? <PatientHover patientId={a.patientId} reason={a.reason} name={patientDisplayName(a.patientId, a.patientName)} />
                         : patientDisplayName(a.patientId, a.patientName)}{" "}
                       {a.patientId && (
                         <TestPatientBadge patientId={a.patientId} />
