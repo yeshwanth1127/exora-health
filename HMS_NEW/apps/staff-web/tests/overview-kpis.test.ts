@@ -5,8 +5,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { tsImport } from 'tsx/esm/api';
 import { fileURLToPath } from 'node:url';
 import { OperationsKpiReportSchema, type OperationsKpiReport } from '@hms/contracts';
-import { overviewKpis, decodeOverviewKpis, reportStart } from '../src/hms/overview-kpis.ts';
-import { periodDelta } from '../src/components/arc/kpi-drilldown/period-data.ts';
+import { overviewKpis, decodeOverviewKpis, reportStart, reportDateLabel } from '../src/hms/overview-kpis.ts';
+import { periodDelta, countFrame } from '../src/components/arc/kpi-drilldown/period-data.ts';
 const options = { parentURL: import.meta.url, tsconfig: fileURLToPath(new URL('../tsconfig.app.json', import.meta.url)) };
 const { KpiDrilldown } = await tsImport('../src/components/arc/kpi-drilldown/kpi-drilldown.js', options);
 const { OverviewReporting } = await tsImport('../src/hms/OverviewReporting.tsx', options);
@@ -66,15 +66,34 @@ test('report decoder refuses wrong clinic, date, timezone, malformed counts and 
   duplicate.metrics[1]!.id = duplicate.metrics[0]!.id;
   assert.equal(OperationsKpiReportSchema.safeParse(duplicate).success, false);
 });
-test('partial-history and timestamp captions remain visible outside the expanding cards', () => {
+test('compact report keeps history context visible and detailed help keyboard accessible', () => {
   const html = renderToStaticMarkup(h(OverviewReporting, { report: { ...report, availableFrom: '2026-10-18' } }));
-  assert.match(html, /Recorded history starts 2026-10-18/);
-  assert.match(html, /earlier dates are gaps/);
-  assert.match(html, /Previous-period comparison is unavailable/);
+  assert.match(html, /History since 18 Oct 2026/);
+  assert.match(html, /this period is incomplete/);
+  assert.match(html, /previous period unavailable/);
   assert.match(html, /Today is partial/);
   assert.match(html, /Asia\/Kolkata/);
+  assert.match(html, /Metric 1, 14,.*previous 7 days/);
+  assert.match(html, /About this activity report/);
+  assert.match(html, /class="root embedded/);
 });
 test('calendar reporting boundaries use inclusive days across leap years', () => {
+  assert.equal(reportDateLabel('2024-02-29'), '29 Feb 2024');
   assert.equal(reportStart('2024-03-01', 7), '2024-02-24');
   assert.equal(reportStart('2026-01-01', 7), '2025-12-26');
+});
+
+test('daily count charts preserve isolated peaks, unknown days and useful zero-period axes', () => {
+  const days = Array<number | null>(90).fill(0);
+  days[0] = null;
+  days[88] = 2;
+  const frame = countFrame(days, Array(90).fill(null), true);
+  assert.equal(frame.a.length, 90);
+  assert.equal(frame.a[88], 2);
+  assert.equal(frame.a[0], null);
+  assert.equal(frame.max - frame.pad, 2);
+  assert.equal((frame.max + frame.min) / 2, 1);
+  const zero = countFrame([0, 0], [null, null], true);
+  assert.equal(zero.max - zero.pad, 1);
+  assert.equal((zero.max + zero.min) / 2, .5);
 });

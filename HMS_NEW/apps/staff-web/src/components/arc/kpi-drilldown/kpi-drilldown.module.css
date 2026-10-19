@@ -96,3 +96,13 @@
 .value{font-size:var(--text-xl)}
 .compare span,.shareHead,.share{display:none}}
 @media (prefers-reduced-motion:reduce){.card,.close,.compare,.delta,.rowDelta,.tab{transition:none}}
+
+/* Opt-in Overview placement after the user's rendered review; demo defaults above remain intact. */
+.embedded{width:100%;margin-inline:0;border:0;border-radius:0;background:transparent}
+.embedded .header{padding:0 0 14px;border-bottom:0}
+.headerText{display:grid;gap:4px}
+.embedded .header h2{font-size:var(--text-base);font-weight:500}
+.embedded .body{--pad:0px;min-height:0}
+.embedded .grid{min-height:0;grid-auto-rows:168px}
+.embedded .spark{height:56px;min-height:0;flex:0 0 56px;padding-top:8px}
+.rowDelta[data-unavailable]{color:var(--text-muted)}

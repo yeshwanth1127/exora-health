@@ -1,5 +1,7 @@
 # Overview KPI reporting — 19 October 2026
 
+> **Follow-up rendered review:** the user requested browser verification and a better dashboard fit. See [kpi-browser-fit-review.md](kpi-browser-fit-review.md) for opt-in embedded sizing, condensed context, raw daily count plotting and observed browser checks. Its results supersede the visual-pending and source-interpolation notes below.
+
 The user approved the recommended KPI drilldown after the four-explorer selection review. This implements **KPI drilldown on Overview**. Metric explorer remains an alternative; Revenue and Choropleth remain deferred. No other explorer is installed by this wave.
 
 ## Before / after

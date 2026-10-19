@@ -1,5 +1,7 @@
 # Component inventory
 
+Latest targeted browser follow-up: [kpi-browser-fit-review.md](kpi-browser-fit-review.md). Compact full-width Overview placement and reporting interactions checked; **235 frontend tests/build pass; 48 folders unchanged**. This supersedes the visual-pending note below for the explicitly checked KPI states.
+
 Latest implementation: [kpi-reporting-wave.md](kpi-reporting-wave.md). User-approved KPI drilldown is on Overview with exact scoped reporting. **48 folders: 44 adopted + 4 support; 234 frontend tests.** Metric explorer remains an alternative; Revenue/Choropleth are deferred. Visual review remains with the user.
 
 Previous implementation: [growth-controls-confirmation-wave.md](growth-controls-confirmation-wave.md). **47 folders: 43 adopted + 4 support.** Checkbox is now a directly adopted form control as well as supporting readiness; Switch is newly copied. **Folder count does not imply every screen/state is migrated.**

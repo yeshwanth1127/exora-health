@@ -10,3 +10,11 @@ export function periodDelta(kpi: { kind: 'total'; lowerIsBetter?: boolean }, cur
   const amount = Number(Math.abs(flat ? 0 : raw).toFixed(1));
   return { available: true, raw, good: kpi.lowerIsBetter ? raw < 0 : raw > 0, flat, sign, amount, unit: '%', text: `${sign}${amount.toFixed(1)}%` };
 }
+
+/** Every stored day is a vertex. Sparse clinic events must not lose peaks to demo resampling. */
+export function countFrame(current: (number | null)[], previous: (number | null)[], compare: boolean) {
+  const known = (compare ? [...current, ...previous] : current).filter((value): value is number => value !== null);
+  const maximum = Math.max(1, ...known);
+  const pad = maximum * .12;
+  return { a: current, b: previous, min: -pad, max: maximum + pad, pad };
+}

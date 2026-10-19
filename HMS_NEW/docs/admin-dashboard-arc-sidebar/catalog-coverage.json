@@ -1,7 +1,7 @@
 {
   "as_of": "2026-10-19",
   "scope": "Local recreated catalog entries; registry/demo names are counted, shared-source variants are not collapsed into original implementations. This is not the live upstream catalog.",
-  "method": "First-pass documentation screening remains complete. User-approved Overview KPI reporting adds one adopted component; source/build/API checks only, no new browser verification.",
+  "method": "First-pass screening remains 249/249. Latest targeted desktop browser review checks the existing KPI drilldown against its local demo and fixes Overview fit; no catalog-wide browser sweep.",
   "counts": {
     "catalog_entries": 249,
     "free_entries": 133,
@@ -17,7 +17,7 @@
     "not_integrated": 201,
     "recorded_rendered_observations": 40,
     "without_recorded_rendered_observation": 209,
-    "browser_verified_this_pass": 0
+    "browser_verified_this_pass": 1
   },
   "index_sources": [
     {
@@ -3226,15 +3226,15 @@
       "screened_this_pass": false,
       "prior_screening_evidence": "pro-wave-shortlist.md: all 116 Pro documents",
       "recorded_rendered_observation": true,
-      "rendered_verified_this_pass": false,
+      "rendered_verified_this_pass": true,
       "integration": "adopted",
       "assessment": {
         "decision": "integrated",
-        "reason": "User-approved Overview reporting. Six stored-record metrics; exact 7/30/90 current/prior totals and doctor/channel rows; no sample data or fabricated history. See kpi-reporting-wave.md."
+        "reason": "Overview reporting with exact scoped counts; subsequent user-requested browser review adds compact full-width embedding and verifies ranges, breakdown, chart keyboard, focus return and history/help states. See kpi-browser-fit-review.md."
       },
       "docs": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kpi-drilldown/docs.md",
       "demo": "http://localhost:4477/components/pro/kpi-drilldown/demo/?theme=light",
-      "detailed_review": "kpi-reporting-wave.md"
+      "detailed_review": "kpi-browser-fit-review.md"
     },
     {
       "id": "layout-morph",

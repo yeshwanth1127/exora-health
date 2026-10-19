@@ -14,6 +14,9 @@ export interface KpiDrilldownProps {
   selected?: string | null;
   onSelectedChange?: (id: string | null) => void;
   title?: string;
+  /** Dashboard placement explicitly requested after rendered review. Default demo geometry stays intact. */
+  embedded?: boolean;
+  caption?: string;
   className?: string;
 }
 export function KpiDrilldown(props: KpiDrilldownProps): ReactElement;

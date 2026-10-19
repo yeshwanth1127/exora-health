@@ -159,15 +159,15 @@ function ActivityPage({
           </Button>
         }
       />
-      {overview && setup}
       {overview && reporting}
+      {overview && setup}
       <Resource
         loading={!overview && (r.loading || events.loading)}
         error={r.error || (!overview ? events.error || health.error : "")}
         refresh={refresh}
       >
         <SkeletonMorph loading={overview && r.loading} loadingLabel="Loading overview" className="arc-morph-tokens">
-        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+        <div className={reporting ? "grid sm:grid-cols-2 gap-4 mb-6" : "grid sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6"}>
           {metrics.filter(([label]) => !reporting || label === "Doctors with active hours" || label === "Local notification jobs").map(([label, value, detail]) => {
             const numeric = typeof value === "number" ? value : typeof value === "string" && /^\d+(?:\.\d+)?%$/.test(value) ? Number(value.slice(0, -1)) : null;
             return numeric !== null ? (

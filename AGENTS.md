@@ -97,3 +97,10 @@
 - New bookings use original creation dates; visits due/no-shows use scheduled dates and current status; check-ins/completions/cancellations use stored event timestamps. Exclude reschedule replacements from new bookings and superseded reschedule cancellations. Label each definition; do not call retained confirmations attendance/conversion or configured fees revenue.
 - The read-only `/v1/operations/kpis` requires clinic `appointments.read` and tenant RLS. Keep doctor/channel aggregation free of patient details, preserve exact doctor IDs, clinic-local dates, partial today/history, missing/zero comparisons and request scope guards. No department join that doubles multi-affiliated doctors.
 - Do not fill pre-clinic history with zero or claim comprehensive historical collection. Unknown dates are null chart gaps; known dates with no stored events are zero. Keep current operational/all-time sections separately labelled.
+
+
+## User-requested KPI browser fit correction
+
+- The user explicitly requested targeted browser checks and a better Overview fit. Read `HMS_NEW/docs/admin-dashboard-arc-sidebar/kpi-browser-fit-review.md`; this supersedes earlier no-browser guidance for that review only. Do not infer permission for another broad catalog sweep.
+- Overview opts into full-width, compact KPI embedding, reporting before setup, a 7-day default, and concise date/history/help context. Standalone demo layout remains the default. Retain the reference expansion/focus/keyboard/motion engine and truthful unknown history.
+- Daily count detail plots must retain each actual day's value and extrema; do not restore fixed 72-point snapshot resampling or rounded duplicate count-axis labels. Period totals and unavailable/zero comparison semantics remain exact. Screenshots and bounded browser evidence are in the review document; current inventory stays 48 folders, 235 frontend tests.

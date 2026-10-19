@@ -6,7 +6,7 @@ import { AnimatePresence, motion, useMotionValue, animate, useReducedMotion } fr
 import { ArrowRight, ArrowUpRight, ArrowDownRight, X, GitCompareArrows } from "lucide-react";
 import { AnimatedCounter } from "../animated-counter/animated-counter";
 import { motionTokens } from "../lib/motion-tokens";
-import { periodDelta as H } from "./period-data";
+import { periodDelta as H, countFrame } from "./period-data";
 import styles from "./kpi-drilldown.module.css";
 let N = [{
     value: "7",
@@ -54,6 +54,10 @@ function S(e, a) {
     minimumFractionDigits: t,
     maximumFractionDigits: t
   })}${a.suffix ?? ""}`;
+}
+function axisLabel(value, format) {
+  const clean = Math.round(value * 1e6) / 1e6;
+  return S(clean, { ...format, decimals: Number.isInteger(clean) ? 0 : 1 });
 }
 function R(e, a) {
   let t = new Date(`${e}T12:00:00Z`);
@@ -259,9 +263,11 @@ function I({
 }
 function W(e, a, t) {
   let r = (e, a) => e == null || a == null ? a : e + (a - e) * t;
+  const fromA = e.a.length === a.a.length ? e.a : C(e.a, a.a.length);
+  const fromB = e.b.length === a.b.length ? e.b : C(e.b, a.b.length);
   return {
-    a: a.a.map((a, t) => r(e.a[t] ?? a, a)),
-    b: a.b.map((a, t) => r(e.b[t] ?? a, a)),
+    a: a.a.map((a, t) => r(fromA[t] ?? a, a)),
+    b: a.b.map((a, t) => r(fromB[t] ?? a, a)),
     min: r(e.min, a.min),
     max: r(e.max, a.max),
     pad: r(e.pad, a.pad)
@@ -281,16 +287,7 @@ function q({
     f = B(h),
     [_, y] = (0, i.useState)(null),
     g = Math.max(0, f - 56),
-    b = (0, i.useMemo)(() => {
-      let e, r, i, n, s, l;
-      return e = C(a, 72), r = C(t, 72), n = extent((i = o ? [...e, ...r] : e), Math.min), l = ((s = extent(i, Math.max)) - n) * .12 || 1, {
-        a: e,
-        b: r,
-        min: n - l,
-        max: s + l,
-        pad: l
-      };
-    }, [o, a, t]),
+    b = (0, i.useMemo)(() => countFrame(a, t, o), [o, a, t]),
     v = (0, useMotionValue)(1),
     j = (0, i.useRef)({
       from: b,
@@ -313,7 +310,7 @@ function q({
         } = j.current,
         i = W(e, a, v.get()),
         n = D(i.a, t, 186, i.min, i.max, 10);
-      k.set(n), N.set(areaPath(n, i.a, t, 196)), M.set(D(i.b, t, 186, i.min, i.max, 10)), $.set(S(i.max - i.pad, r)), L.set(S((i.max + i.min) / 2, r)), P.set(S(i.min + i.pad, r));
+      k.set(n), N.set(areaPath(n, i.a, t, 196)), M.set(D(i.b, t, 186, i.min, i.max, 10)), $.set(axisLabel(i.max - i.pad, r)), L.set(axisLabel((i.max + i.min) / 2, r)), P.set(axisLabel(i.min + i.pad, r));
     }, [N, M, k, v, $, P, L]);
   (0, i.useLayoutEffect)(() => {
     j.current.inner = g, j.current.format = e.format, H();
@@ -329,12 +326,12 @@ function q({
   }, [H, v, p, b]);
   let E = e => 10 + (1 - (e - b.min) / (b.max - b.min)) * 186,
     Y = [b.pad, (b.max - b.min) / 2, b.max - b.min - b.pad].map(e => 10 + (1 - e / (b.max - b.min)) * 186),
-    F = null === _ ? null : Math.round(_ / 71 * (c - 1));
+    F = null === _ ? null : Math.min(c - 1, _);
   function O(e) {
     let a = e.currentTarget.getBoundingClientRect();
-    y(Math.round(71 * Math.max(0, Math.min(1, (e.clientX - a.left) / Math.max(1, g)))));
+    y(Math.round((c - 1) * Math.max(0, Math.min(1, (e.clientX - a.left) / Math.max(1, g)))));
   }
-  let z = null === _ ? 0 : _ / 71 * g,
+  let z = null === F ? 0 : F / Math.max(1, c - 1) * g,
     I = `${e.label} over the last ${c} days, from ${S(a[0], e.format)} to ${S(a[a.length - 1], e.format)}.`,
     U = [0, Math.floor((c - 1) / 2), c - 1];
   return (0, r.jsxs)("div", {
@@ -354,8 +351,7 @@ function q({
       }
       if (!a) return;
       e.preventDefault();
-      let t = 71 / Math.max(1, c - 1);
-      y(e => Math.max(0, Math.min(71, Math.round((e ?? 71) + a * t))));
+      y(e => Math.max(0, Math.min(c - 1, (e ?? c - 1) + a)));
     },
     onBlur: () => y(null),
     children: [f > 0 && (0, r.jsxs)("svg", {
@@ -417,14 +413,14 @@ function q({
           x2: z,
           y1: 10,
           y2: 196
-        }), o && b.b[_] != null && (0, r.jsx)("circle", {
+        }), o && b.b[F] != null && (0, r.jsx)("circle", {
           cx: z,
-          cy: E(b.b[_]),
+          cy: E(b.b[F]),
           r: 3,
           className: styles.cursorBefore
-        }), b.a[_] != null && (0, r.jsx)("circle", {
+        }), b.a[F] != null && (0, r.jsx)("circle", {
           cx: z,
-          cy: E(b.a[_]),
+          cy: E(b.a[F]),
           r: 3.5
         })]
       })]
@@ -590,6 +586,7 @@ function U({
               children: (0, r.jsx)("span", {
                 className: styles.rowDelta,
                 "data-good": o ? "" : void 0,
+                "data-unavailable": !change.available ? "" : void 0,
                 title: change.text,
                 children: change.available ? (0, r.jsx)(AnimatedCounter, {
                   value: Math.abs(d),
@@ -732,10 +729,10 @@ function J({
             style: {
               opacity: T
             },
-            children: (0, r.jsxs)(Y, {
+            children: (0, r.jsx)(Y, {
               id: `${p}`,
               reduce: b,
-              children: ["vs ", S(B, e.format), " the ", p, " days before"]
+              children: B == null ? "Previous period unavailable" : ["vs ", S(B, e.format), " the ", p, " days before"]
             })
           })]
         })]
@@ -803,7 +800,9 @@ function K({
   title: h = "Overview",
   className: f,
   range: rangeProp,
-  onRangeChange
+  onRangeChange,
+  embedded = false,
+  caption
 }) {
   let y = !!(0, useReducedMotion)(),
     [localRange, b] = (0, i.useState)(c),
@@ -881,13 +880,13 @@ function K({
       };
     }), [ee, e]);
   return (0, r.jsxs)("div", {
-    className: `${styles.root} ${f ?? ""}`,
+    className: `${styles.root} ${embedded ? styles.embedded : ""} ${f ?? ""}`,
     onKeyDown: e => {
       "Escape" === e.key && P && !R && (e.preventDefault(), er(null));
     },
     children: [(0, r.jsxs)("header", {
       className: styles.header,
-      children: [(0, r.jsx)("h2", {
+      children: [caption ? (0, r.jsxs)("div", { className: styles.headerText, children: [(0, r.jsx)("h2", { children: h }), (0, r.jsx)("p", { className: styles.description, children: caption })] }) : (0, r.jsx)("h2", {
         children: h
       }), (0, r.jsxs)("div", {
         className: styles.controls,

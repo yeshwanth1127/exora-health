@@ -17,3 +17,8 @@ export function reportStart(end: string, days: number): string {
   d.setUTCDate(d.getUTCDate() - days + 1);
   return d.toISOString().slice(0, 10);
 }
+
+/** Date-only labels never pass through the user's local timezone. */
+export function reportDateLabel(day: string): string {
+  return new Intl.DateTimeFormat('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${day}T12:00:00Z`));
+}

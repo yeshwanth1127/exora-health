@@ -1,5 +1,7 @@
 # Admin dashboard Arc handoff
 
+> **Latest user-requested browser review (19 Oct):** read `kpi-browser-fit-review.md` first. Overview KPI block is now compact/full-width, first on the page, with concise context/help and truthful daily-count chart geometry. User expressly requested these targeted checks; ranges, expansion, breakdown, compare, keyboard/focus and help were exercised. **235 frontend tests/build pass; 48 folders unchanged.** Actual screenshots are under `verification/overview-kpi-*.jpg`. This supersedes the source-only/visual-pending boundary below for these checked states.
+
 > **Latest approved implementation (19 Oct):** read `kpi-reporting-wave.md` first. Overview now uses KPI drilldown with six recorded metrics, exact 7/30/90 current/prior totals and doctor/channel breakdowns. New authorised read-only API contract; null unknown history, explicit event/date definitions and zero-baseline handling. **48 folders: 44 adopted + 4 support; 234 frontend tests; 51 targeted API tests; builds/typecheck pass.** Dashboard5198 → isolated worktree API3080. User retains visual verification. This supersedes the selection-only and old runtime/count notes below.
 
 > **Latest selection revisit:** `explorer-selection-review.md` assesses KPI drilldown, Metric explorer, Revenue explorer and Choropleth against actual source/data contracts. Prefer a later KPI reporting feature; Metric is an alternative; defer Revenue/map. No implementation approval, runtime change or count increase. Current implemented baseline remains `abe547e`, 47 folders and 227 tests.
