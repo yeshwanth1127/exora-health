@@ -1,5 +1,7 @@
 # Admin dashboard Arc handoff
 
+> **Latest selection revisit:** `explorer-selection-review.md` assesses KPI drilldown, Metric explorer, Revenue explorer and Choropleth against actual source/data contracts. Prefer a later KPI reporting feature; Metric is an alternative; defer Revenue/map. No implementation approval, runtime change or count increase. Current implemented baseline remains `abe547e`, 47 folders and 227 tests.
+
 > **Latest controls/confirmation follow-up (19 Oct):** read `growth-controls-confirmation-wave.md`. Growth switches/checkboxes now use Arc; all seven native growth confirmations use the existing Arc Dialog with current-permission and reviewed-record checks. **47 folders: 43 adopted + 4 support; 227 tests.** Source/reference provenance and current catalog ledger are updated. User retains visual verification; no provider/backend writes or browser sweeps.
 
 > **Latest screen-coverage correction (19 Oct):** read `growth-screens-wave.md`. Active WhatsApp, Google Business and Website analytics now use scoped Arc tabs, metric cards, badges and appropriate charts; WhatsApp setup/search and growth date/time fields are migrated. Voice and Loyalty summaries/tabs are included. **46 component folders still; 219 tests.** The old count described copied components, not complete migration of every placement. Provider previews remain previews. Visual verification stays with the user.

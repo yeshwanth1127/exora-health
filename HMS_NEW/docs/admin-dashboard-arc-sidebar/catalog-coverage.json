@@ -2706,11 +2706,12 @@
       "rendered_verified_this_pass": false,
       "integration": "not-integrated",
       "assessment": {
-        "decision": "previously-screened",
-        "reason": "Prior candidate-ledger assessment or all-116-Pro document survey; not a new detailed integration audit in this pass."
+        "decision": "defer-low-local-utility",
+        "reason": "No visitor locality geography in the active model. Prefer source/conversion reporting for a city-focused clinic; revisit only for actionable catchment/branch coverage with real data and custom regional geometry."
       },
       "docs": "/Users/deepakonda/Downloads/test/arc-components/components/pro/choropleth-explorer/docs.md",
-      "demo": "http://localhost:4477/components/pro/choropleth-explorer/demo/?theme=light"
+      "demo": "http://localhost:4477/components/pro/choropleth-explorer/demo/?theme=light",
+      "detailed_review": "explorer-selection-review.md"
     },
     {
       "id": "cohort-retention",
@@ -3228,11 +3229,12 @@
       "rendered_verified_this_pass": false,
       "integration": "not-integrated",
       "assessment": {
-        "decision": "previously-screened",
-        "reason": "Prior candidate-ledger assessment or all-116-Pro document survey; not a new detailed integration audit in this pass."
+        "decision": "preferred-after-reporting-work",
+        "reason": "Overview expanding-card drilldown; needs real 180-day current/prior history, exact period totals/rates and per-range breakdown bindings. Snapshot/default breakdown math is not a direct clinic-period adapter."
       },
       "docs": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kpi-drilldown/docs.md",
-      "demo": "http://localhost:4477/components/pro/kpi-drilldown/demo/?theme=light"
+      "demo": "http://localhost:4477/components/pro/kpi-drilldown/demo/?theme=light",
+      "detailed_review": "explorer-selection-review.md"
     },
     {
       "id": "layout-morph",
@@ -3390,11 +3392,12 @@
       "rendered_verified_this_pass": false,
       "integration": "not-integrated",
       "assessment": {
-        "decision": "previously-screened",
-        "reason": "Prior candidate-ledger assessment or all-116-Pro document survey; not a new detailed integration audit in this pass."
+        "decision": "alternative-after-reporting-work",
+        "reason": "Alternative trend surface for Website analytics; source fixes SaaS IDs/formatting, latest-value math and 30D/90D/12M over 730 sample days. Current 120-day browser preview cannot satisfy all reference ranges."
       },
       "docs": "/Users/deepakonda/Downloads/test/arc-components/components/pro/metric-explorer/docs.md",
-      "demo": "http://localhost:4477/components/pro/metric-explorer/demo/?theme=light"
+      "demo": "http://localhost:4477/components/pro/metric-explorer/demo/?theme=light",
+      "detailed_review": "explorer-selection-review.md"
     },
     {
       "id": "metrics-dashboard",
@@ -3804,11 +3807,12 @@
       "rendered_verified_this_pass": false,
       "integration": "not-integrated",
       "assessment": {
-        "decision": "previously-screened",
-        "reason": "Prior candidate-ledger assessment or all-116-Pro document survey; not a new detailed integration audit in this pass."
+        "decision": "defer-domain-mismatch",
+        "reason": "Subscription MRR/new/expansion/churn model does not represent clinic collections. No exposed collection/refund series in the reviewed active contracts; configured fees are not payments."
       },
       "docs": "/Users/deepakonda/Downloads/test/arc-components/components/pro/revenue-explorer/docs.md",
-      "demo": "http://localhost:4477/components/pro/revenue-explorer/demo/?theme=light"
+      "demo": "http://localhost:4477/components/pro/revenue-explorer/demo/?theme=light",
+      "detailed_review": "explorer-selection-review.md"
     },
     {
       "id": "revenue-globe",
@@ -4513,5 +4517,6 @@
       "demo": "http://localhost:4477/components/pro/week-calendar/demo/?theme=light"
     }
   ],
-  "integration_update": "growth-controls-confirmation-wave.md: Switch adopted; Checkbox promoted from support to an independently adopted form control."
+  "integration_update": "growth-controls-confirmation-wave.md: Switch adopted; Checkbox promoted from support to an independently adopted form control.",
+  "latest_candidate_review": "explorer-selection-review.md: four previously screened explorers revisited; no integration or new first-pass coverage."
 }

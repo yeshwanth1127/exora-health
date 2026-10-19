@@ -1,5 +1,7 @@
 # Component inventory
 
+Latest selection revisit: [explorer-selection-review.md](explorer-selection-review.md). KPI drilldown is the preferred later reporting feature; Metric explorer is an alternative. Revenue/Choropleth are deferred. No adoption/count increase.
+
 Latest implementation: [growth-controls-confirmation-wave.md](growth-controls-confirmation-wave.md). **47 folders: 43 adopted + 4 support.** Checkbox is now a directly adopted form control as well as supporting readiness; Switch is newly copied. **Folder count does not imply every screen/state is migrated.**
 
 Current catalog coverage is reconciled in [catalog-audit-2026-10-19.md](catalog-audit-2026-10-19.md), with all per-entry evidence in [catalog-coverage.json](catalog-coverage.json).
@@ -32,8 +34,8 @@ Current catalog coverage is reconciled in [catalog-audit-2026-10-19.md](catalog-
 | Bar chart | Rendered reference; selected interactions only | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/bar-chart/?theme=light) |
 | Line chart | Rendered reference; selected interactions only | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/line-chart/?theme=light) |
 | Donut chart | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/donut-chart/?theme=light) |
-| Metric explorer | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/metric-explorer/demo/) |
-| KPI drilldown | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/kpi-drilldown/demo/) |
+| Metric explorer | Historical rendered reference + source/data-contract revisit | Alternative later trend surface; fixed history/formatting/snapshot aggregation requires binding work | [Demo](http://localhost:4477/components/pro/metric-explorer/demo/) |
+| KPI drilldown | Historical rendered reference + source/data-contract revisit | Preferred later Overview reporting feature; needs real history, exact period aggregation and breakdowns | [Demo](http://localhost:4477/components/pro/kpi-drilldown/demo/) |
 | Metrics dashboard | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/metrics-dashboard/demo/) |
 | Team directory | Pro wave: rendered reference, states exercised and integrated placement compared at 1440×900 light | Integrated: Workspace settings › Team | [Demo](http://localhost:4477/components/pro/team-directory/demo/) |
 | Roles permissions | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/roles-permissions/demo/) |
@@ -55,7 +57,8 @@ Current catalog coverage is reconciled in [catalog-audit-2026-10-19.md](catalog-
 | Booking pill | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/booking-pill/demo/) |
 | Data grid | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/data-grid/demo/) |
 | Search results | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/search-results/demo/) |
-| Revenue explorer | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/revenue-explorer/demo/) |
+| Revenue explorer | Documentation/source/data-contract revisit | Defer for clinic finances: SaaS MRR model and no exposed collection series | [Demo](http://localhost:4477/components/pro/revenue-explorer/demo/) |
+| Choropleth explorer | Documentation/source/data-contract revisit | Defer: no visitor locality data or actionable regional question; custom local boundaries would be needed | [Demo](http://localhost:4477/components/pro/choropleth-explorer/demo/?theme=light) |
 | Funnel chart | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/funnel-chart/demo/) |
 | Small multiples | Initial documentation screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/small-multiples/demo/) |
 | Multi-step form | Initial documentation screening | Integrated in context/setup wave; visual review retained by user | [Demo](http://localhost:4477/components/pro/multi-step-form/demo/) |
@@ -101,6 +104,7 @@ Current catalog coverage is reconciled in [catalog-audit-2026-10-19.md](catalog-
 | Button | Rendered reference; selected interactions only | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/button/?theme=light) |
 | Split bar | Pro wave: rendered reference, states exercised and integrated placement compared at 1440×900 light | Integrated: Overview › Appointment health | [Demo](http://localhost:4477/components/pro/split-bar/demo/?theme=light) |
 | Sidebar | Rendered reference; selected interactions only | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4477/components/pro/sidebar/demo/) |
+
 
 ## Additional integrated support code
 

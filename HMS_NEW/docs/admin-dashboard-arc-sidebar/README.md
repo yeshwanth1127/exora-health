@@ -1,5 +1,7 @@
 # Admin dashboard Arc implementation
 
+Latest explorer assessment: [explorer-selection-review.md](explorer-selection-review.md) compares four larger reporting blocks and their actual data requirements.
+
 Latest controls/confirmation work: [growth-controls-confirmation-wave.md](growth-controls-confirmation-wave.md), including seven guarded Arc confirmations. Current inventory: **47 folders (43 adopted + 4 support)**.
 
 Latest screen migration: [growth-screens-wave.md](growth-screens-wave.md) records the remaining growth charts/metrics/tabs and their real data bindings.
