@@ -1,3 +1,10 @@
+import { MultiStepForm } from "@/components/arc/multi-step-form/multi-step-form";
+import { toast } from "@/components/toast-events";
+import {
+  describeRolePermissions,
+  type PermissionDescription,
+} from "./role-permissions";
+import { MoneyField, PhoneField } from "@/components/WorkspaceFields";
 // Doctors at the selected clinic, and everything about them that booking uses: the booking profile
 // (specialty, qualifications, languages, video visits), name and phone, the clinics they work at, their
 // own fees, and their calendar. Each change is authorised by the API at the clinic it affects:
@@ -40,8 +47,17 @@ import {
   listFromText,
   refusal,
   rupeesToMinor,
+  minorToRupees,
 } from "./forms";
-import { Choice, Empty, ErrorMessage, Field, Hint, LoadingState, Status } from "./ui";
+import {
+  Choice,
+  Empty,
+  ErrorMessage,
+  Field,
+  Hint,
+  LoadingState,
+  Status,
+} from "./ui";
 import { WorkspaceEmpty } from "./WorkspaceEmpty";
 import type {
   ClinicDirectory,
@@ -66,17 +82,23 @@ const REASONS: Record<string, string> = {
   slug_required: "A published profile needs a web address.",
   duplicate_slug: "Another doctor already uses that web address.",
 };
-function Refused({ cmd, onConfirmed }: { cmd: ReturnType<typeof useCommand>; onConfirmed?: () => void }) {
+function Refused({
+  cmd,
+  onConfirmed,
+}: {
+  cmd: ReturnType<typeof useCommand>;
+  onConfirmed?: () => void;
+}) {
   const reason = refusal(cmd.failure);
   return (
     <>
-    <CommandReceiptRecovery command={cmd} onConfirmed={onConfirmed} />
-    <ErrorMessage
-      text={
-        (reason && REASONS[reason]) ||
-        (isStale(cmd.failure) ? REASONS.stale_version : cmd.error)
-      }
-    />
+      <CommandReceiptRecovery command={cmd} onConfirmed={onConfirmed} />
+      <ErrorMessage
+        text={
+          (reason && REASONS[reason]) ||
+          (isStale(cmd.failure) ? REASONS.stale_version : cmd.error)
+        }
+      />
     </>
   );
 }
@@ -103,7 +125,8 @@ export function Doctors() {
   const [selectedId, setSelectedId] = useState<string | null>(() =>
       new URLSearchParams(location.search).get("doctor"),
     ),
-    [adding, setAdding] = useState(false);
+    [adding, setAdding] = useState(false),
+    [setupId, setSetupId] = useState<string | null>(null);
   const selected = practitioners.find((p) => p.staffId === selectedId) ?? null;
   return (
     <>
@@ -111,7 +134,12 @@ export function Doctors() {
         title="Doctors"
         action={
           can("catalog.manage") ? (
-            <Button onClick={() => setAdding(true)}>
+            <Button
+              onClick={() => {
+                setSetupId(null);
+                setAdding(true);
+              }}
+            >
               <UserPlus />
               Add doctor to this clinic
             </Button>
@@ -203,7 +231,7 @@ export function Doctors() {
             });
         }}
       >
-        <SheetContent className="overflow-y-auto sm:max-w-xl">
+        <SheetContent className="doctor-workspace-panel overflow-y-auto">
           <SheetHeader>
             <SheetTitle>{selected?.name}</SheetTitle>
             <SheetDescription>
@@ -215,6 +243,13 @@ export function Doctors() {
               key={selected.staffId}
               staffId={selected.staffId}
               onChanged={refresh}
+              onContinueSetup={() =>
+                requestLeave(() => {
+                  setSetupId(selected.staffId);
+                  setSelectedId(null);
+                  setAdding(true);
+                })
+              }
             />
           )}
         </SheetContent>
@@ -226,9 +261,13 @@ export function Doctors() {
           else requestLeave(() => setAdding(false));
         }}
       >
-        <SheetContent className="overflow-y-auto sm:max-w-lg">
+        <SheetContent className="doctor-workspace-panel overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Add doctor to {facility.name}</SheetTitle>
+            <SheetTitle>
+              {setupId
+                ? "Continue doctor setup"
+                : `Add doctor to ${facility.name}`}
+            </SheetTitle>
             <SheetDescription>
               Choose an existing doctor or create the missing staff account and
               department here. Invitation, clinic affiliation and calendar are
@@ -237,6 +276,8 @@ export function Doctors() {
           </SheetHeader>
           {adding && (
             <AddDoctor
+              resumeId={setupId}
+              onSaved={refresh}
               onAdded={() => {
                 setAdding(false);
                 refresh();
@@ -271,14 +312,17 @@ function SetUpCalendar({
               undefined,
               true,
             )
-          )
+          ) {
+            toast.success("Doctor calendar ready");
             onDone();
+          }
         }}
       >
         <CalendarPlus />
         Set up calendar
       </Button>
-      <ErrorMessage text={cmd.error} /><CommandReceiptRecovery command={cmd} />
+      <ErrorMessage text={cmd.error} />
+      <CommandReceiptRecovery command={cmd} />
     </div>
   );
 }
@@ -291,11 +335,27 @@ type StaffAccount = {
 };
 
 /** Picks a staff member (doctors first) and adds them to a department here, then opens their calendar. */
-function AddDoctor({ onAdded }: { onAdded: () => void }) {
+function AddDoctor({
+  onAdded,
+  onSaved,
+  resumeId,
+}: {
+  onAdded: () => void;
+  onSaved: () => void;
+  resumeId?: string | null;
+}) {
   const { facility, practitioners, can } = useWorkspace(),
     cmd = useCommand(),
     calendarCmd = useCommand();
-  const [affiliated, setAffiliated] = useState<string | null>(null);
+  const [affiliated, setAffiliated] = useState<string | null>(resumeId ?? null);
+  const [step, setStep] = useState(resumeId ? 2 : 0),
+    [calendarSaved, setCalendarSaved] = useState(false);
+  const savedProfile = useQuery<PractitionerDetail>(
+    affiliated
+      ? `/v1/practitioners/${affiliated}/profile?facilityId=${facility.facilityId}`
+      : null,
+  );
+  const calendarReady = calendarSaved || !!savedProfile.data?.calendarId;
   const [prerequisite, setPrerequisite] = useState<
       "staff" | "department" | null
     >(null),
@@ -355,105 +415,80 @@ function AddDoctor({ onAdded }: { onAdded: () => void }) {
         </Hint>
       </div>
     );
-  if (prerequisite)
-    return (
-      <DoctorPrerequisite
-        kind={prerequisite}
-        onBack={() => setPrerequisite(null)}
-        onCreated={async (id) => {
-          if (prerequisite === "staff") {
-            const current = await request<{ items: StaffAccount[] }>(
-              `/v1/staff-accounts?facilityId=${facility.facilityId}`,
+  const prerequisiteContent = prerequisite ? (
+    <DoctorPrerequisite
+      kind={prerequisite}
+      onBack={() => setPrerequisite(null)}
+      onCreated={async (id) => {
+        if (prerequisite === "staff") {
+          const current = await request<{ items: StaffAccount[] }>(
+            `/v1/staff-accounts?facilityId=${facility.facilityId}`,
+          );
+          const created = current.items.find(
+            (s) => s.staffId === id && s.status === "active",
+          );
+          if (!created)
+            throw new Error(
+              "The saved staff account is not yet visible as active at this clinic. Check access before continuing; it will not be created again.",
             );
-            const created = current.items.find(
-              (s) => s.staffId === id && s.status === "active",
+          if (!(await staff.refresh()))
+            throw new Error(
+              "The staff account was saved but the selector could not refresh. Retry this saved-record check before continuing.",
             );
-            if (!created)
-              throw new Error(
-                "The saved staff account is not yet visible as active at this clinic. Check access before continuing; it will not be created again.",
-              );
-            if (!(await staff.refresh()))
-              throw new Error(
-                "The staff account was saved but the selector could not refresh. Retry this saved-record check before continuing.",
-              );
-            setStaffId(id);
-            setFocusTarget("Staff member");
-            setNotice(
-              "Staff account saved and selected. Sign-in invitation is pending; delivery and professional registration are separate checks.",
-            );
-          } else {
-            const current = await request<ClinicDirectory>(
-              `/v1/facilities/${facility.facilityId}/directory`,
-            );
-            if (
-              current.facilityId !== facility.facilityId ||
-              !current.departments.some(
-                (d) => d.departmentId === id && d.status === "active",
-              )
+          setStaffId(id);
+          setFocusTarget("Staff member");
+          setNotice(
+            "Staff account saved and selected. Sign-in invitation is pending; delivery and professional registration are separate checks.",
+          );
+        } else {
+          const current = await request<ClinicDirectory>(
+            `/v1/facilities/${facility.facilityId}/directory`,
+          );
+          if (
+            current.facilityId !== facility.facilityId ||
+            !current.departments.some(
+              (d) => d.departmentId === id && d.status === "active",
             )
-              throw new Error(
-                "The saved department is not yet visible as active at this clinic. Retry the read before continuing; it will not be created again.",
-              );
-            if (!(await directory.refresh()))
-              throw new Error(
-                "The department was saved but the selector could not refresh. Retry this saved-record check before continuing.",
-              );
-            setDepartmentId(id);
-            setFocusTarget("Department");
-            setNotice(
-              "Department saved and selected. Your doctor details were kept.",
+          )
+            throw new Error(
+              "The saved department is not yet visible as active at this clinic. Retry the read before continuing; it will not be created again.",
             );
-          }
-          setPrerequisite(null);
-        }}
-      />
-    );
-  if (affiliated)
-    return (
-      <div className="p-6 space-y-4">
-        <h3 className="font-medium">
-          Doctor added. Calendar setup needs attention.
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          The clinic affiliation was saved. It will not be added again.{" "}
-          {can("schedules.manage")
-            ? "Continue with the calendar before publishing hours."
-            : "An administrator with schedule management access must set up the calendar."}
-        </p>
-        <Refused cmd={calendarCmd} />
-        {calendarCmd.unknown && (
-          <Hint>
-            The calendar outcome is uncertain. Retrying this naturally
-            idempotent operation checks or creates this same doctor's calendar.
-          </Hint>
-        )}
-        {can("schedules.manage") && (
-          <Button
-            disabled={calendarCmd.busy}
-            onClick={async () => {
-              if (
-                await calendarCmd.run(
-                  `/v1/practitioners/${affiliated}/calendar`,
-                  undefined,
-                  true,
-                )
-              )
-                onAdded();
-            }}
-          >
-            {calendarCmd.busy ? "Checking…" : "Resume calendar setup"}
-          </Button>
-        )}
-        <Button variant="outline" disabled={calendarCmd.busy} onClick={onAdded}>
-          Return to doctors
-        </Button>
-      </div>
-    );
-  return (
+          if (!(await directory.refresh()))
+            throw new Error(
+              "The department was saved but the selector could not refresh. Retry this saved-record check before continuing.",
+            );
+          setDepartmentId(id);
+          setFocusTarget("Department");
+          setNotice(
+            "Department saved and selected. Your doctor details were kept.",
+          );
+        }
+        setPrerequisite(null);
+      }}
+    />
+  ) : null;
+  const clinicForm = (
     <form
-      className="p-6 space-y-4"
+      id="doctor-clinic-stage"
+      className="space-y-4"
       onSubmit={async (e) => {
         e.preventDefault();
+        if (
+          step !== 1 ||
+          cmd.busy ||
+          cmd.unknown ||
+          calendarCmd.busy ||
+          calendarCmd.unknown ||
+          prerequisite ||
+          !candidates.some((account) => account.staffId === staffId) ||
+          !dept ||
+          !from ||
+          staff.loading ||
+          staff.error ||
+          directory.loading ||
+          directory.error
+        )
+          return;
         const added = await cmd.run(
           `/v1/practitioners/${staffId}/affiliations`,
           {
@@ -465,50 +500,14 @@ function AddDoctor({ onAdded }: { onAdded: () => void }) {
           true,
         );
         if (!added) return;
-        // A calendar lets the doctor be given weekly hours; it's shared by every clinic they work at.
+        toast.success("Doctor added to this clinic");
         setAffiliated(staffId);
-        if (
-          can("schedules.manage") &&
-          (await calendarCmd.run(
-            `/v1/practitioners/${staffId}/calendar`,
-            undefined,
-            true,
-          ))
-        )
-          onAdded();
+        setStep(2);
+        onSaved();
       }}
     >
       {notice && <Hint>{notice}</Hint>}
       <fieldset disabled={cmd.busy || cmd.unknown} className="space-y-4">
-        <LoadingState {...staff}>
-          <Field title="Staff member" id="add-doctor">
-            <Choice
-              label="Staff member"
-              value={staffId}
-              onChange={setStaffId}
-              options={candidates.map((s) => ({
-                value: s.staffId,
-                label: `${s.displayName} · ${label(s.staffType)}`,
-              }))}
-            />
-          </Field>
-          {can("staff.manage") && can("access.manage") && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setPrerequisite("staff")}
-            >
-              <UserPlus />
-              Create doctor staff account
-            </Button>
-          )}
-          {!candidates.length && (
-            <Empty>
-              Everyone with access here already works at this clinic.
-            </Empty>
-          )}
-        </LoadingState>
         <LoadingState {...directory}>
           <Field title="Department" id="add-doctor-dept">
             <Choice
@@ -557,40 +556,238 @@ function AddDoctor({ onAdded }: { onAdded: () => void }) {
           />
         </Field>
       </fieldset>
-      <Refused cmd={cmd} />
-      <Button
-        type="submit"
-        disabled={
-          cmd.busy ||
-          calendarCmd.busy ||
-          staff.loading ||
-          !!staff.error ||
-          directory.loading ||
-          !!directory.error ||
-          !staffId ||
-          !dept ||
-          !from
-        }
-      >
-        <Plus />
-        {cmd.busy
-          ? "Adding…"
-          : cmd.unknown
-            ? "Check original doctor request"
-            : "Add to this clinic"}
-      </Button>
+      <Refused
+        cmd={cmd}
+        onConfirmed={() => {
+          setAffiliated(staffId);
+          setStep(2);
+          onSaved();
+        }}
+      />
     </form>
+  );
+  const locked =
+    cmd.busy || cmd.unknown || calendarCmd.busy || calendarCmd.unknown;
+  const calendarContent = (
+    <div className="space-y-4">
+      <p className="text-sm">
+        Clinic affiliation saved. Staff account and clinic details will not be
+        created again.
+      </p>
+      {calendarReady ? (
+        <Hint>
+          Calendar is ready. Publish working hours separately in Schedules
+          before expecting available appointments.
+        </Hint>
+      ) : (
+        <>
+          <Hint>
+            {can("schedules.manage")
+              ? "Set up the shared doctor calendar, then review fees. Working hours are configured separately."
+              : "A colleague with schedule management access must set up the calendar. You can return to this doctor’s details to continue later."}
+          </Hint>
+          {can("schedules.manage") && (
+            <Button
+              type="button"
+              disabled={locked || savedProfile.loading || !!savedProfile.error}
+              onClick={async () => {
+                if (
+                  await calendarCmd.run(
+                    `/v1/practitioners/${affiliated}/calendar`,
+                    undefined,
+                    true,
+                  )
+                ) {
+                  setCalendarSaved(true);
+                  toast.success("Doctor calendar ready");
+                  void savedProfile.refresh();
+                  onSaved();
+                }
+              }}
+            >
+              <CalendarPlus />
+              {calendarCmd.busy ? "Setting up…" : "Set up calendar"}
+            </Button>
+          )}
+        </>
+      )}
+      <Refused
+        cmd={calendarCmd}
+        onConfirmed={() => {
+          setCalendarSaved(true);
+          void savedProfile.refresh();
+          onSaved();
+        }}
+      />
+      <Button
+        type="button"
+        variant="outline"
+        disabled={locked}
+        onClick={() => requestLeave(onAdded)}
+      >
+        Finish later
+      </Button>
+    </div>
+  );
+  const feeContent = affiliated ? (
+    <div className="space-y-4">
+      <Hint>
+        Review the recorded service fees or save a doctor-specific fee.
+        Completing this review does not publish hours or make the doctor
+        bookable.
+      </Hint>
+      <DoctorFees staffId={affiliated} />
+    </div>
+  ) : null;
+  if (
+    resumeId &&
+    savedProfile.data &&
+    !savedProfile.data.affiliations.some(
+      (affiliation) =>
+        affiliation.facilityId === facility.facilityId &&
+        (!affiliation.validTo ||
+          affiliation.validTo > today(facility.timezone)),
+    )
+  ) {
+    return (
+      <div className="p-6 space-y-4">
+        <Hint>
+          This doctor no longer has a current or upcoming affiliation at this
+          clinic. Reload the doctor list before continuing setup.
+        </Hint>
+        <Button variant="outline" onClick={onAdded}>
+          Return to doctors
+        </Button>
+      </div>
+    );
+  }
+  if (
+    resumeId &&
+    (savedProfile.loading || savedProfile.error || !savedProfile.data)
+  )
+    return (
+      <div className="p-6">
+        <LoadingState {...savedProfile}>{null}</LoadingState>
+      </div>
+    );
+  return (
+    <div className="p-6">
+      <MultiStepForm
+        current={step}
+        steps={[
+          {
+            id: "staff",
+            title: "Staff account",
+            description:
+              "Choose an existing staff account or create one. A sign-in invitation is a separate saved record.",
+            content: prerequisiteContent ?? (
+              <div className="space-y-4">
+                {notice && <Hint>{notice}</Hint>}{" "}
+                <LoadingState {...staff}>
+                  <Field title="Staff member" id="add-doctor">
+                    <Choice
+                      label="Staff member"
+                      value={staffId}
+                      onChange={setStaffId}
+                      options={candidates.map((s) => ({
+                        value: s.staffId,
+                        label: `${s.displayName} · ${label(s.staffType)}`,
+                      }))}
+                    />
+                  </Field>
+                  {can("staff.manage") && can("access.manage") && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPrerequisite("staff")}
+                    >
+                      <UserPlus />
+                      Create doctor staff account
+                    </Button>
+                  )}
+                  {!candidates.length && (
+                    <Empty>
+                      Everyone with access here already works at this clinic.
+                    </Empty>
+                  )}
+                </LoadingState>
+              </div>
+            ),
+          },
+          {
+            id: "clinic",
+            title: "Clinic",
+            description: `Department and affiliation at ${facility.name}.`,
+            content: prerequisiteContent ?? clinicForm,
+          },
+          {
+            id: "calendar",
+            title: "Calendar",
+            description: savedProfile.data?.displayName ?? "Doctor calendar",
+            content: (
+              <LoadingState {...savedProfile}>{calendarContent}</LoadingState>
+            ),
+          },
+          {
+            id: "fees",
+            title: "Fees",
+            description:
+              "Service defaults and doctor-specific fees are saved independently.",
+            content: feeContent,
+          },
+        ]}
+        busy={locked}
+        onBack={
+          step === 1
+            ? () => setStep(0)
+            : step === 3
+              ? () => requestLeave(() => setStep(2))
+              : undefined
+        }
+        backDisabled={!!prerequisite}
+        nextForm={
+          step === 1 && !prerequisite ? "doctor-clinic-stage" : undefined
+        }
+        nextDisabled={
+          !!prerequisite ||
+          (step === 0
+            ? !staffId || staff.loading || !!staff.error
+            : step === 1
+              ? !dept || !from || directory.loading || !!directory.error
+              : step === 2
+                ? !calendarReady || savedProfile.loading || !!savedProfile.error
+                : false)
+        }
+        nextLabel={
+          step === 1
+            ? "Save clinic affiliation"
+            : step === 2
+              ? "Review fees"
+              : step === 3
+                ? "Finish review"
+                : "Continue"
+        }
+        onNext={() => {
+          if (step === 0 && staffId) setStep(1);
+          else if (step === 2 && calendarReady) setStep(3);
+          else if (step === 3) requestLeave(onAdded);
+        }}
+      />
+    </div>
   );
 }
 
 function DoctorDetails({
   staffId,
   onChanged,
+  onContinueSetup,
 }: {
   staffId: string;
   onChanged: () => void;
+  onContinueSetup: () => void;
 }) {
-  const { facility } = useWorkspace();
+  const { facility, can } = useWorkspace();
   const detail = useQuery<PractitionerDetail>(
     `/v1/practitioners/${staffId}/profile?facilityId=${facility.facilityId}`,
   );
@@ -603,6 +800,11 @@ function DoctorDetails({
       <LoadingState {...detail}>
         {detail.data && (
           <>
+            {can("catalog.manage") && can("access.manage") && (
+              <Button variant="outline" onClick={onContinueSetup}>
+                Continue calendar & fees setup
+              </Button>
+            )}
             <ProfileForm
               key={`p${detail.data.profile?.version ?? 0}`}
               d={detail.data}
@@ -698,7 +900,10 @@ function ProfileForm({
           false,
           "PUT",
         );
-        if (ok) onSaved();
+        if (ok) {
+          toast.success("Doctor profile saved");
+          onSaved();
+        }
       }}
     >
       <h3 className="font-semibold">Booking profile</h3>
@@ -843,8 +1048,10 @@ function ContactForm({
             : {}),
           ...(phone !== (d.phone ?? "") ? { phone: phone || null } : {}),
         };
-        if (await cmd.run(`/v1/staff/${d.staffId}`, body, false, "PATCH"))
+        if (await cmd.run(`/v1/staff/${d.staffId}`, body, false, "PATCH")) {
+          toast.success("Doctor contact details saved");
           onSaved();
+        }
       }}
     >
       <h3 className="font-semibold">Name and contact</h3>
@@ -858,13 +1065,7 @@ function ContactForm({
           />
         </Field>
         <Field title="Work phone" id="doc-phone">
-          <Input
-            id="doc-phone"
-            type="tel"
-            value={phone}
-            placeholder="+919876543210"
-            onChange={(e) => setPhone(e.target.value.trim())}
-          />
+          <PhoneField id="doc-phone" label="Work phone" value={phone} onValueChange={setPhone} />
         </Field>
       </div>
       <p className="text-xs text-muted-foreground">
@@ -948,6 +1149,7 @@ function Clinics({
                       { validTo: until, reason: reason.trim() },
                     )
                   ) {
+                    toast.success("Clinic affiliation updated");
                     setEnding(null);
                     onChanged();
                   }
@@ -1075,6 +1277,7 @@ function DoctorFees({ staffId }: { staffId: string }) {
                 "PUT",
               )
             ) {
+              toast.success("Doctor fee saved");
               setFeeText("");
               setServiceId("");
               setMode("any");
@@ -1104,12 +1307,8 @@ function DoctorFees({ staffId }: { staffId: string }) {
               />
             </Field>
             <Field title="Their fee (₹, blank = service fee)" id="fee-amount">
-              <Input
-                id="fee-amount"
-                inputMode="decimal"
-                value={feeText}
-                onChange={(e) => setFeeText(e.target.value)}
-              />
+              <MoneyField id="fee-amount" label="Their fee (₹, blank = service fee)" value={feeMinor ?? null}
+                onValueChange={(minor) => setFeeText(minorToRupees(minor))} />
             </Field>
             <Field title="From" id="fee-from">
               <Input
@@ -1213,6 +1412,7 @@ function DoctorPrerequisite({
       : can("facility.manage");
   const roles = useQuery<{
     roles: { roleId: string; name: string; permissions: string[] }[];
+    permissions: PermissionDescription[];
   }>(kind === "staff" && allowed ? "/v1/roles" : null);
   const specialties = useQuery<{ items: Specialty[] }>(
     kind === "department" && allowed ? "/v1/specialties" : null,
@@ -1334,6 +1534,7 @@ function DoctorPrerequisite({
           );
           return;
         }
+        toast.success(kind === "staff" ? "Doctor staff account created" : "Clinical department created");
         setSavedId(id);
         await resume(id);
       }}
@@ -1411,11 +1612,17 @@ function DoctorPrerequisite({
                   <summary className="text-sm cursor-pointer">
                     Review role permissions
                   </summary>
-                  <p className="text-xs text-muted-foreground">
-                    {roles.data?.roles
-                      .find((r) => r.roleId === role)
-                      ?.permissions.join(", ")}
-                  </p>
+                  <p className="mt-3 text-sm text-muted-foreground">This role applies at {facility.name}. It allows:</p>
+                  <div className="mt-3 grid grid-cols-2 gap-4">
+                    {describeRolePermissions(roles.data?.roles.find((r) => r.roleId === role)?.permissions ?? [], roles.data?.permissions ?? []).map((group) => (
+                      <section key={group.module}>
+                        <h4 className="text-sm font-medium">{group.module}</h4>
+                        <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-muted-foreground">
+                          {group.permissions.map((permission) => <li key={permission.code}>{permission.description}</li>)}
+                        </ul>
+                      </section>
+                    ))}
+                  </div>
                 </details>
               )}
             </LoadingState>

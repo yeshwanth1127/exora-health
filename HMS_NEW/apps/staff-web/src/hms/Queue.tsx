@@ -1,3 +1,7 @@
+import { QueueBoard } from "./QueueBoard";
+import type { ClinicQueueToken } from "./queue-board";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/arc/tabs/tabs";
+import { PatientHover } from "./PatientHover";
 import { patientDisplayName } from "./patient-presentation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ListOrdered, RefreshCw, UserPlus } from "lucide-react";
@@ -35,7 +39,8 @@ export function Queue() {
   const [staffId, setStaffId] = useState(""),
     [date, setDate] = useState(today(facility.timezone)),
     [notice, setNotice] = useState(""),
-    [walkIn, setWalkIn] = useState(false);
+    [walkIn, setWalkIn] = useState(false),
+    [view, setView] = useState("board");
   const doctors = useMemo(
     () => [
       ...new Map(
@@ -89,7 +94,7 @@ export function Queue() {
           <Choice
             label="Queue doctor"
             value={selected}
-            onChange={setStaffId}
+            onChange={value => requestLeave(() => setStaffId(value))}
             options={[
               { value: "", label: "All doctors" },
               ...doctors.map((p) => ({
@@ -103,17 +108,14 @@ export function Queue() {
           label="Queue day"
           timezone={facility.timezone}
           value={date}
-          onChange={setDate}
+          onChange={value => requestLeave(() => setDate(value))}
+          actions={<Button
+            variant="outline"
+            onClick={async () => {
+              if (await result.refresh()) cmd.reconciled();
+            }}
+          ><RefreshCw />Refresh</Button>}
         />
-        <Button
-          variant="outline"
-          onClick={async () => {
-            if (await result.refresh()) cmd.reconciled();
-          }}
-        >
-          <RefreshCw />
-          Refresh
-        </Button>
       </div>
       {walkIn && selected && (
         <Sheet
@@ -145,7 +147,14 @@ export function Queue() {
       <div className="space-y-4">
         <ErrorMessage text={cmd.error} />
         {notice && <Hint>{notice}</Hint>}
-        <LoadingState {...result}>
+        <Tabs value={view} onValueChange={setView}>
+          <div className="arc-demo-scope mb-4"><TabsList aria-label="Queue presentation"><TabsTrigger value="board">Board</TabsTrigger><TabsTrigger value="table">Table</TabsTrigger></TabsList></div>
+          <TabsContent value="board"><LoadingState {...result}>
+            <QueueBoard tokens={result.data?.items ?? []} command={cmd} unavailable={result.loading || !!result.error}
+              date={date} patient={token => <QueuePatient patientId={token.patientId} appointmentId={token.appointmentId} />}
+              onChanged={message => { setNotice(message); void result.refresh(); }} />
+          </LoadingState></TabsContent>
+          <TabsContent value="table"><LoadingState {...result}>
           <Card>
             <Table>
               <TableHeader>
@@ -168,7 +177,7 @@ export function Queue() {
                       <Status value={t.status} />
                     </TableCell>
                     <TableCell className="font-mono text-xs">
-                      <QueuePatient patientId={t.patientId} />
+                      <QueuePatient patientId={t.patientId} appointmentId={t.appointmentId} />
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
@@ -258,27 +267,24 @@ export function Queue() {
               />
             )}
           </Card>
-        </LoadingState>
+        </LoadingState></TabsContent>
+        </Tabs>
       </div>
     </>
   );
 }
 
-function QueuePatient({ patientId }: { patientId: string }) {
+function QueuePatient({ patientId, appointmentId }: { patientId: string; appointmentId?: string | null }) {
   const { can } = useWorkspace();
   const result = useQuery<PatientDetail>(
     can("patients.read") ? `/v1/patients/${patientId}` : null,
   );
   return result.data ? (
     <div>
-      <p className="font-sans text-sm">
-        {patientDisplayName(
-          patientId,
-          [result.data.givenName, result.data.familyName]
-            .filter(Boolean)
-            .join(" "),
-        )}
-      </p>
+      <div className="font-sans text-sm">
+        <PatientHover patientId={patientId} appointmentId={appointmentId} detail={result.data} name={patientDisplayName(patientId,
+          [result.data.givenName, result.data.familyName].filter(Boolean).join(" "))} />
+      </div>
       <p className="text-xs text-muted-foreground">{result.data.mrn}</p>
     </div>
   ) : (
@@ -286,7 +292,6 @@ function QueuePatient({ patientId }: { patientId: string }) {
   );
 }
 
-type ClinicQueueToken = QueueToken & { doctorName: string };
 /** The read route is per doctor; combine all scoped doctor queues without changing command routing. */
 function useClinicQueue(
   doctors: Practitioner[],
@@ -342,6 +347,7 @@ function useClinicQueue(
             return r.items.map((t) => ({
               ...t,
               doctorName: names.get(id) ?? "Doctor",
+              doctorStaffId: id,
             }));
           }),
         );

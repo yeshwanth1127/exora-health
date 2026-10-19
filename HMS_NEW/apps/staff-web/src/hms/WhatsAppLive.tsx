@@ -1,5 +1,12 @@
-import { toast } from "sonner";
-import { useState, type ReactNode } from "react";
+import { useWorkspaceTab } from "./use-workspace-tab";
+import { workspaceTabs } from "./workspace-navigation";
+import { GrowthConfirm } from "./GrowthConfirm";
+import { useConfirmationReview } from "./use-confirmation-review";
+import { sameReviewedValue } from "./growth-confirmation";
+import { GrowthMetric } from "./GrowthMetric";
+
+import type { ReactNode } from "react";
+import { toast } from "@/components/toast-events";
 import {
   AlertTriangle,
   ArrowRight,
@@ -9,13 +16,19 @@ import {
   Pencil,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/brand-icons";
-import { Badge } from "@/components/ui/badge";
+import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SharedField } from "@/components/shared-field";
+import { TimeField } from "@/components/WorkspaceFields";
+import { GrowthSwitch as Switch } from "./GrowthControls";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/arc/tabs/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { request } from "./client";
 import { useWorkspace } from "./hooks";
@@ -46,16 +59,8 @@ import { Inbox } from "./WhatsAppInbox";
 import { Activity } from "./WhatsAppActivity";
 import type { Patch } from "./WhatsApp";
 
-const tabs = [
-  ["overview", "Overview"],
-  ["inbox", "Inbox"],
-  ["automations", "Automations"],
-  ["promotions", "Promotions"],
-  ["log", "Message log"],
-  ["settings", "Settings"],
-] as const;
+const tabs = workspaceTabs.whatsapp;
 type Tab = (typeof tabs)[number][0];
-const isTab = (t: string | null): t is Tab => tabs.some(([k]) => k === t);
 
 export function Live({
   clinic,
@@ -90,15 +95,12 @@ export function Live({
       },
     }),
   );
-  const [tab, setTab] = useState<Tab>(() => {
-    const t = new URLSearchParams(location.search).get("tab");
-    return isTab(t) ? t : "overview";
-  });
-  /** Tabs live in the URL so staff can share `whatsapp?tab=inbox`. */
-  const open = (t: Tab, extra = "") => {
-    setTab(t);
-    history.replaceState(history.state, "", `?tab=${t}${extra}`);
-  };
+  const [tab, navigateTab] = useWorkspaceTab("whatsapp");
+  const open = (tab: Tab, extra = "") =>
+    navigateTab(
+      tab,
+      Object.fromEntries(new URLSearchParams(extra.replace(/^&/, ""))),
+    );
   const waiting = data.conversations.filter(needsReply).length;
   const canManage = can("comms.manage");
   return (
@@ -115,54 +117,66 @@ export function Live({
           : "Sending is not available yet."}{" "}
         Booking and appointment notices follow the clinic’s saved settings.
       </p>
-      <Tabs value={tab} onValueChange={(v) => open(v as Tab)}>
-        <div className="-mx-1 overflow-x-auto px-1">
-          <TabsList variant="line">
+      <Tabs
+        value={tab}
+        onValueChange={(v) => open(v as Tab)}
+        className="arc-workflow-root"
+      >
+        <div className="arc-demo-scope">
+          <TabsList aria-label="WhatsApp workspace">
             {tabs.map(([k, label]) => (
-              <TabsTrigger key={k} value={k} className="flex-none px-3">
-                {label}
-                {k === "inbox" && waiting > 0 && (
-                  <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[#25d366] px-1 text-[10px] font-semibold text-white">
-                    {waiting}
-                  </span>
-                )}
+              <TabsTrigger key={k} value={k}>
+                <span className="inline-flex items-center gap-2">
+                  {label}
+                  {k === "inbox" && waiting > 0 && (
+                    <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[#25d366] px-1 text-[10px] font-semibold text-white">
+                      {waiting}
+                    </span>
+                  )}
+                </span>
               </TabsTrigger>
             ))}
           </TabsList>
         </div>
+        <TabsContent value="overview" className="arc-workflow-panel">
+          <Overview
+            data={data}
+            change={change}
+            setup={setup}
+            update={update}
+            open={open}
+            canManage={canManage}
+          />
+        </TabsContent>
+        <TabsContent value="inbox" className="arc-workflow-panel">
+          <Inbox
+            data={data}
+            change={change}
+            clinicName={name}
+            openAutomations={() => open("automations", "&id=staff_reply")}
+          />
+        </TabsContent>
+        <TabsContent value="automations" className="arc-workflow-panel">
+          <ManagedAutomations />
+        </TabsContent>
+        <TabsContent value="promotions" className="arc-workflow-panel">
+          <ManagedPromotions />
+        </TabsContent>
+        <TabsContent value="log" className="arc-workflow-panel">
+          <Activity data={data} change={change} />
+        </TabsContent>
+        <TabsContent value="settings" className="arc-workflow-panel">
+          <SettingsTab
+            data={data}
+            change={change}
+            clinic={clinic}
+            setup={setup}
+            update={update}
+            edit={edit}
+            canManage={canManage}
+          />
+        </TabsContent>
       </Tabs>
-      {tab === "overview" && (
-        <Overview
-          data={data}
-          change={change}
-          setup={setup}
-          update={update}
-          open={open}
-          canManage={canManage}
-        />
-      )}
-      {tab === "inbox" && (
-        <Inbox
-          data={data}
-          change={change}
-          clinicName={name}
-          openAutomations={() => open("automations", "&id=staff_reply")}
-        />
-      )}
-      {tab === "automations" && <ManagedAutomations />}
-      {tab === "promotions" && <ManagedPromotions />}
-      {tab === "log" && <Activity data={data} change={change} />}
-      {tab === "settings" && (
-        <SettingsTab
-          data={data}
-          change={change}
-          clinic={clinic}
-          setup={setup}
-          update={update}
-          edit={edit}
-          canManage={canManage}
-        />
-      )}
     </div>
   );
 }
@@ -298,31 +312,45 @@ function Overview({
         active={!!data.bookingActive}
         ready={!!data.capabilities?.booking && !data.busy}
       />
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold">Today on WhatsApp</h2>
+        <Button variant="outline" onClick={() => open("inbox")}>
+          Open inbox · {waiting} waiting for reply
+        </Button>
+      </div>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
+        <GrowthMetric
           label="Booked on WhatsApp today"
-          value={data.bookedToday ?? "—"}
+          value={data.bookedToday ?? null}
+          context="Recorded bookings today"
         />
-        <Stat
+        <GrowthMetric
           label="Messages accepted today"
           value={
             data.messageStats?.sent ??
             out.filter((e) => ["sent", "delivered", "read"].includes(e.status))
               .length
           }
+          context="Accepted outbound messages; not delivery receipts"
         />
-        <Stat
+        <GrowthMetric
           label="Delivered"
           value={
             (data.messageStats?.settled ?? settled.length)
-              ? `${Math.round(((data.messageStats?.delivered ?? delivered) / (data.messageStats?.settled ?? settled.length)) * 100)}%`
-              : "—"
+              ? Math.round(
+                  ((data.messageStats?.delivered ?? delivered) /
+                    (data.messageStats?.settled ?? settled.length)) *
+                    100,
+                )
+              : null
           }
+          suffix="%"
+          context="Of settled outbound messages"
         />
-        <Stat
+        <GrowthMetric
           label="Waiting for reply"
           value={waiting}
-          onClick={() => open("inbox")}
+          context="Conversations needing staff"
         />
       </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -426,36 +454,6 @@ function Overview({
   );
 }
 
-function Stat({
-  label,
-  value,
-  onClick,
-}: {
-  label: string;
-  value: ReactNode;
-  onClick?: () => void;
-}) {
-  const body = (
-    <>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">
-        {value}
-      </p>
-    </>
-  );
-  return (
-    <Card className="gap-0 p-4 shadow-none">
-      {onClick ? (
-        <button type="button" onClick={onClick} className="text-left">
-          {body}
-        </button>
-      ) : (
-        body
-      )}
-    </Card>
-  );
-}
-
 function SettingsTab({
   data,
   change,
@@ -472,7 +470,9 @@ function SettingsTab({
   edit: (s: Stage) => void;
   canManage: boolean;
 }) {
+  const disconnection = useConfirmationReview<WhatsAppSetup>();
   const { facility } = useWorkspace();
+
   const s = data.settings;
   const set = (patch: Partial<WaSettings>) =>
     change((d) => ({ ...d, settings: { ...d.settings, ...patch } }));
@@ -561,22 +561,22 @@ function SettingsTab({
       >
         <div className="grid gap-4 sm:grid-cols-3">
           <Field id="wa-open" label="Reception opens">
-            <Input
+            <TimeField
               id="wa-open"
-              type="time"
+              label="Reception opens"
               value={s.hours.from}
-              onChange={(e) =>
-                set({ hours: { ...s.hours, from: e.target.value } })
+              onValueChange={(value) =>
+                set({ hours: { ...s.hours, from: value } })
               }
             />
           </Field>
           <Field id="wa-close" label="Reception closes">
-            <Input
+            <TimeField
               id="wa-close"
-              type="time"
+              label="Reception closes"
               value={s.hours.to}
-              onChange={(e) =>
-                set({ hours: { ...s.hours, to: e.target.value } })
+              onValueChange={(value) =>
+                set({ hours: { ...s.hours, to: value } })
               }
             />
           </Field>
@@ -627,22 +627,22 @@ function SettingsTab({
         {s.quiet.on && (
           <div className="mt-4 grid max-w-md gap-4 sm:grid-cols-2">
             <Field id="wa-quiet-from" label="From">
-              <Input
+              <TimeField
                 id="wa-quiet-from"
-                type="time"
+                label="From"
                 value={s.quiet.from}
-                onChange={(e) =>
-                  set({ quiet: { ...s.quiet, from: e.target.value } })
+                onValueChange={(value) =>
+                  set({ quiet: { ...s.quiet, from: value } })
                 }
               />
             </Field>
             <Field id="wa-quiet-to" label="Until">
-              <Input
+              <TimeField
                 id="wa-quiet-to"
-                type="time"
+                label="Until"
                 value={s.quiet.to}
-                onChange={(e) =>
-                  set({ quiet: { ...s.quiet, to: e.target.value } })
+                onValueChange={(value) =>
+                  set({ quiet: { ...s.quiet, to: value } })
                 }
               />
             </Field>
@@ -681,21 +681,35 @@ function SettingsTab({
         <Button
           variant="outline"
           className="text-destructive"
-          onClick={() =>
-            window.confirm(
-              `Disconnect ${setup.connected?.phone}? Patients won't be able to book on WhatsApp until you connect again.`,
-            ) &&
-            void request(
-              `/v1/managed-connections/whatsapp?facilityId=${facility.facilityId}`,
-              { method: "DELETE", idempotencyKey: crypto.randomUUID() },
-            )
-              .then(() => location.reload())
-              .catch((e) => toast.error(e.message))
-          }
+          onClick={() => disconnection.request(setup)}
         >
           Disconnect number
         </Button>
       </Section>
+      <GrowthConfirm
+        open={disconnection.open}
+        onDismiss={disconnection.dismiss}
+        title="Disconnect WhatsApp?"
+        description={`Disconnect ${disconnection.target?.connected?.phone ?? "this number"}? Patients will not be able to book through it until it is connected again.`}
+        confirmLabel="Disconnect number"
+        blockedReason={
+          !canManage
+            ? "You no longer have permission to change WhatsApp setup."
+            : !sameReviewedValue(setup, disconnection.target)
+              ? "The WhatsApp setup changed. Close this dialog and review it before disconnecting."
+              : undefined
+        }
+        onConfirm={() => {
+          if (!canManage || !sameReviewedValue(setup, disconnection.target))
+            return;
+          void request(
+            `/v1/managed-connections/whatsapp?facilityId=${facility.facilityId}`,
+            { method: "DELETE", idempotencyKey: crypto.randomUUID() },
+          )
+            .then(() => location.reload())
+            .catch((error) => toast.error(error.message));
+        }}
+      />
     </fieldset>
   );
 }
@@ -728,9 +742,8 @@ function Field({
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
+    <SharedField id={id} label={label}>
       {children}
-    </div>
+    </SharedField>
   );
 }

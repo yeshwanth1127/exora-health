@@ -1,4 +1,10 @@
-import { requestLeave } from "./leave";
+import { useWorkspaceTab } from "./use-workspace-tab";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/arc/tabs/tabs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChannelOnboarding } from "./ChannelOnboarding";
 import {
@@ -69,15 +75,22 @@ function AssignedVoiceNumber() {
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Your hospital&apos;s voice agent number
             </p>
-            <a className="text-xl font-semibold hover:underline" href={`tel:${phoneNumber}`}>
+            <a
+              className="text-xl font-semibold hover:underline"
+              href={`tel:${phoneNumber}`}
+            >
               {phoneNumber}
             </a>
             <p className="text-xs text-muted-foreground">
-              Patient calls to this number are answered by your dedicated voice agent.
+              Patient calls to this number are answered by your dedicated voice
+              agent.
             </p>
           </div>
         </div>
-        <Badge variant="outline" className="border-emerald-300 text-emerald-700">
+        <Badge
+          variant="outline"
+          className="border-emerald-300 text-emerald-700"
+        >
           Active · Dedicated to this tenant
         </Badge>
       </CardContent>
@@ -173,7 +186,11 @@ function VoiceControl() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" disabled={busy} onClick={() => void refresh()}>
+          <Button
+            variant="outline"
+            disabled={busy}
+            onClick={() => void refresh()}
+          >
             {busy ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
             Check status
           </Button>
@@ -233,7 +250,8 @@ function VoiceControl() {
           <CardContent className="space-y-3 text-sm">
             {busy && !booking ? (
               <p className="flex items-center gap-2 text-muted-foreground">
-                <LoaderCircle className="size-4 animate-spin" /> Checking tenant data…
+                <LoaderCircle className="size-4 animate-spin" /> Checking tenant
+                data…
               </p>
             ) : booking ? (
               <>
@@ -250,7 +268,9 @@ function VoiceControl() {
                 </p>
               </>
             ) : (
-              <p className="text-muted-foreground">Run the status check again.</p>
+              <p className="text-muted-foreground">
+                Run the status check again.
+              </p>
             )}
           </CardContent>
         </Card>
@@ -264,17 +284,27 @@ function VoiceControl() {
           <CardContent>
             {active ? (
               <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
-                <li>Open the patient website and scroll to Voice front desk.</li>
-                <li>Accept the displayed consent notice and allow microphone access.</li>
-                <li>Ask for a doctor and a live slot, then book a test appointment.</li>
-                <li>Return here to confirm the call and booking in Call history.</li>
+                <li>
+                  Open the patient website and scroll to Voice front desk.
+                </li>
+                <li>
+                  Accept the displayed consent notice and allow microphone
+                  access.
+                </li>
+                <li>
+                  Ask for a doctor and a live slot, then book a test
+                  appointment.
+                </li>
+                <li>
+                  Return here to confirm the call and booking in Call history.
+                </li>
               </ol>
             ) : (
               <p className="text-sm leading-relaxed text-muted-foreground">
-                Local booking data can be tested now. A real browser call cannot be
-                tested until the tenant has a public HTTPS address and its dedicated
-                Sarvam agent has been tested, committed and bound by the Exora
-                platform administrator.
+                Local booking data can be tested now. A real browser call cannot
+                be tested until the tenant has a public HTTPS address and its
+                dedicated Sarvam agent has been tested, committed and bound by
+                the Exora platform administrator.
               </p>
             )}
           </CardContent>
@@ -285,38 +315,37 @@ function VoiceControl() {
 }
 
 export function Voice() {
-  const [setup, setSetup] = useState(false);
+  const [tab, open] = useWorkspaceTab("voice");
   const { me, facility } = useWorkspace();
   const source = useMemo(() => voiceSource(me, facility), [me, facility]);
   return (
     <OriginalResourceContext.Provider value={source}>
-      <div className="mb-6 flex gap-2">
-        <Button
-          variant={setup ? "default" : "outline"}
-          onClick={() => requestLeave(() => setSetup(true))}
-        >
-          Call setup
-        </Button>
-        <Button
-          variant={!setup ? "default" : "outline"}
-          onClick={() => requestLeave(() => setSetup(false))}
-        >
-          Call history
-        </Button>
-      </div>
-      <AssignedVoiceNumber />
-      {setup ? (
-        <div className="space-y-8">
-          <VoiceControl />
-          <ChannelOnboarding channel="voice" />
+      <Tabs
+        value={tab}
+        onValueChange={(value) => open(value as "history" | "setup")}
+        className="arc-workflow-root"
+      >
+        <div className="arc-demo-scope mb-6">
+          <TabsList aria-label="Voice workspace">
+            <TabsTrigger value="history">Call history</TabsTrigger>
+            <TabsTrigger value="setup">Call setup</TabsTrigger>
+          </TabsList>
         </div>
-      ) : (
-        <VoiceModule
-          recordingLoader={(id) =>
-            requestBytes(`/v1/voice-calls/${id}/recording`)
-          }
-        />
-      )}
+        <AssignedVoiceNumber />
+        <TabsContent value="setup" className="arc-workflow-panel">
+          <div className="space-y-8">
+            <VoiceControl />
+            <ChannelOnboarding channel="voice" />
+          </div>
+        </TabsContent>
+        <TabsContent value="history" className="arc-workflow-panel">
+          <VoiceModule
+            recordingLoader={(id) =>
+              requestBytes(`/v1/voice-calls/${id}/recording`)
+            }
+          />
+        </TabsContent>
+      </Tabs>
     </OriginalResourceContext.Provider>
   );
 }

@@ -1,3 +1,6 @@
+import { Tooltip } from "../arc/tooltip/tooltip";
+import { Button as ArcButton } from "../arc/button/button";
+import arcStyles from "../arc/button/button.module.css";
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
@@ -43,15 +46,21 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  render,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
-  return (
+  const button = (
     <ButtonPrimitive
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      data-size={size}
+      render={render ?? <ArcButton variant={variant === "default" ? "primary" : variant === "ghost" || variant === "link" ? "ghost" : variant === "destructive" ? "danger" : "secondary"}
+        size={size === "sm" || size === "xs" || size === "icon-sm" || size === "icon-xs" ? "sm" : size === "lg" || size === "icon-lg" ? "lg" : "md"} />}
+      className={cn("arc-demo-scope arc-workspace-button", render && [arcStyles.button, variant === "default" ? arcStyles.primary : variant === "ghost" || variant === "link" ? arcStyles.ghost : arcStyles.secondary], size?.startsWith("icon") && "arc-icon-control", variant === "link" && "underline underline-offset-4", className)}
       {...props}
     />
-  )
+  );
+  return size?.startsWith("icon") && typeof props["aria-label"] === "string"
+    ? <Tooltip content={props["aria-label"]}>{button}</Tooltip> : button;
 }
 
 export { Button, buttonVariants }

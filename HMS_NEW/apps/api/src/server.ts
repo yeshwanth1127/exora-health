@@ -48,6 +48,8 @@ import { registerVoiceIntegrationRoutes } from './http/routes/voice-integration.
 import { registerPublicVoiceRoutes } from './http/routes/public-voice.ts';
 import { registerTenantPublicBookingRoutes } from './http/routes/tenant-public-booking.ts';
 import { loadTelehealthSettings, loadVoiceRuntimeSettings, type TelehealthSettings, type VoiceRuntimeSettings } from './config.ts';
+import { registerAlertRoutes } from "./http/routes/alerts.ts";
+
 
 export interface ServerDeps {
   db: Kysely<DB>;
@@ -309,6 +311,7 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   registerQueueRoutes(app, deps.db);
   registerClinicalRoutes(app, deps.db);
   registerAdminRoutes(app, deps.db);
+  registerAlertRoutes(app, deps.db);
   registerRegistryRoutes(app, deps.db);
   registerRecordRoutes(app, deps.db);
   registerBoardRoutes(app, deps.db);

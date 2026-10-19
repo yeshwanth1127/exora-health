@@ -1,3 +1,4 @@
+import { TimeField } from "@/components/WorkspaceFields";
 import { useContext, useState, type ReactNode } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { OriginalResourceContext, isDraft } from "@/components/resource-source";
@@ -471,52 +472,20 @@ function WeeklyEditor({
                     id={`weekly-start-${index}-${j}`}
                     error={windowError(g, j, false)}
                   >
-                    <Input
-                      id={`weekly-start-${index}-${j}`}
-                      value={w.start}
-                      maxLength={5}
-                      placeholder="10:00"
-                      aria-invalid={!!windowError(g, j, false)}
-                      aria-describedby={
-                        windowError(g, j, false)
-                          ? `weekly-start-${index}-${j}-error`
-                          : undefined
-                      }
-                      onChange={(e) =>
-                        updateGroup(index, {
-                          ...g,
-                          windows: g.windows.map((v, i) =>
-                            i === j ? { ...v, start: e.target.value } : v,
-                          ),
-                        })
-                      }
-                    />
+                    <TimeField id={`weekly-start-${index}-${j}`} label="From · 24-hour" value={w.start}
+                      onValueChange={(value) => updateGroup(index, { ...g,
+                        windows: g.windows.map((v, i) => i === j ? { ...v, start: value } : v),
+                      })} />
                   </Field>
                   <Field
                     label="To · 24-hour"
                     id={`weekly-end-${index}-${j}`}
                     error={windowError(g, j, true)}
                   >
-                    <Input
-                      id={`weekly-end-${index}-${j}`}
-                      value={w.end}
-                      maxLength={5}
-                      placeholder="14:00"
-                      aria-invalid={!!windowError(g, j, true)}
-                      aria-describedby={
-                        windowError(g, j, true)
-                          ? `weekly-end-${index}-${j}-error`
-                          : undefined
-                      }
-                      onChange={(e) =>
-                        updateGroup(index, {
-                          ...g,
-                          windows: g.windows.map((v, i) =>
-                            i === j ? { ...v, end: e.target.value } : v,
-                          ),
-                        })
-                      }
-                    />
+                    <TimeField id={`weekly-end-${index}-${j}`} label="To · 24-hour" value={w.end}
+                      onValueChange={(value) => updateGroup(index, { ...g,
+                        windows: g.windows.map((v, i) => i === j ? { ...v, end: value } : v),
+                      })} />
                   </Field>
                   <Button
                     className="mt-6 h-11 w-11"

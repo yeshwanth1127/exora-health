@@ -1,19 +1,21 @@
+import {
+  SupportConversation,
+  ConversationComposer,
+} from "@/components/arc/support-conversation/support-conversation";
+import { SearchField } from "@/components/arc/search-field/search-field";
+import { requestLeave, useUnsaved } from "./leave";
 import { useEffect, useState } from "react";
 import {
   Bot,
   CalendarPlus,
-  CheckCircle2,
   Clock,
   Inbox as InboxIcon,
-  Search,
   Send,
   UserCheck,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { WhatsAppConsent } from "./WhatsAppConsent";
 import { useQuery, useWorkspace } from "./hooks";
 import {
@@ -27,15 +29,7 @@ import {
   type Conversation,
   type WaData,
 } from "./whatsapp-data";
-import {
-  ago,
-  Bubble,
-  clock,
-  duration,
-  Ticks,
-  useNow,
-  type Change,
-} from "./whatsapp-ui";
+import { ago, duration, useNow, type Change } from "./whatsapp-ui";
 
 const filters = [
   ["waiting", "Needs reply"],
@@ -56,7 +50,7 @@ export function Inbox({
   clinicName: string;
   openAutomations: () => void;
 }) {
-  const { me, can, go } = useWorkspace();
+  const { me, can, go, facility } = useWorkspace();
   const canReply =
     can("comms.reply") && !!data.capabilities?.sending && !data.busy;
   const now = useNow();
@@ -81,7 +75,9 @@ export function Inbox({
         (b.messages.at(-1)?.at ?? b.updatedAt ?? 0) -
         (a.messages.at(-1)?.at ?? a.updatedAt ?? 0),
     );
-  const [picked, setPicked] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string | null>(() =>
+    new URLSearchParams(location.search).get("conversation"),
+  );
   const selected =
     data.conversations.find((x) => x.id === (picked ?? list[0]?.id)) ?? null;
   const remote = useQuery<{
@@ -197,14 +193,12 @@ export function Inbox({
         className={`flex min-h-0 flex-col border-r ${c && picked ? "max-lg:hidden" : ""}`}
       >
         <div className="space-y-3 border-b p-3">
-          <div className="relative">
-            <Search className="absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
-            <Input
-              className="pl-8"
-              placeholder="Search name or number"
-              aria-label="Search chats"
+          <div className="arc-demo-scope">
+            <SearchField
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+              onValueChange={setQ}
+              label="Search chats"
+              placeholder="Search name or number"
             />
           </div>
           <div className="flex flex-wrap gap-1">
@@ -240,7 +234,7 @@ export function Inbox({
               <li key={x.id}>
                 <button
                   type="button"
-                  onClick={() => setPicked(x.id)}
+                  onClick={() => requestLeave(() => setPicked(x.id))}
                   className={`flex w-full gap-3 border-b px-3 py-3 text-left ${active ? "bg-muted" : "hover:bg-muted/50"}`}
                 >
                   <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#25d366]/15 text-sm font-medium text-[#128c7e]">
@@ -301,100 +295,137 @@ export function Inbox({
       </aside>
       {c ? (
         <>
-          <section
-            className={`flex min-h-0 flex-col ${picked ? "" : "max-lg:hidden"}`}
-          >
-            <header className="flex flex-wrap items-center gap-2 border-b px-4 py-2.5">
-              <Button
-                size="xs"
-                variant="ghost"
-                className="lg:hidden"
-                onClick={() => setPicked(null)}
-              >
-                ← Chats
-              </Button>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{c.patient}</p>
-                <p className="text-xs text-muted-foreground">
-                  {c.phone} ·{" "}
-                  {c.assignee
-                    ? `Assigned to ${c.assignee === me.displayName ? "you" : c.assignee}`
-                    : "Unassigned"}
-                </p>
-              </div>
-              {canReply && c.status === "open" && (
-                <>
-                  {c.assignee !== me.displayName && (
+          <SupportConversation
+            key={c.id}
+            title={c.patient}
+            subtitle={`${c.phone} · ${c.assignee ? `Assigned to ${c.assignee === me.displayName ? "you" : c.assignee}` : "Unassigned"}`}
+            className={picked ? "" : "max-lg:hidden"}
+            resolved={c.status !== "open"}
+            onResolve={
+              canReply
+                ? () =>
+                    requestLeave(() => {
+                      edit(
+                        c.status === "open"
+                          ? { status: "resolved" }
+                          : { status: "open", assignee: me.displayName },
+                      );
+                    })
+                : undefined
+            }
+            actions={
+              <>
+                {" "}
+                {canReply && c.status === "open" && (
+                  <>
+                    {c.assignee !== me.displayName && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => edit({ assignee: me.displayName })}
+                      >
+                        <UserCheck /> Assign to me
+                      </Button>
+                    )}
                     <Button
                       size="sm"
-                      variant="outline"
-                      onClick={() => edit({ assignee: me.displayName })}
+                      variant="ghost"
+                      disabled={!data.bookingActive}
+                      onClick={() =>
+                        requestLeave(() => {
+                          edit({ status: "bot", assignee: null });
+                        })
+                      }
                     >
-                      <UserCheck /> Assign to me
+                      <Bot /> Hand back to bot
                     </Button>
+                  </>
+                )}
+              </>
+            }
+            messages={c.messages.map((message) => {
+              const status =
+                message.status ??
+                (message.logId
+                  ? data.log.find((entry) => entry.id === message.logId)?.status
+                  : undefined);
+              return {
+                id: message.id,
+                sender:
+                  message.from === "patient"
+                    ? c.patient
+                    : (message.by ?? "Staff"),
+                outgoing: message.from !== "patient",
+                text: message.text,
+                time: new Date(message.at).toLocaleTimeString("en-IN", {
+                  timeZone: facility.timezone,
+                  hour: "numeric",
+                  minute: "2-digit",
+                }),
+                day: new Date(message.at).toLocaleDateString("en-IN", {
+                  timeZone: facility.timezone,
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                }),
+                delivery: status ? (
+                  <span>
+                    {status === "unknown"
+                      ? "Delivery unconfirmed"
+                      : status === "claimed"
+                        ? "Sending…"
+                        : status}
+                  </span>
+                ) : undefined,
+              };
+            })}
+            notice={
+              c.status === "open"
+                ? undefined
+                : c.status === "resolved"
+                  ? "Resolved"
+                  : "Handed back to the bot"
+            }
+            composer={
+              <>
+                {" "}
+                {remote.error && (
+                  <p role="alert" className="p-3 text-sm text-destructive">
+                    {remote.error}
+                  </p>
+                )}
+                {remote.loading && (
+                  <p className="p-3 text-sm text-muted-foreground">
+                    Loading conversation…
+                  </p>
+                )}
+                {can("comms.reply") &&
+                  remote.data?.conversation.contactPointId && (
+                    <div className="border-b px-3 py-2">
+                      <WhatsAppConsent
+                        contactPointId={remote.data.conversation.contactPointId}
+                        saved={async () => {
+                          await remote.refresh();
+                          window.dispatchEvent(
+                            new Event("hms-whatsapp-updated"),
+                          );
+                        }}
+                      />
+                    </div>
                   )}
-                  <Button
-                    disabled={!data.bookingActive}
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      edit({ status: "bot", assignee: null });
-                      setPicked(null);
-                    }}
-                  >
-                    <Bot /> Hand back to bot
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      edit({ status: "resolved" });
-                      setPicked(null);
-                    }}
-                  >
-                    <CheckCircle2 /> Resolve
-                  </Button>
-                </>
-              )}
-              {canReply && c.status !== "open" && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    edit({ status: "open", assignee: me.displayName })
-                  }
-                >
-                  Reopen
-                </Button>
-              )}
-            </header>
-            {remote.error && (
-              <p role="alert" className="p-3 text-sm text-destructive">
-                {remote.error}
-              </p>
-            )}
-            {can("comms.reply") && remote.data?.conversation.contactPointId && (
-              <div className="border-b px-3 py-2">
-                <WhatsAppConsent
-                  contactPointId={remote.data.conversation.contactPointId}
-                  saved={async () => {
-                    await remote.refresh();
-                    window.dispatchEvent(new Event("hms-whatsapp-updated"));
-                  }}
-                />
-              </div>
-            )}
-            <Thread c={c} data={data} />
-            <Composer
-              key={c.id}
-              c={c}
-              data={data}
-              now={now}
-              canReply={canReply}
-              clinicName={clinicName}
-              send={send}
-              openAutomations={openAutomations}
-            />
-          </section>
+                <Composer
+                  c={c}
+                  data={data}
+                  now={now}
+                  canReply={canReply}
+                  clinicName={clinicName}
+                  send={send}
+                  openAutomations={openAutomations}
+                />{" "}
+              </>
+            }
+          />
+
           <aside className="hidden min-h-0 overflow-y-auto border-l p-4 text-sm xl:block">
             <p className="text-xs font-medium text-muted-foreground">Patient</p>
             <p className="mt-1 font-medium">{c.patient}</p>
@@ -440,69 +471,6 @@ export function Inbox({
   );
 }
 
-function Thread({ c, data }: { c: Conversation; data: WaData }) {
-  return (
-    <div className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto bg-[#efeae2] p-4 text-[13px] leading-snug text-[#111b21]">
-      <div className="space-y-2">
-        {c.messages.map((m) => {
-          const status =
-            m.status ??
-            (m.logId
-              ? data.log.find((e) => e.id === m.logId)?.status
-              : undefined);
-          return (
-            <Bubble
-              key={m.id}
-              me={m.from !== "patient"}
-              meta={
-                <>
-                  {m.from === "bot"
-                    ? "Bot · "
-                    : m.from === "staff"
-                      ? `${m.by ? "Reception" : "Staff"} · `
-                      : ""}
-                  {clock(m.at)}
-                  {status &&
-                    (["queued", "sent", "delivered", "read", "failed"].includes(
-                      status,
-                    ) ? (
-                      <Ticks
-                        status={
-                          status as
-                            "queued" | "sent" | "delivered" | "read" | "failed"
-                        }
-                        className="size-3"
-                      />
-                    ) : (
-                      <span>
-                        {status === "unknown"
-                          ? "Delivery unconfirmed"
-                          : status === "claimed"
-                            ? "Sending…"
-                            : status}
-                      </span>
-                    ))}
-                </>
-              }
-            >
-              <p
-                className={`whitespace-pre-wrap break-words ${m.from === "bot" ? "text-[#54656f]" : ""}`}
-              >
-                {m.text}
-              </p>
-            </Bubble>
-          );
-        })}
-        {c.status !== "open" && (
-          <p className="mx-auto w-fit rounded-md bg-white/80 px-2 py-1 text-center text-[11px] text-[#54656f]">
-            {c.status === "resolved" ? "Resolved" : "Handed back to the bot"}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function Composer({
   c,
   data,
@@ -521,6 +489,7 @@ function Composer({
   openAutomations: () => void;
 }) {
   const [text, setText] = useState("");
+  useUnsaved(!!text.trim());
   if (!canReply || !c.canReply)
     return (
       <p className="border-t p-4 text-sm text-muted-foreground">
@@ -595,51 +564,19 @@ function Composer({
   return (
     <div className="space-y-2 border-t p-3">
       <div className="flex flex-wrap items-center gap-1.5">
-        {data.settings.savedReplies.filter(Boolean).map((r) => (
-          <button
-            key={r}
-            type="button"
-            onClick={() => setText(r)}
-            className="max-w-56 truncate rounded-full border px-2.5 py-0.5 text-xs hover:bg-muted"
-          >
-            {r}
-          </button>
-        ))}
         <span
           className={`ml-auto flex items-center gap-1 text-[11px] ${left < 2 * 3_600_000 ? "text-amber-700" : "text-muted-foreground"}`}
         >
           <Clock className="size-3" /> Reply window {duration(left)} left
         </span>
       </div>
-      <div className="flex items-end gap-2">
-        <Textarea
-          rows={2}
-          maxLength={4096}
-          placeholder={`Reply to ${c.patient.split(" ")[0]}… (Enter to send, Shift+Enter for a new line)`}
-          aria-label="Reply"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (
-              e.key === "Enter" &&
-              !e.shiftKey &&
-              !e.nativeEvent.isComposing
-            ) {
-              e.preventDefault();
-              if (text.trim()) submit();
-            }
-          }}
-          className="min-h-0 resize-none"
-        />
-        <Button
-          size="icon"
-          aria-label="Send"
-          disabled={!text.trim()}
-          onClick={submit}
-        >
-          <Send />
-        </Button>
-      </div>
+      <ConversationComposer
+        value={text}
+        onChange={setText}
+        onSend={submit}
+        suggestions={data.settings.savedReplies}
+        placeholder={`Reply to ${c.patient.split(" ")[0]}… (Enter to send, Shift+Enter for a new line)`}
+      />
     </div>
   );
 }

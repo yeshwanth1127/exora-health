@@ -1,18 +1,22 @@
+import { DropdownMenu } from "@/components/arc/dropdown-menu/dropdown-menu";
+import { PatientHover } from "./PatientHover";
+import { CopyButton } from "@/components/arc/copy-button/copy-button";
 import { useTodayVisits } from "./patient-visits-hooks";
 import { patientDisplayName } from "./patient-presentation";
 import { useEffect, useState } from "react";
 import {
   CalendarPlus,
   RefreshCw,
-  Search,
   CalendarClock,
   XCircle,
   UserX,
   ArrowRight,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/brand-icons";
+import { filterOptionValue, doctorFilterOptions } from "./arc-filter-data";
+import { SearchField } from "@/components/arc/search-field/search-field";
+import { FilterToolbar } from "@/components/arc/filter-toolbar/filter-toolbar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -27,7 +31,7 @@ import { PageTitle } from "@/components/workspace";
 import { useCommand, useQuery, useWorkspace } from "./hooks";
 import { query } from "./client";
 import { today, time, money, label } from "./model";
-import { Choice, ErrorMessage, Field, LoadingState, Status } from "./ui";
+import { ErrorMessage, Field, LoadingState, Status } from "./ui";
 import { PatientLookup, RegisterPatient, TestPatientBadge } from "./Patients";
 import { WorkspaceEmpty } from "./WorkspaceEmpty";
 import { DayNavigator } from "@/components/date-controls";
@@ -56,6 +60,7 @@ export function Appointments() {
     const timer = setTimeout(() => setSearch(text.trim()), 300);
     return () => clearTimeout(timer);
   }, [text]);
+  const doctorOptions = doctorFilterOptions(practitioners);
   const filters = JSON.stringify([date, staffId, status, search, mode]);
   const [pagedFor, setPagedFor] = useState(filters);
   if (pagedFor !== filters) {
@@ -114,7 +119,7 @@ export function Appointments() {
           ) : undefined
         }
       />
-      <Card>
+      <Card className="overflow-visible">
         <CardContent className="pt-5 space-y-4">
           <div className="flex flex-wrap items-start gap-3">
             <DayNavigator
@@ -123,50 +128,6 @@ export function Appointments() {
               timezone={facility.timezone}
               label="Appointment date"
             />
-            <div className="w-48 space-y-2">
-              <Choice
-                label="Doctor"
-                value={staffId}
-                onChange={setStaffId}
-                options={[
-                  { value: "all", label: "All doctors" },
-                  ...practitioners.map((p) => ({
-                    value: p.staffId,
-                    label: p.name,
-                  })),
-                ]}
-              />
-            </div>
-            <div className="w-40 space-y-2">
-              <Choice
-                label="Booking status"
-                value={status}
-                onChange={setStatus}
-                options={[
-                  "all",
-                  "confirmed",
-                  "checked_in",
-                  "completed",
-                  "cancelled",
-                  "no_show",
-                ].map((v) => ({
-                  value: v,
-                  label: v === "all" ? "All statuses" : label(v),
-                }))}
-              />
-            </div>
-            <div className="w-44 space-y-2">
-              <Choice
-                label="Appointment type"
-                value={mode}
-                onChange={setMode}
-                options={[
-                  { value: "all", label: "All visits" },
-                  { value: "in_person", label: "In person" },
-                  { value: "virtual", label: "Video" },
-                ]}
-              />
-            </div>
             <Button
               variant="outline"
               size="icon"
@@ -176,16 +137,45 @@ export function Appointments() {
             >
               <RefreshCw />
             </Button>
+            <div className="arc-demo-scope appointment-search ml-auto min-w-[360px] max-w-xl flex-1">
+              <SearchField variant="soft" label="Search appointments" value={text} onValueChange={setText}
+                autoComplete="off" placeholder="Patient name, phone, MRN or confirmation code"
+                aria-describedby="appointment-search-hint" aria-busy={text.trim().length >= 2 && (text.trim() !== search || result.loading)} />
+              <p id="appointment-search-hint" className="mt-2 text-xs text-muted-foreground" role="status">
+                {text.trim().length === 1 ? "Type at least 2 characters to search." : text.trim().length >= 2
+                  ? text.trim() !== search || result.loading ? "Searching appointments…" : result.error ? "Search could not load. Try again." : `${items.length}${result.data?.nextCursor ? "+" : ""} matching ${items.length === 1 ? "appointment" : "appointments"} for the selected date and filters.`
+                  : "Search within the selected date and filters."}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Search className="size-4 text-muted-foreground" />
-            <Input
-              aria-label="Search appointments"
-              placeholder="Search name, phone, MRN or confirmation code"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
+          <div className="arc-demo-scope">
+            <FilterToolbar
+              label="Appointment filters"
+              filters={[
+                ...(staffId !== "all" ? [{ id: "doctor", label: "Doctor", value: doctorOptions.find((option) => option.value === staffId)?.label ?? "Selected doctor" }] : []),
+                ...(status !== "all" ? [{ id: "status", label: "Booking status", value: label(status) }] : []),
+                ...(mode !== "all" ? [{ id: "mode", label: "Appointment type", value: mode === "virtual" ? "Video" : "In person" }] : []),
+              ]}
+              onRemove={(id) => { if (id === "doctor") setStaffId("all"); else if (id === "status") setStatus("all"); else if (id === "mode") setMode("all"); }}
+              onClearAll={() => { setStaffId("all"); setStatus("all"); setMode("all"); }}
+              addFilter={{
+                fields: [
+                  { id: "doctor", label: "Doctor", options: doctorOptions },
+                  { id: "status", label: "Booking status", options: ["confirmed", "checked_in", "completed", "cancelled", "no_show"].map((value) => ({ value, label: label(value) })) },
+                  { id: "mode", label: "Appointment type", options: [{ value: "in_person", label: "In person" }, { value: "virtual", label: "Video" }] },
+                ],
+                onAdd: (chip, field) => {
+                  // Arc emits the visible label; API filters require the stable option value.
+                  const value = filterOptionValue(chip, field);
+                  if (value === undefined) return;
+                  if (chip.id === "doctor") setStaffId(value);
+                  else if (chip.id === "status") setStatus(value);
+                  else if (chip.id === "mode") setMode(value);
+                },
+              }}
             />
           </div>
+
         </CardContent>
         <LoadingState {...result}>
           <Table>
@@ -204,7 +194,9 @@ export function Appointments() {
                 <TableRow key={a.appointmentId}>
                   <TableCell>
                     <div className="font-medium">
-                      {patientDisplayName(a.patientId, a.patientName)}{" "}
+                      {a.patientId && can("patients.read")
+                        ? <PatientHover patientId={a.patientId} reason={a.reason} name={patientDisplayName(a.patientId, a.patientName)} />
+                        : patientDisplayName(a.patientId, a.patientName)}{" "}
                       {a.patientId && (
                         <TestPatientBadge patientId={a.patientId} />
                       )}
@@ -388,6 +380,7 @@ function AppointmentDetails({
                       ? "Teleconsultation"
                       : "In-person visit"}{" "}
                     · MRN {a.mrn ?? "Not linked"} · Booking {a.confirmationCode}
+                    <span className="arc-demo-scope ml-2"><CopyButton value={a.confirmationCode} label="Copy booking code" iconOnly variant="plain" /></span>
                     {a.tokenNo ? ` · Token ${a.tokenNo}` : ""}
                   </p>
                   {a.originChannel === "whatsapp" && (
@@ -461,56 +454,17 @@ function AppointmentDetails({
                     Patient details & medical history
                   </Button>
                 )}
-                {a.status === "confirmed" && (
-                  <>
-                    {can("appointments.reschedule") && (
-                      <Button
-                        variant="outline"
-                        disabled={locked || move}
-                        onClick={() =>
-                          requestLeave(() => {
-                            setAction("");
-                            setReason("");
-                            setMove(true);
-                          })
-                        }
-                      >
-                        <CalendarClock />
-                        Move appointment
-                      </Button>
-                    )}
-                    {can("appointments.cancel") && (
-                      <Button
-                        variant="destructive"
-                        disabled={locked || move}
-                        onClick={() =>
-                          requestLeave(() => {
-                            setAction("cancel");
-                            setReason("");
-                          })
-                        }
-                      >
-                        <XCircle />
-                        Cancel appointment
-                      </Button>
-                    )}
-                    {can("appointments.check_in") && (
-                      <Button
-                        variant="outline"
-                        className="border-red-200 text-red-700 hover:border-red-300 hover:bg-red-50 hover:text-red-800"
-                        disabled={locked || move}
-                        onClick={() =>
-                          requestLeave(() => {
-                            setAction("no-show");
-                            setReason("");
-                          })
-                        }
-                      >
-                        <UserX />
-                        Mark no-show
-                      </Button>
-                    )}
-                  </>
+                {a.status === "confirmed" && (can("appointments.reschedule") || can("appointments.cancel") || can("appointments.check_in")) && (
+                  <div className="arc-demo-scope">
+                    <DropdownMenu label="More actions" disabled={locked || move} items={[
+                      ...(can("appointments.reschedule") ? [{ label: "Move appointment", icon: <CalendarClock size={16} />, disabled: locked || move,
+                        onSelect: () => requestLeave(() => { setAction(""); setReason(""); setMove(true); }) }] : []),
+                      ...(can("appointments.cancel") ? [{ label: "Cancel appointment", icon: <XCircle size={16} />, destructive: true, separatorBefore: can("appointments.reschedule"), disabled: locked || move,
+                        onSelect: () => requestLeave(() => { setAction("cancel"); setReason(""); }) }] : []),
+                      ...(can("appointments.check_in") ? [{ label: "Mark no-show", icon: <UserX size={16} />, destructive: true, disabled: locked || move,
+                        onSelect: () => requestLeave(() => { setAction("no-show"); setReason(""); }) }] : []),
+                    ]} />
+                  </div>
                 )}
               </div>
             </header>
@@ -668,15 +622,15 @@ function AppointmentDetails({
                                 Change
                               </Button>
                             </p>
-                          ) : (
+                          ) : !register ? (
                             <PatientLookup onSelect={setPatient} />
-                          )}
+                          ) : null}
                           {can("patients.register") && !patient && (
                             <Button
                               variant="ghost"
-                              onClick={() => setRegister((v) => !v)}
+                              onClick={() => requestLeave(() => setRegister((v) => !v))}
                             >
-                              Register patient
+                              {register ? "Back to patient search" : "Register patient"}
                             </Button>
                           )}
                           {register && !patient && (

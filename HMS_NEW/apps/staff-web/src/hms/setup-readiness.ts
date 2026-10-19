@@ -211,3 +211,25 @@ export function deriveSetup(e: SetupEvidence): SetupItem[] {
     ),
   ];
 }
+
+const STATE_TEXT: Record<SetupItem["state"], string> = {
+  complete: "Confirmed",
+  loading: "Checking…",
+  unknown: "Evidence unavailable",
+  optional_deferred: "Checked during booking",
+  blocked: "Needs prerequisite",
+  not_started: "Needs setup",
+};
+/** Read-only readiness rows: the server's evidence decides `done`; staff never tick a check themselves. */
+export function readinessTasks(items: SetupItem[]) {
+  return items.map((i) => ({
+    id: i.id,
+    label: i.title,
+    done: i.state === "complete",
+    detail: `${STATE_TEXT[i.state]} · ${
+      i.state === "unknown"
+        ? "The required read is unavailable or not permitted. This is not proof that configuration is missing."
+        : i.detail
+    }`,
+  }));
+}

@@ -1,0 +1,657 @@
+[
+  {
+    "file": "src/components/arc/combobox/combobox.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/combobox/combobox.module.css",
+    "sha256": "d6515c41a6d61e713100ae5f2723d50a6afa2622629d685728dcf13d85a8f896",
+    "integratedSha256": "d6515c41a6d61e713100ae5f2723d50a6afa2622629d685728dcf13d85a8f896"
+  },
+  {
+    "file": "src/components/arc/combobox/combobox.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/combobox/combobox.tsx",
+    "sha256": "12ae9a73956f4d4854259396fd377aa63321db18198e8816db5b1791ff9a56b7",
+    "integratedSha256": "737f5de266a18a87fae7011c1639b353b5e7b0265f4f7332fee9a0b4aef965c4",
+    "bindingAdaptation": "Optional external label/feedback bindings; onQueryChange and filterOptions=false bind the demonstrated search/listbox to remote patient queries without filtering authorized server results a second time. Default local filtering and demo interactions unchanged."
+  },
+  {
+    "file": "src/components/arc/input/input.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/input/input.tsx",
+    "sha256": "16a4e761b51482e9c066f284a38171085e71ae390e4b26f9f0c18dd8af21c8f2",
+    "integratedSha256": "16a4e761b51482e9c066f284a38171085e71ae390e4b26f9f0c18dd8af21c8f2"
+  },
+  {
+    "file": "src/components/arc/input/input.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/input/input.module.css",
+    "sha256": "ef6716aa7b9f45898859735f416ac932517b94e66bed6b3d23d7aed180529bdf",
+    "integratedSha256": "ef6716aa7b9f45898859735f416ac932517b94e66bed6b3d23d7aed180529bdf"
+  },
+  {
+    "file": "src/components/arc/metric-card/metric-card.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/metric-card/metric-card.tsx",
+    "sha256": "ac550e49b6e9f680f32a694dd27cb42597795465d4709f2418230fbbde865906",
+    "integratedSha256": "e16f3bd6590391b869e16ad64e5e782c46093e68a6a53dffe63f1eb990f866cb",
+    "bindingAdaptation": "Optional decimals passes through to the existing AnimatedCounter; nullable application data renders an accessible unavailable dash using the existing counter typography. Numeric default demo output, geometry, motion and styles are unchanged."
+  },
+  {
+    "file": "src/components/arc/metric-card/metric-card.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/metric-card/metric-card.module.css",
+    "sha256": "733ad2b10292f583f11a7b4e21c09b0d9334bfff15c8abb52baab965dc851235",
+    "integratedSha256": "733ad2b10292f583f11a7b4e21c09b0d9334bfff15c8abb52baab965dc851235"
+  },
+  {
+    "file": "src/components/arc/animated-counter/animated-counter.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/animated-counter/animated-counter.tsx",
+    "sha256": "2542f8bcd8a413c7a846d440d917a3c11a77f4e016014dfdd242c4549df01750",
+    "integratedSha256": "2542f8bcd8a413c7a846d440d917a3c11a77f4e016014dfdd242c4549df01750"
+  },
+  {
+    "file": "src/components/arc/animated-counter/animated-counter.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/animated-counter/animated-counter.module.css",
+    "sha256": "33b7d7f0081f4fd3907a4fafcff64444581845a58cb7b0b7844c394a2e254adf",
+    "integratedSha256": "33b7d7f0081f4fd3907a4fafcff64444581845a58cb7b0b7844c394a2e254adf"
+  },
+  {
+    "file": "src/components/arc/bar-chart/bar-chart.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/bar-chart/bar-chart.tsx",
+    "sha256": "cca5e519cc0ed8588f9a7e087c5e8b449a0960f8cc66e6d64544d336382d042e",
+    "integratedSha256": "cca5e519cc0ed8588f9a7e087c5e8b449a0960f8cc66e6d64544d336382d042e"
+  },
+  {
+    "file": "src/components/arc/bar-chart/bar-chart.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/bar-chart/bar-chart.module.css",
+    "sha256": "e647e55f0622ff4f8f17d7890a987138d185aadb4bda1dd0ab83b456d48acd1c",
+    "integratedSha256": "e647e55f0622ff4f8f17d7890a987138d185aadb4bda1dd0ab83b456d48acd1c"
+  },
+  {
+    "file": "src/components/arc/line-chart/line-chart.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/line-chart/line-chart.tsx",
+    "sha256": "f05816e33d5d7b323e2cf63d16863919f9c4b633ba6bdef99dc45c85d0da59ed",
+    "integratedSha256": "f05816e33d5d7b323e2cf63d16863919f9c4b633ba6bdef99dc45c85d0da59ed"
+  },
+  {
+    "file": "src/components/arc/line-chart/line-chart.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/line-chart/line-chart.module.css",
+    "sha256": "6ab0971d5471b39ea9b03a78fefb8bb4f641326160299943a2983b72133dfb55",
+    "integratedSha256": "6ab0971d5471b39ea9b03a78fefb8bb4f641326160299943a2983b72133dfb55"
+  },
+  {
+    "file": "src/components/arc/date-range-picker/date-range-picker.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/date-range-picker/date-range-picker.tsx",
+    "sha256": "ca4172b1125a3ac22ff06e17b599a6dbbe496247a75f7be46fa340de20d54a2f",
+    "integratedSha256": "bab9e38ecf11a6d7b5319f6a4fa439054060a563fa06a3b8b9da990f1d315ced",
+    "bindingAdaptation": "Optional today prop supplies the server-confirmed organisation calendar day; undefined retains the original viewer-local default. Visual, interaction and motion code unchanged."
+  },
+  {
+    "file": "src/components/arc/date-range-picker/date-range-picker.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/date-range-picker/date-range-picker.module.css",
+    "sha256": "e83b9b26c0bc702dcfe613fe39b3a8cc75e44a5a354f5bca579bd36979e20597",
+    "integratedSha256": "e83b9b26c0bc702dcfe613fe39b3a8cc75e44a5a354f5bca579bd36979e20597"
+  },
+  {
+    "file": "src/components/arc/command-palette/command-palette.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/command-palette/command-palette.tsx",
+    "sha256": "2a4bd0804f3be91c9bf3f900c6dc0e2f0c889ff5f37863cfcbc81fe7931f7dca",
+    "integratedSha256": "2a4bd0804f3be91c9bf3f900c6dc0e2f0c889ff5f37863cfcbc81fe7931f7dca"
+  },
+  {
+    "file": "src/components/arc/command-palette/command-palette.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/command-palette/command-palette.module.css",
+    "sha256": "4eaff3df866b28b91f54adeb13e06f98f8753e69a3baff64287e6edd1e74ec52",
+    "integratedSha256": "ad0f3b4afed156b970b1bf703761373a0d0162aa2d25fc3eae6e63824ef7afd7",
+    "bindingAdaptation": "Removed inherited trailing whitespace only; no CSS declarations or behavior changed."
+  },
+  {
+    "file": "src/components/arc/date-picker/date-picker.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/date-picker/date-picker.module.css",
+    "sha256": "fc3907dc484832ef441b367dd16135bf081ec77894ea1ae7c9c59508a2abe95a",
+    "integratedSha256": "fc3907dc484832ef441b367dd16135bf081ec77894ea1ae7c9c59508a2abe95a"
+  },
+  {
+    "file": "src/components/arc/date-picker/date-picker.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/date-picker/date-picker.tsx",
+    "sha256": "996d6b6703f7478c9ce286a3bbcd49a10aac0cb489b0d8915dfd89dad9c4efb8",
+    "integratedSha256": "0a021d14a805e5300fb2156a8706423226c7e8628d40208fedef7c116139e62f",
+    "bindingAdaptation": "Optional supplied Today and clearable bind clinic dates and required selection. hideLabel supports one external shared label for DOB; description IDs combine existing validation. Default demo appearance and interactions unchanged. Optional monthYearSelection forwards the explicitly requested DOB navigation enhancement; defaults unchanged."
+  },
+  {
+    "file": "src/components/arc/calendar/calendar.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/calendar/calendar.module.css",
+    "sha256": "2e019a6ca658f124c7ea0303aac46aa615a4e6bb3bc485c57d3b85acb0d26adc",
+    "integratedSha256": "432a1b57a5ac86703ebb5dcce7f92d2dd3181fe8e985654ff275605a0cf5b102",
+    "bindingAdaptation": " User-requested optional DOB month/year column geometry; default calendar styles retained."
+  },
+  {
+    "file": "src/components/arc/calendar/calendar.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/calendar/calendar.tsx",
+    "sha256": "cf09873e5d895e46129159e62f7e494f448cfd247aaddd6c9a54de45a5d6c108",
+    "integratedSha256": "f315a5b2f5598a1f2b31f6dd17179a758b1c7e8f8194de97e5d92e88bf1552a0",
+    "bindingAdaptation": "Optional supplied Today binds the calendar to the clinic timezone; undefined retains viewer-local Today. User-requested DOB enhancement: optional monthYearSelection adds searchable Month/Year columns using the existing Arc Combobox; caption navigation changes displayed month only. Default calendar caption unchanged."
+  },
+  {
+    "file": "src/components/arc/select/select.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/select/select.module.css",
+    "sha256": "f700250cfa39db22e974f417d6d776e70b037e031500ca85c3c94e0c558a2b04",
+    "integratedSha256": "f700250cfa39db22e974f417d6d776e70b037e031500ca85c3c94e0c558a2b04"
+  },
+  {
+    "file": "src/components/arc/select/select.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/select/select.tsx",
+    "sha256": "673dc0c887a255c87bfbabd1835606d87cfbf59ed6fd4909a28038f00f673eaa",
+    "integratedSha256": "0b5ba697410da9130517d902dd06387867f6239c4c0b45e02ca6811c6630df15",
+    "bindingAdaptation": "Optional hidden label and trigger attributes preserve existing field validation; the portalled menu receives the reference theme tokens. Default demo interaction and motion retained."
+  },
+  {
+    "file": "src/components/arc/search-field/search-field.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/search-field/search-field.module.css",
+    "sha256": "3b74ebb74a675ab8a0202d9234b8865fdd0d26033f056aa6e3de9bc9bffacce2",
+    "integratedSha256": "b365b084caeab5365e285098e8cdf407921f485a058fef5809ca959850834a5c",
+    "bindingAdaptation": " Optional soft appointment variant adjusts resting border/shadow and focus feedback without changing height, clear action or search semantics."
+  },
+  {
+    "file": "src/components/arc/search-field/search-field.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/search-field/search-field.tsx",
+    "sha256": "d93a8d0778c83d33793bf3fe7e5b206a5d0c6e50948b83f39777b89899392d93",
+    "integratedSha256": "7607a0d944343d99da09ea402e6806d059d4a32358a38866b298ef4ac82d0c42",
+    "bindingAdaptation": " User-requested appointment search refinement adds optional soft variant; other SearchField placements keep the default source appearance and interactions."
+  },
+  {
+    "file": "src/components/arc/button/button.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/button/button.module.css",
+    "sha256": "77323140c3f9fbad7b08dddba0db7260aa233c34c39a9d24cfa646fea287e140",
+    "integratedSha256": "77323140c3f9fbad7b08dddba0db7260aa233c34c39a9d24cfa646fea287e140"
+  },
+  {
+    "file": "src/components/arc/button/button.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/button/button.tsx",
+    "sha256": "6a56d78cb75a6fd5f5cfdd03be8b02bf96f0bc96790d3c81abeee10e089fecec",
+    "integratedSha256": "6a56d78cb75a6fd5f5cfdd03be8b02bf96f0bc96790d3c81abeee10e089fecec"
+  },
+  {
+    "file": "src/components/arc/textarea/textarea.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/textarea/textarea.module.css",
+    "sha256": "57a9294f6f7eea903296334bf1203982b41736aa1082a83af4dc2e8bbc6a144c",
+    "integratedSha256": "57a9294f6f7eea903296334bf1203982b41736aa1082a83af4dc2e8bbc6a144c"
+  },
+  {
+    "file": "src/components/arc/textarea/textarea.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/textarea/textarea.tsx",
+    "sha256": "1ed43b87e45b04180f1c6b8b3b7543e071bed3a6fcb2033e98015c77a8b7135a",
+    "integratedSha256": "1ed43b87e45b04180f1c6b8b3b7543e071bed3a6fcb2033e98015c77a8b7135a"
+  },
+  {
+    "file": "src/components/arc/time-picker/time-picker.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/time-picker/time-picker.module.css",
+    "sha256": "571d5dd081caa1bb5903278489aa4c4daba9e7077a58f33b12ad0f08d1826812",
+    "integratedSha256": "571d5dd081caa1bb5903278489aa4c4daba9e7077a58f33b12ad0f08d1826812"
+  },
+  {
+    "file": "src/components/arc/time-picker/time-picker.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/time-picker/time-picker.tsx",
+    "sha256": "0acb7e628b37a1e9eff3039ce93aab24e14cb71cec4ba25ea3c684c4d9448ccf",
+    "integratedSha256": "946066ad8aeb4f31ed4992faebcceb7e33d15c0cbf46a82a2379d2fdb7e39f8a",
+    "bindingAdaptation": "Optional external control ID, hidden duplicate label and accessibility attributes support the existing field wrapper. Source 24-hour and one-minute options preserve precision."
+  },
+  {
+    "file": "src/components/arc/phone-input/phone-input.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/phone-input/phone-input.module.css",
+    "sha256": "d0f27fe2f5492773faae5f019b16295796e461dcfbca3ca4d3dc7f85069554c4",
+    "integratedSha256": "d0f27fe2f5492773faae5f019b16295796e461dcfbca3ca4d3dc7f85069554c4"
+  },
+  {
+    "file": "src/components/arc/phone-input/phone-input.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/phone-input/phone-input.tsx",
+    "sha256": "e1130be3b8aea675646bf99483a5c88d5897bfd4b8c5f629bac2d0a53868e816",
+    "integratedSha256": "d332db676615b59673decc9f4514230b300115847305cf7cc09c2966a87a3d79",
+    "bindingAdaptation": "External description, invalid and required attributes bind existing field feedback to the real input. Data-format, country-picker and animation logic retained."
+  },
+  {
+    "file": "src/components/arc/money-input/money-input.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/money-input/money-input.module.css",
+    "sha256": "88559c08f38ebd4fbd2a9cc0c7fae0d2078ab018267ac907dab93586306fc0a7",
+    "integratedSha256": "88559c08f38ebd4fbd2a9cc0c7fae0d2078ab018267ac907dab93586306fc0a7"
+  },
+  {
+    "file": "src/components/arc/money-input/money-input.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/money-input/money-input.tsx",
+    "sha256": "c1e7e02920e8ffdfba05079ff20bae0974e181f39fae3105dd00cd7bb4a29c21",
+    "integratedSha256": "4a67db5e9bbd5d4676d7de795d5ff243433616a444f1dc30cfdc5dcda52d977e",
+    "bindingAdaptation": "External description, invalid and required attributes bind existing field feedback. INR/minor-unit/null bindings and compact desktop tokens are supplied by the host."
+  },
+  {
+    "file": "src/components/arc/badge/badge.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/badge/badge.module.css",
+    "sha256": "3306e97600585992b6dbc19db1d55961cbfacd24f5942d80ac3078d6887b3644",
+    "integratedSha256": "3306e97600585992b6dbc19db1d55961cbfacd24f5942d80ac3078d6887b3644"
+  },
+  {
+    "file": "src/components/arc/badge/badge.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/badge/badge.tsx",
+    "sha256": "3c55d03480156cd7636e171ce8649ddc9616db7484dea50063d8b589810c4aad",
+    "integratedSha256": "3c55d03480156cd7636e171ce8649ddc9616db7484dea50063d8b589810c4aad"
+  },
+  {
+    "file": "src/components/arc/tooltip/tooltip.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/tooltip/tooltip.tsx",
+    "sha256": "25ad5ea2b707da617e055f0c2fd9bcf8776775ad658e67f3e9176f3030855f9b",
+    "integratedSha256": "dd48e8cc8d91a3621cf3fb92e0150751770c5b092ac1489272a37939b6662a5e",
+    "bindingAdaptation": "A foundation wrapper around portalled content supplies the reference theme tokens."
+  },
+  {
+    "file": "src/components/arc/tooltip/tooltip.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/tooltip/tooltip.module.css",
+    "sha256": "a6126eda83bbbc1164018ad9df811f437098167077ca493ec5c06538e7f901f4",
+    "integratedSha256": "a6126eda83bbbc1164018ad9df811f437098167077ca493ec5c06538e7f901f4"
+  },
+  {
+    "file": "src/components/arc/empty-state/empty-state.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/empty-state/empty-state.tsx",
+    "sha256": "e99e39c02b03e77738e8e8a69d12f24b6e9d5b3b66f12f1425cec32700fa69ef",
+    "integratedSha256": "e99e39c02b03e77738e8e8a69d12f24b6e9d5b3b66f12f1425cec32700fa69ef"
+  },
+  {
+    "file": "src/components/arc/empty-state/empty-state.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/empty-state/empty-state.module.css",
+    "sha256": "e65e4c4b6e3bd31b8925cb6a5d58e8c4826ffca6efb100f786c70428f98afc1a",
+    "integratedSha256": "e65e4c4b6e3bd31b8925cb6a5d58e8c4826ffca6efb100f786c70428f98afc1a"
+  },
+  {
+    "file": "src/components/arc/skeleton/skeleton.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/skeleton/skeleton.module.css",
+    "sha256": "ba4b3fa1d7f9df341c4c3a5e302d43178015f15030715ddb3ced2116cecf0588",
+    "integratedSha256": "ba4b3fa1d7f9df341c4c3a5e302d43178015f15030715ddb3ced2116cecf0588"
+  },
+  {
+    "file": "src/components/arc/skeleton/skeleton.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/skeleton/skeleton.tsx",
+    "sha256": "73b97715698fa54f6f0eaeefb6a8d795977297dd998439d1e595361e5da6d3b5",
+    "integratedSha256": "73b97715698fa54f6f0eaeefb6a8d795977297dd998439d1e595361e5da6d3b5"
+  },
+  {
+    "file": "src/components/arc/copy-button/copy-button.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/copy-button/copy-button.module.css",
+    "sha256": "090ea463f90ebe80e5fbe9abaa22b8c5ed1daec2068e7bcd18baab09e39dc08e",
+    "integratedSha256": "090ea463f90ebe80e5fbe9abaa22b8c5ed1daec2068e7bcd18baab09e39dc08e"
+  },
+  {
+    "file": "src/components/arc/copy-button/copy-button.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/copy-button/copy-button.tsx",
+    "sha256": "a6faac2922a48cc05ec72650ed63aee9b3871446df683cb7de6790f9bb19744a",
+    "integratedSha256": "a6faac2922a48cc05ec72650ed63aee9b3871446df683cb7de6790f9bb19744a"
+  },
+  {
+    "file": "src/components/arc/alert/alert.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/alert/alert.tsx",
+    "sha256": "ddcd481e2ebc6a1cbf6f053d6de1817d5dfd40b347e0bea561cc9fda2ea54950",
+    "integratedSha256": "ddcd481e2ebc6a1cbf6f053d6de1817d5dfd40b347e0bea561cc9fda2ea54950"
+  },
+  {
+    "file": "src/components/arc/alert/alert.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/alert/alert.module.css",
+    "sha256": "938cddc734989a721d38e92ed62c40df3a911cc3c6af6d9da313daaaf57965a6",
+    "integratedSha256": "938cddc734989a721d38e92ed62c40df3a911cc3c6af6d9da313daaaf57965a6"
+  },
+  {
+    "file": "src/components/arc/toast-stack/toast-stack.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/toast-stack/toast-stack.tsx",
+    "sha256": "ba422f5d6e330c49b9f2a110af7cf91e46e20697490ef7f103909e982adde49a",
+    "integratedSha256": "ba422f5d6e330c49b9f2a110af7cf91e46e20697490ef7f103909e982adde49a"
+  },
+  {
+    "file": "src/components/arc/toast-stack/toast-stack.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/toast-stack/toast-stack.module.css",
+    "sha256": "68ea14b271d2af559f90dd2e972b20591092b1dff9ef5e6a408f6082c015379a",
+    "integratedSha256": "68ea14b271d2af559f90dd2e972b20591092b1dff9ef5e6a408f6082c015379a"
+  },
+  {
+    "file": "src/components/arc/dialog/dialog.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/dialog/dialog.module.css",
+    "sha256": "a71ce7476732e9a996ddf6f765585cd2c7fab6168b8715bad464916c0a36168d",
+    "integratedSha256": "a71ce7476732e9a996ddf6f765585cd2c7fab6168b8715bad464916c0a36168d"
+  },
+  {
+    "file": "src/components/arc/dialog/dialog.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/dialog/dialog.tsx",
+    "sha256": "eb84a7eb2ac864dc07f2825eab252eac78e9c6b889d0e9f00bf6b2b799975ade",
+    "integratedSha256": "3810a09c26b1f0592cdb40815d31641c0e92601efde7f4fd1bd1a5fe244b6bf1",
+    "bindingAdaptation": "A foundation wrapper around portalled content supplies the reference theme tokens. Default source dialog motion and focus behavior retained."
+  },
+  {
+    "file": "src/components/arc/lib/use-copy-feedback.ts",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/lib/use-copy-feedback.ts",
+    "sha256": "88d0ae55bb3e241f529912a4802bbf014e4ba437025acc90ab13e012702273c5",
+    "integratedSha256": "88d0ae55bb3e241f529912a4802bbf014e4ba437025acc90ab13e012702273c5"
+  },
+  {
+    "file": "src/components/arc/avatar/avatar.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/avatar/avatar.tsx",
+    "sha256": "94c22aa1f558a72d3dae928b35516fe182c296636cc8c24ea9fee194718e166c",
+    "integratedSha256": "94c22aa1f558a72d3dae928b35516fe182c296636cc8c24ea9fee194718e166c"
+  },
+  {
+    "file": "src/components/arc/avatar/avatar.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/avatar/avatar.module.css",
+    "sha256": "7a24bd77c83d3c14ac2c90905dc7d64eea7b60e8bf6eddd2e5d30dd6c96bd816",
+    "integratedSha256": "7a24bd77c83d3c14ac2c90905dc7d64eea7b60e8bf6eddd2e5d30dd6c96bd816"
+  },
+  {
+    "file": "src/components/arc/checkbox/checkbox.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/checkbox/checkbox.tsx",
+    "sha256": "4759251a0b2a83320cb4078e840f61481a23be0b38b9aa7c077c2e85e6dde00d",
+    "integratedSha256": "4759251a0b2a83320cb4078e840f61481a23be0b38b9aa7c077c2e85e6dde00d"
+  },
+  {
+    "file": "src/components/arc/checkbox/checkbox.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/checkbox/checkbox.module.css",
+    "sha256": "6cc8ae35edbd99dac2ea3768a6db0932429ecb06febab06e048a4b94974251b6",
+    "integratedSha256": "6cc8ae35edbd99dac2ea3768a6db0932429ecb06febab06e048a4b94974251b6"
+  },
+  {
+    "file": "src/components/arc/lib/arc-provider.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/lib/arc-provider.tsx",
+    "sha256": "bcc7358163968a9508d81586134bf8d921d75783033182f81ca9015985815884",
+    "integratedSha256": "bcc7358163968a9508d81586134bf8d921d75783033182f81ca9015985815884"
+  },
+  {
+    "file": "src/components/arc/split-bar/split-bar.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/split-bar/src/SplitBarDemo.cjs",
+    "sha256": "79024e6ed8a5e2ede3aba76d28b13aed19fd78ca06fb96fa563ebd6f1ce54390",
+    "integratedSha256": "8ae64e4cbb255671bf28e1b08a23ea9660d8e3a140dbed0624d59e56fc426a91",
+    "kind": "pro-port",
+    "bindingAdaptation": "Hand port of the reconstructed demo to TSX; CSS extracted from the captured stylesheet with class hashes removed. Removed only the demo sample traffic data and its 7/30/90-day segmented control. Overview \u203a Appointment health renders two bars (by status, by channel) from /api/v1/admin/analytics with humanized labels; zero totals use the existing Empty state."
+  },
+  {
+    "file": "src/components/arc/split-bar/split-bar.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/split-bar/dist/styles.css",
+    "sha256": "3a32809502413a1062d810b751f7c4e4fb167ad152bc7868a2ba026ea5b12ebd",
+    "integratedSha256": "76d020bda5cc06217a945efe96d60312bda11be9ae0b739bb3ba96ebb18c2997",
+    "kind": "pro-port",
+    "bindingAdaptation": "Hand port of the reconstructed demo to TSX; CSS extracted from the captured stylesheet with class hashes removed. Removed only the demo sample traffic data and its 7/30/90-day segmented control. Overview \u203a Appointment health renders two bars (by status, by channel) from /api/v1/admin/analytics with humanized labels; zero totals use the existing Empty state."
+  },
+  {
+    "file": "src/components/arc/skeleton-morph/skeleton-morph.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/skeleton-morph/src/SkeletonMorphDemo.cjs",
+    "sha256": "edbecff7c4018c771d2407d0abf2d0a48a62896403d9eafe5146d4a72958fa33",
+    "integratedSha256": "d9b89b0331d4e8061c991f8cada20bc05e8ca49f6768ed823d0456d3e4b70bea",
+    "kind": "pro-port",
+    "bindingAdaptation": "SkeletonMorph and MorphBlock ported; demo profile/payout sample cards removed; keyframe renamed to pulse. Overview metric cards, Daily bookings, Appointment health and Recent appointments resolve from skeleton in document order. Host passes width:100% on blocks because these wrap cards/charts/tables rather than fit-content text."
+  },
+  {
+    "file": "src/components/arc/skeleton-morph/skeleton-morph.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/skeleton-morph/dist/styles.css",
+    "sha256": "2915fce28aa34075b6648e3785ca0aa2bbda1dcc40026542f90caddbf0cf93c4",
+    "integratedSha256": "c23894c04bb27f054e0ecd546f67a8916f5b35c667d276b1a69e3601183add39",
+    "kind": "pro-port",
+    "bindingAdaptation": "SkeletonMorph and MorphBlock ported; demo profile/payout sample cards removed; keyframe renamed to pulse. Overview metric cards, Daily bookings, Appointment health and Recent appointments resolve from skeleton in document order. Host passes width:100% on blocks because these wrap cards/charts/tables rather than fit-content text."
+  },
+  {
+    "file": "src/components/arc/team-directory/team-directory.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/team-directory/src/Component.cjs",
+    "sha256": "af46696cef56b2e583e5a2fd0ca409f793abe465ab92c1fa836a0cca13c75231",
+    "integratedSha256": "d11afc2cdacfd2f92c0de0837a20f2c0cedfac4fcf55c5000bc082199220d586",
+    "kind": "pro-port",
+    "bindingAdaptation": "Demo people become a people prop; Working on/Location rows become facts; team filters derive from data; email row only when an email exists; actions slot hosts the existing Manage button. Workspace settings \u203a Team maps staff rows (team = staff type, status text from the server status)."
+  },
+  {
+    "file": "src/components/arc/team-directory/team-directory.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/team-directory/dist/styles.css",
+    "sha256": "55b901eeb5352d0266a80204724e94fe5f11679ebb723f1d9e6eb50c5b41b1ac",
+    "integratedSha256": "beb1a1028db024e4ed7b5e1f913ad24afdff804003f5303c6266009f668b9167",
+    "kind": "pro-port",
+    "bindingAdaptation": "Demo people become a people prop; Working on/Location rows become facts; team filters derive from data; email row only when an email exists; actions slot hosts the existing Manage button. Workspace settings \u203a Team maps staff rows (team = staff type, status text from the server status)."
+  },
+  {
+    "file": "src/components/arc/release-readiness/release-readiness.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/release-readiness/src/Component.cjs",
+    "sha256": "e2e12e4de09c26a75759a1dea77c78b6b9148a7bef9905c508873c6db2268bea",
+    "integratedSha256": "98dc1b23bc2058d7c6cfecacd3883981f0cd9148e06e9482ab6b5f2bbfa3572c",
+    "kind": "pro-port",
+    "bindingAdaptation": "User-approved: checks are read-only and derived from server evidence (deriveSetup); final action is Recheck saved setup (always enabled, reports failure of any active read); notify switch, owner avatars and Start release removed; headerAction/toolbar/collapsed host the existing Hide guide, visit-type and doctor controls; per-check Continue/Review buttons in a third grid column."
+  },
+  {
+    "file": "src/components/arc/release-readiness/release-readiness.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/release-readiness/dist/styles.css",
+    "sha256": "0c28c473544dd9fe62000c20b25b75fa7b8c2fadf6bc495bc11365bd54ab2928",
+    "integratedSha256": "05c080fdd934a7b63c717561a02496715796ba4c5ba66fd7f53c2274dd6b7d32",
+    "kind": "pro-port",
+    "bindingAdaptation": "User-approved: checks are read-only and derived from server evidence (deriveSetup); final action is Recheck saved setup (always enabled, reports failure of any active read); notify switch, owner avatars and Start release removed; headerAction/toolbar/collapsed host the existing Hide guide, visit-type and doctor controls; per-check Continue/Review buttons in a third grid column."
+  },
+  {
+    "file": "src/components/arc/notification-center/notification-center.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/notification-center/notification-center.tsx",
+    "sha256": "189f98adcdbb6fb398079409bcf62133dae18635e35c5eee4cc2d919306ee090",
+    "integratedSha256": "e0c7f274287dc3bb5d1abe88d61f511667d77f02ad7cbf1a3e0716bffbde2f3e",
+    "bindingAdaptation": "Open action (ArrowUpRight, after Dismiss) links each item to its page and closes the panel; items re-sync from props; portalled panel carries arc-demo-scope tokens; panel heading uses the demo page's display font. Bell lists only open Now alerts plus one 'Some alerts could not be checked' item when a source failed. Read/dismiss persist via /v1/me/alerts."
+  },
+  {
+    "file": "src/components/arc/notification-center/notification-center.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/free/notification-center/notification-center.module.css",
+    "sha256": "4411f6909360d67898017f266305e38e8a552f219cf5c33cf43b5bb6b872b7c9",
+    "integratedSha256": "706c1d9f24c4f82fda05aef20d04ccfbfd6b9670c8a5132174f0ebb2783f9129",
+    "bindingAdaptation": "Open action (ArrowUpRight, after Dismiss) links each item to its page and closes the panel; items re-sync from props; portalled panel carries arc-demo-scope tokens; panel heading uses the demo page's display font. Bell lists only open Now alerts plus one 'Some alerts could not be checked' item when a source failed. Read/dismiss persist via /v1/me/alerts."
+  },
+  {
+    "file": "src/components/arc/inbox-triage/inbox-triage.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/inbox-triage/src/Component.cjs",
+    "sha256": "6014efff09ae5a88edaa2b21d4a3df9b3274fef672d05f77f2a50bab942ed994",
+    "integratedSha256": "ac9449f8746f299727ec91489c472981e46c2b916d9513d6ef600c847a709444",
+    "bindingAdaptation": "Messages, folder labels (Open/Snoozed/Done), action labels and empty-state copy are props; onMove/onRead persist to /v1/me/alerts (Snooze = until the clinic's next midnight); Undo reverts through onMove; detailAction renders 'Open <page>'; heading focus ring suppressed as in the demo; rendered in arc-section-frame like the demo's section frame.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/inbox-triage/inbox-triage.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/inbox-triage/dist/styles.css",
+    "sha256": "1b9bb7f5c3033d7adb638cae58da1a4fbb47532b540de7cc37c0dd1c7c0516d5",
+    "integratedSha256": "9ee7e602fb06212fb83e4aee79d44634e04fb39c2c312f4ec2f9b38d6e6abb9b",
+    "bindingAdaptation": "Messages, folder labels (Open/Snoozed/Done), action labels and empty-state copy are props; onMove/onRead persist to /v1/me/alerts (Snooze = until the clinic's next midnight); Undo reverts through onMove; detailAction renders 'Open <page>'; heading focus ring suppressed as in the demo; rendered in arc-section-frame like the demo's section frame.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/availability-picker/availability-picker.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/availability-picker/src/Component.cjs",
+    "sha256": "4ecd43cc0c5975e744771f7867266c1113033beb83eac2a295a67a9b672c917a",
+    "integratedSha256": "8d5aaa36861ba10822bca21acb5c8ce1edcf862751d127d9dd750ab0d4a72c30",
+    "bindingAdaptation": "Approved by the user 18 Oct 2026. Booking slot step for one doctor: only free slots (busy/conflict marks and 'everyone is free' bars have no single-doctor meaning; legend kept); one attendee; next 10 open days in the 30 days from the Start date; slot length from the server slot; Confirm = 'Hold this time' places the real hold and 'Held' is controlled by it; slots heading takes the demo page's h3 display font, tracking and 1.1 line height. User-requested (18 Oct 2026): day numbers use --text-lg instead of --text-xl; an Arc date picker (existing DayNavigator, 'Start date') above the picker sets the first day, so the 5 open days come from the 30 days after it. User-requested (18 Oct 2026, second pass): 10 square day tiles; the slot list is replaced by the Booking pill time step (components/pro/booking-pill src/Component.cjs `eu` + dist/styles.css .slots/.highlight/.slot): 8-column chips (4 below 520px), sliding morph-spring highlight, struck-through taken times from the server's non-free slots, arrow/Home/End keys, 12-hour labels, 'N free' count in place of the legend. The pill's panel-entry stagger is not used. Takeover fix: disabled state now reaches the day buttons, time radios and time-grid keyboard navigation, preventing selection from moving during an in-flight hold/release.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/availability-picker/availability-picker.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/availability-picker/dist/styles.css",
+    "sha256": "054ce4d4fdee7c9e9c913c92c3ec11e0e24f8282953569ed1cbf0a128ea3e247",
+    "integratedSha256": "4af9c6e1b5d03160a4d26ab394d09a21fa014e8eb0f6ba8d88a8eff3f8fe5a66",
+    "bindingAdaptation": "Approved by the user 18 Oct 2026. Booking slot step for one doctor: only free slots (busy/conflict marks and 'everyone is free' bars have no single-doctor meaning; legend kept); one attendee; next 10 open days in the 30 days from the Start date; slot length from the server slot; Confirm = 'Hold this time' places the real hold and 'Held' is controlled by it; slots heading takes the demo page's h3 display font, tracking and 1.1 line height. User-requested (18 Oct 2026): day numbers use --text-lg instead of --text-xl; an Arc date picker (existing DayNavigator, 'Start date') above the picker sets the first day, so the 5 open days come from the 30 days after it. User-requested (18 Oct 2026, second pass): 10 square day tiles; the slot list is replaced by the Booking pill time step (components/pro/booking-pill src/Component.cjs `eu` + dist/styles.css .slots/.highlight/.slot): 8-column chips (4 below 520px), sliding morph-spring highlight, struck-through taken times from the server's non-free slots, arrow/Home/End keys, 12-hour labels, 'N free' count in place of the legend. The pill's panel-entry stagger is not used.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/stepper/stepper.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/stepper/stepper.tsx",
+    "sha256": "7b4034915b0902b16e6dd2e54dfae4ce40fd9b2d4fd09e736f9e196d97fc6c17",
+    "integratedSha256": "7b4034915b0902b16e6dd2e54dfae4ce40fd9b2d4fd09e736f9e196d97fc6c17"
+  },
+  {
+    "file": "src/components/arc/stepper/stepper.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/stepper/stepper.module.css",
+    "sha256": "3762deb9d9cda692a33c81510c811cae11aebadcd82ce58d4ea3b84b3ed5c569",
+    "integratedSha256": "3762deb9d9cda692a33c81510c811cae11aebadcd82ce58d4ea3b84b3ed5c569"
+  },
+  {
+    "file": "src/components/arc/dropdown-menu/dropdown-menu.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/dropdown-menu/dropdown-menu.tsx",
+    "sha256": "93bcd4952628899159bfe984c43d3d23d91aa2eddbaec2ee8bea864e67406981",
+    "integratedSha256": "9fadafb4c3cc956d27720cf4652ed6ad45d8452959dd6fc71cb53b86dcbe5c24",
+    "bindingAdaptation": "Optional disabled prop binds the existing busy/unknown/move lock to the trigger. The portaled menu receives arc-demo-scope so its reference tokens remain scoped; action callbacks/geometry/keyboard/motion retained."
+  },
+  {
+    "file": "src/components/arc/dropdown-menu/dropdown-menu.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/dropdown-menu/dropdown-menu.module.css",
+    "sha256": "4a1a34dbbb4f327cd9843ae8df2b9ce55c3cac979cc2d5d164bd960d5bdc02ab",
+    "integratedSha256": "4a1a34dbbb4f327cd9843ae8df2b9ce55c3cac979cc2d5d164bd960d5bdc02ab"
+  },
+  {
+    "file": "src/components/arc/timeline/timeline.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/timeline/timeline.tsx",
+    "sha256": "71d91894d8337d7b163bb8b011fdc8d47039ae53e90b9e03afc01d845f76870c",
+    "integratedSha256": "71d91894d8337d7b163bb8b011fdc8d47039ae53e90b9e03afc01d845f76870c"
+  },
+  {
+    "file": "src/components/arc/timeline/timeline.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/timeline/timeline.module.css",
+    "sha256": "34712f6b90d29cbc326f1115ee2588d330d729f63d661d7c2c80432b3585115c",
+    "integratedSha256": "34712f6b90d29cbc326f1115ee2588d330d729f63d661d7c2c80432b3585115c"
+  },
+  {
+    "file": "src/components/arc/hover-card/hover-card.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/hover-card/hover-card.tsx",
+    "sha256": "8fe88d6df8541251d9827336614a5f7a87026992eb66a42d8f71679d274d89c2",
+    "integratedSha256": "61a7e6389da0b812628aeb9ca4bfa1f5f8659c3935bab0c407e0abba811566c5",
+    "bindingAdaptation": "Portaled Surface receives arc-demo-scope to retain reference tokens. Patient content is read-only and mounts only when the source card opens; original hover/focus timers, dismissal and motion unchanged."
+  },
+  {
+    "file": "src/components/arc/hover-card/hover-card.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/hover-card/hover-card.module.css",
+    "sha256": "2a847a6020215674247678354139cb7a9b7b5311f86f0a7d6403a3575c83ba2d",
+    "integratedSha256": "2a847a6020215674247678354139cb7a9b7b5311f86f0a7d6403a3575c83ba2d"
+  },
+  {
+    "file": "src/components/arc/radio-cards/radio-cards.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/radio-cards/radio-cards.tsx",
+    "sha256": "82084be52a5d5f9def1d517f3bcdbf8c26f046afc25b93d5dd8ff32543f8a8d4",
+    "integratedSha256": "82084be52a5d5f9def1d517f3bcdbf8c26f046afc25b93d5dd8ff32543f8a8d4"
+  },
+  {
+    "file": "src/components/arc/radio-cards/radio-cards.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/radio-cards/radio-cards.module.css",
+    "sha256": "5f6e5cd90a57fd7c31f301d6c1a9172b3386b2e4afdd0526573c4736836eca7a",
+    "integratedSha256": "5f6e5cd90a57fd7c31f301d6c1a9172b3386b2e4afdd0526573c4736836eca7a"
+  },
+  {
+    "file": "src/components/arc/multi-step-form/multi-step-form.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/multi-step-form/src/dependencies/44818.cjs",
+    "sha256": "8934d98fa2f1b8722adde639adea4b9dcb85dee1ad2bc0b8f029ba7572f8d2cb",
+    "integratedSha256": "6cad3794cc124bd24ee142edfe2a5a41fd8074d50a5b05a64c1d474f88376277",
+    "bindingAdaptation": "User-approved staged doctor setup. Controlled current stage, independent stage forms inside a section, form-ID footer submission, actual guarded commands/receipts, no unconditional demo success screen. Source CSS/step slides/progress/height/label motion ported; disabled Next mirrors disabled Back.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/multi-step-form/multi-step-form.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/multi-step-form/dist/styles.css",
+    "sha256": "20432f238623fba2cded79a6af69ad2be27d05ecba4f9d3ab545125ada4d5759",
+    "integratedSha256": "db7b8c77f5f942cf8c29f8fb750f90f000928c6b91aae1dce4423af51c5adee7",
+    "bindingAdaptation": "User-approved staged doctor setup. Controlled current stage, independent stage forms inside a section, form-ID footer submission, actual guarded commands/receipts, no unconditional demo success screen. Source CSS/step slides/progress/height/label motion ported; disabled Next mirrors disabled Back.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/settings-page/settings-page.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/settings-page/src/SettingsPage.cjs",
+    "sha256": "f48e1f07dd745e3c37df5e4b7ab2db40fbbd8e9ba1b57ac0e00a6206b734fd7e",
+    "integratedSha256": "34e5831e82d893e4bfe0ab339f498a2190a8807406483f8a7dfb70a12b316ecc",
+    "bindingAdaptation": "User-approved Settings section navigation and per-form save semantics. Existing permitted sections/guarded routes, original section motion/highlight/keyboard and measured save-bar shell. Staff name/phone count/discard and existing versioned Action only; no Save all or simulated saved outcome. Existing AnimatedCounter and compact Action size reused; CSS namespaces extracted with media/container/keyframe rules. User-requested 19 Oct full-page opt-in for HMS Settings: full available width, page scrolling, sticky section navigation, no embedded frame/duplicate account chrome. Default reference frame remains available.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/settings-page/settings-page.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/settings-page/dist/styles.css",
+    "sha256": "3790a65058cc4ab6c0cdd72e5eaa608fb7cf1c00c34c77f69f2baf3819aa2bd1",
+    "integratedSha256": "05df97fd42e41503f00b421a368827bc549410ce3f7225b218aa1c274e27bb07",
+    "bindingAdaptation": "User-approved Settings section navigation and per-form save semantics. Existing permitted sections/guarded routes, original section motion/highlight/keyboard and measured save-bar shell. Staff name/phone count/discard and existing versioned Action only; no Save all or simulated saved outcome. Existing AnimatedCounter and compact Action size reused; CSS namespaces extracted with media/container/keyframe rules. User-requested 19 Oct full-page opt-in for HMS Settings: full available width, page scrolling, sticky section navigation, no embedded frame/duplicate account chrome. Default reference frame remains available.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/support-conversation/support-conversation.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/support-conversation/src/Component.cjs",
+    "sha256": "2ceb9b0fc19d1c28439944a1b08e08f14a533afade6cebc8a01e2be8312fbd2a",
+    "integratedSha256": "85137735855a5be79d6580e176452213e48a0325abc272a3fd54ee4072d153d6",
+    "bindingAdaptation": "User-approved WhatsApp theme/full inbox placement. Supplied messages/actions/composer replace seeded history, reply timers, typing and fake attachments. Source message springs, reduced motion, scroll-follow and measured composer height retained; existing preview guards, explicit preview statuses and multiline/length bindings.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/support-conversation/support-conversation.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/support-conversation/dist/styles.css",
+    "sha256": "e18aa025729da7ce814dffeaa18b30a820a99daad12f9c1bf6134ef1f1c1e78e",
+    "integratedSha256": "7eae71888294a042d5fd0f304c90cab4675484b7351497593e6343ba65556cba",
+    "bindingAdaptation": "User-approved WhatsApp theme/full inbox placement. Supplied messages/actions/composer replace seeded history, reply timers, typing and fake attachments. Source message springs, reduced motion, scroll-follow and measured composer height retained; existing preview guards, explicit preview statuses and multiline/length bindings.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/kanban-board/kanban-board-source.js",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kanban-board/src/KanbanBoard.cjs",
+    "sha256": "c75fb0bd48b56bbe544ae3b8a079631c18a8c09bd2ed7bf03355accd3a226963",
+    "integratedSha256": "28540525777af4b2b8a7a988436990097e05f22a92ade6d8b804b269e6e7bc52",
+    "bindingAdaptation": "User-confirmed Queue placement. Captured compiled JSX/gesture engine ported to ESM with existing React/Motion/Lucide/Arc dependencies. No sample defaults. Optional read-only/create/grouping/open/move-request bindings, display ID/patient slot, and unmounted callback guard. Queue keyboard motion previews until drop; explicit moved ID prevents another polled token becoming the target. Host review/real command controls saved state; no queue reordering or doctor reassignment; native hidden semantics preserved.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/kanban-board/kanban-board-source.d.ts",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kanban-board/src/KanbanBoard.cjs",
+    "sha256": "c75fb0bd48b56bbe544ae3b8a079631c18a8c09bd2ed7bf03355accd3a226963",
+    "integratedSha256": "44ebd3ea038dffd0390f212b72c3a94b44645f162ad790584e5ba668d1c999e5",
+    "bindingAdaptation": "User-confirmed Queue placement. Captured compiled JSX/gesture engine ported to ESM with existing React/Motion/Lucide/Arc dependencies. No sample defaults. Optional read-only/create/grouping/open/move-request bindings, display ID/patient slot, and unmounted callback guard. Queue keyboard motion previews until drop; explicit moved ID prevents another polled token becoming the target. Host review/real command controls saved state; no queue reordering or doctor reassignment; native hidden semantics preserved.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/kanban-board/kanban-board.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kanban-board/src/KanbanBoard.cjs",
+    "sha256": "c75fb0bd48b56bbe544ae3b8a079631c18a8c09bd2ed7bf03355accd3a226963",
+    "integratedSha256": "018cef9f00a1342efc5bd50a10336c4a42923d31ea28f87251aeaa32060921bd",
+    "bindingAdaptation": "User-confirmed Queue placement. Captured compiled JSX/gesture engine ported to ESM with existing React/Motion/Lucide/Arc dependencies. No sample defaults. Optional read-only/create/grouping/open/move-request bindings, display ID/patient slot, and unmounted callback guard. Queue keyboard motion previews until drop; explicit moved ID prevents another polled token becoming the target. Host review/real command controls saved state; no queue reordering or doctor reassignment; native hidden semantics preserved.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/kanban-board/kanban-board.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kanban-board/dist/styles.css",
+    "sha256": "d7d9aa6b96afc544c25272065da621494f8304ca97befb8be60961ff21875da0",
+    "integratedSha256": "2b9fb5dd1e5c28b94dd902169a9ace13424c2bc5e23bd3e0058e975021529985",
+    "bindingAdaptation": "User-confirmed Queue placement. Captured compiled JSX/gesture engine ported to ESM with existing React/Motion/Lucide/Arc dependencies. No sample defaults. Optional read-only/create/grouping/open/move-request bindings, display ID/patient slot, and unmounted callback guard. Queue keyboard motion previews until drop; explicit moved ID prevents another polled token becoming the target. Host review/real command controls saved state; no queue reordering or doctor reassignment; native hidden semantics preserved.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/switch/switch.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/switch/switch.tsx",
+    "sha256": "6ab95cb9c0aaa80599cdc0605abf959a20f5030fe4ecdf57f6894274a9c5d73b",
+    "integratedSha256": "6ab95cb9c0aaa80599cdc0605abf959a20f5030fe4ecdf57f6894274a9c5d73b"
+  },
+  {
+    "file": "src/components/arc/switch/switch.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/switch/switch.module.css",
+    "sha256": "3793e7ee1a4c2db46fce615c3fd76212c3c78ea005e23ae07c24b53453c1b6f7",
+    "integratedSha256": "3793e7ee1a4c2db46fce615c3fd76212c3c78ea005e23ae07c24b53453c1b6f7"
+  },
+  {
+    "file": "src/components/arc/kpi-drilldown/kpi-drilldown.js",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kpi-drilldown/src/Component.cjs",
+    "sha256": "681a141a5218dde8b943647d0c822ad0b20fdd8025217abf98ce5ef117c3ae2c",
+    "integratedSha256": "63aa879723a36a941ab771e421415390ddf682a3dc957bdb22c4738314c2c4ae",
+    "bindingAdaptation": "Captured local JSX port to ESM with typed supplied-count contract and scoped CSS. Exact totals/rows, null-history gaps and zero/missing comparisons. Subsequent user-requested rendered fit review adds opt-in full-width compact embedded placement/caption (standalone geometry unchanged), clear unavailable text/neutral delta, raw daily detail vertices with exact keyboard day steps and count-axis formatting; only prior animation geometry is resampled. Reference expansion, close/focus, indicator and motion engine retained. See kpi-browser-fit-review.md for actual browser checks and limits.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/kpi-drilldown/kpi-drilldown.d.ts",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kpi-drilldown/src/Component.cjs",
+    "sha256": "681a141a5218dde8b943647d0c822ad0b20fdd8025217abf98ce5ef117c3ae2c",
+    "integratedSha256": "b4efb71ab4e51626cc0d2820cecdc288a0f854e94be98e5452af5d63b4891756",
+    "bindingAdaptation": "Captured local JSX port to ESM with typed supplied-count contract and scoped CSS. Exact totals/rows, null-history gaps and zero/missing comparisons. Subsequent user-requested rendered fit review adds opt-in full-width compact embedded placement/caption (standalone geometry unchanged), clear unavailable text/neutral delta, raw daily detail vertices with exact keyboard day steps and count-axis formatting; only prior animation geometry is resampled. Reference expansion, close/focus, indicator and motion engine retained. See kpi-browser-fit-review.md for actual browser checks and limits.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/kpi-drilldown/period-data.ts",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kpi-drilldown/src/Component.cjs",
+    "sha256": "681a141a5218dde8b943647d0c822ad0b20fdd8025217abf98ce5ef117c3ae2c",
+    "integratedSha256": "5fceb48e0ca0964e7404a05997dabec7bd027c56402e3777733598cbf49690fe",
+    "bindingAdaptation": "Captured local JSX port to ESM with typed supplied-count contract and scoped CSS. Exact totals/rows, null-history gaps and zero/missing comparisons. Subsequent user-requested rendered fit review adds opt-in full-width compact embedded placement/caption (standalone geometry unchanged), clear unavailable text/neutral delta, raw daily detail vertices with exact keyboard day steps and count-axis formatting; only prior animation geometry is resampled. Reference expansion, close/focus, indicator and motion engine retained. See kpi-browser-fit-review.md for actual browser checks and limits.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/kpi-drilldown/kpi-drilldown.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kpi-drilldown/dist/styles.css",
+    "sha256": "e34e5acf0190e8b92002ed2fe5c54c36f2946e35561969cede039ccf7eb9e9c4",
+    "integratedSha256": "ce43ed5ab60ccf30223afd2889dee8ecfd782ef4b103a53d5c1619d236567195",
+    "bindingAdaptation": "Captured local JSX port to ESM with typed supplied-count contract and scoped CSS. Exact totals/rows, null-history gaps and zero/missing comparisons. Subsequent user-requested rendered fit review adds opt-in full-width compact embedded placement/caption (standalone geometry unchanged), clear unavailable text/neutral delta, raw daily detail vertices with exact keyboard day steps and count-axis formatting; only prior animation geometry is resampled. Reference expansion, close/focus, indicator and motion engine retained. See kpi-browser-fit-review.md for actual browser checks and limits.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/sidebar/sidebar.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/sidebar/src/Component.cjs",
+    "sha256": "a40ecd681d0797e5a4512a4174e619a08c44666918b6bb7240236581b7e86dc8",
+    "integratedSha256": "478a19240983225f2b964610cdabe31e884fec394441351fb29934fc4a6622c3",
+    "kind": "pro-port",
+    "bindingAdaptation": "Existing sidebar port; application group data, guarded navigation and optional defaultOpen/revealActiveGroup bindings for user-requested workspace subpages. Defaults preserve prior open behavior. Reference appearance, collapse controls and motion retained. See workspace-subpages-and-main-merge.md for bounded browser evidence."
+  }
+]

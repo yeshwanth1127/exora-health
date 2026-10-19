@@ -1,28 +1,29 @@
-import { useState, type ComponentType } from "react";
+import { Delta } from "./GoogleBusiness";
+import { GrowthMetric } from "./GrowthMetric";
+import { GrowthBar, GrowthSplit } from "./GrowthCharts";
+import { useWorkspaceTab } from "./use-workspace-tab";
+import { workspaceTabs } from "./workspace-navigation";
+import { useState } from "react";
 import {
   ArrowRight,
   ExternalLink,
-  Globe,
-  Link2,
   Loader2,
-  MapPin,
   Navigation,
   Phone,
-  Share2,
   ShieldCheck,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/toast-events";
 import { PageTitle } from "@/components/workspace";
-import {
-  GoogleIcon,
-  PostHogIcon,
-  WhatsAppIcon,
-} from "@/components/brand-icons";
+import { PostHogIcon, WhatsAppIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/arc/tabs/tabs";
 import { useQuery, useWorkspace } from "./hooks";
-import { Delta } from "./GoogleBusiness";
 import { Pick } from "./whatsapp-ui";
 import { Settings, Websites } from "./WebsiteAnalyticsSetup";
 import { request, IntentKeys } from "./client";
@@ -35,7 +36,6 @@ import {
   summarize,
   type AnalyticsData,
   type Device,
-  type Source,
 } from "./website-analytics";
 
 export type AChange = (
@@ -81,11 +81,7 @@ function AnalyticsPage() {
   return <Analytics clinic={clinic} />;
 }
 
-const tabs = [
-  ["overview", "Overview"],
-  ["websites", "Websites"],
-  ["settings", "Settings"],
-] as const;
+const tabs = workspaceTabs.growth_analytics;
 export type ATab = (typeof tabs)[number][0];
 
 function Analytics({ clinic }: { clinic: Clinic }) {
@@ -97,7 +93,7 @@ function Analytics({ clinic }: { clinic: Clinic }) {
     30000,
   );
   const [intents] = useState(() => new IntentKeys());
-  const [tab, setTab] = useState<ATab>("overview");
+  const [tab, setTab] = useWorkspaceTab("growth_analytics");
   const [busy, setBusy] = useState(false);
   const data = state.data;
   const change: AChange = async (fn) => {
@@ -165,41 +161,51 @@ function Analytics({ clinic }: { clinic: Clinic }) {
         )}
         {data?.available && (
           <>
-            <Tabs value={tab} onValueChange={(v) => setTab(v as ATab)}>
-              <TabsList variant="line">
-                {tabs.map(([k, label]) => (
-                  <TabsTrigger key={k} value={k}>
-                    {label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+            <Tabs
+              value={tab}
+              onValueChange={(v) => setTab(v as ATab)}
+              className="arc-workflow-root"
+            >
+              <div className="arc-demo-scope">
+                <TabsList aria-label="Website analytics workspace">
+                  {tabs.map(([k, label]) => (
+                    <TabsTrigger key={k} value={k}>
+                      {label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+              {data.status === "service_unavailable" && (
+                <p role="alert" className="text-sm text-destructive">
+                  Visitor numbers are temporarily unavailable. Please try again.
+                </p>
+              )}
+              <fieldset disabled={busy} className="min-w-0 space-y-6">
+                <TabsContent value="overview" className="arc-workflow-panel">
+                  {data.status !== "service_unavailable" && (
+                    <Overview
+                      data={data}
+                      open={setTab}
+                      range={days}
+                      setRange={setDays}
+                    />
+                  )}
+                </TabsContent>
+                <TabsContent value="websites" className="arc-workflow-panel">
+                  {
+                    <Websites
+                      data={data}
+                      change={change}
+                      clinic={clinic}
+                      canManage={canManage}
+                    />
+                  }
+                </TabsContent>
+                <TabsContent value="settings" className="arc-workflow-panel">
+                  {<Settings data={data} canManage={canManage} />}
+                </TabsContent>
+              </fieldset>
             </Tabs>
-            {data.status === "service_unavailable" && (
-              <p role="alert" className="text-sm text-destructive">
-                Visitor numbers are temporarily unavailable. Please try again.
-              </p>
-            )}
-            <fieldset disabled={busy} className="min-w-0 space-y-6">
-              {tab === "overview" && data.status !== "service_unavailable" && (
-                <Overview
-                  data={data}
-                  open={setTab}
-                  range={days}
-                  setRange={setDays}
-                />
-              )}
-              {tab === "websites" && (
-                <Websites
-                  data={data}
-                  change={change}
-                  clinic={clinic}
-                  canManage={canManage}
-                />
-              )}
-              {tab === "settings" && (
-                <Settings data={data} canManage={canManage} />
-              )}
-            </fieldset>
           </>
         )}
       </div>
@@ -212,19 +218,6 @@ const ranges = [
   ["30", "Last 30 days"],
   ["90", "Last 90 days"],
 ] as const;
-const sourceIcons: Record<Source, ComponentType<{ className?: string }>> = {
-  google: GoogleIcon,
-  maps: ({ className }) => <MapPin className={`${className} text-[#ea4335]`} />,
-  whatsapp: WhatsAppIcon,
-  social: Share2,
-  direct: Link2,
-  other: Globe,
-};
-const deviceColors: Record<Device, string> = {
-  mobile: "bg-primary",
-  desktop: "bg-primary/55",
-  tablet: "bg-primary/25",
-};
 const n = (v: number) => v.toLocaleString("en-IN");
 
 function Overview({
@@ -247,7 +240,6 @@ function Overview({
   const rate = percent(now.booked, now.visitors);
   const sources = ranked(now.sources);
   const top = sources[0];
-  const max = Math.max(...series.map((d) => d.visitors), 1);
   const ph = data.posthog;
   const ownSites = data.sites.filter((s) => s.kind === "own");
   return (
@@ -329,85 +321,66 @@ function Overview({
               percent(before.booked, before.visitors),
             ],
           ] as const
-        ).map(([title, shown, value, prev]) => (
-          <Card key={title} className="gap-1 p-4 shadow-none">
-            <p className="text-xs text-muted-foreground">{title}</p>
-            <p className="text-2xl font-semibold tabular-nums">{shown}</p>
-            {(title === "Visitors" ||
+        ).map(([title, , value, prev]) => (
+          <GrowthMetric
+            key={title}
+            label={title}
+            value={
+              title === "Visitors" ||
               title === "Pages viewed" ||
-              data.bookingsTracked) && (
-              <Delta now={value} before={prev} label={label} />
-            )}
-          </Card>
+              data.bookingsTracked
+                ? value
+                : null
+            }
+            before={
+              title === "Visitors" ||
+              title === "Pages viewed" ||
+              data.bookingsTracked
+                ? prev
+                : undefined
+            }
+            suffix={title === "Bookings / measured visitors" ? "%" : undefined}
+            decimals={title === "Bookings / measured visitors" ? 1 : 0}
+            context={`Last ${days} days · compared with ${label}`}
+          />
         ))}
       </div>
       {top && data.bookingsTracked && (
         <p className="text-sm">
           Most recorded referrals came from{" "}
           <span className="font-medium">{sourceNames[top[0]]}</span>. About{" "}
-          {Math.round(rate)} confirmed website bookings per 100 measured visitors.
-          Visit tracking can be blocked, so this is an aggregate ratio.
+          {Math.round(rate)} confirmed website bookings per 100 measured
+          visitors. Visit tracking can be blocked, so this is an aggregate
+          ratio.
         </p>
       )}
       <Card className="gap-3 p-5 shadow-none">
         <h2 className="text-sm font-semibold">Visits each day</h2>
-        <div
-          className="flex h-40 items-end gap-px"
-          role="img"
-          aria-label={`Visits each day, ${ranges.find(([k]) => k === range)?.[1].toLowerCase()}`}
-        >
-          {series.map((d) => (
-            <div
-              key={d.date}
-              className="flex-1 rounded-t-sm bg-primary/70 transition-colors hover:bg-primary"
-              style={{ height: `${(d.visitors / max) * 100}%` }}
-              title={`${new Date(d.date).toLocaleDateString([], { day: "numeric", month: "short" })}: ${d.visitors} visits`}
-            />
-          ))}
-        </div>
-        <div className="flex justify-between text-[11px] text-muted-foreground">
-          <span>
-            {series[0] &&
-              new Date(series[0].date).toLocaleDateString([], {
-                day: "numeric",
-                month: "short",
-              })}
-          </span>
-          <span>Today</span>
-        </div>
+        <GrowthBar
+          label="Visits each day"
+          period={`Last ${days} days`}
+          category="Day"
+          averageLabel="Daily average"
+          showAverage
+          data={series.map((d) => ({
+            key: d.date,
+            label: d.date,
+            axisLabel: d.date.slice(5),
+            value: d.visitors,
+          }))}
+        />
       </Card>
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="gap-4 p-5 shadow-none">
           <h2 className="text-sm font-semibold">Where visitors came from</h2>
-          <ul className="space-y-3">
-            {sources.map(([k, v]) => {
-              const Icon = sourceIcons[k];
-              return (
-                <li
-                  key={k}
-                  className="grid grid-cols-[1rem_7.5rem_1fr_2.5rem] items-center gap-2.5 sm:grid-cols-[1.25rem_10rem_1fr_3rem] sm:gap-3 text-sm"
-                >
-                  <Icon className="size-4 text-muted-foreground" />
-                  <span className="truncate">{sourceNames[k]}</span>
-                  <span className="h-2 overflow-hidden rounded-full bg-muted">
-                    <span
-                      className="block h-full rounded-full bg-primary/70"
-                      style={{ width: `${percent(v, sources[0][1])}%` }}
-                    />
-                  </span>
-                  <span className="text-right tabular-nums text-muted-foreground">
-                    {Math.round(
-                      percent(
-                        v,
-                        Object.values(now.sources).reduce((a, b) => a + b, 0),
-                      ),
-                    )}
-                    %
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
+          <GrowthSplit
+            label="Visitor referrals"
+            segments={sources.map(([id, value]) => ({
+              id,
+              label: sourceNames[id],
+              value,
+            }))}
+          />
           <p className="text-xs text-muted-foreground">
             Sources are grouped from recorded referrals.
           </p>
@@ -520,24 +493,14 @@ function Overview({
           </Card>
           <Card className="gap-3 p-5 shadow-none">
             <h2 className="text-sm font-semibold">Devices</h2>
-            <div className="flex h-3 overflow-hidden rounded-full bg-muted">
-              {(Object.keys(deviceNames) as Device[]).map((k) => (
-                <span
-                  key={k}
-                  className={deviceColors[k]}
-                  style={{ width: `${percent(now.devices[k], now.visitors)}%` }}
-                />
-              ))}
-            </div>
-            <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              {(Object.keys(deviceNames) as Device[]).map((k) => (
-                <li key={k} className="flex items-center gap-1.5">
-                  <span className={`size-2 rounded-full ${deviceColors[k]}`} />
-                  {deviceNames[k]}{" "}
-                  {Math.round(percent(now.devices[k], now.visitors))}%
-                </li>
-              ))}
-            </ul>
+            <GrowthSplit
+              label="Visitor devices"
+              segments={(Object.keys(deviceNames) as Device[]).map((id) => ({
+                id,
+                label: deviceNames[id],
+                value: now.devices[id],
+              }))}
+            />
           </Card>
         </div>
       </div>

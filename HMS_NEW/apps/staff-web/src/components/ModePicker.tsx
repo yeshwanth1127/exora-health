@@ -36,7 +36,7 @@ export function ModePicker() {
   }, [mode]);
 
   return (
-    <div role="radiogroup" aria-label="Colour mode" className="flex items-center gap-0.5 rounded-full border bg-card p-1">
+    <div role="radiogroup" aria-label="Colour mode" className="inline-flex items-center gap-1 rounded-full border bg-card p-1">
       {MODES.map((m) => (
         <button
           key={m.id}
@@ -53,7 +53,7 @@ export function ModePicker() {
             className="mode-swatch size-5 rounded-full ring-1 ring-black/10"
             style={{ background: "conic-gradient(var(--sidebar) 0 50%, var(--primary) 0 80%, var(--chart-2) 0)" }}
           />
-          {mode === m.id && <span className="hidden text-xs font-medium lg:inline">{m.name}</span>}
+          <span className="pr-2 text-sm">{m.name}</span>
         </button>
       ))}
     </div>

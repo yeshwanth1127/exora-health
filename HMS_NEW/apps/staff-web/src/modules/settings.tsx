@@ -1,3 +1,7 @@
+import { SettingsSaveBar } from "@/components/arc/settings-page/settings-page";
+import { ActivityFeed } from "./ActivityFeed";
+import type { AuditItem } from "./activity-feed-data";
+import { Tabs as ArcTabs, TabsList as ArcTabsList, TabsTrigger as ArcTabsTrigger, TabsContent as ArcTabsContent } from "@/components/arc/tabs/tabs";
 import { useLegacyCommand } from "@/hms/operational-command";
 import { RecoveryNotice } from "@/hms/OperationalRecovery";
 import { useUnsaved, requestLeave } from "@/hms/leave";
@@ -5,6 +9,8 @@ import type { MutationIntent } from "@/hms/operational-intent";
 import { DemoControls } from "./DemoControls";
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import { TeamDirectory } from "@/components/arc/team-directory/team-directory";
+import { directoryPeople, type StaffRow } from "./staff-directory";
 import { api, type StaffUser } from "@/lib/api";
 import { toCsv } from "@/lib/csv";
 import {
@@ -21,9 +27,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Status } from "@/hms/ui";
 import { Input } from "@/components/ui/input";
-import { DayNavigator, DateRangeField } from "@/components/date-controls";
+import { ReportDateRange } from "@/components/ReportDateRange";
 import { dateRangeError } from "@/components/date-controls-model";
 import { WorkspaceEmpty } from "@/hms/WorkspaceEmpty";
 import {
@@ -447,16 +452,6 @@ function StaffPermissions() {
   );
 }
 
-type AuditItem = {
-  id: string;
-  created_at: string;
-  actor: string;
-  actor_type: string;
-  action: string;
-  targets: Record<string, string>;
-  change: Record<string, unknown>;
-  request_id: string;
-};
 const describe = (value: unknown): string =>
   Array.isArray(value) && value.length === 2 // [before, after]
     ? `${describe(value[0])} → ${describe(value[1])}`
@@ -468,6 +463,7 @@ const describe = (value: unknown): string =>
 
 export function ActivityLog() {
   const call = useApi();
+  const [view, setView] = useState("table");
   const [filters, setFilters] = useState({
       actor: "",
       target: "",
@@ -548,8 +544,8 @@ export function ActivityLog() {
           </Action>
         }
       />
-      <Card className="mb-5">
-        <CardContent className="grid sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-6">
+      <Card className="mb-5 overflow-visible">
+        <CardContent className="arc-activity-filters grid grid-cols-[repeat(3,minmax(0,1fr))_minmax(250px,1.25fr)] items-start gap-4 pt-5">
           <Field label="Person" id="audit-actor">
             <Input
               id="audit-actor"
@@ -571,65 +567,68 @@ export function ActivityLog() {
               onChange={(e) => set("action")(e.target.value)}
             />
           </Field>
-          <div className="lg:col-span-3 space-y-3">
-            <DayNavigator
-              label="Single day"
-              boundaryLabel={log.data?.dateBoundary ? `Organisation dates · ${log.data.dateBoundary.timezone}` : "Organisation timezone unavailable"}
-              allowClear
-              value={filters.start === filters.end ? filters.start : ""}
-              onChange={(day) => {
-                setFilters({ ...filters, start: day, end: day });
-                setLimit(50);
-              }}
-            />
-            <DateRangeField
+            <ReportDateRange
               from={filters.start}
               to={filters.end}
-              boundaryLabel={log.data?.dateBoundary ? `Organisation dates · ${log.data.dateBoundary.timezone}` : "Organisation timezone unavailable"}
+              timezone={log.data?.dateBoundary?.timezone}
               onChange={({ from, to }) => {
                 setFilters({ ...filters, start: from, end: to });
                 setLimit(50);
               }}
             />
-          </div>
         </CardContent>
       </Card>
       <Resource {...log}>
         <Card className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Time</TableHead>
-                <TableHead>Person</TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead>Records</TableHead>
-                <TableHead>Change</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {log.data?.items.map((e) => (
-                <TableRow key={e.id}>
-                  <TableCell className="whitespace-nowrap">
-                    {log.data?.dateBoundary ? new Intl.DateTimeFormat("en-IN", { timeZone: log.data.dateBoundary.timezone, dateStyle: "medium", timeStyle: "short" }).format(new Date(e.created_at)) : e.created_at}
-                  </TableCell>
-                  <TableCell className="whitespace-normal">{e.actor}</TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {e.action}
-                  </TableCell>
-                  <TableCell className="whitespace-normal text-xs">
-                    {Object.entries(e.targets)
-                      .map(([k, v]) => `${k}: ${v}`)
-                      .join(", ")}
-                  </TableCell>
-                  <TableCell className="whitespace-normal text-xs">
-                    {Object.entries(e.change)
-                      .map(([k, v]) => `${k}: ${describe(v)}`)
-                      .join("; ")}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <ArcTabs value={view} onValueChange={setView} className="arc-demo-scope">
+            <div className="px-5 pt-4">
+              <ArcTabsList aria-label="Activity presentation">
+                <ArcTabsTrigger value="table">Table</ArcTabsTrigger>
+                <ArcTabsTrigger value="feed">Feed</ArcTabsTrigger>
+              </ArcTabsList>
+            </div>
+            <ArcTabsContent value="table">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Person</TableHead>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Records</TableHead>
+                    <TableHead>Change</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {log.data?.items.map((e) => (
+                    <TableRow key={e.id}>
+                      <TableCell className="whitespace-nowrap">
+                        {log.data?.dateBoundary ? new Intl.DateTimeFormat("en-IN", { timeZone: log.data.dateBoundary.timezone, dateStyle: "medium", timeStyle: "short" }).format(new Date(e.created_at)) : e.created_at}
+                      </TableCell>
+                      <TableCell className="whitespace-normal">{e.actor}</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {e.action}
+                      </TableCell>
+                      <TableCell className="whitespace-normal text-xs">
+                        {Object.entries(e.targets)
+                          .map(([k, v]) => `${k}: ${v}`)
+                          .join(", ")}
+                      </TableCell>
+                      <TableCell className="whitespace-normal text-xs">
+                        {Object.entries(e.change)
+                          .map(([k, v]) => `${k}: ${describe(v)}`)
+                          .join("; ")}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ArcTabsContent>
+            <ArcTabsContent value="feed">
+              {log.data?.dateBoundary?.timezone
+                ? <ActivityFeed key={query} items={log.data.items} timezone={log.data.dateBoundary.timezone} />
+                : <p role="status" className="p-5 text-sm">Organisation timezone is unavailable. Use Table view to review these events.</p>}
+            </ArcTabsContent>
+          </ArcTabs>
           {log.data?.items.length === 0 && (
             <WorkspaceEmpty
               title="No matching activity"
@@ -670,18 +669,6 @@ export function ActivityLog() {
   );
 }
 
-type StaffRow = {
-  id: string;
-  name: string;
-  employee_no: string;
-  email: string | null;
-  staff_type: string;
-  status: "active" | "invited" | "disabled" | "no_login";
-  is_you: boolean;
-  grants: { id: string; role: string; clinic: string }[];
-  phone?: string | null;
-  version?: number;
-};
 type RoleRow = {
   version: number;
   id: string;
@@ -919,71 +906,38 @@ export function WorkspaceSettings({
                 }
               />
               <Resource {...users}>
-                <Card className="p-0 mb-7">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Work email</TableHead>
-                        <TableHead>Roles</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead />
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {users.data?.map((u) => (
-                        <TableRow key={u.id}>
-                          <TableCell className="whitespace-normal">
-                            {u.name}
-                            {u.is_you && " (you)"}
-                            <span className="block text-xs text-muted-foreground">
-                              {u.employee_no} · {titleCase(u.staff_type)}
-                            </span>
-                          </TableCell>
-                          <TableCell>{u.email ?? "—"}</TableCell>
-                          <TableCell className="whitespace-normal text-xs">
-                            {u.grants
-                              .map((g) => `${g.role} · ${g.clinic}`)
-                              .join(", ") || "No access"}
-                          </TableCell>
-                          <TableCell>
-                            <Status
-                              value={u.status === "invited" ? "invited" : u.status === "active" ? "active" : "inactive"}
-                              text={
-                                {
-                                  active: "Active",
-                                  invited: "Invited (not signed in yet)",
-                                  disabled: "Disabled",
-                                  no_login: "No sign-in",
-                                }[u.status]
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={command.busy || command.unknown}
-                              onClick={() => {
-                                setAccessReview(null);
-                                setPerson(u);
-                                setDetails({
-                                  name: u.name,
-                                  phone: u.phone ?? "",
-                                });
-                                setReason("");
-                                setGrantRoleId("");
-                                setGrantScope("here");
-                              }}
-                            >
-                              Manage
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </Card>
+                <div className="arc-demo-scope arc-section-frame mb-7">
+                  <TeamDirectory
+                    title="Staff"
+                    searchPlaceholder="Search name, role, email"
+                    filterLabel="Filter by staff type"
+                    people={directoryPeople(users.data ?? [])}
+                    actions={(p) => {
+                      const u = users.data?.find((x) => x.id === p.id);
+                      return u && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-4 self-start justify-self-start"
+                          disabled={command.busy || command.unknown}
+                          onClick={() => {
+                            setAccessReview(null);
+                            setPerson(u);
+                            setDetails({
+                              name: u.name,
+                              phone: u.phone ?? "",
+                            });
+                            setReason("");
+                            setGrantRoleId("");
+                            setGrantScope("here");
+                          }}
+                        >
+                          Manage
+                        </Button>
+                      );
+                    }}
+                  />
+                </div>
               </Resource>
             </>
           )}
@@ -1361,30 +1315,42 @@ export function WorkspaceSettings({
                     />
                   </Field>
                 </div>
-                <Action
-                  variant="outline"
-                  disabled={
-                    details.name.trim().length < 2 ||
-                    (!!details.phone &&
-                      !/^\+[1-9][0-9]{7,14}$/.test(details.phone)) ||
-                    (details.name.trim() === person.name &&
-                      details.phone === (person.phone ?? ""))
+                <SettingsSaveBar
+                  count={
+                    Number(details.name !== person.name) +
+                    Number(details.phone !== (person.phone ?? ""))
                   }
-                  run={async () => {
-                    await call(`/api/v1/staff/users/${person.id}`, {
-                      method: "PATCH",
-                      body: {
-                        version: person.version,
-                        name: details.name.trim(),
-                        phone: details.phone,
-                      },
-                    });
-                    refreshPerson(person.id);
-                  }}
-                  success="Details saved"
+                  busy={command.busy || command.unknown || !!accessReview}
+                  onDiscard={() =>
+                    setDetails({ name: person.name, phone: person.phone ?? "" })
+                  }
                 >
-                  Save name and phone
-                </Action>
+                  <Action
+                    size="sm"
+                    disabled={
+                      details.name.trim().length < 2 ||
+                      (!!details.phone &&
+                        !/^\+[1-9][0-9]{7,14}$/.test(details.phone)) ||
+                      (details.name.trim() === person.name &&
+                        details.phone === (person.phone ?? ""))
+                    }
+                    run={async () => {
+                      await call(`/api/v1/staff/users/${person.id}`, {
+                        method: "PATCH",
+                        body: {
+                          version: person.version,
+                          name: details.name.trim(),
+                          phone: details.phone,
+                        },
+                      });
+                      refreshPerson(person.id);
+                    }}
+                    success="Details saved"
+                  >
+                    Save changes
+                  </Action>
+                </SettingsSaveBar>
+                {command.error && !command.unknown && <p role="alert" className="text-sm text-destructive">{command.error}</p>}
               </div>
             )}
             <div className="space-y-3">

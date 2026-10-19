@@ -1,3 +1,4 @@
+import { MoneyField } from "@/components/WorkspaceFields";
 // Hospital catalogue: the clinics this user can access, and the selected clinic's details, departments,
 // bookable services (with their default fee) and consult rooms. Everything shown can be changed here by
 // someone holding the permission at this clinic: facility.manage (clinic details, departments, rooms),
@@ -1287,13 +1288,8 @@ function ServiceForm({
         className="space-y-4 border-t pt-4"
       >
         <Field title="Default consultation fee (₹)" id="svc-fee">
-          <Input
-            id="svc-fee"
-            inputMode="decimal"
-            value={feeText}
-            placeholder="Not priced"
-            onChange={(e) => setFeeText(e.target.value)}
-          />
+          <MoneyField id="svc-fee" label="Default consultation fee (₹)" value={feeMinor ?? null}
+            onValueChange={(minor) => setFeeText(minorToRupees(minor))} />
         </Field>
         {feeMinor === undefined && (
           <p className="text-sm text-destructive">

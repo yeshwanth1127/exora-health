@@ -1,3 +1,4 @@
+import { SearchField } from "@/components/arc/search-field/search-field";
 import { OriginalResourceContext, isDraft } from "@/components/resource-source";
 import { useLegacyCommand } from "@/hms/operational-command";
 import { RecoveryNotice } from "@/hms/OperationalRecovery";
@@ -538,17 +539,9 @@ export function ScheduleTimeline({
             ),
           ]}
         />
-        <div className="space-y-2">
-          <label htmlFor="timeline-search" className="block text-sm leading-none font-medium">
-            Doctor
-          </label>
-          <Input
-            id="timeline-search"
-            type="search"
-            placeholder="Find a doctor…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
+        <div className="arc-demo-scope arc-schedule-search">
+          <SearchField id="timeline-search" label="Doctor" placeholder="Find a doctor…"
+            value={query} onValueChange={setQuery} />
         </div>
       </div>
       <Resource

@@ -1,10 +1,16 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { GrowthConfirm } from "./GrowthConfirm";
+import { useConfirmationReview } from "./use-confirmation-review";
+import { sameReviewedValue } from "./growth-confirmation";
+import { DateField, TimeField } from "@/components/WorkspaceFields";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Plus, Sparkles, X } from "lucide-react";
+import { useUnsaved } from "./leave";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { GrowthCheckbox as Switch } from "./GrowthControls";
 import { Textarea } from "@/components/ui/textarea";
 import { useWorkspace } from "./hooks";
 import { chatLink, validPhone } from "./whatsapp-setup";
@@ -56,7 +62,22 @@ export function Profile({
   canManage: boolean;
 }) {
   const { go } = useWorkspace();
+  const publication = useConfirmationReview<{
+    baseline: Listing;
+    draft: Listing;
+    fields: (typeof checkedFields)[number][];
+  }>();
   const [draft, setDraft] = useState<Listing>(data.listing);
+  const published = useRef<Listing | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  useEffect(() => {
+    if (
+      published.current &&
+      sameReviewedValue(data.listing, published.current)
+    ) {
+      published.current = null;
+    }
+  }, [data.listing]);
   const [waNumber, setWaNumber] = useState("+91");
   const [newCategory, setNewCategory] = useState("");
   useEffect(() => {
@@ -67,7 +88,10 @@ export function Profile({
   }, [section]);
   const set = (patch: Partial<Listing>) =>
     setDraft((d) => ({ ...d, ...patch }));
-  const dirty = JSON.stringify(draft) !== JSON.stringify(data.listing);
+  const dirty =
+    JSON.stringify(draft) !== JSON.stringify(data.listing) &&
+    !sameReviewedValue(draft, published.current);
+  useUnsaved(dirty, { pending: publishing });
   const rechecked = checkedFields.filter((f) => draft[f] !== data.listing[f]);
   const issues = [
     ...descriptionIssues(draft.description),
@@ -92,23 +116,42 @@ export function Profile({
           "Only name, phone, website, description and regular hours can be published in this version.",
       ),
   ];
-  const publish = () => {
+  const publishReviewed = async (
+    review: NonNullable<typeof publication.target>,
+  ) => {
     if (
-      rechecked.length &&
-      !window.confirm(
-        `Google checks a new ${rechecked.map((f) => fieldNames[f]).join(" and ")} before showing it, usually within a few days. Your listing stays as it is until then. Publish?`,
-      )
+      publishing ||
+      !canManage ||
+      !sameReviewedValue(data.listing, review.baseline) ||
+      !sameReviewedValue(draft, review.draft)
     )
       return;
     const at = Date.now();
-    change((d) => ({
-      ...d,
-      listing: draft,
-      checking: {
-        ...d.checking,
-        ...Object.fromEntries(rechecked.map((f) => [f, at])),
-      },
-    }));
+    setPublishing(true);
+    published.current = review.draft;
+    try {
+      const accepted = await change((d) =>
+        sameReviewedValue(d.listing, review.baseline)
+          ? {
+              ...d,
+              listing: review.draft,
+              checking: {
+                ...d.checking,
+                ...Object.fromEntries(review.fields.map((f) => [f, at])),
+              },
+            }
+          : d,
+      );
+      if (!accepted) published.current = null;
+    } finally {
+      setPublishing(false);
+    }
+  };
+  const publish = () => {
+    if (!canManage || !dirty || issues.length) return;
+    const review = { baseline: data.listing, draft, fields: rechecked };
+    if (rechecked.length) publication.request(review);
+    else publishReviewed(review);
   };
   const suggested = suggestCategories(exora.specialities);
   const fromExora = (label: string, on: () => void, same: boolean) =>
@@ -135,7 +178,10 @@ export function Profile({
           ))}
         </ul>
       </nav>
-      <fieldset disabled={!canManage} className="min-w-0 space-y-5 pb-20">
+      <fieldset
+        disabled={!canManage || publishing}
+        className="min-w-0 space-y-5 pb-20"
+      >
         <Section
           id="basics"
           title="Basics"
@@ -295,39 +341,35 @@ export function Profile({
                     }
                   />
                   {p ? (
-                    <span className="flex items-center gap-2">
-                      <Input
-                        type="time"
-                        className="w-28"
-                        aria-label={`${name} opens`}
-                        value={p.open}
-                        onChange={(e) =>
-                          set({
-                            hours: draft.hours.map((x) =>
-                              x.day === day
-                                ? { ...x, open: e.target.value }
-                                : x,
-                            ),
-                          })
-                        }
-                      />
+                    <div className="flex items-end gap-2">
+                      <div className="w-44">
+                        <TimeField
+                          label={`${name} opens`}
+                          value={p.open}
+                          onValueChange={(value) =>
+                            set({
+                              hours: draft.hours.map((x) =>
+                                x.day === day ? { ...x, open: value } : x,
+                              ),
+                            })
+                          }
+                        />
+                      </div>
                       to
-                      <Input
-                        type="time"
-                        className="w-28"
-                        aria-label={`${name} closes`}
-                        value={p.close}
-                        onChange={(e) =>
-                          set({
-                            hours: draft.hours.map((x) =>
-                              x.day === day
-                                ? { ...x, close: e.target.value }
-                                : x,
-                            ),
-                          })
-                        }
-                      />
-                    </span>
+                      <div className="w-44">
+                        <TimeField
+                          label={`${name} closes`}
+                          value={p.close}
+                          onValueChange={(value) =>
+                            set({
+                              hours: draft.hours.map((x) =>
+                                x.day === day ? { ...x, close: value } : x,
+                              ),
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
                   ) : (
                     <span className="text-muted-foreground">Closed</span>
                   )}
@@ -631,6 +673,26 @@ export function Profile({
           </div>
         </div>
       )}
+      <GrowthConfirm
+        open={publication.open}
+        onDismiss={publication.dismiss}
+        title="Publish profile changes?"
+        description={`Google checks a new ${publication.target?.fields.map((f) => fieldNames[f]).join(" and ") ?? "profile detail"} before showing it, usually within a few days. Your listing stays as it is until then. This saves the browser preview; it does not publish to live Google.`}
+        confirmLabel="Publish preview"
+        destructive={false}
+        blockedReason={
+          !canManage
+            ? "You no longer have permission to publish these changes."
+            : !publication.target ||
+                !sameReviewedValue(data.listing, publication.target.baseline) ||
+                !sameReviewedValue(draft, publication.target.draft)
+              ? "The profile changed. Close this dialog and review the current changes before publishing."
+              : undefined
+        }
+        onConfirm={() => {
+          if (publication.target) publishReviewed(publication.target);
+        }}
+      />
     </div>
   );
 }
@@ -664,13 +726,13 @@ function Holidays({
         </div>
       ))}
       <div className="flex flex-wrap gap-2">
-        <Input
-          type="date"
-          className="w-40"
-          aria-label="Holiday date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
+        <div className="w-52">
+          <DateField
+            label="Holiday date"
+            value={date}
+            onValueChange={setDate}
+          />
+        </div>
         <Input
           className="w-48"
           placeholder="e.g. Diwali"
@@ -678,6 +740,7 @@ function Holidays({
           value={label}
           onChange={(e) => setLabel(e.target.value)}
         />
+
         <Button
           variant="outline"
           disabled={!date}
@@ -769,20 +832,15 @@ function Toggle({
   disabled?: boolean;
 }) {
   return (
-    <label className="flex items-center justify-between gap-4 border-b py-3 text-sm last:border-0">
-      <span className="min-w-0">
-        <span className="block font-medium">{title}</span>
-        <span className="block truncate text-xs text-muted-foreground">
-          {text}
-        </span>
-      </span>
+    <div className="border-b py-3 last:border-0">
       <Switch
+        label={title}
+        description={text}
         checked={on}
         disabled={disabled}
-        aria-label={title}
         onCheckedChange={set}
       />
-    </label>
+    </div>
   );
 }
 

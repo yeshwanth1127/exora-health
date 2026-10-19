@@ -1,13 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/arc/dialog/dialog";
 import { leaveState } from "./leave";
 export function LeaveDialog() {
   const open = useSyncExternalStore(leaveState.subscribe, leaveState.isPending);
@@ -22,20 +15,11 @@ export function LeaveDialog() {
         if (!value) leaveState.stay();
       }}
     >
-      <DialogContent showCloseButton={false}>
-        <DialogHeader>
-          <DialogTitle>
-            {blocked
-              ? "Confirm the original request first"
-              : "Leave this unfinished task?"}
-          </DialogTitle>
-          <DialogDescription>
-            {blocked
-              ? "A request is still being saved or has an unknown outcome. Stay on this task and recover the original request before navigating away."
-              : "Your unsaved changes will be discarded. No draft is saved when you leave."}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
+      <DialogContent title={blocked ? "Confirm the original request first" : "Leave this unfinished task?"}
+        description={blocked ? "A request is still being saved or has an unknown outcome. Stay on this task and recover the original request before navigating away."
+          : "Your unsaved changes will be discarded. No draft is saved when you leave."}>
+        <div className="flex justify-end gap-2">
+
           <Button variant="outline" onClick={leaveState.stay}>
             Keep editing
           </Button>
@@ -44,7 +28,7 @@ export function LeaveDialog() {
               Discard and leave
             </Button>
           )}
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -1,6 +1,11 @@
-import { useId } from "react";
+import { Tooltip } from "./arc/tooltip/tooltip";
+import { TimeField } from "./WorkspaceFields";
+import { useId, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "./ui/button";
+import { Button } from "./arc/button/button";
+import { DatePicker } from "./arc/date-picker/date-picker";
+import { parseReportDay, formatReportDay } from "@/hms/arc-report-range";
+import { useCalendarToday } from "./use-calendar-today";
 import { Input } from "./ui/input";
 import { SharedField } from "./shared-field";
 import {
@@ -22,6 +27,7 @@ export function DayNavigator({
   max,
   disabled,
   allowClear = false,
+  actions,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -32,74 +38,37 @@ export function DayNavigator({
   max?: string;
   disabled?: boolean;
   allowClear?: boolean;
+  actions?: ReactNode;
 }) {
   const id = useId(),
     prev = shiftDay(value, -1),
     next = shiftDay(value, 1);
+  const calendarToday = useCalendarToday(timezone);
   const current = timezone ? localToday(timezone) : "";
-  return (
-    <SharedField label={label} id={id} hint={boundaryLabel ?? timezone}>
-      <div className="flex items-center gap-1.5">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label={`Previous ${label.toLowerCase()}`}
-          disabled={disabled || !dayInBounds(prev, min, max)}
-          onClick={() => onChange(prev)}
-        >
-          <ChevronLeft />
-        </Button>
-        <Input
-          id={id}
-          type="date"
-          className="w-40"
-          value={value}
-          min={min}
-          max={max}
-          disabled={disabled}
-          onChange={(e) => {
-            if (
-              (!e.target.value && allowClear) ||
-              dayInBounds(e.target.value, min, max)
-            )
-              onChange(e.target.value);
-          }}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label={`Next ${label.toLowerCase()}`}
-          disabled={disabled || !dayInBounds(next, min, max)}
-          onClick={() => onChange(next)}
-        >
-          <ChevronRight />
-        </Button>
-        {timezone && (
-          <Button
-            type="button"
-            variant="outline"
-            disabled={disabled || !dayInBounds(current, min, max)}
-            onClick={() => onChange(current)}
-          >
-            Today
-          </Button>
-        )}
-        {allowClear && value && (
-          <Button
-            type="button"
-            variant="ghost"
-            disabled={disabled}
-            onClick={() => onChange("")}
-          >
-            All dates
-          </Button>
-        )}
+  return <div className="arc-demo-scope arc-day-navigation">
+    <div className="flex items-end gap-2">
+      <div className="w-52">
+        <DatePicker id={id} label={label} value={parseReportDay(value) ?? undefined}
+          today={calendarToday ?? undefined} clearable={allowClear} placeholder="All dates"
+          minDate={parseReportDay(min ?? "") ?? undefined} maxDate={parseReportDay(max ?? "") ?? undefined}
+          disabled={disabled} showToday={!!timezone}
+          onChange={(day) => {
+            const nextValue = day ? formatReportDay(day) : "";
+            if ((!nextValue && allowClear) || dayInBounds(nextValue, min, max)) onChange(nextValue);
+          }} />
       </div>
-    </SharedField>
-  );
+      <Tooltip content={`Previous ${label.toLowerCase()}`}><Button type="button" variant="secondary" className="arc-icon-control" aria-label={`Previous ${label.toLowerCase()}`}
+        disabled={disabled || !dayInBounds(prev, min, max)} onClick={() => onChange(prev)}><ChevronLeft size={16} /></Button></Tooltip>
+      <Tooltip content={`Next ${label.toLowerCase()}`}><Button type="button" variant="secondary" className="arc-icon-control" aria-label={`Next ${label.toLowerCase()}`}
+        disabled={disabled || !dayInBounds(next, min, max)} onClick={() => onChange(next)}><ChevronRight size={16} /></Button></Tooltip>
+      {timezone && <Button type="button" variant="secondary" disabled={disabled || !dayInBounds(current, min, max)} onClick={() => onChange(current)}>Today</Button>}
+      {allowClear && value && <Button type="button" variant="ghost" disabled={disabled} onClick={() => onChange("")}>All dates</Button>}
+      {actions}
+    </div>
+    {(boundaryLabel || timezone) && <p className="mt-2 text-xs text-muted-foreground">{boundaryLabel ?? timezone}</p>}
+  </div>;
 }
+
 export function DateRangeField({
   from,
   to,
@@ -207,14 +176,8 @@ export function TimeRangeField({
         required={required}
         submitted={submitted}
       >
-        <Input
-          id={`${id}-start`}
-          type="time"
-          value={start}
-          disabled={disabled}
-          required={required}
-          onChange={(e) => onChange({ start: e.target.value, end })}
-        />
+        <TimeField label="Start time" id={`${id}-start`} value={start}
+          disabled={disabled} required={required} onValueChange={(value) => onChange({ start: value, end })} />
       </SharedField>
       <SharedField
         label="End time"
@@ -224,14 +187,8 @@ export function TimeRangeField({
         required={required}
         submitted={submitted}
       >
-        <Input
-          id={`${id}-end`}
-          type="time"
-          value={end}
-          disabled={disabled}
-          required={required}
-          onChange={(e) => onChange({ start, end: e.target.value })}
-        />
+        <TimeField label="End time" id={`${id}-end`} value={end}
+          disabled={disabled} required={required} onValueChange={(value) => onChange({ end: value, start })} />
       </SharedField>
     </div>
   );

@@ -7,7 +7,11 @@ import {
   type OriginalResourceSource,
 } from "@/components/resource-source";
 import { request, query } from "./client";
-import { useWorkspace } from "./hooks";
+import { useWorkspace, useQuery } from "./hooks";
+import type { OperationsKpiReport } from "@hms/contracts";
+import { decodeOverviewKpis } from "./overview-kpis";
+import { OverviewReporting } from "./OverviewReporting";
+import { LoadingState } from "./ui";
 import { today } from "./model";
 import { patientDisplayName } from "./patient-presentation";
 import { SetupGuide } from "./SetupGuide";
@@ -35,6 +39,12 @@ export function Overview({
   page?: "overview" | "operations";
 }) {
   const { me, facility } = useWorkspace();
+  const end = today(facility.timezone);
+  const report = useQuery<OperationsKpiReport>(
+    page === "overview" ? `/v1/operations/kpis?${query({ facilityId: facility.facilityId, date: end })}` : null,
+    0,
+    (value) => decodeOverviewKpis(value, { facilityId: facility.facilityId, end, timezone: facility.timezone }),
+  );
   const source = useMemo<OriginalResourceSource>(
     () => ({
       scope: `${me.tenantId}:${facility.facilityId}:${me.staffId}`,
@@ -113,6 +123,12 @@ export function Overview({
       <OperationsModule
         page={page}
         setup={page === "overview" ? <SetupGuide /> : undefined}
+        onRefresh={page === "overview" ? report.refresh : undefined}
+        reporting={page === "overview" ? (
+          <LoadingState loading={report.loading} error={report.error} data={report.data} failure={report.failure} refresh={report.refresh}>
+            {report.data && <OverviewReporting key={`${me.tenantId}:${facility.facilityId}`} report={report.data} />}
+          </LoadingState>
+        ) : undefined}
       />
     </OriginalResourceContext.Provider>
   );

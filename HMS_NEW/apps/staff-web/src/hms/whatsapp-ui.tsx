@@ -1,28 +1,14 @@
+import { useFieldContext } from "@/components/field-context";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import {
-  Check,
-  CheckCheck,
-  Clock,
-  FileText,
-  ImageIcon,
-  Paperclip,
-  Upload,
-  X,
-  AlertCircle,
-} from "lucide-react";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
+import { Check, CheckCheck, Clock, FileText, ImageIcon, Paperclip, Upload, X, AlertCircle } from "lucide-react";
+import { toast } from "@/components/toast-events";
+import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { WorkspaceChoice } from "@/components/WorkspaceChoice";
 import { IntentKeys, request } from "./client";
 import { useQuery, useWorkspace } from "./hooks";
 import { saveWaPreferences, type WaRemote } from "./managed-whatsapp";
+
 import type { Practitioner } from "./types";
 import { checkUpload, type Attachment } from "./whatsapp-setup";
 import {
@@ -304,20 +290,11 @@ export function Pick<T extends string>({
   onChange: (v: T) => void;
   className?: string;
 }) {
-  return (
-    <Select value={value} onValueChange={(v) => onChange(v as T)}>
-      <SelectTrigger id={id} className={className}>
-        <SelectValue>{options.find(([k]) => k === value)?.[1]}</SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {options.map(([k, label]) => (
-          <SelectItem key={k} value={k}>
-            {label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
+  const field = useFieldContext();
+  return <div className={className}><WorkspaceChoice id={id} label={field?.label ?? "Selection"}
+    value={value} onChange={(next) => onChange(next as T)}
+    options={options.map(([value, label]) => ({ value, label }))} /></div>;
+
 }
 
 export function FileSlot({

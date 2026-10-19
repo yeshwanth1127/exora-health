@@ -23,13 +23,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { WorkspaceChoice } from "@/components/WorkspaceChoice";
 import {
   Table,
   TableBody,
@@ -587,47 +581,14 @@ export function MessageTemplates() {
                 </div>
                 <div className="grid grid-cols-3 gap-5">
                   <Field title="Purpose" id="template-category">
-                    <Select
-                      value={form.category}
-                      onValueChange={(v) =>
-                        set("category", v as Form["category"])
-                      }
-                    >
-                      <SelectTrigger id="template-category">
-                        <SelectValue>
-                          {form.category === "utility"
-                            ? "Appointment updates"
-                            : "Marketing"}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="utility">
-                          Appointment updates
-                        </SelectItem>
-                        <SelectItem value="marketing">Marketing</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <WorkspaceChoice id="template-category" label="Category" value={form.category}
+                      onChange={(value) => set("category", value as Form["category"])}
+                      options={[{ value: "utility", label: "Appointment updates" }, { value: "marketing", label: "Marketing" }]} />
                   </Field>
                   <Field title="Header" id="template-header">
-                    <Select
-                      value={form.header}
-                      onValueChange={(v) => set("header", v as Form["header"])}
-                    >
-                      <SelectTrigger id="template-header">
-                        <SelectValue>
-                          {form.header === "none"
-                            ? "No header"
-                            : form.header === "text"
-                              ? "Text"
-                              : "Image"}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No header</SelectItem>
-                        <SelectItem value="text">Text</SelectItem>
-                        <SelectItem value="image">Image</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <WorkspaceChoice id="template-header" label="Header" value={form.header}
+                      onChange={(value) => set("header", value as Form["header"])}
+                      options={[{ value: "none", label: "No header" }, { value: "text", label: "Text" }, { value: "image", label: "Image" }]} />
                   </Field>
                   <Field title="Number of parameters" id="template-parameters">
                     <Input

@@ -1,12 +1,17 @@
+import { GrowthConfirm } from "./GrowthConfirm";
+import { useConfirmationReview } from "./use-confirmation-review";
+import { sameReviewedValue } from "./growth-confirmation";
+import { Stepper } from "@/components/arc/stepper/stepper";
 import { useEffect, useState } from "react";
 import { ArrowRight, Check, Copy, ExternalLink, Lock } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/toast-events";
+
 import { PageTitle } from "@/components/workspace";
 import { WhatsAppIcon } from "@/components/brand-icons";
-import { Badge } from "@/components/ui/badge";
+import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { GrowthCheckbox as Checkbox } from "./GrowthControls";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { GrowthSwitch as Switch } from "./GrowthControls";
 import { Textarea } from "@/components/ui/textarea";
 import { useManagedSetup, connectMeta } from "./managed-whatsapp";
 import { useWorkspace } from "./hooks";
@@ -72,7 +77,10 @@ const titles: Record<Exclude<Stage, "live">, [string, string]> = {
     "Add doctor and department files",
     "Optional photos and PDFs patients receive.",
   ],
-  test: ["Booking availability", "Book a real appointment by messaging your connected number."],
+  test: [
+    "Booking availability",
+    "Book a real appointment by messaging your connected number.",
+  ],
 };
 
 function Setup({ clinic }: { clinic: Clinic }) {
@@ -224,16 +232,17 @@ function Setup({ clinic }: { clinic: Clinic }) {
           Connect securely to manage patient conversations from this dashboard.
           Set up booking messages here, then enable bookings from the overview.
         </p>
-        <div
-          className="mt-4 flex gap-1.5"
-          aria-label={`Step ${reached + 1} of 4`}
-        >
-          {stageOrder.slice(0, 4).map((s, i) => (
-            <span
-              key={s}
-              className={`h-1.5 flex-1 rounded-full ${i < reached ? "bg-primary" : i === reached ? "bg-primary/40" : "bg-muted"}`}
-            />
-          ))}
+        <div className="arc-demo-scope mt-4">
+          <Stepper
+            label="WhatsApp setup"
+            current={reached}
+            steps={stageOrder
+              .slice(0, 4)
+              .map((id) => ({
+                id,
+                label: titles[id as Exclude<Stage, "live">][0],
+              }))}
+          />
         </div>
       </div>
       {!canManage && (
@@ -384,18 +393,16 @@ function ConnectStep({
             <p className="mb-3 text-sm font-medium">Before you start</p>
             <div className="space-y-3">
               {eligibility.map((text, i) => (
-                <label key={text} className="flex items-start gap-3 text-sm">
-                  <Checkbox
-                    className="mt-0.5"
-                    checked={checked.includes(i)}
-                    onCheckedChange={(on) =>
-                      setChecked(
-                        on ? [...checked, i] : checked.filter((x) => x !== i),
-                      )
-                    }
-                  />
-                  {text}
-                </label>
+                <Checkbox
+                  key={text}
+                  label={text}
+                  checked={checked.includes(i)}
+                  onCheckedChange={(on) =>
+                    setChecked(
+                      on ? [...checked, i] : checked.filter((x) => x !== i),
+                    )
+                  }
+                />
               ))}
             </div>
           </div>
@@ -503,17 +510,22 @@ function ConnectStep({
 }
 
 function FlowEditor({ clinic, setup, update, done }: StepProps) {
+  const { can } = useWorkspace();
+  const canManage = can("comms.manage");
+  const templateReview = useConfirmationReview<{
+    before: WhatsAppSetup;
+    shape: ClinicShape;
+  }>();
   const suggested = suggestShape(
     clinic.doctors.length,
     clinic.departments.length,
   );
   const choose = (shape: ClinicShape) => {
-    if (setup.shape === shape) return;
-    if (
-      setup.shape &&
-      !window.confirm("Switching template resets your step text. Continue?")
-    )
+    if (!canManage || setup.shape === shape) return;
+    if (setup.shape) {
+      templateReview.request({ before: setup, shape });
       return;
+    }
     update({
       shape,
       steps: stepsFor(
@@ -609,6 +621,37 @@ function FlowEditor({ clinic, setup, update, done }: StepProps) {
           </Button>
         </>
       )}
+      <GrowthConfirm
+        open={templateReview.open}
+        onDismiss={templateReview.dismiss}
+        title="Switch booking template?"
+        description={`Switch to ${templateReview.target ? shapes[templateReview.target.shape].label : "another template"}? This resets the booking step text saved in this browser.`}
+        confirmLabel="Switch template"
+        blockedReason={
+          !canManage
+            ? "You no longer have permission to change WhatsApp setup."
+            : !sameReviewedValue(setup, templateReview.target?.before)
+              ? "The booking flow changed. Close this dialog and review it before switching templates."
+              : undefined
+        }
+        onConfirm={() => {
+          const review = templateReview.target;
+          if (!canManage || !review || !sameReviewedValue(setup, review.before))
+            return;
+          update((old) =>
+            sameReviewedValue(old, review.before)
+              ? {
+                  shape: review.shape,
+                  steps: stepsFor(
+                    review.shape,
+                    old.connected?.name ?? clinic.name,
+                    clinic.doctors[0]?.name,
+                  ),
+                }
+              : {},
+          );
+        }}
+      />
     </div>
   );
 }
@@ -653,22 +696,12 @@ function TestStep({ setup, update, done }: Omit<StepProps, "clinic">) {
         </li>
         <li className="flex gap-4">
           <StepDot n={2} done={setup.tested} active={false} />
-          <label className="flex flex-1 items-start gap-3 text-sm">
-            <Checkbox
-              className="mt-0.5"
-              checked={setup.tested}
-              disabled
-              onCheckedChange={(tested) =>
-                update({ tested: !!tested, live: tested ? setup.live : false })
-              }
-            />
-            <span>
-              <span className="font-medium">Automatic booking test</span>
-              <span className="block text-xs text-muted-foreground">
-                After enabling bookings, send HI to check the full conversation. Bookings appear in Appointments.
-              </span>
-            </span>
-          </label>
+          <Checkbox
+            label="Automatic booking test"
+            description="After enabling bookings, send HI to check the full conversation. Bookings appear in Appointments."
+            checked={setup.tested}
+            disabled
+          />
         </li>
         <li className="flex gap-4">
           <StepDot
@@ -680,8 +713,8 @@ function TestStep({ setup, update, done }: Omit<StepProps, "clinic">) {
             <div>
               <p className="text-sm font-medium">Accept bookings on WhatsApp</p>
               <p className="text-xs text-muted-foreground">
-                Book a real appointment by messaging your connected number. Your connected inbox is
-                available now.
+                Book a real appointment by messaging your connected number. Your
+                connected inbox is available now.
               </p>
             </div>
             <Switch

@@ -1,3 +1,4 @@
+import { TimeField } from "@/components/WorkspaceFields";
 import { OriginalResourceContext, isDraft } from "@/components/resource-source";
 import { useContext, useEffect, useState, useSyncExternalStore } from "react";
 import { Plus, LockKeyhole, CalendarPlus } from "lucide-react";
@@ -216,18 +217,7 @@ export function ScheduleRangeActions({
                 id="range-start"
                 error={startError}
               >
-                <Input
-                  id="range-start"
-                  type="text"
-                  placeholder="HH:MM"
-                  maxLength={5}
-                  value={start}
-                  aria-invalid={!!startError}
-                  aria-describedby={
-                    startError ? "range-start-error" : undefined
-                  }
-                  onChange={(e) => setStart(e.target.value)}
-                />
+                <TimeField id="range-start" label="From · IST (24-hour)" value={start} onValueChange={setStart} />
               </Field>
               <Field
                 label="To · IST (24-hour)"
@@ -236,22 +226,7 @@ export function ScheduleRangeActions({
                   endError || (valid && action === "book" ? timeError : "")
                 }
               >
-                <Input
-                  id="range-end"
-                  type="text"
-                  placeholder="HH:MM"
-                  maxLength={5}
-                  value={end}
-                  aria-invalid={
-                    !!endError || (valid && action === "book" && !!timeError)
-                  }
-                  aria-describedby={
-                    endError || (valid && action === "book" && timeError)
-                      ? "range-end-error"
-                      : undefined
-                  }
-                  onChange={(e) => setEnd(e.target.value)}
-                />
+                <TimeField id="range-end" label="To · IST (24-hour)" value={end} onValueChange={setEnd} />
               </Field>
             </div>
             <Choice

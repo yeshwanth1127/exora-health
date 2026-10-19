@@ -1,6 +1,7 @@
 import { createContext, useContext } from "react";
 export const FieldContext = createContext<{
   controlId: string;
+  label: string;
   descriptionId?: string;
   errorId?: string;
   invalid: boolean;

@@ -15,13 +15,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { WorkspaceChoice } from "@/components/WorkspaceChoice";
 import { useCommand, useQuery, useWorkspace } from "./hooks";
 import { useUnsaved } from "./leave";
 import { CommandReceiptRecovery } from "./CommandReceiptRecovery";
@@ -162,32 +156,9 @@ function OnboardingForm({
           className="space-y-6"
         >
           <div className="space-y-2">
-            <Label htmlFor="channel-number-plan">Phone number</Label>
-            <Select
-              value={draft.numberStrategy}
-              onValueChange={(v) =>
-                update({
-                  numberStrategy: String(v),
-                } as Partial<ChannelOnboardingDraft>)
-              }
-            >
-              <SelectTrigger id="channel-number-plan" className="w-full">
-                <SelectValue>
-                  {
-                    strategies[setup.channel].find(
-                      ([value]) => value === draft.numberStrategy,
-                    )?.[1]
-                  }
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {strategies[setup.channel].map(([key, label]) => (
-                  <SelectItem key={key} value={key}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <WorkspaceChoice label="Phone number" id="channel-number-plan" value={draft.numberStrategy}
+              onChange={(numberStrategy) => update({ numberStrategy } as Partial<ChannelOnboardingDraft>)}
+              options={strategies[setup.channel].map(([value, label]) => ({ value, label }))} />
             {draft.numberStrategy === "business_app_coexistence" && (
               <p className="text-muted-foreground">
                 Keeping the Business app depends on Meta eligibility. Personal

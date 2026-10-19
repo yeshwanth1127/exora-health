@@ -136,3 +136,5 @@ export * from './audit.ts';
 export * from './booking.ts';
 
 export * from './channel-onboarding.ts';
+
+export * from './operations-kpis.ts';

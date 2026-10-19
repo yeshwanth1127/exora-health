@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/toast-events";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+import { GrowthSwitch as Switch } from "./GrowthControls";
+import { GrowthBadge as Badge } from "./GrowthBadge";
 import { IntentKeys, request } from "./client";
 import { useQuery, useWorkspace } from "./hooks";
 type Notice = {
@@ -95,7 +95,7 @@ export function ManagedAutomations() {
               </Badge>
             </div>
             <Switch
-              aria-label={n.title}
+              label={n.title}
               checked={n.enabled}
               disabled={!can("comms.manage") || !!busy}
               onCheckedChange={(on) => void save(n, on)}

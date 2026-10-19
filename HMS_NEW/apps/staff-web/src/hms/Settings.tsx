@@ -1,13 +1,31 @@
+import { SettingsPage as ArcSettingsPage } from "@/components/arc/settings-page/settings-page";
+import {
+  Users,
+  ShieldCheck,
+  CalendarCheck,
+  SlidersHorizontal,
+  Stethoscope,
+  FileCheck,
+  Palette,
+  CircleUser,
+} from "lucide-react";
+import { ModePicker } from "@/components/ModePicker";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 // Mounts Workspace settings (original layout) on the HMS API (G16, G17 overbooking): staff invited by
 // work email, roles granted per clinic, role copies with permission switches, and the booking policy.
 // The server enforces every rule; `allowed` only hides controls the user can't use.
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { WorkspaceSettings } from "@/modules/settings";
 import {
   OriginalResourceContext,
   type OriginalResourceSource,
 } from "@/components/resource-source";
-import { Button } from "@/components/ui/button";
 import { ModuleSwitches, Registrations, ConsentDocuments } from "./AdminPanels";
 import {
   SETTINGS_SECTIONS,
@@ -56,7 +74,9 @@ const paths = {
 const titleCase = (s: string) =>
   s.charAt(0).toUpperCase() + s.slice(1).replaceAll("_", " ");
 
-export function SettingsPage() {
+export function SettingsPage({
+  clinicPicker,
+}: { clinicPicker?: ReactNode } = {}) {
   const { me, facility, go } = useWorkspace();
   const permitted: SettingsSection[] = [
     ...(can(me, "access.manage", facility.facilityId)
@@ -75,6 +95,7 @@ export function SettingsPage() {
     ...((me.permissions["consent_documents.manage"] ?? []).includes("*")
       ? (["consent-documents"] as SettingsSection[])
       : []),
+    "appearance",
     "account",
   ];
   const requested = new URLSearchParams(location.search).get("section"),
@@ -237,41 +258,90 @@ export function SettingsPage() {
   }, [me, facility]);
   return (
     <OriginalResourceContext.Provider value={source}>
-      <h1 className="mb-2 text-2xl font-semibold">Workspace settings</h1>
-      <nav
-        aria-label="Settings sections"
-        className="mb-6 flex flex-wrap gap-2 border-b pb-4"
+      <h1 className="mb-6 text-2xl font-semibold">Workspace settings</h1>
+      <ArcSettingsPage
+        fullPage
+        current={section}
+        onChange={(id) => go(`settings?section=${id}`)}
+        account={{ name: me.displayName, detail: titleCase(me.staffType) }}
+        sections={SETTINGS_SECTIONS.filter(([id]) =>
+          permitted.includes(id),
+        ).map(([id, name]) => {
+          const icons = {
+            team: Users,
+            roles: ShieldCheck,
+            booking: CalendarCheck,
+            modules: SlidersHorizontal,
+            registrations: Stethoscope,
+            "consent-documents": FileCheck,
+            appearance: Palette,
+            account: CircleUser,
+          };
+          const descriptions = {
+            team: `Staff accounts and invitations at ${facility.name}.`,
+            roles:
+              "Review permissions and clinic access before applying a change.",
+            booking: `Appointment booking rules for ${facility.name}.`,
+            modules: "Manage the modules available to this organisation.",
+            registrations:
+              "Review professional registrations and verification.",
+            "consent-documents": "Manage the organisation’s consent documents.",
+            appearance: "Choose the colour theme for this browser.",
+            account: "Your account and current clinic workspace.",
+          };
+          const Icon = icons[id];
+          return {
+            id,
+            label: id === "registrations" ? "Registrations" : name,
+            description: descriptions[id],
+            icon: <Icon size={16} strokeWidth={1.75} aria-hidden="true" />,
+          };
+        })}
       >
-        {SETTINGS_SECTIONS.filter(([id]) => permitted.includes(id)).map(
-          ([id, name]) => (
-            <Button
-              key={id}
-              variant={section === id ? "default" : "outline"}
-              aria-current={section === id ? "page" : undefined}
-              onClick={() => go(`settings?section=${id}`)}
-            >
-              {name}
-            </Button>
-          ),
+        {requested && requested !== section && (
+          <p role="status" className="mb-4 text-sm text-muted-foreground">
+            That settings section is not available. Showing{" "}
+            {SETTINGS_SECTIONS.find(([id]) => id === section)?.[1]}.
+          </p>
         )}
-      </nav>
-      {requested && requested !== section && (
-        <p role="status" className="mb-4 text-sm text-muted-foreground">
-          That settings section is not available. Showing{" "}
-          {SETTINGS_SECTIONS.find(([id]) => id === section)?.[1]}.
-        </p>
-      )}
-      {["team", "roles", "booking", "account"].includes(section) && (
-        <WorkspaceSettings
-          key={section}
-          section={section as "team" | "roles" | "booking" | "account"}
-          clinicName={facility.name}
-          account={{ name: me.displayName, detail: titleCase(me.staffType) }}
-        />
-      )}
-      {section === "modules" && <ModuleSwitches />}
-      {section === "registrations" && <Registrations />}
-      {section === "consent-documents" && <ConsentDocuments />}
+        {section === "account" && clinicPicker && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Current clinic</CardTitle>
+              <CardDescription>
+                Choose the clinic workspace you want to use.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="max-w-sm">{clinicPicker}</div>
+            </CardContent>
+          </Card>
+        )}
+        {["team", "roles", "booking", "account"].includes(section) && (
+          <WorkspaceSettings
+            key={section}
+            section={section as "team" | "roles" | "booking" | "account"}
+            clinicName={facility.name}
+            account={{ name: me.displayName, detail: titleCase(me.staffType) }}
+          />
+        )}
+        {section === "appearance" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Appearance</CardTitle>
+              <CardDescription>
+                Choose the colour theme for this browser.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ModePicker />
+            </CardContent>
+          </Card>
+        )}
+        {section === "modules" && <ModuleSwitches />}
+        {section === "registrations" && <Registrations />}
+        {section === "consent-documents" && <ConsentDocuments />}
+      </ArcSettingsPage>
     </OriginalResourceContext.Provider>
   );
 }

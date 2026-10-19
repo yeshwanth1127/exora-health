@@ -1,4 +1,10 @@
+import { GrowthBar } from "./GrowthCharts";
+import { useWorkspaceTab } from "./use-workspace-tab";
+import { workspaceTabs } from "./workspace-navigation";
+import { metricChange } from "./growth-metrics";
+import { GrowthMetric } from "./GrowthMetric";
 import { useEffect, useState, type ComponentType } from "react";
+
 import {
   AlertTriangle,
   CalendarCheck,
@@ -13,13 +19,19 @@ import {
   Share2,
 } from "lucide-react";
 import { GoogleIcon, WhatsAppIcon } from "@/components/brand-icons";
-import { toast } from "sonner";
+import { toast } from "@/components/toast-events";
 import { PageTitle } from "@/components/workspace";
-import { Badge } from "@/components/ui/badge";
+import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/arc/tabs/tabs";
 import { IntentKeys, request } from "./client";
+
 import { useQuery, useWorkspace } from "./hooks";
 import { today } from "./model";
 import { addDays } from "./forms";
@@ -287,31 +299,18 @@ function useGbp(facilityId: string) {
   };
 }
 
-const tabs = [
-  ["overview", "Overview"],
-  ["profile", "Profile"],
-  ["reviews", "Reviews"],
-  ["posts", "Posts"],
-  ["photos", "Photos"],
-  ["insights", "Insights"],
-] as const;
+const tabs = workspaceTabs.google_business;
 export type GTab = (typeof tabs)[number][0];
 
 function Google({ exora }: { exora: Exora }) {
   const { facility, can } = useWorkspace();
   const remote = useGbp(facility.facilityId);
   const { data, change } = remote;
-  const [tab, setTab] = useState<GTab>(() => {
-    const t = new URLSearchParams(location.search).get("tab");
-    return tabs.some(([k]) => k === t) ? (t as GTab) : "overview";
-  });
-  const [section, setSection] = useState<string | null>(null);
+  const [tab, navigateTab] = useWorkspaceTab("google_business");
+  const section = new URLSearchParams(location.search).get("section");
   const canManage = can("growth.manage");
-  const open = (t: GTab, s: string | null = null) => {
-    setTab(t);
-    setSection(s);
-    history.replaceState(history.state, "", `?tab=${t}`);
-  };
+  const open = (tab: GTab, section: string | null = null) =>
+    navigateTab(tab, section ? { section } : {});
   const preview = (
     <div className="flex gap-2">
       {remote.busy && <Badge variant="outline">Saving…</Badge>}
@@ -385,74 +384,84 @@ function Google({ exora }: { exora: Exora }) {
           disabled={remote.busy || data.status === "service_unavailable"}
           className="min-w-0 space-y-6"
         >
-          <Tabs value={tab} onValueChange={(v) => open(v as GTab)}>
-            <div className="-mx-1 overflow-x-auto px-1">
-              <TabsList variant="line">
+          <Tabs
+            value={tab}
+            onValueChange={(v) => open(v as GTab)}
+            className="arc-workflow-root"
+          >
+            <div className="arc-demo-scope">
+              <TabsList aria-label="Google Business workspace">
                 {tabs.map(([k, label]) => (
-                  <TabsTrigger key={k} value={k} className="flex-none px-3">
-                    {label}
-                    {k === "reviews" && unreplied > 0 && (
-                      <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[#1a73e8] px-1 text-[10px] font-semibold text-white">
-                        {unreplied}
-                      </span>
-                    )}
+                  <TabsTrigger key={k} value={k}>
+                    <span className="inline-flex items-center gap-2">
+                      {label}
+                      {k === "reviews" && unreplied > 0 && (
+                        <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[#1a73e8] px-1 text-[10px] font-semibold text-white">
+                          {unreplied}
+                        </span>
+                      )}
+                    </span>
                   </TabsTrigger>
                 ))}
               </TabsList>
             </div>
+            {!canManage && (
+              <p className="rounded-md border bg-muted/40 p-3 text-sm">
+                You can see the listing. Ask an administrator to make changes.
+              </p>
+            )}
+            <TabsContent value="overview" className="arc-workflow-panel">
+              <Overview
+                data={data}
+                change={change}
+                exora={exora}
+                open={open}
+                canManage={canManage}
+              />
+            </TabsContent>
+            <TabsContent value="profile" className="arc-workflow-panel">
+              <Profile
+                key={section ?? ""}
+                data={data}
+                change={change}
+                exora={exora}
+                section={section}
+                canManage={canManage}
+              />
+            </TabsContent>
+            <TabsContent value="reviews" className="arc-workflow-panel">
+              {data.capabilities?.reviews === false ? (
+                <p>Reviews are temporarily unavailable.</p>
+              ) : (
+                <Reviews
+                  data={data}
+                  change={change}
+                  exora={exora}
+                  canManage={canManage}
+                />
+              )}
+            </TabsContent>
+            <TabsContent value="posts" className="arc-workflow-panel">
+              {data.capabilities?.posts === false ? (
+                <p>Posts are temporarily unavailable.</p>
+              ) : (
+                <Posts
+                  data={data}
+                  change={change}
+                  exora={exora}
+                  canManage={canManage}
+                />
+              )}
+            </TabsContent>
+            <TabsContent value="photos" className="arc-workflow-panel">
+              <p className="text-sm text-muted-foreground">
+                Photo publishing is not available yet.
+              </p>
+            </TabsContent>
+            <TabsContent value="insights" className="arc-workflow-panel">
+              <GooglePerformance />
+            </TabsContent>
           </Tabs>
-          {!canManage && (
-            <p className="rounded-md border bg-muted/40 p-3 text-sm">
-              You can see the listing. Ask an administrator to make changes.
-            </p>
-          )}
-          {tab === "overview" && (
-            <Overview
-              data={data}
-              change={change}
-              exora={exora}
-              open={open}
-              canManage={canManage}
-            />
-          )}
-          {tab === "profile" && (
-            <Profile
-              key={section ?? ""}
-              data={data}
-              change={change}
-              exora={exora}
-              section={section}
-              canManage={canManage}
-            />
-          )}
-          {tab === "reviews" && data.capabilities?.reviews === false && (
-            <p>Reviews are temporarily unavailable.</p>
-          )}
-          {tab === "reviews" && data.capabilities?.reviews !== false && (
-            <Reviews
-              data={data}
-              change={change}
-              exora={exora}
-              canManage={canManage}
-            />
-          )}
-          {tab === "posts" && data.capabilities?.posts === false && (
-            <p>Posts are temporarily unavailable.</p>
-          )}
-          {tab === "posts" && data.capabilities?.posts !== false && (
-            <Posts
-              data={data}
-              change={change}
-              exora={exora}
-              canManage={canManage}
-            />
-          )}
-          {tab === "photos" && (
-            <p className="text-sm text-muted-foreground">
-              Photo publishing is not available yet.
-            </p>
-          )}
-          {tab === "insights" && <GooglePerformance />}
         </fieldset>
       </div>
     </>
@@ -721,18 +730,21 @@ function Overview({
         ))}
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-6">
+          <GrowthMetric
+            label="Profile score"
+            value={s}
+            suffix="/100"
+            context={
+              todo.length
+                ? `${Math.min(3, todo.length)} quick fixes to reach ${reach}.`
+                : "Your listing is complete. Keep posting and replying to reviews."
+            }
+          />
           <Card className="gap-0 p-0 shadow-none">
-            <div className="flex items-center gap-5 border-b p-5">
-              <ScoreRing value={s} />
-              <div>
-                <p className="text-lg font-semibold">Profile score {s}/100</p>
-                <p className="text-sm text-muted-foreground">
-                  {todo.length
-                    ? `${Math.min(3, todo.length)} quick fix${todo.length === 1 ? "" : "es"} to reach ${reach}.`
-                    : "Your listing is complete. Keep posting and replying to reviews."}
-                </p>
-              </div>
-            </div>
+            <h2 className="border-b p-5 text-sm font-semibold">
+              Profile checklist
+            </h2>
+
             <ul className="divide-y">
               {todo.map((t) => {
                 const [label, run] = action(t);
@@ -817,60 +829,12 @@ export function Delta({
   before: number;
   label?: string;
 }) {
-  if (!before)
-    return (
-      <p className="text-[11px] text-muted-foreground">{now ? "New" : "—"}</p>
-    );
-  const pct = Math.round(((now - before) / before) * 100);
+  const change = metricChange(now, before);
   return (
-    <p
-      className={`text-[11px] ${pct > 0 ? "text-emerald-700" : pct < 0 ? "text-destructive" : "text-muted-foreground"}`}
-    >
-      {pct > 0 ? "▲" : pct < 0 ? "▼" : ""} {Math.abs(pct)}% vs {label}
-    </p>
-  );
-}
-
-function ScoreRing({ value }: { value: number }) {
-  const r = 26,
-    c = 2 * Math.PI * r;
-  const color = value >= 80 ? "#188038" : value >= 50 ? "#f9ab00" : "#d93025";
-  return (
-    <svg
-      viewBox="0 0 64 64"
-      className="size-16 shrink-0"
-      role="img"
-      aria-label={`Profile score ${value} out of 100`}
-    >
-      <circle
-        cx="32"
-        cy="32"
-        r={r}
-        fill="none"
-        stroke="currentColor"
-        strokeOpacity=".1"
-        strokeWidth="6"
-      />
-      <circle
-        cx="32"
-        cy="32"
-        r={r}
-        fill="none"
-        stroke={color}
-        strokeWidth="6"
-        strokeLinecap="round"
-        strokeDasharray={`${(value / 100) * c} ${c}`}
-        transform="rotate(-90 32 32)"
-      />
-      <text
-        x="32"
-        y="37"
-        textAnchor="middle"
-        className="fill-foreground text-[15px] font-semibold"
-      >
-        {value}
-      </text>
-    </svg>
+    <Badge variant="outline">
+      {change ?? "—"}
+      {change && ` vs ${label}`}
+    </Badge>
   );
 }
 
@@ -1043,8 +1007,7 @@ function GooglePerformance() {
         </Button>
       </Card>
     );
-  const data = q.data,
-    max = Math.max(1, ...data.daily.map((d) => d.views));
+  const data = q.data;
   return (
     <div className="space-y-4">
       <div>
@@ -1064,19 +1027,13 @@ function GooglePerformance() {
             ["website", "Website clicks"],
           ] as const
         ).map(([key, title]) => (
-          <Card key={key} className="gap-1 p-4 shadow-none">
-            <p className="text-xs text-muted-foreground">{title}</p>
-            <p className="text-xl font-semibold">
-              {data.current?.[key]?.toLocaleString() ?? "—"}
-            </p>
-            {data.current?.[key] != null && data.previous?.[key] != null && (
-              <Delta
-                now={data.current[key]!}
-                before={data.previous[key]!}
-                label="previous 30 days"
-              />
-            )}
-          </Card>
+          <GrowthMetric
+            key={key}
+            label={title}
+            value={data.current?.[key] ?? null}
+            before={data.previous?.[key] ?? undefined}
+            context="Previous 30 complete days · compared with the preceding period"
+          />
         ))}
       </div>
       {data.daily.length > 0 && (
@@ -1084,20 +1041,19 @@ function GooglePerformance() {
           <p className="text-sm font-medium">
             Search and Maps impressions by day
           </p>
-          <div
-            className="flex h-32 items-end gap-1"
-            role="img"
-            aria-label="Google impressions per day"
-          >
-            {data.daily.map((d) => (
-              <div
-                key={d.date}
-                className="flex-1 rounded-t bg-primary/70"
-                style={{ height: `${(d.views / max) * 100}%` }}
-                title={`${d.date}: ${d.views}`}
-              />
-            ))}
-          </div>
+          <GrowthBar
+            label="Google impressions"
+            period="Previous 30 complete days"
+            category="Day"
+            averageLabel="Daily average"
+            showAverage
+            data={data.daily.map((d) => ({
+              key: d.date,
+              label: d.date,
+              axisLabel: d.date.slice(5),
+              value: d.views,
+            }))}
+          />
         </Card>
       )}
     </div>

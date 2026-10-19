@@ -1,9 +1,12 @@
+import { GrowthMetric } from "./GrowthMetric";
 import { useState } from "react";
-import { ArrowDownLeft, ArrowUpRight, Search } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { GrowthBadge as Badge } from "./GrowthBadge";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { SearchField } from "@/components/arc/search-field/search-field";
+import { SharedField } from "@/components/shared-field";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { type Category, type Status, type WaData } from "./whatsapp-data";
@@ -33,7 +36,7 @@ export function Activity({ data }: { data: WaData; change: Change }) {
   const open = data.log.find((e) => e.id === openId) ?? null;
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
         {(
           [
             ["Sent today", todayOut.length],
@@ -42,29 +45,25 @@ export function Activity({ data }: { data: WaData; change: Change }) {
             ["Failed", count(["failed"])],
           ] as const
         ).map(([label, n]) => (
-          <Card key={label} className="gap-0 p-4 shadow-none">
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className={`text-xl font-semibold tabular-nums ${label === "Failed" && n ? "text-destructive" : ""}`}>{n}</p>
-          </Card>
+          <GrowthMetric key={label} label={label} value={n} context="Today · browser preview message log" />
         ))}
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Search patient, number, template" aria-label="Search messages" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="arc-demo-scope w-80">
+          <SearchField label="Search messages" placeholder="Patient, number or template" value={q} onValueChange={setQ} />
         </div>
-        <Pick
-          className="w-40"
+        <SharedField id="wa-log-status" label="Status"><Pick
+          id="wa-log-status" className="w-44"
           value={status}
           options={[["all", "All statuses"], ...(Object.entries(statusLabels) as [Status, string][])]}
           onChange={setStatus}
-        />
-        <Pick
-          className="w-40"
+        /></SharedField>
+        <SharedField id="wa-log-category" label="Type"><Pick
+          id="wa-log-category" className="w-44"
           value={category}
           options={[["all", "All types"], ...(Object.entries(categoryText) as [Category, string][])]}
           onChange={setCategory}
-        />
+        /></SharedField>
         <span className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="size-2 animate-pulse rounded-full bg-emerald-500" /> Live
         </span>

@@ -1,3 +1,5 @@
+import { EmptyState } from "@/components/arc/empty-state/empty-state";
+import { Search } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -11,15 +13,8 @@ export function WorkspaceEmpty({
   action?: { label: string; onClick: () => void };
   children?: ReactNode;
 }) {
-  return (
-    <div className="px-6 py-10 text-center space-y-3">
-      <h3 className="font-medium text-foreground">{title}</h3>
-      {action && (
-        <Button variant="outline" onClick={action.onClick}>
-          {action.label}
-        </Button>
-      )}
-      {children}
-    </div>
-  );
+  return <div className="arc-demo-scope">
+    <EmptyState title={title} description="" icon={<Search size={20} aria-hidden="true" />} action={action ? <Button variant="outline" onClick={action.onClick}>{action.label}</Button> : undefined} />
+    {children}
+  </div>;
 }

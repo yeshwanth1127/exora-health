@@ -1,17 +1,15 @@
 import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ComponentProps,
-} from "react";
+  workspaceActiveRoute,
+  workspaceChildren,
+} from "@/hms/workspace-navigation";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   LayoutDashboard,
+  Bell,
   Headphones,
   ChartNoAxesCombined,
   ScrollText,
   Ticket,
-  ChevronRight,
   Building2,
   CalendarDays,
   Clock3,
@@ -26,26 +24,15 @@ import {
 import { GoogleIcon, WhatsAppIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ModePicker } from "@/components/ModePicker";
+import { WorkspaceCommands } from "@/components/WorkspaceCommands";
+import { ClinicPicker } from "@/components/ClinicPicker";
 import { Card, CardContent } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-  useSidebar,
-} from "@/components/ui/sidebar";
+  ArcSidebarLayout,
+  type SidebarSection,
+} from "@/components/arc/sidebar/sidebar";
 import { HmsError, request, setIdentity, setTenant } from "@/hms/client";
 import {
   devAutoSignInSubject,
@@ -53,10 +40,7 @@ import {
   finishLogin,
   oidc,
 } from "@/hms/auth";
-import {
-  fallbackTenantName,
-  fetchTenantName,
-} from "@/hms/tenant-brand";
+import { fallbackTenantName, fetchTenantName } from "@/hms/tenant-brand";
 import { can, permittedFacilities, practitionersFor } from "@/hms/model";
 import { WorkspaceContext, useQuery } from "@/hms/hooks";
 import { hasUnsavedChanges, requestLeave, leaveState } from "@/hms/leave";
@@ -88,6 +72,9 @@ import { Schedules } from "@/hms/Schedules";
 import { Overview } from "@/hms/Overview";
 import { Catalogue } from "@/hms/Catalogue";
 import { Consultations } from "@/hms/Consultations";
+import { AlertsProvider } from "@/hms/AlertsProvider";
+import { AlertsBell } from "@/hms/AlertsBell";
+import { AlertsPage } from "@/hms/AlertsPage";
 import { Teleconsultations } from "@/hms/Teleconsultations";
 import { Loyalty } from "@/hms/Loyalty";
 import { PatientVideo } from "@/hms/PatientVideo";
@@ -205,21 +192,6 @@ function Brand({ tenantName }: { tenantName: string }) {
     </div>
   );
 }
-function NavigationButton({
-  onClick,
-  ...props
-}: ComponentProps<typeof SidebarMenuButton>) {
-  const { setOpenMobile } = useSidebar();
-  return (
-    <SidebarMenuButton
-      {...props}
-      onClick={(e) => {
-        setOpenMobile(false);
-        onClick?.(e);
-      }}
-    />
-  );
-}
 
 export default function App() {
   return location.pathname === "/staff/video-consult" ? (
@@ -256,7 +228,11 @@ function StaffApp() {
     phase: "restoring" | "accepting";
   } | null>(null);
   const [listedClinics, setListedClinics] = useState(0);
-  const [bootstrap, setBootstrap] = useState<{ state: string; canCreateClinic: boolean; organizationProvisioned: boolean } | null>(null);
+  const [bootstrap, setBootstrap] = useState<{
+    state: string;
+    canCreateClinic: boolean;
+    organizationProvisioned: boolean;
+  } | null>(null);
   useEffect(() => {
     let alive = true;
     void fetchTenantName()
@@ -270,7 +246,7 @@ function StaffApp() {
       alive = false;
     };
   }, []);
-  function go(next: string) {
+  function go(next: string, onNavigated?: () => void) {
     requestLeave(() => {
       const index = route.current.index + 1;
       history.pushState({ hmsIndex: index }, "", `/staff/${next}`);
@@ -280,6 +256,7 @@ function StaffApp() {
       };
       if (next.split("?")[0] === page) setNavVersion((n) => n + 1);
       setPage(next.split("?")[0]);
+      onNavigated?.();
     });
   }
   function signout() {
@@ -487,9 +464,7 @@ function StaffApp() {
                 One workspace for your clinic.
               </p>
             </div>
-            <p className="text-sm opacity-70">
-              {tenantName} · Staff workspace
-            </p>
+            <p className="text-sm opacity-70">{tenantName} · Staff workspace</p>
           </aside>
           <main className="login-panel">
             <div className="login-form space-y-6">
@@ -601,6 +576,7 @@ function StaffApp() {
   const auditor = (me.permissions["audit.read"] ?? []).includes("*");
   const extraPages = [
     "settings",
+    "alerts",
     ...(auditor ? ["activity"] : []),
     ...(can(me, "appointments.read", facilityId) ? ["waitlist", "queue"] : []),
     ...(auditor && can(me, "appointments.read", facilityId)
@@ -609,170 +585,181 @@ function StaffApp() {
   ];
   const allowed =
     extraPages.includes(page) || visible.some((n) => n.key === page);
+  const sidebarSections: SidebarSection[] = [...groups, "Workspace"]
+    .map((group) => ({
+      id: group.toLowerCase(),
+      heading: group,
+      items: visible
+        .filter((item) => item.group === group)
+        .map((item) => ({
+          id: workspaceChildren(item.key) ? `${item.key}-group` : item.key,
+          label: item.name,
+          icon: item.icon,
+          ...(workspaceChildren(item.key)
+            ? {
+                children: workspaceChildren(item.key),
+                defaultOpen: workspaceChildren(item.key)!.some(
+                  (child) =>
+                    child.id === workspaceActiveRoute(page, location.search),
+                ),
+              }
+            : {}),
+        })),
+    }))
+    .filter((section) => section.items.length > 0);
   return (
     <TooltipProvider>
-      <SidebarProvider>
-        <Sidebar>
-          <SidebarHeader className="px-5 py-6">
-            <Brand tenantName={tenantName} />
-          </SidebarHeader>
-          <SidebarContent>
-            {groups.map((g) => {
-              const items = visible.filter((n) => n.group === g);
-              return (
-                items.length > 0 && (
-                  <SidebarGroup key={g}>
-                    <SidebarGroupLabel>{g}</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                      <SidebarMenu>
-                        {items.map((n) => (
-                          <SidebarMenuItem key={n.key}>
-                            <NavigationButton
-                              isActive={
-                                page === n.key ||
-                                (n.key === "appointments" &&
-                                  ["waitlist", "queue"].includes(page))
-                              }
-                              onClick={() => go(n.key)}
-                            >
-                              <n.icon />
-                              <span>{n.name}</span>
-                            </NavigationButton>
-                          </SidebarMenuItem>
-                        ))}
-                      </SidebarMenu>
-                    </SidebarGroupContent>
-                  </SidebarGroup>
-                )
-              );
-            })}
-            <SidebarGroup className="mt-auto">
-              <SidebarGroupLabel>Workspace</SidebarGroupLabel>
-              <SidebarMenu>
-                {visible
-                  .filter((n) => n.group === "Workspace")
-                  .map((n) => (
-                    <SidebarMenuItem key={n.key}>
-                      <NavigationButton
-                        isActive={page === n.key}
-                        onClick={() => go(n.key)}
-                      >
-                        <n.icon />
-                        <span>{n.name}</span>
-                      </NavigationButton>
-                    </SidebarMenuItem>
-                  ))}
-                <SidebarMenuItem>
-                  <NavigationButton
-                    isActive={page === "settings"}
-                    onClick={() => go("settings")}
-                  >
-                    <Settings2 />
-                    Workspace settings
-                  </NavigationButton>
-                </SidebarMenuItem>
-                {auditor && (
-                  <SidebarMenuItem>
-                    <NavigationButton
-                      isActive={page === "activity" || page === "operations"}
-                      onClick={() => go("activity")}
-                    >
-                      <ScrollText />
-                      Activity
-                    </NavigationButton>
-                  </SidebarMenuItem>
+      <WorkspaceContext.Provider
+        value={{ me, facility, practitioners: [], go }}
+      >
+        <AlertsProvider key={`${me.tenantId}:${me.staffId}:${facilityId}`}>
+          <ArcSidebarLayout
+            togglePlacement="sidebar"
+            key={`${me.tenantId}:${me.staffId}`}
+            sections={sidebarSections}
+            footer={[
+              { id: "alerts", label: "My alerts", icon: Bell },
+              { id: "settings", label: "Workspace settings", icon: Settings2 },
+              ...(auditor
+                ? [{ id: "activity", label: "Activity", icon: ScrollText }]
+                : []),
+              { id: "signout", label: "Sign out", icon: LogOut },
+            ]}
+            active={workspaceActiveRoute(page, location.search)}
+            revealActiveGroup
+            brand={{
+              name: tenantName,
+              detail: facility.name,
+              icon: <HeartPulse />,
+            }}
+            person={{
+              name: me.displayName,
+              role:
+                me.staffType === "admin"
+                  ? can(me, "tenant.manage")
+                    ? "Clinic administrator"
+                    : "Clinic staff"
+                  : me.staffType.replaceAll("_", " "),
+            }}
+            onNavigate={(target, accepted) => {
+              if (target === "signout")
+                requestLeave(() => {
+                  accepted();
+                  signout();
+                });
+              else go(target, accepted);
+            }}
+            renderHeader={(toggle) => (
+              <header className="workspace-header">
+                {toggle && (
+                  <div className="workspace-sidebar-toggle">{toggle}</div>
                 )}
-              </SidebarMenu>
-            </SidebarGroup>
-          </SidebarContent>
-          <SidebarFooter className="p-4 border-t border-sidebar-border">
-            <div className="flex items-center gap-3 px-2 mb-2">
-              <div className="size-9 rounded-full bg-muted flex items-center justify-center text-xs font-semibold">
-                {me.displayName
-                  .split(" ")
-                  .map((n) => n[0])
-                  .slice(0, 2)
-                  .join("")}
-              </div>
-              <div>
-                <p className="text-xs font-medium">{me.displayName}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {me.staffType === "admin"
-                    ? can(me, "tenant.manage")
-                      ? "Clinic administrator"
-                      : "Clinic staff"
-                    : me.staffType.replaceAll("_", " ")}
-                </p>
-              </div>
-            </div>
-            <NavigationButton
-              onClick={() => {
-                requestLeave(signout);
-              }}
-            >
-              <LogOut />
-              Sign out
-            </NavigationButton>
-          </SidebarFooter>
-        </Sidebar>
-        <SidebarInset className="min-w-0">
-          <header className="workspace-header">
-            <div className="flex items-center gap-3">
-              <SidebarTrigger />
-              <span className="text-sm text-muted-foreground hidden md:block">
-                {tenantName}
-              </span>
-              <ChevronRight className="size-3 text-muted-foreground hidden md:block" />
-              <span className="text-xs font-medium hidden md:block">
-                {(["appointments", "waitlist", "queue"].includes(page)
-                  ? "Appointments"
-                  : ["activity", "operations"].includes(page)
-                    ? "Activity"
-                    : navigation.find((n) => n.key === page)?.name) ??
-                  (page === "settings"
-                    ? "Workspace settings"
-                    : page === "activity"
-                      ? "Activity log"
-                      : page.replaceAll("_", " "))}
-              </span>
-            </div>
-            <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 md:flex-nowrap md:gap-3">
-              <ModePicker />
-              <div className="w-52 max-w-[55vw]">
-                <Choice
-                  label="Clinic"
+                <div className="workspace-search">
+                  <WorkspaceCommands
+                    key={`${me.staffId}:${facilityId}`}
+                    items={[
+                      ...visible.flatMap((item) => [
+                        {
+                          id: item.key,
+                          label: item.name,
+                          group: item.group,
+                          icon: <item.icon className="size-4" />,
+                        },
+                        ...(item.key === "appointments"
+                          ? []
+                          : (workspaceChildren(item.key) ?? []).map(
+                              (child) => ({
+                                id: child.id,
+                                label: `${item.name} · ${child.label}`,
+                                group: item.group,
+                                icon: <item.icon className="size-4" />,
+                              }),
+                            )),
+                      ]),
+                      {
+                        id: "alerts",
+                        label: "My alerts",
+                        group: "Workspace",
+                        icon: <Bell className="size-4" />,
+                      },
+                      {
+                        id: "settings",
+                        label: "Workspace settings",
+                        group: "Workspace",
+                        icon: <Settings2 className="size-4" />,
+                      },
+                      ...(auditor
+                        ? [
+                            {
+                              id: "activity",
+                              label: "Staff activity",
+                              group: "Workspace",
+                              icon: <ScrollText className="size-4" />,
+                            },
+                          ]
+                        : []),
+                      ...(can(me, "appointments.read", facilityId)
+                        ? [
+                            {
+                              id: "waitlist",
+                              label: "Waitlist",
+                              group: "Clinic",
+                            },
+                            { id: "queue", label: "Queue", group: "Clinic" },
+                          ]
+                        : []),
+                      ...(can(me, "appointments.book", facilityId)
+                        ? [
+                            {
+                              id: "appointments?book=1",
+                              label: "Book appointment",
+                              group: "Actions",
+                              icon: <CalendarDays className="size-4" />,
+                            },
+                          ]
+                        : []),
+                    ]}
+                    onNavigate={go}
+                  />
+                </div>
+                <AlertsBell />
+              </header>
+            )}
+          >
+            <Directory
+              key={`${me.tenantId}:${facilityId}:${navVersion}`}
+              me={me}
+              facility={facility}
+              page={page}
+              allowed={allowed}
+              go={go}
+              clinicPicker={
+                <ClinicPicker
+                  key={facilityId}
                   value={facilityId}
                   options={facilities.map((f) => ({
                     value: f.facilityId,
                     label: f.name,
                   }))}
-                  onChange={(id) => {
+                  onChange={(id) =>
                     requestLeave(() => {
                       setTenant(me.tenantId);
                       setFacilityId(id);
-                    });
-                  }}
+                    })
+                  }
                 />
-              </div>
-              {devLoginEnabled && (
-                <Badge variant="outline">Local preview</Badge>
-              )}
-            </div>
-          </header>
-          <Directory
-            key={`${me.tenantId}:${facilityId}:${navVersion}`}
-            me={me}
-            facility={facility}
-            page={page}
-            allowed={allowed}
-            go={go}
-          />
-          <footer className="workspace-footer">
-            <span>{tenantName} · {facility.name}</span>
-            <span>{facility.timezone}</span>
-          </footer>
-        </SidebarInset>
-      </SidebarProvider>
+              }
+            />
+            <footer className="workspace-footer">
+              <span>
+                {tenantName} · {facility.name}
+              </span>
+              <span>{facility.timezone}</span>
+            </footer>
+          </ArcSidebarLayout>
+        </AlertsProvider>
+      </WorkspaceContext.Provider>
+
       <Toaster />
     </TooltipProvider>
   );
@@ -789,13 +776,16 @@ function DevSignIn({
     import.meta.env.VITE_HMS_DEFAULT_SUBJECT?.trim() ||
     "";
   const devIdentities = [
-    ...(configuredSubject ? [{ value: configuredSubject, label: "Workspace administrator" }] : []),
+    ...(configuredSubject
+      ? [{ value: configuredSubject, label: "Workspace administrator" }]
+      : []),
     { value: "ravi", label: "Ravi · Front desk" },
     { value: "asha", label: "Dr Asha · Doctor" },
     { value: "meena", label: "Meena · Nurse" },
     { value: "priya", label: "Priya · Administrator" },
-  ].filter((identity, index, identities) =>
-    identities.findIndex(({ value }) => value === identity.value) === index
+  ].filter(
+    (identity, index, identities) =>
+      identities.findIndex(({ value }) => value === identity.value) === index,
   );
   const [subject, setSubject] = useState(configuredSubject || "ravi"),
     [email, setEmail] = useState(""),
@@ -804,12 +794,24 @@ function DevSignIn({
     <Card>
       <CardContent className="pt-5 space-y-4">
         <Badge variant="outline">Local development only</Badge>
-        {customIdentity ? <label htmlFor="dev-subject" className="block space-y-1.5 text-sm"><span className="font-medium">Registered staff identity</span><Input id="dev-subject" value={subject} onChange={e=>setSubject(e.target.value)} autoComplete="off" /></label> : <Choice
-          label="Staff identity"
-          value={subject}
-          onChange={setSubject}
-          options={devIdentities}
-        />}
+        {customIdentity ? (
+          <label htmlFor="dev-subject" className="block space-y-1.5 text-sm">
+            <span className="font-medium">Registered staff identity</span>
+            <Input
+              id="dev-subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              autoComplete="off"
+            />
+          </label>
+        ) : (
+          <Choice
+            label="Staff identity"
+            value={subject}
+            onChange={setSubject}
+            options={devIdentities}
+          />
+        )}
         <Button
           variant="outline"
           size="sm"
@@ -818,7 +820,9 @@ function DevSignIn({
             setSubject(customIdentity ? configuredSubject || "ravi" : "");
           }}
         >
-          {customIdentity ? "Use the development identities" : "Use another registered identity"}
+          {customIdentity
+            ? "Use the development identities"
+            : "Use another registered identity"}
         </Button>
         <Button
           className="w-full"
@@ -849,6 +853,7 @@ function DevSignIn({
   );
 }
 type DirectoryProps = {
+  clinicPicker?: ReactNode;
   me: Me;
   facility: Facility;
   page: string;
@@ -875,13 +880,8 @@ function DirectoryContent({
   page,
   allowed,
   go,
-}: {
-  me: Me;
-  facility: Facility;
-  page: string;
-  allowed: boolean;
-  go: (page: string) => void;
-}) {
+  clinicPicker,
+}: DirectoryProps) {
   const canReadDoctors = can(me, "catalog.read", facility.facilityId);
   const doctors = useQuery<{ items: Practitioner[] }>(
     canReadDoctors
@@ -934,6 +934,8 @@ function DirectoryContent({
           <ActivityWorkspace page={page} />
         ) : page === "overview" ? (
           <Overview />
+        ) : page === "alerts" ? (
+          <AlertsPage />
         ) : ["appointments", "waitlist", "queue"].includes(page) ? (
           <AppointmentWorkspace page={page} />
         ) : page === "patients" ? (
@@ -957,7 +959,7 @@ function DirectoryContent({
         ) : page === "loyalty" ? (
           <Loyalty />
         ) : (
-          <SettingsPage />
+          <SettingsPage clinicPicker={clinicPicker} />
         )}
       </main>
     </WorkspaceContext.Provider>

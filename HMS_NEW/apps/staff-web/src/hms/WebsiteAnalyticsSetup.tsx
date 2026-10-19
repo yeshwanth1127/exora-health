@@ -1,3 +1,6 @@
+import { GrowthConfirm } from "./GrowthConfirm";
+import { useConfirmationReview } from "./use-confirmation-review";
+import { reviewedTarget } from "./growth-confirmation";
 import { useState } from "react";
 import {
   Check,
@@ -8,13 +11,13 @@ import {
   ShieldCheck,
   X,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { copy } from "./GoogleBusiness";
-import { siteUrl, type AnalyticsData } from "./website-analytics";
+import { siteUrl, type Site, type AnalyticsData } from "./website-analytics";
 import type { AChange, Clinic } from "./WebsiteAnalytics";
 
 // Other modules still use a development-only preview flag. Analytics itself never uses sample data.
@@ -33,6 +36,8 @@ export function Websites({
   const [adding, setAdding] = useState(false),
     [value, setValue] = useState("");
   const url = siteUrl(value);
+  const removal = useConfirmationReview<Site>();
+  const target = reviewedTarget(data.sites, removal.target);
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -110,13 +115,7 @@ export function Websites({
                     size="icon-sm"
                     variant="ghost"
                     aria-label={`Stop counting ${site.url}`}
-                    onClick={() => {
-                      if (window.confirm(`Stop counting ${site.url}?`))
-                        void change((d) => ({
-                          ...d,
-                          sites: d.sites.filter((s) => s.id !== site.id),
-                        }));
-                    }}
+                    onClick={() => removal.request(site)}
                   >
                     <X />
                   </Button>
@@ -161,6 +160,27 @@ export function Websites({
           </p>
         )}
       </Card>
+      <GrowthConfirm
+        open={removal.open}
+        onDismiss={removal.dismiss}
+        title="Stop counting this website?"
+        description={`Remove ${removal.target?.url ?? "this website"} from the recorded sites?`}
+        confirmLabel="Remove website"
+        blockedReason={
+          !canManage
+            ? "You no longer have permission to manage websites."
+            : !target
+              ? "This website changed. Review it again."
+              : undefined
+        }
+        onConfirm={() => {
+          if (canManage && target)
+            void change((d) => ({
+              ...d,
+              sites: d.sites.filter((site) => site.id !== target.id),
+            }));
+        }}
+      />
     </div>
   );
 }
