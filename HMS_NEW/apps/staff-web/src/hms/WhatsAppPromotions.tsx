@@ -1,3 +1,6 @@
+import { GrowthConfirm } from "./GrowthConfirm";
+import { useConfirmationReview } from "./use-confirmation-review";
+import { reviewedTarget, canCancelPreviewCampaign } from "./growth-confirmation";
 import { GrowthDateTime } from "./GrowthDateTime";
 import { useState } from "react";
 import { Megaphone, Plus, Send } from "lucide-react";
@@ -46,6 +49,8 @@ export function Promotions({
   canManage: boolean;
 }) {
   const [composing, setComposing] = useState(false);
+  const cancellation = useConfirmationReview<Campaign>();
+  const cancelTarget = reviewedTarget(data.campaigns, cancellation.target);
   const specialties = [...new Set(clinic.departments.map((d) => d.name).concat(clinic.doctors.map((d) => d.specialtyName ?? "").filter(Boolean)))];
   const describe = (a: Audience) =>
     a.kind === "all" ? "Everyone opted in" : a.kind === "specialty" ? `${a.value} patients` : `Not seen in ${a.months} months`;
@@ -101,10 +106,7 @@ export function Promotions({
                       <Button
                         size="xs"
                         variant="ghost"
-                        onClick={() =>
-                          window.confirm(`Cancel “${c.name}”? Nothing has been sent yet.`) &&
-                          change((d) => ({ ...d, campaigns: d.campaigns.filter((x) => x.id !== c.id) }))
-                        }
+                        onClick={() => cancellation.request(c)}
                       >
                         Cancel
                       </Button>
@@ -142,6 +144,14 @@ export function Promotions({
           )}
         </SheetContent>
       </Sheet>
+      <GrowthConfirm open={cancellation.open} onDismiss={cancellation.dismiss} title="Cancel promotion?"
+        description={`Cancel “${cancellation.target?.name ?? ""}” in this browser preview? Nothing has been sent by this preview campaign.`}
+        confirmLabel="Cancel promotion" blockedReason={!canManage ? "You no longer have permission to manage promotions." : !canCancelPreviewCampaign(cancelTarget) ? "This promotion changed or started sending. Close this dialog and review its current status." : undefined}
+        onConfirm={() => {
+          if (!canManage || !canCancelPreviewCampaign(cancelTarget)) return;
+          change(d => canCancelPreviewCampaign(reviewedTarget(d.campaigns, cancellation.target))
+            ? { ...d, campaigns: d.campaigns.filter(x => x.id !== cancellation.target?.id) } : d);
+        }} />
     </div>
   );
 }

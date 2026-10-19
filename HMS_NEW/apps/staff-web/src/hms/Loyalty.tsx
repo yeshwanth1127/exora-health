@@ -16,7 +16,7 @@ import { WhatsAppIcon } from "@/components/brand-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card as Panel } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { GrowthCheckbox as Checkbox } from "./GrowthControls";
 import {
   Dialog,
   DialogContent,
@@ -1392,26 +1392,11 @@ function Enrol({
           <div className="space-y-2">
             <Label>Programs</Label>
             {live.map((p) => (
-              <label
-                key={p.id}
-                className="flex items-center gap-3 rounded-md border p-2.5 text-sm"
-              >
-                <Checkbox
-                  checked={picked.includes(p.id)}
-                  onCheckedChange={(on) =>
-                    setPicked(
-                      on ? [...picked, p.id] : picked.filter((x) => x !== p.id),
-                    )
-                  }
-                />
+              <div key={p.id} className="flex items-center gap-3 rounded-md border p-2.5 text-sm">
+                <Checkbox label={p.name} description={summary(p.config)} checked={picked.includes(p.id)}
+                  onCheckedChange={on => setPicked(on ? [...picked, p.id] : picked.filter(x => x !== p.id))} />
                 <KindIcon program={p} size="size-6" />
-                <span className="min-w-0 flex-1">
-                  {p.name}
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {summary(p.config)}
-                  </span>
-                </span>
-              </label>
+              </div>
             ))}
             {data.programs.some((p) => p.status === "paused") && (
               <p className="text-xs text-muted-foreground">

@@ -601,5 +601,17 @@
     "integratedSha256": "2b9fb5dd1e5c28b94dd902169a9ace13424c2bc5e23bd3e0058e975021529985",
     "bindingAdaptation": "User-confirmed Queue placement. Captured compiled JSX/gesture engine ported to ESM with existing React/Motion/Lucide/Arc dependencies. No sample defaults. Optional read-only/create/grouping/open/move-request bindings, display ID/patient slot, and unmounted callback guard. Queue keyboard motion previews until drop; explicit moved ID prevents another polled token becoming the target. Host review/real command controls saved state; no queue reordering or doctor reassignment; native hidden semantics preserved.",
     "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/switch/switch.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/switch/switch.tsx",
+    "sha256": "6ab95cb9c0aaa80599cdc0605abf959a20f5030fe4ecdf57f6894274a9c5d73b",
+    "integratedSha256": "6ab95cb9c0aaa80599cdc0605abf959a20f5030fe4ecdf57f6894274a9c5d73b"
+  },
+  {
+    "file": "src/components/arc/switch/switch.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/switch/switch.module.css",
+    "sha256": "3793e7ee1a4c2db46fce615c3fd76212c3c78ea005e23ae07c24b53453c1b6f7",
+    "integratedSha256": "3793e7ee1a4c2db46fce615c3fd76212c3c78ea005e23ae07c24b53453c1b6f7"
   }
 ]

@@ -1,3 +1,6 @@
+import { GrowthConfirm } from "./GrowthConfirm";
+import { useConfirmationReview } from "./use-confirmation-review";
+import { sameReviewedValue } from "./growth-confirmation";
 import { GrowthMetric } from "./GrowthMetric";
 import { requestLeave } from "./leave";
 import { useState, type ReactNode } from "react";
@@ -17,7 +20,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { SharedField } from "@/components/shared-field";
 import { TimeField } from "@/components/WorkspaceFields";
-import { Switch } from "@/components/ui/switch";
+import { GrowthSwitch as Switch } from "./GrowthControls";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/arc/tabs/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useWorkspace } from "./hooks";
@@ -276,6 +279,7 @@ function SettingsTab({
   edit: (s: Stage) => void;
   canManage: boolean;
 }) {
+  const disconnection = useConfirmationReview<WhatsAppSetup>();
   const s = data.settings;
   const set = (patch: Partial<WaSettings>) => change((d) => ({ ...d, settings: { ...d.settings, ...patch } }));
   const files = Object.keys(setup.content).length;
@@ -391,14 +395,18 @@ function SettingsTab({
         <Button
           variant="outline"
           className="text-destructive"
-          onClick={() =>
-            window.confirm(`Disconnect ${setup.connected?.phone}? Patients won't be able to book on WhatsApp until you connect again.`) &&
-            update(emptySetup)
-          }
+          onClick={() => disconnection.request(setup)}
         >
           Disconnect number
         </Button>
       </Section>
+      <GrowthConfirm open={disconnection.open} onDismiss={disconnection.dismiss} title="Disconnect WhatsApp setup?"
+        description={`Reset the WhatsApp setup for ${disconnection.target?.connected?.phone ?? "this number"} saved in this browser? The preview will return to setup. No live provider connection is changed.`}
+        confirmLabel="Disconnect setup" blockedReason={!canManage ? "You no longer have permission to change WhatsApp setup." : !sameReviewedValue(setup, disconnection.target) ? "The WhatsApp setup changed. Close this dialog and review it before disconnecting." : undefined}
+        onConfirm={() => {
+          if (!canManage || !sameReviewedValue(setup, disconnection.target)) return;
+          update(old => sameReviewedValue(old, disconnection.target) ? emptySetup : {});
+        }} />
     </fieldset>
   );
 }

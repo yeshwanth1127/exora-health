@@ -1,5 +1,6 @@
 # Growth screen coverage correction — 19 October 2026
 
+> Historical wave snapshot. Current counts and the completed switch/checkbox/confirmation follow-up are in [growth-controls-confirmation-wave.md](growth-controls-confirmation-wave.md); the current machine-readable ledger has 47 integrated folders.
 The user correctly identified incomplete migration on the active WhatsApp, Google Business and Website analytics screens. The catalog audit counted available/copied components and screened documents; it did not establish migration of every placement. This wave expands existing Arc components into those screens, plus the remaining Voice and Loyalty summary tiles and tabs.
 
 ## Counts and evidence

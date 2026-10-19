@@ -80,3 +80,11 @@
 - Current placements include scoped Arc tabs and panels, numeric metric cards, source/device/review Split bars, daily/category Bar charts, growth badges, setup Stepper and compatible date/time/search controls. Voice and Loyalty summary tiles/tabs follow the same presentation. The component-folder count stays 46; it is not a screen-completion metric.
 - Preserve browser-preview/sample/provider distinctions, zero versus unavailable values, exact category counts, comparison baselines, guarded WhatsApp navigation and local date/time strings. Conversion stages overlap and must not be treated as parts of a Split bar. Existing Google/WhatsApp patient-facing visual previews keep their recognizable brand presentation.
 - User retains visual verification. No browser sweeps, phone optimization, fabricated analytics/provider data, automatic catalog waves or dependency additions are needed for this correction.
+
+
+## Approved remaining growth controls and confirmations
+
+- The user explicitly authorised implementing the remaining switches/checkboxes and browser confirmations. Read `HMS_NEW/docs/admin-dashboard-arc-sidebar/growth-controls-confirmation-wave.md` for placements and checks. Current inventory is 47 folders: 43 adopted + 4 support; Checkbox is now independently adopted in forms, Switch is newly copied unchanged.
+- Arc Switch uses its reference dependency `@radix-ui/react-switch` (1.4.1 in the lockfile). Preserve the copied track/thumb geometry, keyboard behavior and reduced motion. Immediate preferences use Switch; staged Google profile choices and enrolment/setup selections use Checkbox.
+- Seven growth confirmations use the existing Arc Dialog. Retain the exact reviewed record, check current permissions and eligibility, and recheck the functional state updater. Cancel/Escape/outside dismissal writes nothing; never allow cancellation after a campaign starts sending, or delete a changed reply/post/website.
+- These remain browser-preview operations. Do not add live provider calls, change storage keys or run real campaigns to demonstrate confirmations. User retains visual verification; do not start automatic browser sweeps or unapproved component waves.

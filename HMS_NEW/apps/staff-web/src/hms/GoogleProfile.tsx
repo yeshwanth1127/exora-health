@@ -1,12 +1,15 @@
+import { GrowthConfirm } from "./GrowthConfirm";
+import { useConfirmationReview } from "./use-confirmation-review";
+import { sameReviewedValue } from "./growth-confirmation";
 import { DateField, TimeField } from "@/components/WorkspaceFields";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Plus, Sparkles, X } from "lucide-react";
 import { toast } from "@/components/toast-events";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { GrowthCheckbox as Switch } from "./GrowthControls";
 import { Textarea } from "@/components/ui/textarea";
 import { useWorkspace } from "./hooks";
 import { chatLink, validPhone } from "./whatsapp-setup";
@@ -54,7 +57,15 @@ export function Profile({
   canManage: boolean;
 }) {
   const { go } = useWorkspace();
+  const publication = useConfirmationReview<{ baseline: Listing; draft: Listing; fields: (typeof checkedFields)[number][] }>();
   const [draft, setDraft] = useState<Listing>(data.listing);
+  const published = useRef<Listing | null>(null);
+  useEffect(() => {
+    if (published.current && sameReviewedValue(data.listing, published.current)) {
+      published.current = null;
+      toast.success("Google profile preview saved", { id: "google-profile-preview" });
+    }
+  }, [data.listing]);
   const [waNumber, setWaNumber] = useState("+91");
   const [newCategory, setNewCategory] = useState("");
   useEffect(() => {
@@ -64,12 +75,18 @@ export function Profile({
   const dirty = JSON.stringify(draft) !== JSON.stringify(data.listing);
   const rechecked = checkedFields.filter((f) => draft[f] !== data.listing[f]);
   const issues = descriptionIssues(draft.description);
-  const publish = () => {
-    if (rechecked.length && !window.confirm(`Google checks a new ${rechecked.map((f) => fieldNames[f]).join(" and ")} before showing it, usually within a few days. Your listing stays as it is until then. Publish?`))
-      return;
+  const publishReviewed = (review: NonNullable<typeof publication.target>) => {
+    if (!canManage || !sameReviewedValue(data.listing, review.baseline) || !sameReviewedValue(draft, review.draft)) return;
     const at = Date.now();
-    change((d) => ({ ...d, listing: draft, checking: { ...d.checking, ...Object.fromEntries(rechecked.map((f) => [f, at])) } }));
-    toast.success("Published to Google");
+    published.current = review.draft;
+    change(d => sameReviewedValue(d.listing, review.baseline) ? { ...d, listing: review.draft,
+      checking: { ...d.checking, ...Object.fromEntries(review.fields.map(f => [f, at])) } } : d);
+  };
+  const publish = () => {
+    if (!canManage || !dirty || issues.length) return;
+    const review = { baseline: data.listing, draft, fields: rechecked };
+    if (rechecked.length) publication.request(review);
+    else publishReviewed(review);
   };
   const suggested = suggestCategories(exora.specialities);
   const fromExora = (label: string, on: () => void, same: boolean) =>
@@ -316,6 +333,11 @@ export function Profile({
           </div>
         </div>
       )}
+      <GrowthConfirm open={publication.open} onDismiss={publication.dismiss} title="Publish profile changes?"
+        description={`Google checks a new ${publication.target?.fields.map(f => fieldNames[f]).join(" and ") ?? "profile detail"} before showing it, usually within a few days. Your listing stays as it is until then. This saves the browser preview; it does not publish to live Google.`}
+        confirmLabel="Publish preview" destructive={false}
+        blockedReason={!canManage ? "You no longer have permission to publish these changes." : !publication.target || !sameReviewedValue(data.listing, publication.target.baseline) || !sameReviewedValue(draft, publication.target.draft) ? "The profile changed. Close this dialog and review the current changes before publishing." : undefined}
+        onConfirm={() => { if (publication.target) publishReviewed(publication.target); }} />
     </div>
   );
 }
@@ -381,13 +403,9 @@ function Field({ id, label, hint, children }: { id: string; label: string; hint?
 
 function Toggle({ title, text, on, set, disabled }: { title: string; text: string; on: boolean; set: (on: boolean) => void; disabled?: boolean }) {
   return (
-    <label className="flex items-center justify-between gap-4 border-b py-3 text-sm last:border-0">
-      <span className="min-w-0">
-        <span className="block font-medium">{title}</span>
-        <span className="block truncate text-xs text-muted-foreground">{text}</span>
-      </span>
-      <Switch checked={on} disabled={disabled} aria-label={title} onCheckedChange={set} />
-    </label>
+    <div className="border-b py-3 last:border-0">
+      <Switch label={title} description={text} checked={on} disabled={disabled} onCheckedChange={set} />
+    </div>
   );
 }
 

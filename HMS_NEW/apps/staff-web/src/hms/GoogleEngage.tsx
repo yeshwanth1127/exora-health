@@ -1,3 +1,6 @@
+import { GrowthConfirm } from "./GrowthConfirm";
+import { useConfirmationReview } from "./use-confirmation-review";
+import { reviewedTarget } from "./growth-confirmation";
 import { GrowthDateTime } from "./GrowthDateTime";
 import { SharedField } from "@/components/shared-field";
 import { DateField } from "@/components/WorkspaceFields";
@@ -12,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { GrowthSwitch as Switch } from "./GrowthControls";
 import { Textarea } from "@/components/ui/textarea";
 import { checkUpload, type Attachment } from "./whatsapp-setup";
 import { FileSlot, HeaderPreview, Pick } from "./whatsapp-ui";
@@ -27,6 +30,7 @@ import {
   type PhotoSlot,
   type Post,
   type PostKind,
+  type Review,
 } from "./google-profile";
 import { copy, PhotoThumb, photoUrls, type GChange } from "./GoogleBusiness";
 import { Chip } from "./GoogleProfile";
@@ -47,6 +51,8 @@ function Stars({ n, className = "" }: { n: number; className?: string }) {
 
 export function Reviews({ data, change, exora, canManage }: { data: GbpData; change: GChange; exora: Exora; canManage: boolean }) {
   const [filter, setFilter] = useState<"waiting" | "all" | "low">("waiting");
+  const deletion = useConfirmationReview<Review>();
+  const deleteTarget = reviewedTarget(data.reviews, deletion.target);
   const [editing, setEditing] = useState<string | null>(null);
   const [text, setText] = useState("");
   const list = data.reviews
@@ -120,7 +126,7 @@ export function Reviews({ data, change, exora, canManage }: { data: GbpData; cha
                     <Button
                       size="xs"
                       variant="ghost"
-                      onClick={() => window.confirm("Delete this reply from Google?") && change((d) => ({ ...d, reviews: d.reviews.map((x) => (x.id === r.id ? { ...x, reply: null } : x)) }))}
+                      onClick={() => deletion.request(r)}
                     >
                       Delete
                     </Button>
@@ -173,6 +179,14 @@ export function Reviews({ data, change, exora, canManage }: { data: GbpData; cha
           </label>
         </Card>
       </div>
+      <GrowthConfirm open={deletion.open} onDismiss={deletion.dismiss} title="Delete this reply?"
+        description={`Delete your reply to ${deletion.target?.author ?? "this review"} from the Google Business browser preview? The review itself will remain. No live Google reply is changed.`}
+        confirmLabel="Delete reply" blockedReason={!canManage ? "You no longer have permission to manage replies." : !deleteTarget?.reply ? "This review or reply changed. Close this dialog and review the current reply." : undefined}
+        onConfirm={() => {
+          if (!canManage || !deleteTarget?.reply) return;
+          change(d => reviewedTarget(d.reviews, deletion.target)?.reply
+            ? { ...d, reviews: d.reviews.map(x => x.id === deletion.target?.id ? { ...x, reply: null } : x) } : d);
+        }} />
     </div>
   );
 }
@@ -189,6 +203,8 @@ const day = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString([], { d
 
 export function Posts({ data, change, exora, canManage }: { data: GbpData; change: GChange; exora: Exora; canManage: boolean }) {
   const [kind, setKind] = useState<PostKind>("update");
+  const deletion = useConfirmationReview<Post>();
+  const deleteTarget = reviewedTarget(data.posts, deletion.target);
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [button, setButton] = useState<Post["button"]>("book");
@@ -313,7 +329,7 @@ export function Posts({ data, change, exora, canManage }: { data: GbpData; chang
                   {p.status === "checking" ? "Google is checking" : p.status === "scheduled" ? "Scheduled" : p.status === "rejected" ? "Not accepted" : "Live"}
                 </Badge>
                 {canManage && (
-                  <Button size="icon-xs" variant="ghost" aria-label="Delete post" onClick={() => window.confirm("Delete this post from Google?") && change((d) => ({ ...d, posts: d.posts.filter((x) => x.id !== p.id) }))}>
+                  <Button size="icon-xs" variant="ghost" aria-label="Delete post" onClick={() => deletion.request(p)}>
                     <X />
                   </Button>
                 )}
@@ -347,6 +363,13 @@ export function Posts({ data, change, exora, canManage }: { data: GbpData; chang
           </div>
         </div>
       </div>
+      <GrowthConfirm open={deletion.open} onDismiss={deletion.dismiss} title="Delete this post?"
+        description={`Delete “${deletion.target?.title || deletion.target?.text.slice(0, 60) || "this post"}” from the Google Business browser preview? No live Google post is changed.`}
+        confirmLabel="Delete post" blockedReason={!canManage ? "You no longer have permission to manage posts." : !deleteTarget ? "This post changed or was removed. Close this dialog and review the current post." : undefined}
+        onConfirm={() => {
+          if (!canManage || !deleteTarget) return;
+          change(d => reviewedTarget(d.posts, deletion.target) ? { ...d, posts: d.posts.filter(x => x.id !== deletion.target?.id) } : d);
+        }} />
     </div>
   );
 }

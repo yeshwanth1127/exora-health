@@ -1,3 +1,6 @@
+import { GrowthConfirm } from "./GrowthConfirm";
+import { useConfirmationReview } from "./use-confirmation-review";
+import { reviewedTarget } from "./growth-confirmation";
 import { useState, type ReactNode } from "react";
 import { AlertTriangle, CalendarCheck, Check, Copy, ExternalLink, Globe, Loader2, Mail, Plus, RefreshCw, ShieldCheck, X } from "lucide-react";
 import { PostHogIcon } from "@/components/brand-icons";
@@ -62,6 +65,8 @@ function Status({ site }: { site: Site }) {
 
 export function Websites({ data, change, clinic, canManage }: { data: AnalyticsData; change: AChange; clinic: Clinic; canManage: boolean }) {
   const [adding, setAdding] = useState(false);
+  const removal = useConfirmationReview<Site>();
+  const removeTarget = reviewedTarget(data.sites, removal.target);
   const [openId, setOpenId] = useState<string | null>(() => data.sites.find((s) => s.kind === "own" && s.status !== "live")?.id ?? null);
   const code = snippet(location.origin, siteKey(clinic.facilityId));
   const patch = (id: string, p: Partial<Site>) => change((d) => ({ ...d, sites: d.sites.map((s) => (s.id === id ? { ...s, ...p } : s)) }));
@@ -102,10 +107,7 @@ export function Websites({ data, change, clinic, canManage }: { data: AnalyticsD
                     size="icon-sm"
                     variant="ghost"
                     aria-label={`Stop counting ${shortUrl(s.url)}`}
-                    onClick={() =>
-                      window.confirm(`Stop counting visits on ${shortUrl(s.url)}? Remove the code from that site too.`) &&
-                      change((d) => ({ ...d, sites: d.sites.filter((x) => x.id !== s.id) }))
-                    }
+                    onClick={() => removal.request(s)}
                   >
                     <X />
                   </Button>
@@ -127,6 +129,14 @@ export function Websites({ data, change, clinic, canManage }: { data: AnalyticsD
           setAdding(false);
         }}
       />
+      <GrowthConfirm open={removal.open} onDismiss={removal.dismiss} title="Stop counting this website?"
+        description={`Remove ${removal.target ? shortUrl(removal.target.url) : "this website"} from the browser preview. Remove the installed code from the website too; this action cannot change the website itself.`}
+        confirmLabel="Remove website" blockedReason={!canManage ? "You no longer have permission to manage websites." : removeTarget?.kind !== "own" ? "This website changed or was removed. Close this dialog and review the current list." : undefined}
+        onConfirm={() => {
+          if (!canManage || removeTarget?.kind !== "own") return;
+          change(d => reviewedTarget(d.sites, removal.target)?.kind === "own"
+            ? { ...d, sites: d.sites.filter(x => x.id !== removal.target?.id) } : d);
+        }} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 {
   "as_of": "2026-10-19",
   "scope": "Local recreated catalog entries; registry/demo names are counted, shared-source variants are not collapsed into original implementations. This is not the live upstream catalog.",
-  "method": "All remaining free docs screened by description and When to use. Targeted API/source/application-binding checks for ten candidates. Previous Pro coverage is attributed to the existing documented survey. No browser automation or implementation changes.",
+  "method": "First-pass documentation screening is retained from catalog-audit-2026-10-19.md. Current integrations were updated by the authorised growth controls/confirmation follow-up; no new browser verification.",
   "counts": {
     "catalog_entries": 249,
     "free_entries": 133,
@@ -11,10 +11,10 @@
     "new_first_pass_screened": 83,
     "now_first_pass_screened": 249,
     "remaining_first_pass_screening": 0,
-    "adopted": 41,
-    "support": 5,
-    "integrated_total": 46,
-    "not_integrated": 203,
+    "adopted": 43,
+    "support": 4,
+    "integrated_total": 47,
+    "not_integrated": 202,
     "recorded_rendered_observations": 40,
     "without_recorded_rendered_observation": 209,
     "browser_verified_this_pass": 0
@@ -454,10 +454,10 @@
       "prior_screening_evidence": "Earlier reports with explicit free-preview link",
       "recorded_rendered_observation": false,
       "rendered_verified_this_pass": false,
-      "integration": "support",
+      "integration": "adopted",
       "assessment": {
-        "decision": "integrated-support",
-        "reason": "Existing integration; latest implementation/provenance is in component-source-manifest.json and the handoff."
+        "decision": "adopted",
+        "reason": "Arc growth controls/confirmation follow-up. Switch copied without source changes; Checkbox reused as direct accessible form choices as well as readiness support."
       },
       "docs": "/Users/deepakonda/Downloads/test/arc-components/free-source/docs/checkbox.md",
       "demo": "http://localhost:4478/free-previews/checkbox/?theme=light"
@@ -2056,10 +2056,10 @@
       "prior_screening_evidence": "Earlier reports with explicit free-preview link",
       "recorded_rendered_observation": false,
       "rendered_verified_this_pass": false,
-      "integration": "not-integrated",
+      "integration": "adopted",
       "assessment": {
-        "decision": "previously-screened",
-        "reason": "Prior candidate-ledger assessment or all-116-Pro document survey; not a new detailed integration audit in this pass."
+        "decision": "adopted",
+        "reason": "Arc growth controls/confirmation follow-up. Switch copied without source changes; Checkbox reused as direct accessible form choices as well as readiness support."
       },
       "docs": "/Users/deepakonda/Downloads/test/arc-components/free-source/docs/switch.md",
       "demo": "http://localhost:4478/free-previews/switch/?theme=light"
@@ -4512,5 +4512,6 @@
       "docs": "/Users/deepakonda/Downloads/test/arc-components/components/pro/week-calendar/docs.md",
       "demo": "http://localhost:4477/components/pro/week-calendar/demo/?theme=light"
     }
-  ]
+  ],
+  "integration_update": "growth-controls-confirmation-wave.md: Switch adopted; Checkbox promoted from support to an independently adopted form control."
 }

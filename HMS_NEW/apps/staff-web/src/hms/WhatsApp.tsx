@@ -1,3 +1,6 @@
+import { GrowthConfirm } from "./GrowthConfirm";
+import { useConfirmationReview } from "./use-confirmation-review";
+import { sameReviewedValue } from "./growth-confirmation";
 import { Stepper } from "@/components/arc/stepper/stepper";
 import { useEffect, useState } from "react";
 import {
@@ -13,7 +16,7 @@ import { WhatsAppIcon } from "@/components/brand-icons";
 import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { GrowthCheckbox as Checkbox } from "./GrowthControls";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { GrowthSwitch as Switch } from "./GrowthControls";
 import { Textarea } from "@/components/ui/textarea";
 import { useWorkspace } from "./hooks";
 import {
@@ -298,16 +301,8 @@ function ConnectStep({ clinic, setup, update, done }: StepProps) {
             <p className="mb-3 text-sm font-medium">Before you start</p>
             <div className="space-y-3">
               {eligibility.map((text, i) => (
-                <label key={text} className="flex items-start gap-3 text-sm">
-                  <Checkbox
-                    className="mt-0.5"
-                    checked={checked.includes(i)}
-                    onCheckedChange={(on) =>
-                      setChecked(on ? [...checked, i] : checked.filter((x) => x !== i))
-                    }
-                  />
-                  {text}
-                </label>
+                <Checkbox key={text} label={text} checked={checked.includes(i)}
+                  onCheckedChange={on => setChecked(on ? [...checked, i] : checked.filter(x => x !== i))} />
               ))}
             </div>
           </div>
@@ -400,10 +395,13 @@ function ConnectStep({ clinic, setup, update, done }: StepProps) {
 }
 
 function FlowEditor({ clinic, setup, update, done }: StepProps) {
+  const { can } = useWorkspace();
+  const canManage = can("comms.manage");
+  const templateReview = useConfirmationReview<{ before: WhatsAppSetup; shape: ClinicShape }>();
   const suggested = suggestShape(clinic.doctors.length, clinic.departments.length);
   const choose = (shape: ClinicShape) => {
-    if (setup.shape === shape) return;
-    if (setup.shape && !window.confirm("Switching template resets your step text. Continue?")) return;
+    if (!canManage || setup.shape === shape) return;
+    if (setup.shape) { templateReview.request({ before: setup, shape }); return; }
     update({ shape, steps: stepsFor(shape, setup.connected?.name ?? clinic.name, clinic.doctors[0]?.name) });
   };
   const setStep = (id: FlowStep["id"], patch: Partial<FlowStep>) =>
@@ -480,6 +478,15 @@ function FlowEditor({ clinic, setup, update, done }: StepProps) {
           </Button>
         </>
       )}
+      <GrowthConfirm open={templateReview.open} onDismiss={templateReview.dismiss} title="Switch booking template?"
+        description={`Switch to ${templateReview.target ? shapes[templateReview.target.shape].label : "another template"}? This resets the booking step text saved in this browser.`}
+        confirmLabel="Switch template" blockedReason={!canManage ? "You no longer have permission to change WhatsApp setup." : !sameReviewedValue(setup, templateReview.target?.before) ? "The booking flow changed. Close this dialog and review it before switching templates." : undefined}
+        onConfirm={() => {
+          const review = templateReview.target;
+          if (!canManage || !review || !sameReviewedValue(setup, review.before)) return;
+          update(old => sameReviewedValue(old, review.before) ? { shape: review.shape,
+            steps: stepsFor(review.shape, old.connected?.name ?? clinic.name, clinic.doctors[0]?.name) } : {});
+        }} />
     </div>
   );
 }
@@ -583,19 +590,9 @@ function TestStep({ setup, update, done }: Omit<StepProps, "clinic">) {
         </li>
         <li className="flex gap-4">
           <StepDot n={2} done={setup.tested} active={false} />
-          <label className="flex flex-1 items-start gap-3 text-sm">
-            <Checkbox
-              className="mt-0.5"
-              checked={setup.tested}
-              onCheckedChange={(tested) => update({ tested: !!tested, live: tested ? setup.live : false })}
-            />
-            <span>
-              <span className="font-medium">I got the menu and booked a test slot</span>
-              <span className="block text-xs text-muted-foreground">
-                Cancel the test booking from Appointments afterwards.
-              </span>
-            </span>
-          </label>
+          <Checkbox label="I got the menu and booked a test slot"
+            description="Cancel the test booking from Appointments afterwards."
+            checked={setup.tested} onCheckedChange={tested => update({ tested, live: tested ? setup.live : false })} />
         </li>
         <li className="flex gap-4">
           <StepDot n={3} done={setup.live} active={setup.tested && !setup.live} />

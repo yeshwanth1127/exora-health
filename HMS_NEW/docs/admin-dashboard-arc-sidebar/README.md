@@ -1,8 +1,10 @@
 # Admin dashboard Arc implementation
 
+Latest controls/confirmation work: [growth-controls-confirmation-wave.md](growth-controls-confirmation-wave.md), including seven guarded Arc confirmations. Current inventory: **47 folders (43 adopted + 4 support)**.
+
 Latest screen migration: [growth-screens-wave.md](growth-screens-wave.md) records the remaining growth charts/metrics/tabs and their real data bindings.
 
-Latest catalog scan/counts: [catalog-audit-2026-10-19.md](catalog-audit-2026-10-19.md). Machine-readable per-entry evidence: [catalog-coverage.json](catalog-coverage.json). First-pass documentation coverage is 249/249; integration remains 46 folders. Earlier count claims below are historical.
+Latest catalog scan/counts: [catalog-audit-2026-10-19.md](catalog-audit-2026-10-19.md). Machine-readable per-entry evidence: [catalog-coverage.json](catalog-coverage.json). First-pass documentation coverage is 249/249; current integration is 47 folders. Earlier count claims below are historical.
 
 Start with [HANDOFF.md](HANDOFF.md) for the current implementation and continuation guide. Earlier verification is recorded in [arc-five-verification.md](arc-five-verification.md) and [takeover-review.md](takeover-review.md).
 

@@ -1,5 +1,6 @@
 # Local Arc catalog coverage and next fits — 19 October 2026
 
+> Historical wave snapshot. Current counts and the completed switch/checkbox/confirmation follow-up are in [growth-controls-confirmation-wave.md](growth-controls-confirmation-wave.md); the current machine-readable ledger has 47 integrated folders.
 Selection/documentation pass only, after implementation `e7b9f80`. No dashboard code, dependency, runtime or patient/provider data changed. The user asked to scan further components and reconcile explored/remaining counts, while retaining their browser/visual review preference.
 
 ## Reconciled counts

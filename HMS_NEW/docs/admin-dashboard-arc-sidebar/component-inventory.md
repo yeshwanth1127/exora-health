@@ -1,6 +1,6 @@
 # Component inventory
 
-Latest placement expansion: [growth-screens-wave.md](growth-screens-wave.md). The same 46 integrated components now cover additional WhatsApp, Google, Analytics, Voice and Loyalty placements. **Folder count does not imply every screen or state is migrated.**
+Latest implementation: [growth-controls-confirmation-wave.md](growth-controls-confirmation-wave.md). **47 folders: 43 adopted + 4 support.** Checkbox is now a directly adopted form control as well as supporting readiness; Switch is newly copied. **Folder count does not imply every screen/state is migrated.**
 
 Current catalog coverage is reconciled in [catalog-audit-2026-10-19.md](catalog-audit-2026-10-19.md), with all per-entry evidence in [catalog-coverage.json](catalog-coverage.json).
 
@@ -8,10 +8,10 @@ Current catalog coverage is reconciled in [catalog-audit-2026-10-19.md](catalog-
 
 - **249 local catalog entries:** 133 free + 116 Pro, excluding two infrastructure entries. This counts registry/demo names, including shared-source variants, not unique original implementations.
 - **249 / 249 first-pass documentation screens complete:** 166 previously recorded + 83 in the latest pass. **0 remain for first-pass docs screening**.
-- **46 integrated component folders:** 41 adopted + 5 support. **203 catalog entries are not integrated**, including deliberate exclusions and deferred candidates.
+- **47 integrated component folders:** 43 adopted + 4 support. **202 catalog entries are not integrated**, including deliberate exclusions and deferred candidates.
 - **40 named references have recorded historical rendered-demo observations**; 209 do not. These are not exhaustive behavioral/fidelity checks, and this latest scan used no browser automation.
 - Documentation screening, source/API assessment, rendered observation and actual integration are separate evidence levels. The old 82/83 counts describe earlier subsets and must not be added to the later all-Pro survey.
-- Latest implementation remains [whatsapp-queue-settings-wave.md](whatsapp-queue-settings-wave.md): WhatsApp-themed Support conversation, Queue Kanban and full-page Settings. This scan changed documentation only.
+- Latest implementation: [growth-controls-confirmation-wave.md](growth-controls-confirmation-wave.md). The preceding [growth-screens-wave.md](growth-screens-wave.md) expanded charts/metrics/tabs. The original catalog scan was documentation-only.
 
 ## Earlier candidate ledger
 
@@ -87,8 +87,8 @@ Current catalog coverage is reconciled in [catalog-audit-2026-10-19.md](catalog-
 | Accordion | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/accordion/?theme=light) |
 | Hover card | Second documentation/source screening | Integrated in the approved five-component wave; visual review retained by user | [Demo](http://localhost:4478/free-previews/hover-card/?theme=light) |
 | Hold to confirm | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/hold-to-confirm/?theme=light) |
-| Switch | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/switch/?theme=light) |
-| Checkbox | Second documentation/source screening | Support copy for Release readiness only; not adopted as a general field | [Demo](http://localhost:4478/free-previews/checkbox/?theme=light) |
+| Switch | Documentation/source review; no new rendered verification | Adopted: immediate growth preferences | [Demo](http://localhost:4478/free-previews/switch/?theme=light) |
+| Checkbox | Documentation/source review; reused existing source | Adopted: setup eligibility, test confirmation, enrolment and staged Google choices; also readiness support | [Demo](http://localhost:4478/free-previews/checkbox/?theme=light) |
 | Security settings | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/security-settings/demo/) |
 | Release readiness | Pro wave: rendered reference, states exercised and integrated placement compared at 1440×900 light | Integrated: Overview booking setup guide (approved read-only adaptation) | [Demo](http://localhost:4477/components/pro/release-readiness/demo/) |
 | Share access | Second documentation/source screening | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/share-access/demo/) |
@@ -110,10 +110,9 @@ Current catalog coverage is reconciled in [catalog-audit-2026-10-19.md](catalog-
 | Calendar | Date picker and date ranges |
 | Textarea | Existing multiline fields, through the shared adapter |
 | Avatar | Team directory rows and profile |
-| Checkbox | Release readiness read-only checks |
 
 ## Integrated folder inventory
 
-`alert`, `animated-counter`, `availability-picker`, `avatar`, `badge`, `bar-chart`, `button`, `calendar`, `checkbox`, `combobox`, `command-palette`, `copy-button`, `date-picker`, `date-range-picker`, `dialog`, `dropdown-menu`, `empty-state`, `filter-toolbar`, `hover-card`, `inbox-triage`, `input`, `kanban-board`, `line-chart`, `metric-card`, `money-input`, `multi-step-form`, `notification-center`, `phone-input`, `radio-cards`, `release-readiness`, `search-field`, `select`, `settings-page`, `sidebar`, `skeleton`, `skeleton-morph`, `split-bar`, `stepper`, `support-conversation`, `tabs`, `team-directory`, `textarea`, `time-picker`, `timeline`, `toast-stack`, `tooltip`.
+`alert`, `animated-counter`, `availability-picker`, `avatar`, `badge`, `bar-chart`, `button`, `calendar`, `checkbox`, `combobox`, `command-palette`, `copy-button`, `date-picker`, `date-range-picker`, `dialog`, `dropdown-menu`, `empty-state`, `filter-toolbar`, `hover-card`, `inbox-triage`, `input`, `kanban-board`, `line-chart`, `metric-card`, `money-input`, `multi-step-form`, `notification-center`, `phone-input`, `radio-cards`, `release-readiness`, `search-field`, `select`, `settings-page`, `sidebar`, `skeleton`, `skeleton-morph`, `split-bar`, `stepper`, `support-conversation`, `switch`, `tabs`, `team-directory`, `textarea`, `time-picker`, `timeline`, `toast-stack`, `tooltip`.
 
 Selection rationale and deferred data/interaction conflicts remain in `component-shortlist.md` and `next-wave-shortlist.md`. In particular, Donut chart was assessed but not integrated. Roles permissions and Week calendar remain deferred (Team directory was adopted in the Pro wave, see `pro-wave-shortlist.md`); readable role descriptions and a wider doctor panel do not constitute those larger replacements.
