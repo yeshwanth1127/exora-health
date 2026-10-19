@@ -5,9 +5,18 @@ import { toast } from "@/components/toast-events";
 import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
 import { WorkspaceChoice } from "@/components/WorkspaceChoice";
+import { IntentKeys, request } from "./client";
+import { useQuery, useWorkspace } from "./hooks";
+import { saveWaPreferences, type WaRemote } from "./managed-whatsapp";
+
 import type { Practitioner } from "./types";
 import { checkUpload, type Attachment } from "./whatsapp-setup";
-import { progress, templateState, type Status, type TemplateDraft, type WaData } from "./whatsapp-data";
+import {
+  templateState,
+  type Status,
+  type TemplateDraft,
+  type WaData,
+} from "./whatsapp-data";
 
 export type Clinic = {
   name: string;
@@ -19,33 +28,154 @@ export type Clinic = {
 /** Object URLs for files picked this visit, keyed by slot id, so previews show the real image. */
 export const previews = new Map<string, string>();
 
-// ponytail: UI-first phase keeps WhatsApp data in this browser; swap for the API in the backend phase.
-export function useWaData(key: string, make: () => WaData) {
-  const [data, set] = useState<WaData>(() => {
-    const fresh = make();
-    try {
-      const old = JSON.parse(localStorage.getItem(key) ?? "null") as WaData | null;
-      if (!old || old.v !== fresh.v) return fresh;
-      // Sample traffic is regenerated daily; the clinic's own settings and templates are kept.
-      return old.day === fresh.day
-        ? old
-        : { ...fresh, automations: old.automations, campaigns: old.campaigns, settings: old.settings };
-    } catch {
-      return fresh;
-    }
+export function useWaData(_key: string, make: () => WaData) {
+  const { facility } = useWorkspace();
+  const remote = useQuery<WaRemote>(
+    `/v1/whatsapp-workspace?facilityId=${facility.facilityId}`,
+    15000,
+  );
+  const [data, setData] = useState<WaData>(() => ({
+    ...make(),
+    conversations: [],
+    automations: [],
+    campaigns: [],
+    log: [],
+    optedIn: 0,
+  }));
+  const [busy, setBusy] = useState(false),
+    [revision, bump] = useState(0);
+  const refs = useRef({
+    busy: false,
+    dirty: false,
+    keys: new IntentKeys(),
+    latest: data,
+    remote: null as WaRemote | null,
   });
   useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(data));
-    } catch {
-      /* Private mode: changes last for this visit. */
+    if (remote.data) {
+      refs.current.remote = remote.data;
+      if (!refs.current.dirty && !refs.current.busy) {
+        refs.current.latest = {
+          ...remote.data.data,
+          capabilities: remote.data.capabilities,
+        };
+        setData(refs.current.latest);
+      }
     }
-  }, [key, data]);
+  }, [remote.data, busy]);
+  const refreshRef = useRef(remote.refresh);
+  refreshRef.current = remote.refresh;
   useEffect(() => {
-    const t = setInterval(() => set((d) => progress(d, Date.now())), 1000);
-    return () => clearInterval(t);
-  }, []);
-  return [data, set] as const;
+    const refresh = () => {
+      void refreshRef.current();
+    };
+    window.addEventListener("hms-whatsapp-updated", refresh);
+    return () => window.removeEventListener("hms-whatsapp-updated", refresh);
+  }, [facility.facilityId]);
+  const change: Change = (fn) => {
+    const r = refs.current,
+      old = r.latest,
+      next = fn(old);
+    if (JSON.stringify(next.settings) !== JSON.stringify(old.settings)) {
+      r.latest = next;
+      r.dirty = true;
+      setData(next);
+      bump((n) => n + 1);
+      return;
+    }
+    if (r.busy) return;
+    if (
+      JSON.stringify(next.automations) !== JSON.stringify(old.automations) ||
+      JSON.stringify(next.campaigns) !== JSON.stringify(old.campaigns)
+    ) {
+      toast.error(
+        "Use Automations or Promotions to review and save these changes.",
+      );
+      return;
+    }
+    const chat = next.conversations.find(
+      (c) =>
+        JSON.stringify(c) !==
+        JSON.stringify(old.conversations.find((x) => x.id === c.id)),
+    );
+    if (!chat) {
+      toast.error("This action is not available yet.");
+      return;
+    }
+    const before = old.conversations.find((c) => c.id === chat.id);
+    if (!before) return;
+    const message = chat.messages.find(
+      (m) => m.from === "staff" && !before.messages.some((x) => x.id === m.id),
+    );
+    const action = message
+      ? "reply"
+      : chat.status === "resolved"
+        ? "close"
+        : chat.status === "bot"
+          ? "resume"
+          : "assign";
+    if (message && !remote.data?.capabilities.sending) {
+      toast.error("WhatsApp sending is not available yet.");
+      return;
+    }
+    const path = `/v1/whatsapp-workspace/conversations/${chat.id}/${action}`,
+      body = {
+        version: chat.version ?? before.version,
+        ...(message ? { text: message.text } : {}),
+      };
+    r.busy = true;
+    setBusy(true);
+    void request(path, {
+      method: "POST",
+      body,
+      idempotencyKey: r.keys.for(path, body),
+    })
+      .then(async () => {
+        r.keys.complete(path, body);
+        await remote.refresh();
+        window.dispatchEvent(new Event("hms-whatsapp-updated"));
+        toast.success(
+          message
+            ? "Reply queued. Delivery appears after confirmation."
+            : "Conversation updated",
+        );
+      })
+      .catch((e) => toast.error(e.message))
+      .finally(() => {
+        r.busy = false;
+        setBusy(false);
+      });
+  };
+  useEffect(() => {
+    const r = refs.current;
+    if (!r.dirty || r.busy || !r.remote) return;
+    const timer = setTimeout(async () => {
+      r.dirty = false;
+      r.busy = true;
+      setBusy(true);
+      const prefs = r.latest.settings;
+      try {
+        await saveWaPreferences(facility.facilityId, r.remote!, prefs, r.keys);
+        await remote.refresh();
+        window.dispatchEvent(new Event("hms-whatsapp-updated"));
+      } catch (e) {
+        toast.error(
+          e instanceof Error ? e.message : "Settings could not be saved.",
+        );
+        r.dirty = false;
+      } finally {
+        r.busy = false;
+        setBusy(false);
+        if (!r.dirty) await remote.refresh();
+        bump((n) => n + 1);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [revision, remote.data, facility.facilityId]);
+  return [
+    { ...data, loading: remote.loading, error: remote.error, busy },
+    change,
+  ] as const;
 }
 export type Change = (fn: (d: WaData) => WaData) => void;
 
@@ -74,7 +204,15 @@ export function duration(ms: number) {
 }
 export const startOfToday = (now: number) => new Date(now).setHours(0, 0, 0, 0);
 
-export function StepDot({ n, done, active }: { n: number; done: boolean; active: boolean }) {
+export function StepDot({
+  n,
+  done,
+  active,
+}: {
+  n: number;
+  done: boolean;
+  active: boolean;
+}) {
   return (
     <span
       className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-medium ${done ? "bg-primary text-primary-foreground" : active ? "border-2 border-primary" : "border text-muted-foreground"}`}
@@ -105,6 +243,9 @@ export function MetaBadge({ t }: { t: TemplateDraft }) {
 }
 
 export const statusLabels: Record<Status, string> = {
+  claimed: "Sending",
+  unknown: "Delivery unconfirmed",
+  cancelled: "Cancelled",
   queued: "Queued",
   sent: "Sent",
   delivered: "Delivered",
@@ -112,13 +253,27 @@ export const statusLabels: Record<Status, string> = {
   failed: "Failed",
   received: "Received",
 };
-export function Ticks({ status, className = "" }: { status: Status; className?: string }) {
+export function Ticks({
+  status,
+  className = "",
+}: {
+  status: Status;
+  className?: string;
+}) {
   const c = `size-3.5 ${className}`;
-  if (status === "queued") return <Clock className={c} aria-label="Queued" />;
+  if (status === "unknown")
+    return <AlertCircle className={c} aria-label="Delivery unconfirmed" />;
+  if (status === "claimed" || status === "queued")
+    return <Clock className={c} aria-label="Queued" />;
   if (status === "sent") return <Check className={c} aria-label="Sent" />;
-  if (status === "delivered") return <CheckCheck className={c} aria-label="Delivered" />;
-  if (status === "read") return <CheckCheck className={`${c} text-sky-500`} aria-label="Read" />;
-  if (status === "failed") return <AlertCircle className={`${c} text-destructive`} aria-label="Failed" />;
+  if (status === "delivered")
+    return <CheckCheck className={c} aria-label="Delivered" />;
+  if (status === "read")
+    return <CheckCheck className={`${c} text-sky-500`} aria-label="Read" />;
+  if (status === "failed")
+    return (
+      <AlertCircle className={`${c} text-destructive`} aria-label="Failed" />
+    );
   return null;
 }
 
@@ -165,7 +320,10 @@ export function FileSlot({
     const old = previews.get(id);
     if (old) URL.revokeObjectURL(old);
     previews.set(id, URL.createObjectURL(file));
-    onChange({ kind: file.type === "application/pdf" ? "pdf" : "image", name: file.name });
+    onChange({
+      kind: file.type === "application/pdf" ? "pdf" : "image",
+      name: file.name,
+    });
   };
   return (
     <div className="flex min-w-0 items-center gap-2">
@@ -184,15 +342,28 @@ export function FileSlot({
       {value ? (
         <>
           <span className="flex min-w-0 items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs">
-            {value.kind === "pdf" ? <FileText className="size-3.5 shrink-0" /> : <ImageIcon className="size-3.5 shrink-0" />}
+            {value.kind === "pdf" ? (
+              <FileText className="size-3.5 shrink-0" />
+            ) : (
+              <ImageIcon className="size-3.5 shrink-0" />
+            )}
             <span className="truncate">{value.name}</span>
           </span>
-          <Button size="icon-xs" variant="ghost" aria-label={`Remove ${label}`} onClick={() => onChange(null)}>
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            aria-label={`Remove ${label}`}
+            onClick={() => onChange(null)}
+          >
             <X />
           </Button>
         </>
       ) : (
-        <Button size={compact ? "xs" : "sm"} variant="outline" onClick={() => input.current?.click()}>
+        <Button
+          size={compact ? "xs" : "sm"}
+          variant="outline"
+          onClick={() => input.current?.click()}
+        >
           {compact ? <Upload /> : <Paperclip />}
           {compact ? "Upload" : `Add ${label.toLowerCase()}`}
         </Button>
@@ -201,12 +372,26 @@ export function FileSlot({
   );
 }
 
-export function Bubble({ me = false, children, meta }: { me?: boolean; children: ReactNode; meta?: ReactNode }) {
+export function Bubble({
+  me = false,
+  children,
+  meta,
+}: {
+  me?: boolean;
+  children: ReactNode;
+  meta?: ReactNode;
+}) {
   return (
     <div className={`flex ${me ? "justify-end" : "justify-start"}`}>
-      <div className={`max-w-[85%] rounded-lg px-2.5 py-1.5 shadow-[0_1px_0.5px_rgba(11,20,26,.13)] ${me ? "bg-[#d9fdd3]" : "bg-white"}`}>
+      <div
+        className={`max-w-[85%] rounded-lg px-2.5 py-1.5 shadow-[0_1px_0.5px_rgba(11,20,26,.13)] ${me ? "bg-[#d9fdd3]" : "bg-white"}`}
+      >
         {children}
-        {meta && <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-[#667781]">{meta}</div>}
+        {meta && (
+          <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-[#667781]">
+            {meta}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -216,7 +401,10 @@ export function Choices({ items }: { items: string[] }) {
   return (
     <div className="-mx-2.5 mt-2 divide-y border-t">
       {items.map((t) => (
-        <p key={t} className="truncate px-2.5 py-1.5 text-center text-[13px] text-[#008069]">
+        <p
+          key={t}
+          className="truncate px-2.5 py-1.5 text-center text-[13px] text-[#008069]"
+        >
           {t}
         </p>
       ))}
@@ -224,13 +412,29 @@ export function Choices({ items }: { items: string[] }) {
   );
 }
 
-export function HeaderPreview({ id, header }: { id: string; header: Attachment }) {
+export function HeaderPreview({
+  id,
+  header,
+}: {
+  id: string;
+  header: Attachment;
+}) {
   const url = previews.get(id);
   if (header.kind === "image" && url)
-    return <img src={url} alt="" className="-mx-1 mb-1.5 aspect-video w-[calc(100%+0.5rem)] rounded-md object-cover" />;
+    return (
+      <img
+        src={url}
+        alt=""
+        className="-mx-1 mb-1.5 aspect-video w-[calc(100%+0.5rem)] rounded-md object-cover"
+      />
+    );
   return (
     <div className="mb-1.5 flex items-center gap-2 rounded-md bg-[#f0f2f5] p-2 text-xs">
-      {header.kind === "pdf" ? <FileText className="size-5 text-[#e53935]" /> : <ImageIcon className="size-5" />}
+      {header.kind === "pdf" ? (
+        <FileText className="size-5 text-[#e53935]" />
+      ) : (
+        <ImageIcon className="size-5" />
+      )}
       <span className="truncate">{header.name}</span>
     </div>
   );
@@ -254,13 +458,19 @@ export function TemplatePreview({
 }) {
   return (
     <div className="overflow-hidden rounded-[20px] border-[5px] border-foreground/85 bg-[#efeae2]">
-      <div className="bg-[#008069] px-3 py-2 text-sm font-medium text-white">{title}</div>
+      <div className="bg-[#008069] px-3 py-2 text-sm font-medium text-white">
+        {title}
+      </div>
       <div className="min-h-40 p-3 text-[13px] leading-snug text-[#111b21]">
         <Bubble meta={clock(Date.now())}>
           {header && <HeaderPreview id={slot} header={header} />}
           <p className="whitespace-pre-wrap break-words">{text}</p>
-          {footer && <p className="mt-1 text-[11px] text-[#667781]">{footer}</p>}
-          {buttons.length > 0 && <Choices items={buttons.filter((b) => b.trim())} />}
+          {footer && (
+            <p className="mt-1 text-[11px] text-[#667781]">{footer}</p>
+          )}
+          {buttons.length > 0 && (
+            <Choices items={buttons.filter((b) => b.trim())} />
+          )}
         </Bubble>
       </div>
     </div>

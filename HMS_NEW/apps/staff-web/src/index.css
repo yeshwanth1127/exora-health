@@ -384,6 +384,9 @@ body {
     padding: 24px 16px;
   }
   .workspace-header {
+    height: auto;
+    min-height: 64px;
+    padding-block: 10px;
     padding-inline: 12px;
   }
   .workspace-footer {

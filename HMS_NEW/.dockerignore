@@ -1,0 +1,10 @@
+.git
+.pgdata
+.comms-storage
+node_modules
+**/node_modules
+**/dist
+*.log
+.env
+.tenants
+docs/plan/staff-integration-audit

@@ -1100,6 +1100,35 @@ export interface ClinicalTriageAssessment {
   version: Generated<number>;
 }
 
+export interface CommsAnalyticsMirror {
+  attempts: Generated<number>;
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  next_attempt_at: Generated<Timestamp>;
+  payload: Json;
+  site_id: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsAnalyticsSite {
+  created_at: Generated<Timestamp>;
+  created_by: string;
+  enabled: Generated<boolean>;
+  facility_id: string;
+  id: Generated<string>;
+  kind: string;
+  last_event_at: Timestamp | null;
+  origin: string;
+  retired: Generated<boolean>;
+  tenant_id: string;
+  umami_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
 export interface CommsAsset {
   created_at: Generated<Timestamp>;
   created_by: string | null;
@@ -1113,6 +1142,36 @@ export interface CommsAsset {
   sha256: string;
   size_bytes: number;
   status: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsBookingAttribution {
+  appointment_id: string;
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  site_id: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsBookingChat {
+  conversation_id: string;
+  created_at: Generated<Timestamp>;
+  expires_at: Generated<Timestamp>;
+  id: Generated<string>;
+  state: Generated<Json>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsBookingChatInput {
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  inbound_id: string;
   tenant_id: string;
   updated_at: Generated<Timestamp>;
   version: Generated<number>;
@@ -1266,15 +1325,112 @@ export interface CommsFollowupRule {
   version: Generated<number>;
 }
 
+export interface CommsGoogleScheduledPost {
+  actor_staff_id: string;
+  actor_user_id: string;
+  connection_id: string;
+  created_at: Generated<Timestamp>;
+  due_at: Timestamp;
+  external_id: string;
+  facility_id: string;
+  id: Generated<string>;
+  payload: Json;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
 export interface CommsInboundMessage {
   account_id: string;
   conversation_id: string;
   created_at: Generated<Timestamp>;
   id: Generated<string>;
+  phone_number_id: string | null;
   provider_message_id: string;
   received_at: Timestamp;
   tenant_id: string;
   text_content: string;
+}
+
+export interface CommsIntegrationAttempt {
+  actor_staff_id: string;
+  actor_user_id: string;
+  created_at: Generated<Timestamp>;
+  credential: string | null;
+  expires_at: Timestamp;
+  facility_id: string;
+  id: Generated<string>;
+  provider: string;
+  state_hash: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  verifier: string;
+  version: Generated<number>;
+}
+
+export interface CommsManagedAutomation {
+  attempted_at: Timestamp | null;
+  connection_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string;
+  enabled: Generated<boolean>;
+  enabled_at: Generated<Timestamp>;
+  facility_id: string;
+  id: Generated<string>;
+  kind: string;
+  provider_status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsManagedBroadcast {
+  approved_by: string | null;
+  audience_hash: string;
+  budget_minor: number;
+  connection_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string;
+  due_at: Timestamp;
+  estimate_minor: number;
+  facility_id: string;
+  id: Generated<string>;
+  recipient_count: number;
+  status: Generated<string>;
+  template: Json;
+  tenant_id: string;
+  title: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsManagedConnection {
+  created_at: Generated<Timestamp>;
+  created_by: string;
+  credential: string;
+  enabled: Generated<boolean>;
+  external_id: string;
+  facility_id: string;
+  id: Generated<string>;
+  metadata: Generated<Json>;
+  provider: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
+}
+
+export interface CommsManagedDelivery {
+  connection_id: string;
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  outbound_id: string;
+  provider_message_id: string | null;
+  state: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
 }
 
 export interface CommsMessageTemplate {
@@ -1315,6 +1471,11 @@ export interface CommsOutboundMessage {
   created_by: string | null;
   facility_id: string;
   id: Generated<string>;
+  managed_broadcast_id: string | null;
+  managed_details: Generated<Json>;
+  managed_inbound_id: string | null;
+  managed_purpose: Generated<string>;
+  managed_send_requested: Generated<boolean>;
   reminder_job_id: string | null;
   status: Generated<string>;
   tenant_id: string;
@@ -1485,6 +1646,19 @@ export interface CommsVoiceTranscriptRevision {
   source: Generated<string>;
   tenant_id: string;
   turns: Json;
+}
+
+export interface CommsWhatsappWorkspace {
+  booking_enabled_at: Timestamp | null;
+  created_at: Generated<Timestamp>;
+  created_by: string;
+  draft: Generated<Json>;
+  facility_id: string;
+  id: Generated<string>;
+  preferences: Generated<Json>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
 }
 
 export interface PatientPatient {
@@ -2083,7 +2257,12 @@ export interface DB {
   "clinical.tele_session": ClinicalTeleSession;
   "clinical.tele_session_event": ClinicalTeleSessionEvent;
   "clinical.triage_assessment": ClinicalTriageAssessment;
+  "comms.analytics_mirror": CommsAnalyticsMirror;
+  "comms.analytics_site": CommsAnalyticsSite;
   "comms.asset": CommsAsset;
+  "comms.booking_attribution": CommsBookingAttribution;
+  "comms.booking_chat": CommsBookingChat;
+  "comms.booking_chat_input": CommsBookingChatInput;
   "comms.booking_link": CommsBookingLink;
   "comms.booking_link_change": CommsBookingLinkChange;
   "comms.campaign": CommsCampaign;
@@ -2095,7 +2274,13 @@ export interface DB {
   "comms.conversation": CommsConversation;
   "comms.delivery_receipt": CommsDeliveryReceipt;
   "comms.followup_rule": CommsFollowupRule;
+  "comms.google_scheduled_post": CommsGoogleScheduledPost;
   "comms.inbound_message": CommsInboundMessage;
+  "comms.integration_attempt": CommsIntegrationAttempt;
+  "comms.managed_automation": CommsManagedAutomation;
+  "comms.managed_broadcast": CommsManagedBroadcast;
+  "comms.managed_connection": CommsManagedConnection;
+  "comms.managed_delivery": CommsManagedDelivery;
   "comms.message_template": CommsMessageTemplate;
   "comms.messaging_consent_event": CommsMessagingConsentEvent;
   "comms.outbound_message": CommsOutboundMessage;
@@ -2109,6 +2294,7 @@ export interface DB {
   "comms.voice_recording_access": CommsVoiceRecordingAccess;
   "comms.voice_transcript": CommsVoiceTranscript;
   "comms.voice_transcript_revision": CommsVoiceTranscriptRevision;
+  "comms.whatsapp_workspace": CommsWhatsappWorkspace;
   "patient.patient": PatientPatient;
   "patient.patient_address": PatientPatientAddress;
   "patient.patient_consent": PatientPatientConsent;

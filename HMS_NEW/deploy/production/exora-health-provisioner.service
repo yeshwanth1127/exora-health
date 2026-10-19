@@ -1,0 +1,19 @@
+[Unit]
+Description=Exora Health tenant provisioner
+After=docker.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+Environment=EXORA_PROVISIONER_CONFIG=/etc/exora-health/provisioner.env
+ExecStart=/usr/local/sbin/exora-health-provision-worker
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

@@ -104,3 +104,11 @@
 - The user explicitly requested targeted browser checks and a better Overview fit. Read `HMS_NEW/docs/admin-dashboard-arc-sidebar/kpi-browser-fit-review.md`; this supersedes earlier no-browser guidance for that review only. Do not infer permission for another broad catalog sweep.
 - Overview opts into full-width, compact KPI embedding, reporting before setup, a 7-day default, and concise date/history/help context. Standalone demo layout remains the default. Retain the reference expansion/focus/keyboard/motion engine and truthful unknown history.
 - Daily count detail plots must retain each actual day's value and extrema; do not restore fixed 72-point snapshot resampling or rounded duplicate count-axis labels. Period totals and unavailable/zero comparison semantics remain exact. Screenshots and bounded browser evidence are in the review document; current inventory stays 48 folders, 235 frontend tests.
+
+
+## Approved workspace sidebar subpages and current main
+
+- The user explicitly requested WhatsApp, analytics and similar multi-tab workspaces to be segmented like Appointments before publishing all Arc work to main. Read `HMS_NEW/docs/admin-dashboard-arc-sidebar/workspace-subpages-and-main-merge.md`.
+- Share typed destinations in `workspace-navigation.ts` across sidebar, page tabs and command search; retain compatible query/deep links and guarded Back/Forward/dirty/pending navigation. Keep queue view switches, settings editors and recording access review contextual.
+- Current main's managed integration contracts supersede earlier preview-only operation guidance: retain actual queries/actions, permission/capability/version/idempotency checks, truthful loading/error/unavailable/delivery state. Never substitute sample analytics, local-only connection success or fake saved/provider results.
+- Component inventory remains 48 folders; 243 staff tests and 449 API/database tests passed. Targeted local navigation was browser checked, but connected-provider states and full demo parity remain unverified. No production deployment is established by publishing source.

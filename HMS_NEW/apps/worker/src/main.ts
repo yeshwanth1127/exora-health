@@ -1,15 +1,29 @@
+import { dispatchGooglePosts } from "../../api/src/modules/comms/managed-google.ts";
+import { pollAutomationApprovals } from "../../api/src/modules/comms/managed-automations.ts";
+import { dispatchAnalyticsMirror } from "../../api/src/modules/comms/managed-analytics.ts";
+import { dispatchBookingChats } from "../../api/src/modules/comms/managed-booking-chat.ts";
 // Background worker: delivers outbox events and runs housekeeping jobs.
 //   pnpm worker:dev
-import { evaluateDueNotifications } from '../../api/src/modules/comms/notifications.ts';
-import { dispatchTemplateSubmissions } from '../../api/src/modules/comms/template-submissions.ts';
-import { createDb } from '@hms/db';
-import { config } from '../../../db/scripts/config.mjs';
-import { dispatchOnce } from './dispatcher.ts';
-import { handlers } from './handlers.ts';
-import { expireHolds, maintainPartitions, purgeIdempotencyRecords } from './jobs.ts';
+import { dispatchManagedWhatsApp } from "../../api/src/modules/comms/managed-whatsapp.ts";
+import { loadManagedSettings } from "../../api/src/modules/comms/managed-config.ts";
+import { evaluateDueNotifications } from "../../api/src/modules/comms/notifications.ts";
+import { dispatchTemplateSubmissions } from "../../api/src/modules/comms/template-submissions.ts";
+import { createDb } from "@hms/db";
+import { config } from "../../../db/scripts/config.mjs";
+import { dispatchOnce } from "./dispatcher.ts";
+import { handlers } from "./handlers.ts";
+import {
+  expireHolds,
+  maintainPartitions,
+  purgeIdempotencyRecords,
+} from "./jobs.ts";
 
-const db = createDb({ connectionString: config.appDatabaseUrl, maxConnections: 5 });
-const log = (msg: string, data: Record<string, unknown> = {}) => console.log(JSON.stringify({ time: new Date().toISOString(), msg, ...data }));
+const db = createDb({
+  connectionString: config.appDatabaseUrl,
+  maxConnections: 5,
+});
+const log = (msg: string, data: Record<string, unknown> = {}) =>
+  console.log(JSON.stringify({ time: new Date().toISOString(), msg, ...data }));
 let stopping = false;
 
 /** Runs `job` every `ms` until shutdown; logs results worth seeing and any failure. */
@@ -17,29 +31,60 @@ async function every(name: string, ms: number, job: () => Promise<unknown>) {
   while (!stopping) {
     try {
       const result = await job();
-      if (typeof result === 'number' && result > 0) log(name, { count: result });
-      else if (result && typeof result === 'object' && (result as { claimed?: number }).claimed) log(name, result as Record<string, unknown>);
+      if (typeof result === "number" && result > 0)
+        log(name, { count: result });
+      else if (
+        result &&
+        typeof result === "object" &&
+        (result as { claimed?: number }).claimed
+      )
+        log(name, result as Record<string, unknown>);
     } catch (err) {
-      log(`${name} failed`, { error: err instanceof Error ? err.message : String(err) });
+      log(`${name} failed`, {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
     await new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
-for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, () => {
-    log('stopping', { signal });
+    log("stopping", { signal });
     stopping = true;
     setTimeout(() => void db.destroy().then(() => process.exit(0)), 1500);
   });
 }
 
-log('worker started', { handlers: handlers.map((h) => h.consumer) });
-void every('outbox', 1_000, () => dispatchOnce(db, handlers, { log }));
-void every('expire-holds', 30_000, () => expireHolds(db));
-void every('partitions', 24 * 3600_000, () => maintainPartitions(db));
-void every('purge-idempotency', 3600_000, () => purgeIdempotencyRecords(db));
+log("worker started", { handlers: handlers.map((h) => h.consumer) });
+void every("outbox", 1_000, () => dispatchOnce(db, handlers, { log }));
+void every("expire-holds", 30_000, () => expireHolds(db));
+void every("partitions", 24 * 3600_000, () => maintainPartitions(db));
+void every("purge-idempotency", 3600_000, () => purgeIdempotencyRecords(db));
 
-void every('notification-readback', 5_000, () => evaluateDueNotifications(db));
+void every("notification-readback", 5_000, () => evaluateDueNotifications(db));
 // Dedicated dispatcher commits each provider attempt before POST; outbox retries must never resend it.
-void every('whatsapp-template-submissions', 5_000, () => dispatchTemplateSubmissions(db));
+void every("whatsapp-template-submissions", 5_000, () =>
+  dispatchTemplateSubmissions(db),
+);
+
+const managedSettings = loadManagedSettings();
+void every("managed-whatsapp-replies", 2000, () =>
+  dispatchManagedWhatsApp(db, managedSettings),
+);
+
+void every("managed-booking-chats", 2000, () =>
+  dispatchBookingChats(db, managedSettings),
+);
+
+void every("analytics-mirror", 5000, () =>
+  dispatchAnalyticsMirror(db, managedSettings),
+);
+
+void every("managed-message-approvals", 60000, () =>
+  pollAutomationApprovals(db, managedSettings),
+);
+
+void every("managed-google-posts", 10000, () =>
+  dispatchGooglePosts(db, managedSettings),
+);

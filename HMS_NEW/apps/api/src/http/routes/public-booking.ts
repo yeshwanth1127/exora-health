@@ -1,3 +1,5 @@
+import { attributeBooking } from "../../modules/comms/managed-analytics.ts";
+import type { ManagedSettings } from "../../modules/comms/managed-config.ts";
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { DB, Kysely } from '@hms/db';
@@ -15,7 +17,7 @@ const Query=z.strictObject({doctor:z.string().regex(/^[a-z0-9][a-z0-9-]{1,80}$/)
   from:z.iso.date(),to:z.iso.date()});
 
 /** Deliberately separate public surface. Staff /v1 authentication and CORS remain unchanged. */
-export function registerPublicBookingRoutes(parent:FastifyInstance,db:Kysely<DB>,config:PublicBookingConfig) {
+export function registerPublicBookingRoutes(parent:FastifyInstance,db:Kysely<DB>,config:PublicBookingConfig,managed?:ManagedSettings) {
   void parent.register(async app=>{
     app.addHook('onRequest',async(request,reply)=>{
       reply.header('cache-control','no-store');
@@ -56,6 +58,8 @@ export function registerPublicBookingRoutes(parent:FastifyInstance,db:Kysely<DB>
       const {site,caller}=await authority(request);
       const claim=readSlot(body.slotToken,config.signingSecret);
       const result=await publicBook(db,caller,site,config.signingSecret,body,claim,key);
+      if(managed && request.headers['sec-gpc']!=='1' && request.headers.dnt!=='1')
+        await attributeBooking(db,site.tenantId,site.facilityId,request.headers.origin??'',result.appointmentId,managed);
       return reply.status(201).send(result);
     });
   });

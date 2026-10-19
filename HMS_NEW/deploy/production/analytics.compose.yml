@@ -1,0 +1,42 @@
+# Run on the data host. Route the loopback Umami port through a company-only HTTPS ingress;
+# HMS forwards tracking events, so the Umami console never needs public customer access.
+name: exora-analytics
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: umami
+      POSTGRES_USER: umami
+      POSTGRES_PASSWORD: ${UMAMI_DATABASE_PASSWORD:?Set the private analytics database password}
+    volumes:
+      - analytics_pgdata:/var/lib/postgresql
+    networks: [analytics_private]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U umami -d umami']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  umami:
+    # Pin an official self-hosted Umami v3 release/digest supporting persistent API keys.
+    image: ${UMAMI_IMAGE:?Set a pinned official Umami PostgreSQL image or digest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://umami:${UMAMI_DATABASE_PASSWORD:?Set password}@db:5432/umami
+      APP_SECRET: ${UMAMI_APP_SECRET:?Set a persistent random application secret}
+    ports:
+      - '127.0.0.1:${UMAMI_PORT:-3001}:3000'
+    networks: [analytics_private, analytics_egress]
+    security_opt: [no-new-privileges:true]
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
+networks:
+  analytics_private:
+    internal: true
+  analytics_egress:
+volumes:
+  analytics_pgdata:

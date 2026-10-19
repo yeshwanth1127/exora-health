@@ -1,7 +1,0 @@
-{
-  "status": "unavailable",
-  "availableAppointments": null,
-  "asOf": null,
-  "source": "scheduling-backend-not-connected",
-  "message": "Live appointment availability is shown on the booking page."
-}

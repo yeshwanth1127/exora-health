@@ -1,0 +1,94 @@
+{
+  "date": "2026-10-17",
+  "scope": "Local PostgreSQL, real HTTP/OIDC/JWKS invitation and permission tests, browser against actual local API. Remote provider transports and Meta SDK window are synthetic. Existing Meta app inspected read-only; no live subscription or real message/listing changed.",
+  "browserChecks": {
+    "result": "PASS",
+    "checks": [
+      "Analytics add submits one API intent",
+      "Installation waits for accepted collection",
+      "Analytics settings are company managed",
+      "No customer provider credentials requested",
+      "Desktop and 390px have no horizontal overflow",
+      "Untracked conversion remains explicit",
+      "Google reply uses one server action",
+      "Rejected provider reply not displayed as published",
+      "Integration state not stored in localStorage",
+      "Connected WhatsApp inbox renders",
+      "WhatsApp reply uses one intent",
+      "Consent refusal remains explicit",
+      "Rejected WhatsApp reply not displayed as sent",
+      "Booking activation waits for server confirmation",
+      "Booking activation submits one intent",
+      "Appointment notice toggle persists one intent",
+      "Promotion requires a persisted preview",
+      "Promotion approval submits one intent",
+      "Rejected promotion remains in review",
+      "Rejected promotion is never shown as scheduled",
+      "Operations request no provider credentials",
+      "Promotion review fits a 390px screen"
+    ],
+    "widths": [
+      {
+        "viewport": 1440,
+        "scrollWidth": 1440
+      },
+      {
+        "viewport": 390,
+        "scrollWidth": 390
+      }
+    ],
+    "date": "2026-10-16; earlier mocked endpoint baseline"
+  },
+  "backend": {
+    "result": "PASS",
+    "tests": 433,
+    "files": 42,
+    "onboardingTests": 10,
+    "productionAuthTests": 2,
+    "previousOperationalTargetedTests": 29
+  },
+  "staff": {
+    "result": "PASS",
+    "tests": 166
+  },
+  "typecheck": "PASS",
+  "staffBuild": "PASS; existing bundle-size warning",
+  "liveProviders": "UNVERIFIABLE: existing Meta messages subscription observed, app in development mode, no App Review submission recorded; Google/Umami not provisioned. No live delivery, external customer OAuth or deployed acceptance test.",
+  "deployment": "NOT PERFORMED",
+  "operatorPreflight": {
+    "database": "PASS",
+    "providerConfiguration": "EXPECTED NOT READY",
+    "exitCode": 2,
+    "secretsReturned": false
+  },
+  "minimalReleaseExclusions": [
+    "Media uploads",
+    "Advanced Google category/service/attribute/holiday publishing",
+    "Automatic review requests",
+    "Arbitrary marketing-template design",
+    "Automatic instrumentation of a separate website repository"
+  ],
+  "localRuntime": {
+    "api": "PASS: real HTTP onboarding test and browser harness on 3067",
+    "worker": "Current dispatcher regression suite PASS; live sending not enabled",
+    "staff": "PASS: browser role checks on 5197; test processes stopped after verification"
+  },
+  "accountPermissionsBrowser": {
+    "result": "PASS",
+    "date": "2026-10-17",
+    "checks": [
+      "Owner completes Business app connection through actual API",
+      "Connection survives page reload",
+      "Owner adds website through actual API",
+      "No company provider credential fields",
+      "Owner can start Google setup",
+      "Reception cannot connect Google",
+      "Reception WhatsApp setup is read-only"
+    ],
+    "evidence": "Actual dashboard/API/restricted PostgreSQL; development browser login, synthetic Meta SDK and injected remote provider transport. OIDC invitation/token verification tested separately over real HTTP.",
+    "fixture": "apps/staff-web/tests/browser/managed-account-permissions.cjs"
+  },
+  "publicBuild": "PASS",
+  "composeConfiguration": "PASS: local tenant, production tenant and private analytics templates",
+  "containerExecution": "UNVERIFIABLE: local Docker daemon unavailable"
+}

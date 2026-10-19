@@ -1,10 +1,8 @@
 import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+  workspaceActiveRoute,
+  workspaceChildren,
+} from "@/hms/workspace-navigation";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   LayoutDashboard,
   Bell,
@@ -31,9 +29,18 @@ import { ClinicPicker } from "@/components/ClinicPicker";
 import { Card, CardContent } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ArcSidebarLayout, type SidebarSection } from "@/components/arc/sidebar/sidebar";
+import {
+  ArcSidebarLayout,
+  type SidebarSection,
+} from "@/components/arc/sidebar/sidebar";
 import { HmsError, request, setIdentity, setTenant } from "@/hms/client";
-import { devLoginEnabled, finishLogin, oidc } from "@/hms/auth";
+import {
+  devAutoSignInSubject,
+  devLoginEnabled,
+  finishLogin,
+  oidc,
+} from "@/hms/auth";
+import { fallbackTenantName, fetchTenantName } from "@/hms/tenant-brand";
 import { can, permittedFacilities, practitionersFor } from "@/hms/model";
 import { WorkspaceContext, useQuery } from "@/hms/hooks";
 import { hasUnsavedChanges, requestLeave, leaveState } from "@/hms/leave";
@@ -41,7 +48,14 @@ import { useRecoverableCommand } from "@/hms/operational-command";
 import { RecoveryNotice } from "@/hms/OperationalRecovery";
 import { useUnsaved } from "@/hms/leave";
 import { LeaveDialog } from "@/hms/LeaveDialog";
-import { Choice, Empty, ErrorMessage, Field, Hint, LoadingState } from "@/hms/ui";
+import {
+  Choice,
+  Empty,
+  ErrorMessage,
+  Field,
+  Hint,
+  LoadingState,
+} from "@/hms/ui";
 import { Input } from "@/components/ui/input";
 import { Patients } from "@/hms/Patients";
 import {
@@ -67,23 +81,101 @@ import { PatientVideo } from "@/hms/PatientVideo";
 import type { Facility, Me, Practitioner } from "@/hms/types";
 
 const navigation = [
-  { group: "Clinic", key: "overview", name: "Overview", icon: LayoutDashboard, permission: "appointments.read" },
-  { group: "Clinic", key: "appointments", name: "Appointments", icon: CalendarDays, permission: "appointments.read" },
-  { group: "Clinic", key: "schedules", name: "Schedules", icon: Clock3, permission: "appointments.read" },
-  { group: "Clinic", key: "patients", name: "Patients", icon: Users, permission: "patients.read" },
-  { group: "Care", key: "consultations", name: "Consultations", icon: Stethoscope, permission: "encounters.read" },
-  { group: "Care", key: "teleconsultations", name: "Teleconsultations", icon: Video, permission: "teleconsult.read" },
-  { group: "Messages", key: "whatsapp", name: "WhatsApp", icon: WhatsAppIcon, permission: "comms.read" },
-  { group: "Messages", key: "voice", name: "Voice", icon: Headphones, permission: "voice.read" },
-  { group: "Growth", key: "google_business", name: "Google Business", icon: GoogleIcon, permission: "growth.read" },
-  { group: "Growth", key: "growth_analytics", name: "Website analytics", icon: ChartNoAxesCombined, permission: "growth.read" },
+  {
+    group: "Clinic",
+    key: "overview",
+    name: "Overview",
+    icon: LayoutDashboard,
+    permission: "appointments.read",
+  },
+  {
+    group: "Clinic",
+    key: "appointments",
+    name: "Appointments",
+    icon: CalendarDays,
+    permission: "appointments.read",
+  },
+  {
+    group: "Clinic",
+    key: "schedules",
+    name: "Schedules",
+    icon: Clock3,
+    permission: "appointments.read",
+  },
+  {
+    group: "Clinic",
+    key: "patients",
+    name: "Patients",
+    icon: Users,
+    permission: "patients.read",
+  },
+  {
+    group: "Care",
+    key: "consultations",
+    name: "Consultations",
+    icon: Stethoscope,
+    permission: "encounters.read",
+  },
+  {
+    group: "Care",
+    key: "teleconsultations",
+    name: "Teleconsultations",
+    icon: Video,
+    permission: "teleconsult.read",
+  },
+  {
+    group: "Messages",
+    key: "whatsapp",
+    name: "WhatsApp",
+    icon: WhatsAppIcon,
+    permission: "comms.read",
+  },
+  {
+    group: "Messages",
+    key: "voice",
+    name: "Voice",
+    icon: Headphones,
+    permission: "voice.read",
+  },
+  {
+    group: "Growth",
+    key: "google_business",
+    name: "Google Business",
+    icon: GoogleIcon,
+    permission: "growth.read",
+  },
+  {
+    group: "Growth",
+    key: "growth_analytics",
+    name: "Website analytics",
+    icon: ChartNoAxesCombined,
+    permission: "growth.read",
+  },
   // Reception checks membership at the desk, so anyone who sees appointments sees loyalty.
-  { group: "Growth", key: "loyalty", name: "Loyalty programs", icon: Ticket, permission: "appointments.read" },
-  { group: "Workspace", key: "catalogue", name: "Hospital catalogue", icon: Building2, permission: "catalog.read" },
-  { group: "Workspace", key: "doctors", name: "Doctors", icon: UserRound, permission: "catalog.read" },
+  {
+    group: "Growth",
+    key: "loyalty",
+    name: "Loyalty programs",
+    icon: Ticket,
+    permission: "appointments.read",
+  },
+  {
+    group: "Workspace",
+    key: "catalogue",
+    name: "Hospital catalogue",
+    icon: Building2,
+    permission: "catalog.read",
+  },
+  {
+    group: "Workspace",
+    key: "doctors",
+    name: "Doctors",
+    icon: UserRound,
+    permission: "catalog.read",
+  },
 ];
 const groups = ["Clinic", "Care", "Messages", "Growth"];
-function Brand() {
+function Brand({ tenantName }: { tenantName: string }) {
   return (
     <div className="flex items-center gap-3">
       <div className="brand-icon">
@@ -91,7 +183,10 @@ function Brand() {
       </div>
       <div>
         <div className="font-semibold tracking-tight text-[15px]">
-          Exora Health
+          {tenantName}
+        </div>
+        <div className="text-xs text-muted-foreground mt-0.5">
+          Powered by Exora Health
         </div>
       </div>
     </div>
@@ -109,6 +204,7 @@ export default function App() {
   );
 }
 function StaffApp() {
+  const [tenantName, setTenantName] = useState(fallbackTenantName);
   const [me, setMe] = useState<Me | null>(null),
     [facilities, setFacilities] = useState<Facility[]>([]),
     [facilityId, setFacilityId] = useState("");
@@ -132,7 +228,24 @@ function StaffApp() {
     phase: "restoring" | "accepting";
   } | null>(null);
   const [listedClinics, setListedClinics] = useState(0);
-  const [bootstrap, setBootstrap] = useState<{ state: string; canCreateClinic: boolean; organizationProvisioned: boolean } | null>(null);
+  const [bootstrap, setBootstrap] = useState<{
+    state: string;
+    canCreateClinic: boolean;
+    organizationProvisioned: boolean;
+  } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void fetchTenantName()
+      .then((name) => {
+        if (alive) setTenantName(name);
+      })
+      .catch(() => {
+        // Keep a neutral label if bootstrap is temporarily unavailable.
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
   function go(next: string, onNavigated?: () => void) {
     requestLeave(() => {
       const index = route.current.index + 1;
@@ -171,14 +284,33 @@ function StaffApp() {
       const identity = await request<Me>("/v1/me");
       if (identity.isSystemAccount)
         throw new Error("Integration accounts cannot use the staff workspace.");
-      const context = await request<{ facilities: Facility[]; bootstrap: { state: string; canCreateClinic: boolean; organizationProvisioned: boolean } }>("/v1/session-context");
+      const context = await request<{
+        facilities: Facility[];
+        bootstrap: {
+          state: string;
+          canCreateClinic: boolean;
+          organizationProvisioned: boolean;
+        };
+      }>("/v1/session-context");
       setBootstrap(context.bootstrap);
       const result = { items: context.facilities };
       const allowed = permittedFacilities(identity, result.items);
       setTenantOptions([]);
-      setListedClinics(context.bootstrap.state === "inaccessible_clinics" ? 1 : result.items.length);
+      setListedClinics(
+        context.bootstrap.state === "inaccessible_clinics"
+          ? 1
+          : result.items.length,
+      );
       setFacilities(allowed);
-      setFacilityId(allowed[0]?.facilityId ?? "");
+      setFacilityId(
+        allowed.find(
+          (f) =>
+            f.facilityId ===
+            new URLSearchParams(location.search).get("facility"),
+        )?.facilityId ??
+          allowed[0]?.facilityId ??
+          "",
+      );
       setMe(identity);
     } catch (e) {
       if (e instanceof HmsError && Array.isArray(e.details.tenants)) {
@@ -286,6 +418,20 @@ function StaffApp() {
           setError(e.message);
           setBusy(false);
         });
+    } else if (devAutoSignInSubject) {
+      setBusy(true);
+      void request<{ token: string }>("/dev/login", {
+        method: "POST",
+        body: { subject: devAutoSignInSubject },
+      })
+        .then((result) => {
+          if (alive) return accept(result.token);
+        })
+        .catch((e) => {
+          if (!alive) return;
+          setError(e instanceof Error ? e.message : "Sign-in failed.");
+          setBusy(false);
+        });
     }
     return () => {
       alive = false;
@@ -299,7 +445,7 @@ function StaffApp() {
       <TooltipProvider>
         <div className="login-layout">
           <aside className="login-story">
-            <Brand />
+            <Brand tenantName={tenantName} />
             <div>
               <Badge
                 variant="secondary"
@@ -318,7 +464,7 @@ function StaffApp() {
                 One workspace for your clinic.
               </p>
             </div>
-            <p className="text-sm opacity-70">Exora Health · Staff workspace</p>
+            <p className="text-sm opacity-70">{tenantName} · Staff workspace</p>
           </aside>
           <main className="login-panel">
             <div className="login-form space-y-6">
@@ -403,7 +549,7 @@ function StaffApp() {
   if (!facility)
     return (
       <div className="p-8 space-y-4">
-        <Brand />
+        <Brand tenantName={tenantName} />
         <h1 className="text-xl font-semibold">
           {listedClinics
             ? "You don’t have clinic access yet"
@@ -446,16 +592,16 @@ function StaffApp() {
       items: visible
         .filter((item) => item.group === group)
         .map((item) => ({
-          id: item.key === "appointments" ? "appointment-group" : item.key,
+          id: workspaceChildren(item.key) ? `${item.key}-group` : item.key,
           label: item.name,
           icon: item.icon,
-          ...(item.key === "appointments"
+          ...(workspaceChildren(item.key)
             ? {
-                children: [
-                  { id: "appointments", label: "All appointments" },
-                  { id: "waitlist", label: "Waitlist" },
-                  { id: "queue", label: "Queue" },
-                ],
+                children: workspaceChildren(item.key),
+                defaultOpen: workspaceChildren(item.key)!.some(
+                  (child) =>
+                    child.id === workspaceActiveRoute(page, location.search),
+                ),
               }
             : {}),
         })),
@@ -463,85 +609,157 @@ function StaffApp() {
     .filter((section) => section.items.length > 0);
   return (
     <TooltipProvider>
-     <WorkspaceContext.Provider value={{ me, facility, practitioners: [], go }}>
-     <AlertsProvider key={`${me.tenantId}:${me.staffId}:${facilityId}`}>
-      <ArcSidebarLayout
-        togglePlacement="sidebar"
-        key={`${me.tenantId}:${me.staffId}`}
-        sections={sidebarSections}
-        footer={[
-          { id: "alerts", label: "My alerts", icon: Bell },
-          { id: "settings", label: "Workspace settings", icon: Settings2 },
-          ...(auditor
-            ? [{ id: "activity", label: "Activity", icon: ScrollText }]
-            : []),
-          { id: "signout", label: "Sign out", icon: LogOut },
-        ]}
-        active={page === "operations" ? "activity" : page}
-        brand={{
-          name: "Exora Health",
-          detail: facility.name,
-          icon: <HeartPulse />,
-        }}
-        person={{
-          name: me.displayName,
-          role:
-            me.staffType === "admin"
-              ? can(me, "tenant.manage")
-                ? "Clinic administrator"
-                : "Clinic staff"
-              : me.staffType.replaceAll("_", " "),
-        }}
-        onNavigate={(target, accepted) => {
-          if (target === "signout")
-            requestLeave(() => {
-              accepted();
-              signout();
-            });
-          else go(target, accepted);
-        }}
-        renderHeader={(toggle) => (
-          <header className="workspace-header">
-            {toggle && <div className="workspace-sidebar-toggle">{toggle}</div>}
-            <div className="workspace-search">
-              <WorkspaceCommands
-                key={`${me.staffId}:${facilityId}`}
-                items={[
-                  ...visible.map((item) => ({ id: item.key, label: item.name, group: item.group, icon: <item.icon className="size-4" /> })),
-                  { id: "alerts", label: "My alerts", group: "Workspace", icon: <Bell className="size-4" /> },
-                  { id: "settings", label: "Workspace settings", group: "Workspace", icon: <Settings2 className="size-4" /> },
-                  ...(auditor ? [{ id: "activity", label: "Staff activity", group: "Workspace", icon: <ScrollText className="size-4" /> }] : []),
-                  ...(can(me, "appointments.read", facilityId) ? [
-                    { id: "waitlist", label: "Waitlist", group: "Clinic" },
-                    { id: "queue", label: "Queue", group: "Clinic" },
-                  ] : []),
-                  ...(can(me, "appointments.book", facilityId) ? [{ id: "appointments?book=1", label: "Book appointment", group: "Actions", icon: <CalendarDays className="size-4" /> }] : []),
-                ]}
-                onNavigate={go}
-              />
-            </div>
-            <AlertsBell />
-          </header>
-        )}
+      <WorkspaceContext.Provider
+        value={{ me, facility, practitioners: [], go }}
       >
-        <Directory
-          key={`${me.tenantId}:${facilityId}:${navVersion}`}
-          me={me}
-          facility={facility}
-          page={page}
-          allowed={allowed}
-          go={go}
-          clinicPicker={<ClinicPicker key={facilityId} value={facilityId}
-            options={facilities.map((f) => ({ value: f.facilityId, label: f.name }))}
-            onChange={(id) => requestLeave(() => { setTenant(me.tenantId); setFacilityId(id); })} />}
-        />
-        <footer className="workspace-footer">
-          <span>Exora Health · {facility.name}</span>
-          <span>{facility.timezone}</span>
-        </footer>
-      </ArcSidebarLayout>
-     </AlertsProvider>
-     </WorkspaceContext.Provider>
+        <AlertsProvider key={`${me.tenantId}:${me.staffId}:${facilityId}`}>
+          <ArcSidebarLayout
+            togglePlacement="sidebar"
+            key={`${me.tenantId}:${me.staffId}`}
+            sections={sidebarSections}
+            footer={[
+              { id: "alerts", label: "My alerts", icon: Bell },
+              { id: "settings", label: "Workspace settings", icon: Settings2 },
+              ...(auditor
+                ? [{ id: "activity", label: "Activity", icon: ScrollText }]
+                : []),
+              { id: "signout", label: "Sign out", icon: LogOut },
+            ]}
+            active={workspaceActiveRoute(page, location.search)}
+            revealActiveGroup
+            brand={{
+              name: tenantName,
+              detail: facility.name,
+              icon: <HeartPulse />,
+            }}
+            person={{
+              name: me.displayName,
+              role:
+                me.staffType === "admin"
+                  ? can(me, "tenant.manage")
+                    ? "Clinic administrator"
+                    : "Clinic staff"
+                  : me.staffType.replaceAll("_", " "),
+            }}
+            onNavigate={(target, accepted) => {
+              if (target === "signout")
+                requestLeave(() => {
+                  accepted();
+                  signout();
+                });
+              else go(target, accepted);
+            }}
+            renderHeader={(toggle) => (
+              <header className="workspace-header">
+                {toggle && (
+                  <div className="workspace-sidebar-toggle">{toggle}</div>
+                )}
+                <div className="workspace-search">
+                  <WorkspaceCommands
+                    key={`${me.staffId}:${facilityId}`}
+                    items={[
+                      ...visible.flatMap((item) => [
+                        {
+                          id: item.key,
+                          label: item.name,
+                          group: item.group,
+                          icon: <item.icon className="size-4" />,
+                        },
+                        ...(item.key === "appointments"
+                          ? []
+                          : (workspaceChildren(item.key) ?? []).map(
+                              (child) => ({
+                                id: child.id,
+                                label: `${item.name} · ${child.label}`,
+                                group: item.group,
+                                icon: <item.icon className="size-4" />,
+                              }),
+                            )),
+                      ]),
+                      {
+                        id: "alerts",
+                        label: "My alerts",
+                        group: "Workspace",
+                        icon: <Bell className="size-4" />,
+                      },
+                      {
+                        id: "settings",
+                        label: "Workspace settings",
+                        group: "Workspace",
+                        icon: <Settings2 className="size-4" />,
+                      },
+                      ...(auditor
+                        ? [
+                            {
+                              id: "activity",
+                              label: "Staff activity",
+                              group: "Workspace",
+                              icon: <ScrollText className="size-4" />,
+                            },
+                          ]
+                        : []),
+                      ...(can(me, "appointments.read", facilityId)
+                        ? [
+                            {
+                              id: "waitlist",
+                              label: "Waitlist",
+                              group: "Clinic",
+                            },
+                            { id: "queue", label: "Queue", group: "Clinic" },
+                          ]
+                        : []),
+                      ...(can(me, "appointments.book", facilityId)
+                        ? [
+                            {
+                              id: "appointments?book=1",
+                              label: "Book appointment",
+                              group: "Actions",
+                              icon: <CalendarDays className="size-4" />,
+                            },
+                          ]
+                        : []),
+                    ]}
+                    onNavigate={go}
+                  />
+                </div>
+                <AlertsBell />
+              </header>
+            )}
+          >
+            <Directory
+              key={`${me.tenantId}:${facilityId}:${navVersion}`}
+              me={me}
+              facility={facility}
+              page={page}
+              allowed={allowed}
+              go={go}
+              clinicPicker={
+                <ClinicPicker
+                  key={facilityId}
+                  value={facilityId}
+                  options={facilities.map((f) => ({
+                    value: f.facilityId,
+                    label: f.name,
+                  }))}
+                  onChange={(id) =>
+                    requestLeave(() => {
+                      setTenant(me.tenantId);
+                      setFacilityId(id);
+                    })
+                  }
+                />
+              }
+            />
+            <footer className="workspace-footer">
+              <span>
+                {tenantName} · {facility.name}
+              </span>
+              <span>{facility.timezone}</span>
+            </footer>
+          </ArcSidebarLayout>
+        </AlertsProvider>
+      </WorkspaceContext.Provider>
+
       <Toaster />
     </TooltipProvider>
   );
@@ -553,26 +771,59 @@ function DevSignIn({
   busy: boolean;
   onLogin: (subject: string, email?: string) => Promise<void>;
 }) {
-  const configuredSubject = import.meta.env.VITE_HMS_DEV_SUBJECT?.trim() || "";
+  const configuredSubject =
+    import.meta.env.VITE_HMS_DEV_SUBJECT?.trim() ||
+    import.meta.env.VITE_HMS_DEFAULT_SUBJECT?.trim() ||
+    "";
+  const devIdentities = [
+    ...(configuredSubject
+      ? [{ value: configuredSubject, label: "Workspace administrator" }]
+      : []),
+    { value: "ravi", label: "Ravi · Front desk" },
+    { value: "asha", label: "Dr Asha · Doctor" },
+    { value: "meena", label: "Meena · Nurse" },
+    { value: "priya", label: "Priya · Administrator" },
+  ].filter(
+    (identity, index, identities) =>
+      identities.findIndex(({ value }) => value === identity.value) === index,
+  );
   const [subject, setSubject] = useState(configuredSubject || "ravi"),
     [email, setEmail] = useState(""),
-    [customIdentity,setCustomIdentity]=useState(Boolean(configuredSubject));
+    [customIdentity, setCustomIdentity] = useState(false);
   return (
     <Card>
       <CardContent className="pt-5 space-y-4">
         <Badge variant="outline">Local development only</Badge>
-        {customIdentity ? <label htmlFor="dev-subject" className="block space-y-1.5 text-sm"><span className="font-medium">Registered staff identity</span><Input id="dev-subject" value={subject} onChange={e=>setSubject(e.target.value)} autoComplete="off" /></label> : <Choice
-          label="Staff identity"
-          value={subject}
-          onChange={setSubject}
-          options={[
-            { value: "ravi", label: "Ravi · Front desk" },
-            { value: "asha", label: "Dr Asha · Doctor" },
-            { value: "meena", label: "Meena · Nurse" },
-            { value: "priya", label: "Priya · Administrator" },
-          ]}
-        />}
-        {!configuredSubject && <Button variant="outline" size="sm" onClick={()=>{setCustomIdentity(!customIdentity);setSubject(customIdentity?'ravi':'');}}>{customIdentity?'Use the original development identities':'Use another registered identity'}</Button>}
+        {customIdentity ? (
+          <label htmlFor="dev-subject" className="block space-y-1.5 text-sm">
+            <span className="font-medium">Registered staff identity</span>
+            <Input
+              id="dev-subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              autoComplete="off"
+            />
+          </label>
+        ) : (
+          <Choice
+            label="Staff identity"
+            value={subject}
+            onChange={setSubject}
+            options={devIdentities}
+          />
+        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setCustomIdentity(!customIdentity);
+            setSubject(customIdentity ? configuredSubject || "ravi" : "");
+          }}
+        >
+          {customIdentity
+            ? "Use the development identities"
+            : "Use another registered identity"}
+        </Button>
         <Button
           className="w-full"
           disabled={busy || !subject.trim()}
@@ -623,7 +874,14 @@ function Directory(props: DirectoryProps) {
     </WorkspaceContext.Provider>
   );
 }
-function DirectoryContent({ me, facility, page, allowed, go, clinicPicker }: DirectoryProps) {
+function DirectoryContent({
+  me,
+  facility,
+  page,
+  allowed,
+  go,
+  clinicPicker,
+}: DirectoryProps) {
   const canReadDoctors = can(me, "catalog.read", facility.facilityId);
   const doctors = useQuery<{ items: Practitioner[] }>(
     canReadDoctors
@@ -709,21 +967,75 @@ function DirectoryContent({ me, facility, page, allowed, go, clinicPicker }: Dir
 }
 
 function FirstClinic({ onCreated }: { onCreated: () => Promise<void> }) {
-  const [name, setName] = useState(""), [code, setCode] = useState(""), [stateCode, setStateCode] = useState("29");
+  const [name, setName] = useState(""),
+    [code, setCode] = useState(""),
+    [stateCode, setStateCode] = useState("29");
   const command = useRecoverableCommand(request, "first-clinic");
   useUnsaved(!!name || !!code || command.busy || command.unknown);
   const create = async () => {
-    if (await command.run("/v1/facilities", { name: name.trim(), code: code.trim(), stateCode, facilityType: "clinic" }, true)) await onCreated();
+    if (
+      await command.run(
+        "/v1/facilities",
+        {
+          name: name.trim(),
+          code: code.trim(),
+          stateCode,
+          facilityType: "clinic",
+        },
+        true,
+      )
+    )
+      await onCreated();
   };
-  return <Card className="max-w-xl"><CardContent className="space-y-4 pt-6">
-    <h2 className="text-lg font-semibold">Create your first clinic</h2>
-    <fieldset disabled={command.busy || command.unknown} className="space-y-4">
-      <Field label="Clinic name" id="bootstrap-name"><Input id="bootstrap-name" value={name} onChange={e => setName(e.target.value)} maxLength={120} /></Field>
-      <Field label="Clinic code" id="bootstrap-code"><Input id="bootstrap-code" value={code} onChange={e => setCode(e.target.value)} maxLength={30} /></Field>
-      <Field label="State code" id="bootstrap-state"><Input id="bootstrap-state" value={stateCode} onChange={e => setStateCode(e.target.value)} maxLength={2} /></Field>
-      <Button disabled={name.trim().length < 2 || !/^[A-Za-z0-9_-]{1,30}$/.test(code.trim()) || !/^[0-9]{2}$/.test(stateCode)} onClick={() => void create()}>Create clinic</Button>
-    </fieldset>
-    <ErrorMessage text={command.error} />
-    <RecoveryNotice command={command} onRecovered={() => void onCreated()} />
-  </CardContent></Card>;
+  return (
+    <Card className="max-w-xl">
+      <CardContent className="space-y-4 pt-6">
+        <h2 className="text-lg font-semibold">Create your first clinic</h2>
+        <fieldset
+          disabled={command.busy || command.unknown}
+          className="space-y-4"
+        >
+          <Field label="Clinic name" id="bootstrap-name">
+            <Input
+              id="bootstrap-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={120}
+            />
+          </Field>
+          <Field label="Clinic code" id="bootstrap-code">
+            <Input
+              id="bootstrap-code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              maxLength={30}
+            />
+          </Field>
+          <Field label="State code" id="bootstrap-state">
+            <Input
+              id="bootstrap-state"
+              value={stateCode}
+              onChange={(e) => setStateCode(e.target.value)}
+              maxLength={2}
+            />
+          </Field>
+          <Button
+            disabled={
+              name.trim().length < 2 ||
+              !/^[A-Za-z0-9_-]{1,30}$/.test(code.trim()) ||
+              !/^[0-9]{2}$/.test(stateCode)
+            }
+            onClick={() => void create()}
+          >
+            Create clinic
+          </Button>
+        </fieldset>
+        <ErrorMessage text={command.error} />
+        <RecoveryNotice
+          command={command}
+          onRecovered={() => void onCreated()}
+        />
+      </CardContent>
+    </Card>
+  );
 }

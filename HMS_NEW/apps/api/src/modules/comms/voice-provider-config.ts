@@ -19,7 +19,9 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ACCOUNT = /^[A-Za-z0-9_.:-]{1,100}$/;
 const SECRET_ENV = /^HMS_VOICE_SECRET_[A-Z0-9_]{1,80}$/;
 const KEYS = ['tenantId', 'facilityId', 'accountId', 'agentVersion', 'secretEnv'];
-const LEGACY_FIELDS = ['VOICE_CALLBACK_TENANT_ID', 'VOICE_CALLBACK_FACILITY_ID', 'VOICE_CALLBACK_ACCOUNT_ID', 'VOICE_CALLBACK_SECRET', 'SARVAM_APP_VERSION'];
+// SARVAM_APP_VERSION is shared by the current web-agent integration and the
+// legacy callback binding. It must not enable legacy mode by itself.
+const LEGACY_FIELDS = ['VOICE_CALLBACK_TENANT_ID', 'VOICE_CALLBACK_FACILITY_ID', 'VOICE_CALLBACK_ACCOUNT_ID', 'VOICE_CALLBACK_SECRET'];
 export class VoiceProviderConfigError extends Error {
   readonly code = 'invalid_voice_provider_config';
   constructor() {

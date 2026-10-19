@@ -1,2 +1,0 @@
-"""Avocado Health Core Backend."""
-

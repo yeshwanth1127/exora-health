@@ -645,5 +645,13 @@
     "integratedSha256": "ce43ed5ab60ccf30223afd2889dee8ecfd782ef4b103a53d5c1619d236567195",
     "bindingAdaptation": "Captured local JSX port to ESM with typed supplied-count contract and scoped CSS. Exact totals/rows, null-history gaps and zero/missing comparisons. Subsequent user-requested rendered fit review adds opt-in full-width compact embedded placement/caption (standalone geometry unchanged), clear unavailable text/neutral delta, raw daily detail vertices with exact keyboard day steps and count-axis formatting; only prior animation geometry is resampled. Reference expansion, close/focus, indicator and motion engine retained. See kpi-browser-fit-review.md for actual browser checks and limits.",
     "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/sidebar/sidebar.tsx",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/sidebar/src/Component.cjs",
+    "sha256": "a40ecd681d0797e5a4512a4174e619a08c44666918b6bb7240236581b7e86dc8",
+    "integratedSha256": "478a19240983225f2b964610cdabe31e884fec394441351fb29934fc4a6622c3",
+    "kind": "pro-port",
+    "bindingAdaptation": "Existing sidebar port; application group data, guarded navigation and optional defaultOpen/revealActiveGroup bindings for user-requested workspace subpages. Defaults preserve prior open behavior. Reference appearance, collapse controls and motion retained. See workspace-subpages-and-main-merge.md for bounded browser evidence."
   }
 ]

@@ -1,21 +1,21 @@
 import { GrowthMetric } from "./GrowthMetric";
 import { useState } from "react";
-import { ArrowDownLeft, ArrowUpRight, RotateCw } from "lucide-react";
-import { toast } from "@/components/toast-events";
+import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { GrowthBadge as Badge } from "./GrowthBadge";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SearchField } from "@/components/arc/search-field/search-field";
 import { SharedField } from "@/components/shared-field";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { queue, type Category, type LogEntry, type Status, type WaData } from "./whatsapp-data";
+import { type Category, type Status, type WaData } from "./whatsapp-data";
 import { clock, maskPhone, Pick, startOfToday, statusLabels, Ticks, useNow, type Change } from "./whatsapp-ui";
 
 const categoryText: Record<Category, string> = { service: "Service", utility: "Utility", marketing: "Marketing" };
 const PAGE = 50;
 
-export function Activity({ data, change }: { data: WaData; change: Change }) {
+export function Activity({ data }: { data: WaData; change: Change }) {
   const now = useNow(60_000);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<Status | "all">(() => {
@@ -34,11 +34,6 @@ export function Activity({ data, change }: { data: WaData; change: Change }) {
   const todayOut = data.log.filter((e) => e.direction === "out" && e.at >= startOfToday(now));
   const count = (s: Status[]) => todayOut.filter((e) => s.includes(e.status)).length;
   const open = data.log.find((e) => e.id === openId) ?? null;
-  const retry = (e: LogEntry) => {
-    change((d) => queue(d, { patient: e.patient, phone: e.phone, kind: `${e.kind} · retry`, template: e.template, category: e.category, body: e.body }, Date.now())[0]);
-    setOpenId(null);
-    toast.success("Sending again");
-  };
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
@@ -143,11 +138,8 @@ export function Activity({ data, change }: { data: WaData; change: Change }) {
                   <div className="space-y-2 rounded-md border border-destructive/30 bg-destructive/5 p-3">
                     <p className="font-medium text-destructive">Failed · Meta error {open.error.code}</p>
                     <p>{open.error.text}</p>
-                    {open.error.retry && (
-                      <Button size="sm" variant="outline" onClick={() => retry(open)}>
-                        <RotateCw /> Try again
-                      </Button>
-                    )}
+                    <p className="text-xs">Review the conversation before requesting another message.</p>
+
                   </div>
                 )}
                 <dl className="grid grid-cols-2 gap-3">

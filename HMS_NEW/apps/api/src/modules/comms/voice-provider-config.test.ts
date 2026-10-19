@@ -67,4 +67,7 @@ describe('server-only voice clinic callback bindings', () => {
     for (const extra of [{ VOICE_CALLBACK_SECRET: undefined }, { VOICE_CALLBACK_SECRET: 'weak' }, { VOICE_CALLBACK_TENANT_ID: undefined }, { VOICE_CALLBACK_FACILITY_ID: 'bad' }, { VOICE_CALLBACK_ACCOUNT_ID: undefined }, { SARVAM_APP_VERSION: undefined }, { SARVAM_APP_VERSION: '0' }, { SARVAM_APP_VERSION: '1.5' }, { SARVAM_APP_VERSION: '1e2' }]) expect(() => parseVoiceProviderConfig({ ...legacy, ...extra })).toThrow(VoiceProviderConfigError);
     expect(() => parseVoiceProviderConfig({ VOICE_CALLBACK_ACCOUNT_ID: 'partial' })).toThrow(VoiceProviderConfigError);
   });
+  it('does not enable legacy callbacks for a web-agent version alone', () => {
+    expect(parseVoiceProviderConfig({ SARVAM_APP_VERSION: '1' })).toEqual({ mode: 'legacy', bindings: [] });
+  });
 });

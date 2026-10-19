@@ -3,10 +3,14 @@ import {
   UserManager,
   WebStorageStateStore,
 } from "oidc-client-ts";
+import { isDevelopmentLoginConfigured } from "@/hms/runtime-flags";
 const authority = import.meta.env.VITE_OIDC_AUTHORITY,
   clientId = import.meta.env.VITE_OIDC_CLIENT_ID;
 export const devLoginEnabled =
-  import.meta.env.DEV && import.meta.env.VITE_HMS_DEV_LOGIN === "true";
+  isDevelopmentLoginConfigured(import.meta.env.VITE_HMS_DEV_LOGIN);
+export const devAutoSignInSubject = devLoginEnabled
+  ? (import.meta.env.VITE_HMS_DEFAULT_SUBJECT?.trim() ?? "")
+  : "";
 export const oidc =
   authority && clientId
     ? new UserManager({
@@ -14,7 +18,7 @@ export const oidc =
         client_id: clientId,
         redirect_uri: `${location.origin}/staff/callback`,
         response_type: "code",
-        scope: import.meta.env.VITE_OIDC_SCOPE || "openid profile",
+        scope: import.meta.env.VITE_OIDC_SCOPE || "openid profile email",
         userStore: new WebStorageStateStore({
           store: new InMemoryWebStorage(),
         }),

@@ -1,3 +1,5 @@
+import { useWorkspaceTab } from "./use-workspace-tab";
+import { workspaceTabs } from "./workspace-navigation";
 import { GrowthMetric } from "./GrowthMetric";
 import { useEffect, useState } from "react";
 import {
@@ -34,7 +36,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/arc/tabs/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/arc/tabs/tabs";
 import { useWorkspace } from "./hooks";
 import { Pick } from "./whatsapp-ui";
 import { preview } from "./WebsiteAnalyticsSetup";
@@ -94,11 +101,7 @@ function useLoyalty(key: string) {
   return [data, set] as const;
 }
 
-const tabs = [
-  ["programs", "Programs"],
-  ["members", "Members"],
-  ["patient", "Patient view"],
-] as const;
+const tabs = workspaceTabs.loyalty;
 type LTab = (typeof tabs)[number][0];
 const rewarded: Entry["type"][] = [
   "redeem",
@@ -114,10 +117,7 @@ function LoyaltyPage() {
   const canEdit = preview && can("growth.manage");
   const canDesk = preview && can("appointments.check_in");
   const [data, change] = useLoyalty(`exora:loyalty:${facility.facilityId}`);
-  const [tab, setTab] = useState<LTab>(() => {
-    const t = new URLSearchParams(location.search).get("tab");
-    return tabs.some(([k]) => k === t) ? (t as LTab) : "programs";
-  });
+  const [tab, open] = useWorkspaceTab("loyalty");
   const [editing, setEditing] = useState<{
     program: Program;
     saved: boolean;
@@ -128,10 +128,6 @@ function LoyaltyPage() {
   const fromDialog = (id: string) => {
     setEnrolling(false);
     setTimeout(() => setMemberId(id));
-  };
-  const open = (t: LTab) => {
-    setTab(t);
-    history.replaceState(history.state, "", `?tab=${t}`);
   };
   const now = Date.now();
   const due = data.enrollments.filter(
@@ -153,61 +149,69 @@ function LoyaltyPage() {
         action={badge}
       />
       <div className="space-y-6">
-        <Tabs value={tab} onValueChange={(v) => open(v as LTab)} className="arc-workflow-root">
+        <Tabs
+          value={tab}
+          onValueChange={(v) => open(v as LTab)}
+          className="arc-workflow-root"
+        >
           <div className="arc-demo-scope">
-          <TabsList aria-label="Loyalty workspace">
-            {tabs.map(([k, label]) => (
-              <TabsTrigger key={k} value={k}>
-                <span className="inline-flex items-center gap-2">{label}
-                {k === "members" && due > 0 && (
-                  <span className="grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold text-white">
-                    {due}
+            <TabsList aria-label="Loyalty workspace">
+              {tabs.map(([k, label]) => (
+                <TabsTrigger key={k} value={k}>
+                  <span className="inline-flex items-center gap-2">
+                    {label}
+                    {k === "members" && due > 0 && (
+                      <span className="grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold text-white">
+                        {due}
+                      </span>
+                    )}
                   </span>
-                )}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+                </TabsTrigger>
+              ))}
+            </TabsList>
           </div>
-        {!preview && (
-          <p className="rounded-md border bg-muted/40 p-3 text-sm">
-            Loyalty programs open with the next update. You can look around;
-            nothing can be set up yet.
-          </p>
-        )}
-        <TabsContent value="programs" className="arc-workflow-panel">
-          <Programs
-            data={data}
-            canEdit={canEdit}
-            enrolledIn={enrolledIn}
-            onEdit={(p) => setEditing({ program: p, saved: true })}
-            onStart={(k) =>
-              setEditing({ program: newProgram(k), saved: false })
-            }
-            onStatus={(id, s) => {
-              change((d) => ({
-                ...d,
-                programs: d.programs.map((p) =>
-                  p.id === id ? { ...p, status: s } : p,
-                ),
-              }));
-              toast.success(
-                s === "paused"
-                  ? "Paused. Members keep what they've earned."
-                  : "Program is live",
-              );
-            }}
-            onSample={() => change(() => seed(clinic, Date.now()))}
-          />
-        </TabsContent>
-        <TabsContent value="members" className="arc-workflow-panel">
-          <Members
-            data={data}
-            canDesk={canDesk}
-            onOpen={setMemberId}
-            onEnrol={() => setEnrolling(true)}
-          />
-        </TabsContent>
-        <TabsContent value="patient" className="arc-workflow-panel"><PatientView data={data} clinic={clinic} /></TabsContent>
+          {!preview && (
+            <p className="rounded-md border bg-muted/40 p-3 text-sm">
+              Loyalty programs open with the next update. You can look around;
+              nothing can be set up yet.
+            </p>
+          )}
+          <TabsContent value="programs" className="arc-workflow-panel">
+            <Programs
+              data={data}
+              canEdit={canEdit}
+              enrolledIn={enrolledIn}
+              onEdit={(p) => setEditing({ program: p, saved: true })}
+              onStart={(k) =>
+                setEditing({ program: newProgram(k), saved: false })
+              }
+              onStatus={(id, s) => {
+                change((d) => ({
+                  ...d,
+                  programs: d.programs.map((p) =>
+                    p.id === id ? { ...p, status: s } : p,
+                  ),
+                }));
+                toast.success(
+                  s === "paused"
+                    ? "Paused. Members keep what they've earned."
+                    : "Program is live",
+                );
+              }}
+              onSample={() => change(() => seed(clinic, Date.now()))}
+            />
+          </TabsContent>
+          <TabsContent value="members" className="arc-workflow-panel">
+            <Members
+              data={data}
+              canDesk={canDesk}
+              onOpen={setMemberId}
+              onEnrol={() => setEnrolling(true)}
+            />
+          </TabsContent>
+          <TabsContent value="patient" className="arc-workflow-panel">
+            <PatientView data={data} clinic={clinic} />
+          </TabsContent>
         </Tabs>
       </div>
       <Editor
@@ -342,7 +346,12 @@ function Programs({
         <>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
             {stats.map(([label, value, hint]) => (
-              <GrowthMetric key={label} label={label} value={value} context={hint} />
+              <GrowthMetric
+                key={label}
+                label={label}
+                value={value}
+                context={hint}
+              />
             ))}
           </div>
           <section className="space-y-3">
@@ -922,8 +931,7 @@ function MemberBody({
                       </div>
                       {s.ready && (
                         <p className="text-amber-700 dark:text-amber-300">
-                          The card is full: {lower(p.config.reward)} is
-                          ready.
+                          The card is full: {lower(p.config.reward)} is ready.
                         </p>
                       )}
                     </>
@@ -1392,9 +1400,20 @@ function Enrol({
           <div className="space-y-2">
             <Label>Programs</Label>
             {live.map((p) => (
-              <div key={p.id} className="flex items-center gap-3 rounded-md border p-2.5 text-sm">
-                <Checkbox label={p.name} description={summary(p.config)} checked={picked.includes(p.id)}
-                  onCheckedChange={on => setPicked(on ? [...picked, p.id] : picked.filter(x => x !== p.id))} />
+              <div
+                key={p.id}
+                className="flex items-center gap-3 rounded-md border p-2.5 text-sm"
+              >
+                <Checkbox
+                  label={p.name}
+                  description={summary(p.config)}
+                  checked={picked.includes(p.id)}
+                  onCheckedChange={(on) =>
+                    setPicked(
+                      on ? [...picked, p.id] : picked.filter((x) => x !== p.id),
+                    )
+                  }
+                />
                 <KindIcon program={p} size="size-6" />
               </div>
             ))}

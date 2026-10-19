@@ -15,6 +15,36 @@ export interface ApiConfig {
   /** Browser origins allowed by CORS (CORS_ORIGINS, comma-separated). */
   corsOrigins: string[];
   telehealth: TelehealthSettings;
+  /** Tenant exposed by this single-tenant runtime's public booking surface. */
+  publicTenantId?: string;
+  /** Optional tenant-bound Sarvam booking integration and public web-call runtime. */
+  voice: VoiceRuntimeSettings;
+}
+
+export interface VoiceAgentBinding {
+  orgId: string;
+  workspaceId: string;
+  appId: string;
+  appVersion: number;
+  agentName: string;
+  runtimeBaseUrl: string;
+}
+
+export interface VoiceRuntimeSettings {
+  /** Enables Sarvam's server-to-server tools. Omitted until a tenant requests Voice. */
+  integration?: {
+    serviceKey: string;
+    signingSecret: string;
+    serviceAccountId: string;
+  };
+  /** Enables the public website's browser voice call. Omitted until an agent is committed. */
+  agent?: VoiceAgentBinding;
+  /** Public inbound number assigned exclusively to this tenant's agent. */
+  assignedPhoneNumber?: string;
+  sarvamApiKey?: string;
+  recordingNotice: string;
+  noticeVersion: string;
+  sessionSeconds: number;
 }
 
 /** Virtual OPD: Jitsi token signing and join rules. */
@@ -34,6 +64,56 @@ export interface TelehealthSettings {
 }
 
 export const DEV_JITSI_SECRET = 'local-dev-jitsi-secret-change-me-0123456789';
+
+export function loadVoiceRuntimeSettings(env: NodeJS.ProcessEnv = process.env): VoiceRuntimeSettings {
+  const serviceKey = env.VOICE_SERVICE_KEY?.trim();
+  const serviceAccountId = env.VOICE_SERVICE_ACCOUNT_ID?.trim();
+  const signingSecret = env.VOICE_SIGNING_SECRET?.trim() || serviceKey;
+  const integration = serviceKey && serviceAccountId && signingSecret
+    ? { serviceKey, serviceAccountId, signingSecret }
+    : undefined;
+  if ((serviceKey || serviceAccountId || env.VOICE_SIGNING_SECRET) && !integration) {
+    throw new Error('VOICE_SERVICE_KEY and VOICE_SERVICE_ACCOUNT_ID must be set together');
+  }
+
+  const orgId = env.SARVAM_ORG_ID?.trim();
+  const workspaceId = env.SARVAM_WORKSPACE_ID?.trim();
+  const appId = env.SARVAM_APP_ID?.trim();
+  const appVersion = env.SARVAM_APP_VERSION ? Number(env.SARVAM_APP_VERSION) : undefined;
+  const agentFields = [orgId, workspaceId, appId, appVersion, env.SARVAM_AGENT_NAME, env.SARVAM_API_KEY];
+  const hasAgentField = agentFields.some(Boolean);
+  const completeAgent = !!orgId && !!workspaceId && !!appId && Number.isInteger(appVersion) && Number(appVersion) > 0 && !!env.SARVAM_API_KEY;
+  if (hasAgentField && !completeAgent) {
+    throw new Error('Sarvam web voice needs SARVAM_ORG_ID, SARVAM_WORKSPACE_ID, SARVAM_APP_ID, SARVAM_APP_VERSION and SARVAM_API_KEY');
+  }
+  const agent = completeAgent
+    ? {
+        orgId: orgId!,
+        workspaceId: workspaceId!,
+        appId: appId!,
+        appVersion: Number(appVersion),
+        agentName: env.SARVAM_AGENT_NAME?.trim() || 'booking assistant',
+        runtimeBaseUrl: '/sarvam-runtime/',
+      }
+    : undefined;
+  const assignedPhoneNumber = env.SARVAM_PHONE_NUMBER?.trim();
+  if (assignedPhoneNumber && !/^\+[1-9]\d{7,14}$/.test(assignedPhoneNumber)) {
+    throw new Error('SARVAM_PHONE_NUMBER must be an E.164 phone number');
+  }
+  const sessionSeconds = Number(env.VOICE_SESSION_SECONDS ?? 900);
+  if (!Number.isInteger(sessionSeconds) || sessionSeconds < 60 || sessionSeconds > 3600) {
+    throw new Error('VOICE_SESSION_SECONDS must be an integer from 60 to 3600');
+  }
+  return {
+    integration,
+    agent,
+    assignedPhoneNumber: assignedPhoneNumber || undefined,
+    sarvamApiKey: completeAgent ? env.SARVAM_API_KEY!.trim() : undefined,
+    recordingNotice: env.VOICE_RECORDING_NOTICE?.trim() || 'This call may be processed and recorded to help the clinic manage your appointment.',
+    noticeVersion: env.VOICE_NOTICE_VERSION?.trim() || '2026-10-14',
+    sessionSeconds,
+  };
+}
 
 export function loadTelehealthSettings(env: NodeJS.ProcessEnv = process.env): TelehealthSettings {
   const secret = env.JITSI_SECRET ?? DEV_JITSI_SECRET;
@@ -81,6 +161,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     allowClockOverride: env.ALLOW_CLOCK_OVERRIDE === '1' && env.NODE_ENV !== 'production',
     // Default: the Vite dev server used by hospital-webpage.
     telehealth: loadTelehealthSettings(env),
+    publicTenantId: env.PUBLIC_TENANT_ID,
+    voice: loadVoiceRuntimeSettings(env),
     corsOrigins: (env.CORS_ORIGINS ?? 'http://localhost:5173,http://127.0.0.1:5173').split(',').map((o) => o.trim()).filter(Boolean),
   };
 }

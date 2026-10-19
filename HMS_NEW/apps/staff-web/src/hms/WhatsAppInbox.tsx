@@ -2,8 +2,9 @@ import {
   SupportConversation,
   ConversationComposer,
 } from "@/components/arc/support-conversation/support-conversation";
+import { SearchField } from "@/components/arc/search-field/search-field";
 import { requestLeave, useUnsaved } from "./leave";
-import { useCallback, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Bot,
   CalendarPlus,
@@ -12,12 +13,11 @@ import {
   Send,
   UserCheck,
 } from "lucide-react";
-import { toast } from "@/components/toast-events";
 import { GrowthBadge as Badge } from "./GrowthBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { SearchField } from "@/components/arc/search-field/search-field";
-import { useWorkspace } from "./hooks";
+import { WhatsAppConsent } from "./WhatsAppConsent";
+import { useQuery, useWorkspace } from "./hooks";
 import {
   automationInfo,
   lastInbound,
@@ -29,7 +29,7 @@ import {
   type Conversation,
   type WaData,
 } from "./whatsapp-data";
-import { ago, duration, Ticks, useNow, type Change } from "./whatsapp-ui";
+import { ago, duration, useNow, type Change } from "./whatsapp-ui";
 
 const filters = [
   ["waiting", "Needs reply"],
@@ -51,7 +51,8 @@ export function Inbox({
   openAutomations: () => void;
 }) {
   const { me, can, go, facility } = useWorkspace();
-  const canReply = can("comms.reply");
+  const canReply =
+    can("comms.reply") && !!data.capabilities?.sending && !data.busy;
   const now = useNow();
   const [filter, setFilter] = useState<Filter>("waiting");
   const [q, setQ] = useState("");
@@ -70,20 +71,65 @@ export function Inbox({
         `${c.patient} ${c.phone}`.toLowerCase().includes(q.toLowerCase()),
     )
     .sort(
-      (a, b) => (b.messages.at(-1)?.at ?? 0) - (a.messages.at(-1)?.at ?? 0),
+      (a, b) =>
+        (b.messages.at(-1)?.at ?? b.updatedAt ?? 0) -
+        (a.messages.at(-1)?.at ?? a.updatedAt ?? 0),
     );
   const [picked, setPicked] = useState<string | null>(() =>
     new URLSearchParams(location.search).get("conversation"),
   );
-  const c =
+  const selected =
     data.conversations.find((x) => x.id === (picked ?? list[0]?.id)) ?? null;
+  const remote = useQuery<{
+    conversation: {
+      version: number;
+      canReply: boolean;
+      contactPointId?: string;
+    };
+    messages: {
+      id: string;
+      direction: string;
+      text: string;
+      createdAt: string;
+      actorStaffId: string | null;
+      status: string | null;
+    }[];
+  }>(
+    selected ? `/v1/whatsapp-workspace/conversations/${selected.id}` : null,
+    15000,
+  );
+  useEffect(() => {
+    const refresh = () => void remote.refresh();
+    window.addEventListener("hms-whatsapp-updated", refresh);
+    return () => window.removeEventListener("hms-whatsapp-updated", refresh);
+  }, [remote.refresh]);
+  const c = selected
+    ? {
+        ...selected,
+        version: remote.data?.conversation.version ?? selected.version,
+        canReply: remote.data?.conversation.canReply ?? false,
+        messages:
+          remote.data?.messages.map((m) => ({
+            id: m.id,
+            at: Date.parse(m.createdAt),
+            from:
+              m.direction === "inbound"
+                ? ("patient" as const)
+                : ("staff" as const),
+            text: m.text,
+            by: m.actorStaffId ?? undefined,
+            status: m.status ?? undefined,
+            logId: m.direction === "outbound" ? m.id : undefined,
+          })) ?? [],
+      }
+    : null;
   // Acting on a chat pins it, so it stays open after it leaves the current filter.
   const edit = (patch: Partial<Conversation>) => {
     setPicked(c?.id ?? null);
     change((d) => ({
       ...d,
       conversations: d.conversations.map((x) =>
-        x.id === c?.id ? { ...x, ...patch } : x,
+        x.id === c?.id ? { ...x, version: c?.version, ...patch } : x,
       ),
     }));
   };
@@ -98,62 +144,48 @@ export function Inbox({
             : x.status === "resolved",
     ).length;
 
-  const send = useCallback(
-    (text: string, template: string | null) => {
-      if (
-        !c ||
-        !canReply ||
-        c.status !== "open" ||
-        !text.trim() ||
-        text.length > 4096
-      )
-        return false;
-      const at = Date.now();
-      if (!template && !windowLeft(lastInbound(c), at)) {
-        toast.error("The reply window has closed. Use an approved template.");
-        return false;
-      }
-      setPicked(c.id);
-      change((d) => {
-        const [next, logId] = queue(
-          d,
-          {
-            patient: c.patient,
-            phone: c.phone,
-            kind: template ? "Reception follow-up" : "Staff reply",
-            template,
-            category: template ? "utility" : "service",
-            body: text,
-          },
-          at,
-        );
-        return {
-          ...next,
-          conversations: next.conversations.map((x) =>
-            x.id === c.id
-              ? {
-                  ...x,
-                  assignee: x.assignee ?? me.displayName,
-                  messages: [
-                    ...x.messages,
-                    {
-                      id: uid(),
-                      at,
-                      from: "staff" as const,
-                      text,
-                      by: me.displayName,
-                      logId,
-                    },
-                  ],
-                }
-              : x,
-          ),
-        };
-      });
-      return true;
-    },
-    [c, canReply, change, me.displayName],
-  );
+  const send = (text: string, template: string | null) => {
+    if (!c || !text.trim() || !c.canReply || data.busy) return;
+    setPicked(c.id);
+    const at = Date.now();
+    change((d) => {
+      const [next, logId] = queue(
+        d,
+        {
+          patient: c.patient,
+          phone: c.phone,
+          kind: template ? "Reception follow-up" : "Staff reply",
+          template,
+          category: template ? "utility" : "service",
+          body: text,
+        },
+        at,
+      );
+      return {
+        ...next,
+        conversations: next.conversations.map((x) =>
+          x.id === c.id
+            ? {
+                ...x,
+                version: c.version,
+                assignee: x.assignee ?? me.displayName,
+                messages: [
+                  ...x.messages,
+                  {
+                    id: uid(),
+                    at,
+                    from: "staff" as const,
+                    text,
+                    by: me.displayName,
+                    logId,
+                  },
+                ],
+              }
+            : x,
+        ),
+      };
+    });
+  };
 
   return (
     <Card className="grid h-[calc(100dvh-230px)] min-h-[560px] gap-0 overflow-hidden p-0 shadow-none lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)_260px]">
@@ -162,7 +194,12 @@ export function Inbox({
       >
         <div className="space-y-3 border-b p-3">
           <div className="arc-demo-scope">
-            <SearchField label="Search chats" placeholder="Name or number" value={q} onValueChange={setQ} />
+            <SearchField
+              value={q}
+              onValueChange={setQ}
+              label="Search chats"
+              placeholder="Search name or number"
+            />
           </div>
           <div className="flex flex-wrap gap-1">
             {filters.map(([k, label]) => (
@@ -170,12 +207,10 @@ export function Inbox({
                 key={k}
                 size="xs"
                 variant={filter === k ? "secondary" : "ghost"}
-                onClick={() =>
-                  requestLeave(() => {
-                    setFilter(k);
-                    setPicked(null);
-                  })
-                }
+                onClick={() => {
+                  setFilter(k);
+                  setPicked(null);
+                }}
               >
                 {label}
                 {k !== "resolved" && (
@@ -189,7 +224,11 @@ export function Inbox({
         </div>
         <ul className="min-h-0 flex-1 overflow-y-auto">
           {list.map((x) => {
-            const last = x.messages.at(-1);
+            const last = x.messages.at(-1) ?? {
+              at: x.updatedAt ?? 0,
+              from: "patient",
+              text: "Open conversation",
+            };
             const active = x.id === c?.id;
             return (
               <li key={x.id}>
@@ -209,16 +248,16 @@ export function Inbox({
                         {x.patient}
                       </span>
                       <span className="shrink-0 text-[11px] text-muted-foreground">
-                        {last ? ago(last.at, now) : ""}
+                        {ago(last.at, now)}
                       </span>
                     </span>
                     <span className="block truncate text-xs text-muted-foreground">
-                      {last?.from === "staff"
+                      {last.from === "staff"
                         ? "You: "
-                        : last?.from === "bot"
+                        : last.from === "bot"
                           ? "Bot: "
                           : ""}
-                      {last?.text ?? "No messages yet"}
+                      {last.text}
                     </span>
                     <span className="mt-1 flex items-center gap-1.5">
                       <Badge
@@ -248,7 +287,7 @@ export function Inbox({
             <li className="grid place-items-center gap-2 p-8 text-center text-sm text-muted-foreground">
               <InboxIcon className="size-5" />
               {filter === "waiting"
-                ? "No chats currently need a reply in this preview."
+                ? "No conversations are waiting for a staff reply."
                 : "No chats here."}
             </li>
           )}
@@ -271,11 +310,6 @@ export function Inbox({
                           ? { status: "resolved" }
                           : { status: "open", assignee: me.displayName },
                       );
-                      toast.success(
-                        c.status === "open"
-                          ? "Chat resolved in preview"
-                          : "Chat reopened in preview",
-                      );
                     })
                 : undefined
             }
@@ -296,10 +330,10 @@ export function Inbox({
                     <Button
                       size="sm"
                       variant="ghost"
+                      disabled={!data.bookingActive}
                       onClick={() =>
                         requestLeave(() => {
                           edit({ status: "bot", assignee: null });
-                          toast.success("Chat moved to bot in preview");
                         })
                       }
                     >
@@ -310,17 +344,17 @@ export function Inbox({
               </>
             }
             messages={c.messages.map((message) => {
-              const status = message.logId
-                ? data.log.find((entry) => entry.id === message.logId)?.status
-                : undefined;
+              const status =
+                message.status ??
+                (message.logId
+                  ? data.log.find((entry) => entry.id === message.logId)?.status
+                  : undefined);
               return {
                 id: message.id,
                 sender:
                   message.from === "patient"
                     ? c.patient
-                    : message.from === "bot"
-                      ? "Bot"
-                      : (message.by ?? "Staff"),
+                    : (message.by ?? "Staff"),
                 outgoing: message.from !== "patient",
                 text: message.text,
                 time: new Date(message.at).toLocaleTimeString("en-IN", {
@@ -335,10 +369,13 @@ export function Inbox({
                   year: "numeric",
                 }),
                 delivery: status ? (
-                  <>
-                    Preview · <Ticks status={status} />
-                    {status}
-                  </>
+                  <span>
+                    {status === "unknown"
+                      ? "Delivery unconfirmed"
+                      : status === "claimed"
+                        ? "Sending…"
+                        : status}
+                  </span>
                 ) : undefined,
               };
             })}
@@ -346,35 +383,63 @@ export function Inbox({
               c.status === "open"
                 ? undefined
                 : c.status === "resolved"
-                  ? "Resolved in this preview"
-                  : "Handed back to the bot in this preview"
+                  ? "Resolved"
+                  : "Handed back to the bot"
             }
             composer={
-              <Composer
-                c={c}
-                data={data}
-                now={now}
-                canReply={canReply}
-                clinicName={clinicName}
-                send={send}
-                openAutomations={openAutomations}
-              />
+              <>
+                {" "}
+                {remote.error && (
+                  <p role="alert" className="p-3 text-sm text-destructive">
+                    {remote.error}
+                  </p>
+                )}
+                {remote.loading && (
+                  <p className="p-3 text-sm text-muted-foreground">
+                    Loading conversation…
+                  </p>
+                )}
+                {can("comms.reply") &&
+                  remote.data?.conversation.contactPointId && (
+                    <div className="border-b px-3 py-2">
+                      <WhatsAppConsent
+                        contactPointId={remote.data.conversation.contactPointId}
+                        saved={async () => {
+                          await remote.refresh();
+                          window.dispatchEvent(
+                            new Event("hms-whatsapp-updated"),
+                          );
+                        }}
+                      />
+                    </div>
+                  )}
+                <Composer
+                  c={c}
+                  data={data}
+                  now={now}
+                  canReply={canReply}
+                  clinicName={clinicName}
+                  send={send}
+                  openAutomations={openAutomations}
+                />{" "}
+              </>
             }
           />
+
           <aside className="hidden min-h-0 overflow-y-auto border-l p-4 text-sm xl:block">
             <p className="text-xs font-medium text-muted-foreground">Patient</p>
             <p className="mt-1 font-medium">{c.patient}</p>
             <p className="text-xs text-muted-foreground">
               {c.context.visits
                 ? `${c.context.visits} past visit${c.context.visits === 1 ? "" : "s"}`
-                : "New patient"}
+                : "Visit history unavailable"}
             </p>
             <dl className="mt-4 space-y-3">
               <div>
                 <dt className="text-xs text-muted-foreground">
                   Next appointment
                 </dt>
-                <dd>{c.context.next ?? "None booked"}</dd>
+                <dd>{c.context.next ?? "Unavailable"}</dd>
               </div>
               <div>
                 <dt className="text-xs text-muted-foreground">Last visit</dt>
@@ -420,16 +485,16 @@ function Composer({
   now: number;
   canReply: boolean;
   clinicName: string;
-  send: (text: string, template: string | null) => boolean;
+  send: (text: string, template: string | null) => void;
   openAutomations: () => void;
 }) {
   const [text, setText] = useState("");
-  if (c.status !== "open" && text) setText("");
   useUnsaved(!!text.trim());
-  if (!canReply)
+  if (!canReply || !c.canReply)
     return (
       <p className="border-t p-4 text-sm text-muted-foreground">
-        You can read this chat. Ask your administrator for reply access.
+        Replying requires an active connection, current patient consent and a
+        current reply window.
       </p>
     );
   if (c.status !== "open")
@@ -440,7 +505,13 @@ function Composer({
     );
   const left = windowLeft(lastInbound(c), now);
   if (!left) {
-    const tpl = data.automations.find((a) => a.id === "staff_reply")!;
+    const tpl = data.automations.find((a) => a.id === "staff_reply");
+    if (!tpl)
+      return (
+        <p className="border-t p-4 text-sm text-muted-foreground">
+          The reply window has expired. Wait for the patient to message again.
+        </p>
+      );
     const body = render(tpl.approved?.body ?? tpl.body, {
       patient_name: c.patient.split(" ")[0],
       clinic_name: clinicName,
@@ -463,14 +534,12 @@ function Composer({
         </div>
         {c.messages.at(-1)?.from === "staff" ? (
           <p className="text-sm text-muted-foreground">
-            Queued in this browser preview. You can chat freely once{" "}
-            {c.patient.split(" ")[0]} replies.
+            Sent. You can chat freely once {c.patient.split(" ")[0]} replies.
           </p>
         ) : tpl.approved ? (
           <Button
             onClick={() => {
-              if (send(body, automationInfo.staff_reply.name))
-                toast.success("Template queued in preview");
+              send(body, automationInfo.staff_reply.name);
             }}
           >
             <Send /> Send template
@@ -489,10 +558,8 @@ function Composer({
     );
   }
   const submit = () => {
-    if (send(text.trim(), null)) {
-      setText("");
-      toast.success("Message queued in preview");
-    }
+    send(text.trim(), null);
+    setText("");
   };
   return (
     <div className="space-y-2 border-t p-3">

@@ -19,6 +19,8 @@ let t: TenantFixture;
 let facility2: string;
 let doctor: string;
 let monday: string;
+const voiceAccountId = randomUUID();
+const voiceServiceKey = 'voice-test-service-key-at-least-32-characters';
 const run = randomUUID().slice(0, 8); // identities are global, so make this run's subjects unique
 const tokens: Record<'admin' | 'branchAdmin' | 'frontDesk' | 'nurse' | 'doctor' | 'bot', string> = {} as never;
 
@@ -43,8 +45,19 @@ async function call(method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, opts
 }
 
 beforeAll(async () => {
-  app = buildServer({ db, verifier: createVerifier({ mode: 'dev', secret: DEV_SECRET_DEFAULT, issuer: DEV_ISSUER }), allowClockOverride: true });
   t = await createTenant(admin, 'api');
+  app = buildServer({
+    db,
+    verifier: createVerifier({ mode: 'dev', secret: DEV_SECRET_DEFAULT, issuer: DEV_ISSUER }),
+    allowClockOverride: true,
+    publicTenantId: t.tenantId,
+    voice: {
+      integration: { serviceKey: voiceServiceKey, signingSecret: 'voice-test-signing-secret-at-least-32-characters', serviceAccountId: voiceAccountId },
+      recordingNotice: 'Test notice',
+      noticeVersion: 'test-v1',
+      sessionSeconds: 900,
+    },
+  });
   const one = async (text: string, values: unknown[]) => (await admin.query<{ id: string }>(text, values)).rows[0]!.id;
 
   facility2 = await one(`INSERT INTO platform.facility (tenant_id, organization_id, code, name, facility_type, state_code) VALUES ($1, $2, 'F2', 'Branch 2', 'clinic', '29') RETURNING id`, [t.tenantId, t.organizationId]);
@@ -60,6 +73,8 @@ beforeAll(async () => {
     doctor: await staff('D1', 'Dr API', 'doctor'),
     bot: await staff('SVC', 'WhatsApp bot', 'other', true),
   };
+  await admin.query(`INSERT INTO platform.staff (id,tenant_id,employee_no,given_name,display_name,staff_type,is_system_account) VALUES ($1,$2,'VOICE','Voice','Voice agent','other',true)`, [voiceAccountId, t.tenantId]);
+  await admin.query(`INSERT INTO platform.role_grant (tenant_id,staff_id,role_id) SELECT $1,$2,id FROM platform.role WHERE tenant_id IS NULL AND code='booking_agent'`, [t.tenantId, voiceAccountId]);
   doctor = people.doctor;
   const grants: Array<[keyof typeof people, string, string | null]> = [
     ['admin', 'tenant_admin', null],
@@ -138,6 +153,27 @@ describe('authentication', () => {
     expect(body.tenantId).toBe(t.tenantId);
     expect(body.permissions['appointments.book']).toEqual([t.facilityId]);
     expect(body.permissions['schedules.manage']).toBeUndefined();
+  });
+});
+
+describe('tenant voice integration', () => {
+  it('rejects a missing tenant service key and exposes no cross-tenant selector', async () => {
+    const denied = await call('GET', '/api/v1/integrations/voice/branches', { token: null });
+    expect(denied).toMatchObject({ status: 403, body: { error: { code: 'forbidden' } } });
+    const accepted = await call('GET', '/api/v1/integrations/voice/branches', { token: null, headers: { 'x-service-key': voiceServiceKey } });
+    expect(accepted.status).toBe(200);
+    expect(accepted.body.branches.map((branch: { branch_id: string }) => branch.branch_id)).toEqual(expect.arrayContaining([t.facilityId, facility2]));
+  });
+
+  it('reads live doctors and availability from this tenant', async () => {
+    const headers = { 'x-service-key': voiceServiceKey };
+    const doctors = await call('GET', '/api/v1/integrations/voice/doctors?department=general', { token: null, headers });
+    expect(doctors.status).toBe(200);
+    expect(doctors.body.doctors).toEqual(expect.arrayContaining([expect.objectContaining({ doctor_id: doctor, branch_id: t.facilityId })]));
+    const availability = await call('GET', `/api/v1/integrations/voice/availability?doctor_id=${doctor}&branch_id=${t.facilityId}&start_date=${monday}&end_date=${monday}&consultation_type=in_person`, { token: null, headers });
+    expect(availability.status).toBe(200);
+    expect(availability.body.slots.length).toBeGreaterThan(0);
+    expect(availability.body.slots[0]).toMatchObject({ doctor_id: doctor, branch_id: t.facilityId, consultation_type: 'in_person' });
   });
 });
 

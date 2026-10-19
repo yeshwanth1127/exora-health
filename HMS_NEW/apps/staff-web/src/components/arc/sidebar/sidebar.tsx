@@ -30,6 +30,7 @@ export type SidebarEntry = {
   icon?: ComponentType<SVGProps<SVGSVGElement>>;
   count?: number;
   children?: SidebarEntry[];
+  defaultOpen?: boolean;
 };
 export type SidebarSection = {
   id: string;
@@ -46,6 +47,7 @@ type Props = {
   onNavigate: (id: string, accepted: () => void) => void;
   renderHeader: (toggle: ReactNode) => ReactNode;
   togglePlacement?: "header" | "sidebar";
+  revealActiveGroup?: boolean;
   children: ReactNode;
 };
 
@@ -469,6 +471,7 @@ export function ArcSidebarLayout({
   onNavigate,
   renderHeader,
   togglePlacement = "header",
+  revealActiveGroup = false,
   children,
 }: Props) {
   const id = useId();
@@ -485,10 +488,18 @@ export function ArcSidebarLayout({
       sections.flatMap((section) =>
         section.items
           .filter((entry) => entry.children)
-          .map((entry) => [entry.id, true]),
+          .map((entry) => [entry.id, entry.defaultOpen ?? true]),
       ),
     ),
   );
+  useEffect(() => {
+    if (!revealActiveGroup) return;
+    const group = sections
+      .flatMap((section) => section.items)
+      .find((entry) => entry.children?.some((child) => child.id === active));
+    if (group)
+      setGroups((old) => (old[group.id] ? old : { ...old, [group.id]: true }));
+  }, [active, revealActiveGroup]);
   const [announcement, setAnnouncement] = useState("");
   const sheet = useRef<HTMLDivElement>(null);
   const menu = useRef<HTMLButtonElement>(null);
@@ -659,7 +670,7 @@ export function ArcSidebarLayout({
   );
   return (
     <LayoutGroup id={id}>
-    <Tooltip.Provider delay={250} closeDelay={0} timeout={300}>
+      <Tooltip.Provider delay={250} closeDelay={0} timeout={300}>
         <section
           ref={setShell}
           className={styles.shell}
@@ -687,7 +698,9 @@ export function ArcSidebarLayout({
               data-floating={floating || undefined}
             >
               <Brand brand={brand} collapsed={collapsed} reduce={reduce} />
-              {togglePlacement === "sidebar" && <div className={styles.toggleRow}>{toggleButton}</div>}
+              {togglePlacement === "sidebar" && (
+                <div className={styles.toggleRow}>{toggleButton}</div>
+              )}
               <Navigation
                 {...nav}
                 variant="side"
@@ -714,7 +727,9 @@ export function ArcSidebarLayout({
             )}
           </AnimatePresence>
           <main className={styles.main}>
-            {renderHeader(togglePlacement === "sidebar" && !mobile ? null : toggleButton)}
+            {renderHeader(
+              togglePlacement === "sidebar" && !mobile ? null : toggleButton,
+            )}
             <div className={styles.page}>{children}</div>
           </main>
           <p className={styles.srOnly} role="status" aria-live="polite">
