@@ -1,5 +1,7 @@
 # Explorer selection review — 19 October 2026
 
+> **Subsequent user approval:** KPI drilldown is now implemented on Overview. See [kpi-reporting-wave.md](kpi-reporting-wave.md) for actual definitions, timestamps, tests and counts. The assessment below records the earlier selection stage; its no-approval/no-integration statements are historical. Metric/Revenue/Choropleth decisions remain unchanged.
+
 The user asked whether KPI explorer, Revenue explorer, Metric explorer and Choropleth explorer belong in the clinic dashboard. The local catalog calls the first component **KPI drilldown**. This is a selection/source/data-contract review only; no explorer was approved or implemented by this request.
 
 ## Recommendation

@@ -62,22 +62,30 @@ function HealthSplit({ title, rows }: { title: string; rows: { label: string; va
 export function OperationsModule({
   page,
   setup,
+  reporting,
+  onRefresh,
 }: {
   page: string;
   setup?: ReactNode;
+  reporting?: ReactNode;
+  onRefresh?: () => unknown;
 }) {
   return page === "catalogue" ? (
     <CataloguePage />
   ) : (
-    <ActivityPage overview={page === "overview"} setup={setup} />
+    <ActivityPage overview={page === "overview"} setup={setup} reporting={reporting} onRefresh={onRefresh} />
   );
 }
 function ActivityPage({
   overview,
   setup,
+  reporting,
+  onRefresh,
 }: {
   overview: boolean;
   setup?: ReactNode;
+  reporting?: ReactNode;
+  onRefresh?: () => unknown;
 }) {
   const r = useResource<Analytics>("/api/v1/admin/analytics");
   const events = useResource<Event[]>(
@@ -90,6 +98,7 @@ function ActivityPage({
     r.refresh();
     events.refresh();
     health.refresh();
+    onRefresh?.();
   };
   const s = r.data?.summary ?? {};
   const metrics = overview
@@ -151,6 +160,7 @@ function ActivityPage({
         }
       />
       {overview && setup}
+      {overview && reporting}
       <Resource
         loading={!overview && (r.loading || events.loading)}
         error={r.error || (!overview ? events.error || health.error : "")}
@@ -158,7 +168,7 @@ function ActivityPage({
       >
         <SkeletonMorph loading={overview && r.loading} loadingLabel="Loading overview" className="arc-morph-tokens">
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
-          {metrics.map(([label, value, detail]) => {
+          {metrics.filter(([label]) => !reporting || label === "Doctors with active hours" || label === "Local notification jobs").map(([label, value, detail]) => {
             const numeric = typeof value === "number" ? value : typeof value === "string" && /^\d+(?:\.\d+)?%$/.test(value) ? Number(value.slice(0, -1)) : null;
             return numeric !== null ? (
               <MorphBlock style={FILL} key={String(label)} height={METRIC_SKELETON} radius={34} className="arc-demo-scope">
@@ -176,8 +186,8 @@ function ActivityPage({
         </div>
         {overview ? (
           <div className="space-y-6">
-            <div className="grid lg:grid-cols-2 gap-6">
-              <Card>
+            <div className={reporting ? "grid gap-6" : "grid lg:grid-cols-2 gap-6"}>
+              {!reporting && <Card>
                 <CardHeader>
                   <CardTitle>Daily bookings</CardTitle>
                   <CardDescription>
@@ -214,7 +224,7 @@ function ActivityPage({
                     </Table>
                   </ChartDataDisclosure>
                 </CardContent>
-              </Card>
+              </Card>}
               <Card>
                 <CardHeader>
                   <CardTitle>Appointment health</CardTitle>

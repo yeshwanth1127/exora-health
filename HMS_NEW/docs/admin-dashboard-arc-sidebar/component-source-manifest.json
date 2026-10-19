@@ -613,5 +613,37 @@
     "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/switch/switch.module.css",
     "sha256": "3793e7ee1a4c2db46fce615c3fd76212c3c78ea005e23ae07c24b53453c1b6f7",
     "integratedSha256": "3793e7ee1a4c2db46fce615c3fd76212c3c78ea005e23ae07c24b53453c1b6f7"
+  },
+  {
+    "file": "src/components/arc/kpi-drilldown/kpi-drilldown.js",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kpi-drilldown/src/Component.cjs",
+    "sha256": "681a141a5218dde8b943647d0c822ad0b20fdd8025217abf98ce5ef117c3ae2c",
+    "integratedSha256": "9a9451a5e2cc0061e13e88a3bee1f6cb155b6ab4db7651da6314484e0069abb0",
+    "bindingAdaptation": "Approved Overview KPI reporting. Captured JSX ported to ESM with typed contract and existing React/Motion/Lucide/Animated counter/tokens; conditional CSS rules extracted through map 79780. Demo data removed. Exact range totals/rows replace snapshot/share math; controlled range caption binding, missing/zero comparisons, stable row IDs and null-history chart gaps. Reference expansion, controls, focus/keyboard, geometry and motion retained. User visual verification pending.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/kpi-drilldown/kpi-drilldown.d.ts",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kpi-drilldown/src/Component.cjs",
+    "sha256": "681a141a5218dde8b943647d0c822ad0b20fdd8025217abf98ce5ef117c3ae2c",
+    "integratedSha256": "23613927e9945a02eb30d92bff5b08125c354f803502d96472f02ac0f2439561",
+    "bindingAdaptation": "Approved Overview KPI reporting. Captured JSX ported to ESM with typed contract and existing React/Motion/Lucide/Animated counter/tokens; conditional CSS rules extracted through map 79780. Demo data removed. Exact range totals/rows replace snapshot/share math; controlled range caption binding, missing/zero comparisons, stable row IDs and null-history chart gaps. Reference expansion, controls, focus/keyboard, geometry and motion retained. User visual verification pending.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/kpi-drilldown/period-data.ts",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kpi-drilldown/src/Component.cjs",
+    "sha256": "681a141a5218dde8b943647d0c822ad0b20fdd8025217abf98ce5ef117c3ae2c",
+    "integratedSha256": "96abebc713ad395b09fae25e3fc9ed3b08279ff40c0f540e260211ed8e37600d",
+    "bindingAdaptation": "Approved Overview KPI reporting. Captured JSX ported to ESM with typed contract and existing React/Motion/Lucide/Animated counter/tokens; conditional CSS rules extracted through map 79780. Demo data removed. Exact range totals/rows replace snapshot/share math; controlled range caption binding, missing/zero comparisons, stable row IDs and null-history chart gaps. Reference expansion, controls, focus/keyboard, geometry and motion retained. User visual verification pending.",
+    "kind": "pro-port"
+  },
+  {
+    "file": "src/components/arc/kpi-drilldown/kpi-drilldown.module.css",
+    "reference": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kpi-drilldown/dist/styles.css",
+    "sha256": "e34e5acf0190e8b92002ed2fe5c54c36f2946e35561969cede039ccf7eb9e9c4",
+    "integratedSha256": "8fe7ee29d631dc00ea270828757f6baaafd3e5186b31079451c353a9bc82e6d5",
+    "bindingAdaptation": "Approved Overview KPI reporting. Captured JSX ported to ESM with typed contract and existing React/Motion/Lucide/Animated counter/tokens; conditional CSS rules extracted through map 79780. Demo data removed. Exact range totals/rows replace snapshot/share math; controlled range caption binding, missing/zero comparisons, stable row IDs and null-history chart gaps. Reference expansion, controls, focus/keyboard, geometry and motion retained. User visual verification pending.",
+    "kind": "pro-port"
   }
 ]

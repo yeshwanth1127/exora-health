@@ -88,3 +88,12 @@
 - Arc Switch uses its reference dependency `@radix-ui/react-switch` (1.4.1 in the lockfile). Preserve the copied track/thumb geometry, keyboard behavior and reduced motion. Immediate preferences use Switch; staged Google profile choices and enrolment/setup selections use Checkbox.
 - Seven growth confirmations use the existing Arc Dialog. Retain the exact reviewed record, check current permissions and eligibility, and recheck the functional state updater. Cancel/Escape/outside dismissal writes nothing; never allow cancellation after a campaign starts sending, or delete a changed reply/post/website.
 - These remain browser-preview operations. Do not add live provider calls, change storage keys or run real campaigns to demonstrate confirmations. User retains visual verification; do not start automatic browser sweeps or unapproved component waves.
+
+
+## Approved Overview KPI reporting
+
+- The user approved KPI drilldown after the explorer selection review. Read `HMS_NEW/docs/admin-dashboard-arc-sidebar/kpi-reporting-wave.md`. Current inventory is 48 folders (44 adopted + 4 support); visual verification remains with the user. Metric explorer is an alternative; Revenue/Choropleth stay deferred.
+- Preserve the local demo's card expansion, controls, keyboard/focus and motion. Bind exact 7/30/90-day totals and dimension rows; never restore the sample last-value headline, share-derived row estimates, generated history or SaaS metrics.
+- New bookings use original creation dates; visits due/no-shows use scheduled dates and current status; check-ins/completions/cancellations use stored event timestamps. Exclude reschedule replacements from new bookings and superseded reschedule cancellations. Label each definition; do not call retained confirmations attendance/conversion or configured fees revenue.
+- The read-only `/v1/operations/kpis` requires clinic `appointments.read` and tenant RLS. Keep doctor/channel aggregation free of patient details, preserve exact doctor IDs, clinic-local dates, partial today/history, missing/zero comparisons and request scope guards. No department join that doubles multi-affiliated doctors.
+- Do not fill pre-clinic history with zero or claim comprehensive historical collection. Unknown dates are null chart gaps; known dates with no stored events are zero. Keep current operational/all-time sections separately labelled.

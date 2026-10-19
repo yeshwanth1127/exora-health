@@ -1,7 +1,7 @@
 {
   "as_of": "2026-10-19",
   "scope": "Local recreated catalog entries; registry/demo names are counted, shared-source variants are not collapsed into original implementations. This is not the live upstream catalog.",
-  "method": "First-pass documentation screening is retained from catalog-audit-2026-10-19.md. Current integrations were updated by the authorised growth controls/confirmation follow-up; no new browser verification.",
+  "method": "First-pass documentation screening remains complete. User-approved Overview KPI reporting adds one adopted component; source/build/API checks only, no new browser verification.",
   "counts": {
     "catalog_entries": 249,
     "free_entries": 133,
@@ -11,10 +11,10 @@
     "new_first_pass_screened": 83,
     "now_first_pass_screened": 249,
     "remaining_first_pass_screening": 0,
-    "adopted": 43,
+    "adopted": 44,
     "support": 4,
-    "integrated_total": 47,
-    "not_integrated": 202,
+    "integrated_total": 48,
+    "not_integrated": 201,
     "recorded_rendered_observations": 40,
     "without_recorded_rendered_observation": 209,
     "browser_verified_this_pass": 0
@@ -3227,14 +3227,14 @@
       "prior_screening_evidence": "pro-wave-shortlist.md: all 116 Pro documents",
       "recorded_rendered_observation": true,
       "rendered_verified_this_pass": false,
-      "integration": "not-integrated",
+      "integration": "adopted",
       "assessment": {
-        "decision": "preferred-after-reporting-work",
-        "reason": "Overview expanding-card drilldown; needs real 180-day current/prior history, exact period totals/rates and per-range breakdown bindings. Snapshot/default breakdown math is not a direct clinic-period adapter."
+        "decision": "integrated",
+        "reason": "User-approved Overview reporting. Six stored-record metrics; exact 7/30/90 current/prior totals and doctor/channel rows; no sample data or fabricated history. See kpi-reporting-wave.md."
       },
       "docs": "/Users/deepakonda/Downloads/test/arc-components/components/pro/kpi-drilldown/docs.md",
       "demo": "http://localhost:4477/components/pro/kpi-drilldown/demo/?theme=light",
-      "detailed_review": "explorer-selection-review.md"
+      "detailed_review": "kpi-reporting-wave.md"
     },
     {
       "id": "layout-morph",

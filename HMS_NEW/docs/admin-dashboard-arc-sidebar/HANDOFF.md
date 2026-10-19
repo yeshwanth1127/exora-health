@@ -1,5 +1,7 @@
 # Admin dashboard Arc handoff
 
+> **Latest approved implementation (19 Oct):** read `kpi-reporting-wave.md` first. Overview now uses KPI drilldown with six recorded metrics, exact 7/30/90 current/prior totals and doctor/channel breakdowns. New authorised read-only API contract; null unknown history, explicit event/date definitions and zero-baseline handling. **48 folders: 44 adopted + 4 support; 234 frontend tests; 51 targeted API tests; builds/typecheck pass.** Dashboard5198 → isolated worktree API3080. User retains visual verification. This supersedes the selection-only and old runtime/count notes below.
+
 > **Latest selection revisit:** `explorer-selection-review.md` assesses KPI drilldown, Metric explorer, Revenue explorer and Choropleth against actual source/data contracts. Prefer a later KPI reporting feature; Metric is an alternative; defer Revenue/map. No implementation approval, runtime change or count increase. Current implemented baseline remains `abe547e`, 47 folders and 227 tests.
 
 > **Latest controls/confirmation follow-up (19 Oct):** read `growth-controls-confirmation-wave.md`. Growth switches/checkboxes now use Arc; all seven native growth confirmations use the existing Arc Dialog with current-permission and reviewed-record checks. **47 folders: 43 adopted + 4 support; 227 tests.** Source/reference provenance and current catalog ledger are updated. User retains visual verification; no provider/backend writes or browser sweeps.

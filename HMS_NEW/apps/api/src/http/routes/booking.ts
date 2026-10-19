@@ -14,6 +14,7 @@ import {
   holdSlot,
   listAppointments,
   operationsSummary,
+  operationsKpis,
   listWaitlist,
   addToWaitlist,
   offerWaitlistSlot,
@@ -123,6 +124,12 @@ export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
     const scopes = grantedFacilities(principalOf(request), 'comms.read');
     const voiceScopes = grantedFacilities(principalOf(request), 'voice.read');
     return operationsSummary(db, callerOf(request), q.facilityId, q.date, scopes === null || scopes.has(q.facilityId), voiceScopes === null || voiceScopes.has(q.facilityId));
+  });
+
+  app.get('/v1/operations/kpis', async (request) => {
+    const q = parse(z.strictObject({ facilityId: uuid, date: z.iso.date() }), request.query);
+    authorize(principalOf(request), 'appointments.read', q.facilityId);
+    return operationsKpis(db, callerOf(request), q.facilityId, q.date);
   });
 
   // The outbox spans every clinic and module (clinical included), so it needs audit.read for every clinic.

@@ -1,8 +1,8 @@
 # Component inventory
 
-Latest selection revisit: [explorer-selection-review.md](explorer-selection-review.md). KPI drilldown is the preferred later reporting feature; Metric explorer is an alternative. Revenue/Choropleth are deferred. No adoption/count increase.
+Latest implementation: [kpi-reporting-wave.md](kpi-reporting-wave.md). User-approved KPI drilldown is on Overview with exact scoped reporting. **48 folders: 44 adopted + 4 support; 234 frontend tests.** Metric explorer remains an alternative; Revenue/Choropleth are deferred. Visual review remains with the user.
 
-Latest implementation: [growth-controls-confirmation-wave.md](growth-controls-confirmation-wave.md). **47 folders: 43 adopted + 4 support.** Checkbox is now a directly adopted form control as well as supporting readiness; Switch is newly copied. **Folder count does not imply every screen/state is migrated.**
+Previous implementation: [growth-controls-confirmation-wave.md](growth-controls-confirmation-wave.md). **47 folders: 43 adopted + 4 support.** Checkbox is now a directly adopted form control as well as supporting readiness; Switch is newly copied. **Folder count does not imply every screen/state is migrated.**
 
 Current catalog coverage is reconciled in [catalog-audit-2026-10-19.md](catalog-audit-2026-10-19.md), with all per-entry evidence in [catalog-coverage.json](catalog-coverage.json).
 
@@ -10,10 +10,10 @@ Current catalog coverage is reconciled in [catalog-audit-2026-10-19.md](catalog-
 
 - **249 local catalog entries:** 133 free + 116 Pro, excluding two infrastructure entries. This counts registry/demo names, including shared-source variants, not unique original implementations.
 - **249 / 249 first-pass documentation screens complete:** 166 previously recorded + 83 in the latest pass. **0 remain for first-pass docs screening**.
-- **47 integrated component folders:** 43 adopted + 4 support. **202 catalog entries are not integrated**, including deliberate exclusions and deferred candidates.
+- **48 integrated component folders:** 44 adopted + 4 support. **201 catalog entries are not integrated**, including deliberate exclusions and deferred candidates.
 - **40 named references have recorded historical rendered-demo observations**; 209 do not. These are not exhaustive behavioral/fidelity checks, and this latest scan used no browser automation.
 - Documentation screening, source/API assessment, rendered observation and actual integration are separate evidence levels. The old 82/83 counts describe earlier subsets and must not be added to the later all-Pro survey.
-- Latest implementation: [growth-controls-confirmation-wave.md](growth-controls-confirmation-wave.md). The preceding [growth-screens-wave.md](growth-screens-wave.md) expanded charts/metrics/tabs. The original catalog scan was documentation-only.
+- Previous implementation: [growth-controls-confirmation-wave.md](growth-controls-confirmation-wave.md). The preceding [growth-screens-wave.md](growth-screens-wave.md) expanded charts/metrics/tabs. The original catalog scan was documentation-only.
 
 ## Earlier candidate ledger
 
@@ -35,7 +35,7 @@ Current catalog coverage is reconciled in [catalog-audit-2026-10-19.md](catalog-
 | Line chart | Rendered reference; selected interactions only | Integrated in current scope; newest placements await user review | [Demo](http://localhost:4478/free-previews/line-chart/?theme=light) |
 | Donut chart | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4478/free-previews/donut-chart/?theme=light) |
 | Metric explorer | Historical rendered reference + source/data-contract revisit | Alternative later trend surface; fixed history/formatting/snapshot aggregation requires binding work | [Demo](http://localhost:4477/components/pro/metric-explorer/demo/) |
-| KPI drilldown | Historical rendered reference + source/data-contract revisit | Preferred later Overview reporting feature; needs real history, exact period aggregation and breakdowns | [Demo](http://localhost:4477/components/pro/kpi-drilldown/demo/) |
+| KPI drilldown | Historical rendered reference + current source/build/API checks; user visual review pending | Implemented on Overview: six recorded metrics, exact 7/30/90 totals and doctor/channel breakdowns | [Demo](http://localhost:4477/components/pro/kpi-drilldown/demo/) |
 | Metrics dashboard | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/metrics-dashboard/demo/) |
 | Team directory | Pro wave: rendered reference, states exercised and integrated placement compared at 1440×900 light | Integrated: Workspace settings › Team | [Demo](http://localhost:4477/components/pro/team-directory/demo/) |
 | Roles permissions | Rendered reference; selected interactions only | Considered; not adopted in current scope | [Demo](http://localhost:4477/components/pro/roles-permissions/demo/) |
