@@ -780,6 +780,177 @@ describe('the booking journey over HTTP', () => {
   });
 });
 
+describe("quick arrival without full registration", () => {
+  const arrivalDate = () => {
+    const d = new Date(`${monday}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + 7);
+    return d.toISOString().slice(0, 10);
+  };
+  it("creates one minimal identity and token atomically; retry replays the same result", async () => {
+    const name = `Quick ${run}`,
+      date = arrivalDate(),
+      idem = `arrival-${randomUUID()}`;
+    const body = {
+      staffId: doctor,
+      facilityId: t.facilityId,
+      newPatient: { name, phone: "+919876543210" },
+    };
+    const first = await call("POST", "/v1/walk-ins", {
+      token: tokens.frontDesk,
+      idem,
+      now: ist(date, "16:00"),
+      body,
+    });
+    expect(first).toMatchObject({
+      status: 201,
+      body: { status: "checked_in", tokenNo: 1 },
+    });
+    const again = await call("POST", "/v1/walk-ins", {
+      token: tokens.frontDesk,
+      idem,
+      now: ist(date, "16:00"),
+      body,
+    });
+    expect(again.body).toEqual(first.body);
+    const { rows } = await admin.query(
+      `SELECT p.id, p.sex, p.birth_date, p.registered_facility_id,
+      (SELECT count(*)::int FROM booking.queue_token q WHERE q.patient_id = p.id) AS tokens,
+      (SELECT value FROM patient.patient_contact c WHERE c.patient_id = p.id AND kind='phone') AS phone
+      FROM patient.patient p WHERE p.tenant_id=$1 AND p.given_name=$2`,
+      [t.tenantId, name],
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      sex: "unknown",
+      birth_date: null,
+      registered_facility_id: t.facilityId,
+      tokens: 1,
+      phone: "+919876543210",
+    });
+  });
+  it("requires a single identity, validates name/phone and enforces registration permission and facility scope", async () => {
+    const base = { staffId: doctor, facilityId: t.facilityId },
+      now = ist(arrivalDate(), "16:00");
+    for (const identity of [
+      {},
+      { newPatient: { name: " " } },
+      { newPatient: { name: "Valid", phone: "123" } },
+      { patientId: randomUUID(), newPatient: { name: "Both" } },
+    ])
+      expect(
+        (
+          await call("POST", "/v1/walk-ins", {
+            idem: true,
+            now,
+            body: { ...base, ...identity },
+          })
+        ).status,
+      ).toBe(400);
+    expect(
+      (
+        await call("POST", "/v1/walk-ins", {
+          token: tokens.nurse,
+          idem: true,
+          now,
+          body: { ...base, newPatient: { name: "No registration permission" } },
+        })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await call("POST", "/v1/walk-ins", {
+          token: tokens.frontDesk,
+          idem: true,
+          now,
+          body: {
+            ...base,
+            facilityId: facility2,
+            newPatient: { name: "Wrong facility" },
+          },
+        })
+      ).status,
+    ).toBe(403);
+  });
+  it("failed capacity/session checks do not leave a patient record", async () => {
+    const name = `Unaccepted ${run}`;
+    const failed = await call("POST", "/v1/walk-ins", {
+      token: tokens.frontDesk,
+      idem: true,
+      now: ist(arrivalDate(), "23:00"),
+      body: { staffId: doctor, facilityId: t.facilityId, newPatient: { name } },
+    });
+    expect(failed.status).toBe(422);
+    expect(
+      (
+        await admin.query(
+          `SELECT count(*)::int AS n FROM patient.patient WHERE tenant_id=$1 AND given_name=$2`,
+          [t.tenantId, name],
+        )
+      ).rows[0].n,
+    ).toBe(0);
+  });
+  it("checks an unlinked booking in with name only, retaining replay and refusing new identities for linked bookings", async () => {
+    const date = arrivalDate(),
+      now = ist(date, "08:00");
+    const held = await call("POST", "/v1/holds", {
+      idem: true,
+      now,
+      body: { staffId: doctor, slotStart: ist(date, "09:00") },
+    });
+    expect(held.status).toBe(201);
+    const booked = await call("POST", "/v1/appointments", {
+      idem: true,
+      now,
+      body: {
+        reservationId: held.body.reservationId,
+        bookingParty: { name: "Caller", phone: "+919876543211" },
+        originChannel: "front_desk",
+      },
+    });
+    expect(booked.status).toBe(201);
+    const url = `/v1/appointments/${booked.body.appointmentId}/check-in`,
+      idem = `arrival-${randomUUID()}`,
+      body = { newPatient: { name: `Booked quick ${run}` } };
+    expect(
+      (await call("POST", url, { token: tokens.nurse, idem: true, now, body }))
+        .status,
+    ).toBe(403);
+    const priorDay = new Date(`${date}T12:00:00Z`); priorDay.setUTCDate(priorDay.getUTCDate() - 1);
+    const rejectedName = `Rolled back ${run}`;
+    expect((await call("POST", url, { token: tokens.frontDesk, idem: true, now: ist(priorDay.toISOString().slice(0, 10), "08:00"), body: { newPatient: { name: rejectedName } } })).status).toBe(422);
+    expect((await admin.query(`SELECT count(*)::int AS n FROM patient.patient WHERE tenant_id=$1 AND given_name=$2`, [t.tenantId, rejectedName])).rows[0].n).toBe(0);
+    const first = await call("POST", url, {
+      token: tokens.frontDesk,
+      idem,
+      now,
+      body,
+    });
+    expect(first.status).toBe(200);
+    expect(
+      (await call("POST", url, { token: tokens.frontDesk, idem, now, body }))
+        .body,
+    ).toEqual(first.body);
+    expect(
+      (
+        await call("POST", url, {
+          token: tokens.frontDesk,
+          idem: true,
+          now,
+          body: { newPatient: { name: `Forbidden extra ${run}` } },
+        })
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await admin.query(
+          `SELECT count(*)::int AS n FROM patient.patient WHERE tenant_id=$1 AND given_name=$2`,
+          [t.tenantId, `Forbidden extra ${run}`],
+        )
+      ).rows[0].n,
+    ).toBe(0);
+  });
+});
+
 describe('tenant isolation over HTTP', () => {
   it("another tenant's administrator gets 404 for this tenant's appointment", async () => {
     const other = await createTenant(admin, 'api-other');

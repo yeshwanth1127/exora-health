@@ -1,104 +1,213 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/toast-events";
 import { useCommand, useWorkspace } from "./hooks";
 import { PatientLookup, RegisterPatient } from "./Patients";
-import { Choice, ErrorMessage, Field, Hint } from "./ui";
+import {
+  QuickPatientFields,
+  arrivalReady,
+  arrivalBody,
+} from "./QuickPatientFields";
+import { Choice, ErrorMessage, Field } from "./ui";
 import { label } from "./model";
 import { requestLeave, useUnsaved } from "./leave";
 import type { Patient } from "./types";
 
 export function WalkIn({
-  staffId,
+  staffId: initialStaff = "",
   onCreated,
 }: {
-  staffId: string;
+  staffId?: string;
   onCreated: (result: { tokenNo: number; sessionOn: string }) => void;
 }) {
-  const { facility, can } = useWorkspace(),
+  const { facility, practitioners, can } = useWorkspace(),
     cmd = useCommand();
-  const [patient, setPatient] = useState<Patient | null>(null),
-    [register, setRegister] = useState(false),
-    [reason, setReason] = useState(""),
-    [priority, setPriority] = useState("normal");
-  useUnsaved(
-    cmd.unknown || !!patient || !!reason.trim() || priority !== "normal",
+  const [staffId, setStaffId] = useState(initialStaff);
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [mode, setMode] = useState(
+    can("patients.register") ? "quick" : "search",
   );
+  const [arrival, setArrival] = useState({ name: "", phone: "" });
+  const [showOptions, setShowOptions] = useState(false);
+  const [reason, setReason] = useState(""),
+    [priority, setPriority] = useState("normal");
+  const locked = cmd.busy || cmd.unknown;
+  const doctors = [
+    ...new Map(
+      practitioners
+        .filter((p) => p.facilityId === facility.facilityId)
+        .map((p) => [p.staffId, p]),
+    ).values(),
+  ];
+  const selected = doctors.some((p) => p.staffId === staffId) ? staffId : "";
+  const ready =
+    !!selected &&
+    (!!patient ||
+      (mode === "quick" && can("patients.register") && arrivalReady(arrival)));
+  useUnsaved(
+    cmd.unknown ||
+      !!patient ||
+      !!arrival.name ||
+      !!arrival.phone ||
+      !!reason.trim() ||
+      priority !== "normal" ||
+      staffId !== initialStaff,
+    { pending: locked },
+  );
+  function changeMode(next: string) {
+    if (next === mode) return;
+    const change = () => {
+      setMode(next);
+      setPatient(null);
+      setArrival({ name: "", phone: "" });
+    };
+    if (mode === "register" || patient || arrival.name || arrival.phone)
+      requestLeave(change);
+    else change();
+  }
+
   return (
-    <div className="p-6 space-y-5">
-      <ErrorMessage text={cmd.error} />
-      <Hint>
-        This registers today's arrival and creates a queue token. The doctor
-        must have remaining walk-in capacity at this facility.
-      </Hint>
-      {!patient ? (
-        <>
-          {!register && <PatientLookup onSelect={setPatient} />}
-          {can("patients.register") && (
-            <Button variant="ghost" onClick={() => requestLeave(() => setRegister((v) => !v))}>
-              {register ? "Back to patient search" : "Register new patient"}
-            </Button>
-          )}
-          {register && <RegisterPatient onCreated={(patient) => { setPatient(patient); setRegister(false); }} />}
-        </>
-      ) : (
-        <>
-          <div className="flex justify-between items-center">
+    <div className="max-w-3xl space-y-5">
+      <p className="text-sm text-muted-foreground">
+        Check the patient in and issue today’s queue token. The doctor must have
+        walk-in capacity.
+      </p>
+      <Choice
+        label="Doctor"
+        value={selected}
+        disabled={locked}
+        onChange={setStaffId}
+        options={[
+          { value: "", label: "Choose a doctor" },
+          ...doctors.map((p) => ({ value: p.staffId, label: p.name })),
+        ]}
+      />
+      <div
+        className="flex flex-wrap gap-2"
+        role="group"
+        aria-label="Arrival patient"
+      >
+        {can("patients.register") && (
+          <Button
+            variant={mode === "quick" ? "default" : "outline"}
+            aria-pressed={mode === "quick"}
+            disabled={locked}
+            onClick={() => changeMode("quick")}
+          >
+            New patient · quick arrival
+          </Button>
+        )}
+        <Button
+          variant={mode === "search" ? "default" : "outline"}
+          aria-pressed={mode === "search"}
+          disabled={locked}
+          onClick={() => changeMode("search")}
+        >
+          Find existing patient
+        </Button>
+      </div>
+      <fieldset disabled={locked} className="space-y-5">
+        {mode === "quick" && !patient ? (
+          <QuickPatientFields
+            value={arrival}
+            onChange={setArrival}
+            disabled={locked}
+          />
+        ) : patient ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <p>
-              {patient.name} · {patient.mrn}
+              {patient.name} · MRN {patient.mrn}
             </p>
             <Button
               variant="ghost"
-              disabled={cmd.busy || cmd.unknown}
+              disabled={locked}
               onClick={() => setPatient(null)}
             >
               Change patient
             </Button>
           </div>
-          <Choice
-            label="Queue priority"
-            value={priority}
-            onChange={setPriority}
-            options={["normal", "senior_citizen", "emergency", "vip"].map(
-              (v) => ({ value: v, label: label(v) }),
-            )}
+        ) : mode === "register" ? (
+          <RegisterPatient
+            onCreated={(p) => {
+              setPatient(p);
+              setMode("search");
+            }}
           />
-          <Field title="Reason for visit (optional)" id="walk-in-reason">
-            <Textarea
-              id="walk-in-reason"
-              maxLength={500}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
+        ) : (
+          <PatientLookup
+            onSelect={(p) => {
+              if (!locked) setPatient(p);
+            }}
+          />
+        )}
+        {mode === "search" && !patient && can("patients.register") && (
+          <Button variant="ghost" onClick={() => changeMode("register")}>
+            Open full registration instead
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          aria-expanded={showOptions}
+          onClick={() => setShowOptions((v) => !v)}
+        >
+          Priority and visit reason (optional)
+        </Button>
+        {showOptions && (
+          <div className="space-y-4 pt-4">
+            <Choice
+              label="Queue priority"
+              value={priority}
+              disabled={locked}
+              onChange={setPriority}
+              options={["normal", "senior_citizen", "emergency", "vip"].map(
+                (v) => ({ value: v, label: label(v) }),
+              )}
             />
-          </Field>
-          <Button
-            disabled={cmd.busy}
-            onClick={async () => {
-              const result = await cmd.run<{
-                tokenNo: number;
-                sessionOn: string;
-              }>(
+            <Field title="Reason for visit" id="walk-in-reason">
+              <Textarea
+                id="walk-in-reason"
+                maxLength={500}
+                value={reason}
+                disabled={locked}
+                onChange={(e) => setReason(e.target.value)}
+              />
+            </Field>
+          </div>
+        )}
+      </fieldset>
+      <ErrorMessage text={cmd.error} />
+      <Button
+        disabled={cmd.busy || (!cmd.unknown && !ready)}
+        onClick={async () => {
+          const body = {
+            ...(patient
+              ? { patientId: patient.patientId }
+              : { newPatient: arrivalBody(arrival) }),
+            staffId: selected,
+            facilityId: facility.facilityId,
+            priority,
+            ...(reason.trim() ? { reason: reason.trim() } : {}),
+          };
+          const result = cmd.unknown
+            ? await cmd.replay<{ tokenNo: number; sessionOn: string }>()
+            : await cmd.run<{ tokenNo: number; sessionOn: string }>(
                 "/v1/walk-ins",
-                {
-                  patientId: patient.patientId,
-                  staffId,
-                  facilityId: facility.facilityId,
-                  priority,
-                  ...(reason.trim() ? { reason: reason.trim() } : {}),
-                },
+                body,
                 true,
               );
-              if (result) onCreated(result);
-            }}
-          >
-            {cmd.busy
-              ? "Registering arrival…"
-              : cmd.unknown
-                ? "Recover the same walk-in request"
-                : "Confirm walk-in arrival"}
-          </Button>
-        </>
-      )}
+          if (result) {
+            toast.success(`Checked in · Token ${result.tokenNo}`);
+            onCreated(result);
+          }
+        }}
+      >
+        {cmd.busy
+          ? "Checking in…"
+          : cmd.unknown
+            ? "Recover the same arrival request"
+            : "Check in and issue token"}
+      </Button>
     </div>
   );
 }

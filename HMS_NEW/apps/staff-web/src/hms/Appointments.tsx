@@ -1,3 +1,9 @@
+import {
+  QuickPatientFields,
+  arrivalReady,
+  arrivalBody,
+} from "./QuickPatientFields";
+import { toast } from "@/components/toast-events";
 import { DropdownMenu } from "@/components/arc/dropdown-menu/dropdown-menu";
 import { PatientHover } from "./PatientHover";
 import { CopyButton } from "@/components/arc/copy-button/copy-button";
@@ -41,7 +47,7 @@ import { Booking } from "./Booking";
 import type { Appointment, Patient, PatientDetail } from "./types";
 
 export function Appointments() {
-  const { facility, practitioners, can } = useWorkspace();
+  const { facility, practitioners, can, go } = useWorkspace();
   const [date, setDate] = useState(today(facility.timezone)),
     [staffId, setStaffId] = useState("all"),
     [status, setStatus] = useState("all"),
@@ -111,12 +117,19 @@ export function Appointments() {
       <PageTitle
         title="Appointments"
         action={
-          can("appointments.book") ? (
-            <Button onClick={() => setBook(true)}>
-              <CalendarPlus />
-              Book appointment
-            </Button>
-          ) : undefined
+          <div className="flex flex-wrap gap-2">
+            {can("appointments.check_in") && can("patients.read") && (
+              <Button variant="outline" onClick={() => go("queue?arrival=1")}>
+                Quick arrival
+              </Button>
+            )}
+            {can("appointments.book") && (
+              <Button onClick={() => setBook(true)}>
+                <CalendarPlus />
+                Book appointment
+              </Button>
+            )}
+          </div>
         }
       />
       <Card className="overflow-visible">
@@ -138,13 +151,33 @@ export function Appointments() {
               <RefreshCw />
             </Button>
             <div className="arc-demo-scope appointment-search ml-auto min-w-[360px] max-w-xl flex-1">
-              <SearchField variant="soft" label="Search appointments" value={text} onValueChange={setText}
-                autoComplete="off" placeholder="Patient name, phone, MRN or confirmation code"
-                aria-describedby="appointment-search-hint" aria-busy={text.trim().length >= 2 && (text.trim() !== search || result.loading)} />
-              <p id="appointment-search-hint" className="mt-2 text-xs text-muted-foreground" role="status">
-                {text.trim().length === 1 ? "Type at least 2 characters to search." : text.trim().length >= 2
-                  ? text.trim() !== search || result.loading ? "Searching appointments…" : result.error ? "Search could not load. Try again." : `${items.length}${result.data?.nextCursor ? "+" : ""} matching ${items.length === 1 ? "appointment" : "appointments"} for the selected date and filters.`
-                  : "Search within the selected date and filters."}
+              <SearchField
+                variant="soft"
+                label="Search appointments"
+                value={text}
+                onValueChange={setText}
+                autoComplete="off"
+                placeholder="Patient name, phone, MRN or confirmation code"
+                aria-describedby="appointment-search-hint"
+                aria-busy={
+                  text.trim().length >= 2 &&
+                  (text.trim() !== search || result.loading)
+                }
+              />
+              <p
+                id="appointment-search-hint"
+                className="mt-2 text-xs text-muted-foreground"
+                role="status"
+              >
+                {text.trim().length === 1
+                  ? "Type at least 2 characters to search."
+                  : text.trim().length >= 2
+                    ? text.trim() !== search || result.loading
+                      ? "Searching appointments…"
+                      : result.error
+                        ? "Search could not load. Try again."
+                        : `${items.length}${result.data?.nextCursor ? "+" : ""} matching ${items.length === 1 ? "appointment" : "appointments"} for the selected date and filters.`
+                    : "Search within the selected date and filters."}
               </p>
             </div>
           </div>
@@ -152,17 +185,69 @@ export function Appointments() {
             <FilterToolbar
               label="Appointment filters"
               filters={[
-                ...(staffId !== "all" ? [{ id: "doctor", label: "Doctor", value: doctorOptions.find((option) => option.value === staffId)?.label ?? "Selected doctor" }] : []),
-                ...(status !== "all" ? [{ id: "status", label: "Booking status", value: label(status) }] : []),
-                ...(mode !== "all" ? [{ id: "mode", label: "Appointment type", value: mode === "virtual" ? "Video" : "In person" }] : []),
+                ...(staffId !== "all"
+                  ? [
+                      {
+                        id: "doctor",
+                        label: "Doctor",
+                        value:
+                          doctorOptions.find(
+                            (option) => option.value === staffId,
+                          )?.label ?? "Selected doctor",
+                      },
+                    ]
+                  : []),
+                ...(status !== "all"
+                  ? [
+                      {
+                        id: "status",
+                        label: "Booking status",
+                        value: label(status),
+                      },
+                    ]
+                  : []),
+                ...(mode !== "all"
+                  ? [
+                      {
+                        id: "mode",
+                        label: "Appointment type",
+                        value: mode === "virtual" ? "Video" : "In person",
+                      },
+                    ]
+                  : []),
               ]}
-              onRemove={(id) => { if (id === "doctor") setStaffId("all"); else if (id === "status") setStatus("all"); else if (id === "mode") setMode("all"); }}
-              onClearAll={() => { setStaffId("all"); setStatus("all"); setMode("all"); }}
+              onRemove={(id) => {
+                if (id === "doctor") setStaffId("all");
+                else if (id === "status") setStatus("all");
+                else if (id === "mode") setMode("all");
+              }}
+              onClearAll={() => {
+                setStaffId("all");
+                setStatus("all");
+                setMode("all");
+              }}
               addFilter={{
                 fields: [
                   { id: "doctor", label: "Doctor", options: doctorOptions },
-                  { id: "status", label: "Booking status", options: ["confirmed", "checked_in", "completed", "cancelled", "no_show"].map((value) => ({ value, label: label(value) })) },
-                  { id: "mode", label: "Appointment type", options: [{ value: "in_person", label: "In person" }, { value: "virtual", label: "Video" }] },
+                  {
+                    id: "status",
+                    label: "Booking status",
+                    options: [
+                      "confirmed",
+                      "checked_in",
+                      "completed",
+                      "cancelled",
+                      "no_show",
+                    ].map((value) => ({ value, label: label(value) })),
+                  },
+                  {
+                    id: "mode",
+                    label: "Appointment type",
+                    options: [
+                      { value: "in_person", label: "In person" },
+                      { value: "virtual", label: "Video" },
+                    ],
+                  },
                 ],
                 onAdd: (chip, field) => {
                   // Arc emits the visible label; API filters require the stable option value.
@@ -175,7 +260,6 @@ export function Appointments() {
               }}
             />
           </div>
-
         </CardContent>
         <LoadingState {...result}>
           <Table>
@@ -194,9 +278,15 @@ export function Appointments() {
                 <TableRow key={a.appointmentId}>
                   <TableCell>
                     <div className="font-medium">
-                      {a.patientId && can("patients.read")
-                        ? <PatientHover patientId={a.patientId} reason={a.reason} name={patientDisplayName(a.patientId, a.patientName)} />
-                        : patientDisplayName(a.patientId, a.patientName)}{" "}
+                      {a.patientId && can("patients.read") ? (
+                        <PatientHover
+                          patientId={a.patientId}
+                          reason={a.reason}
+                          name={patientDisplayName(a.patientId, a.patientName)}
+                        />
+                      ) : (
+                        patientDisplayName(a.patientId, a.patientName)
+                      )}{" "}
                       {a.patientId && (
                         <TestPatientBadge patientId={a.patientId} />
                       )}
@@ -303,11 +393,20 @@ function AppointmentDetails({
   const result = useQuery<Appointment>(`/v1/appointments/${id}`, 10000);
   const [patient, setPatient] = useState<Patient | null>(null),
     [register, setRegister] = useState(false),
+    [quick, setQuick] = useState(false),
+    [arrival, setArrival] = useState({ name: "", phone: "" }),
     [move, setMove] = useState(false),
     [action, setAction] = useState(""),
     [reason, setReason] = useState(""),
     [notice, setNotice] = useState("");
-  useUnsaved(!!reason.trim() || !!patient || cmd.unknown);
+  useUnsaved(
+    !!reason.trim() ||
+      !!patient ||
+      !!arrival.name ||
+      !!arrival.phone ||
+      cmd.unknown,
+    { pending: cmd.busy || cmd.unknown },
+  );
   const a = result.data;
   const visit = useQuery<{ encounterId: string; status: string }>(
     a &&
@@ -330,6 +429,8 @@ function AppointmentDetails({
     setAction("");
     setReason("");
     setPatient(null);
+    setArrival({ name: "", phone: "" });
+    setQuick(false);
     setNotice(
       "Appointment updated. Contact the patient to confirm the change.",
     );
@@ -343,10 +444,15 @@ function AppointmentDetails({
   const checkIn = async () => {
     const value = await cmd.run<{ tokenNo: number }>(
       `/v1/appointments/${id}/check-in`,
-      patient ? { patientId: patient.patientId } : {},
+      patient
+        ? { patientId: patient.patientId }
+        : quick
+          ? { newPatient: arrivalBody(arrival) }
+          : {},
       true,
     );
     if (value) {
+      toast.success(`Checked in · Token ${value.tokenNo}`);
       await changed();
       setNotice(
         `Checked in${value.tokenNo ? ` · Token ${value.tokenNo}` : ""}.`,
@@ -359,7 +465,7 @@ function AppointmentDetails({
         {a && (
           <>
             <header className="space-y-4">
-              <div className="flex items-start justify-between gap-6">
+              <div className="flex flex-wrap items-start justify-between gap-6">
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <h2 className="text-xl font-semibold">
@@ -380,7 +486,14 @@ function AppointmentDetails({
                       ? "Teleconsultation"
                       : "In-person visit"}{" "}
                     · MRN {a.mrn ?? "Not linked"} · Booking {a.confirmationCode}
-                    <span className="arc-demo-scope ml-2"><CopyButton value={a.confirmationCode} label="Copy booking code" iconOnly variant="plain" /></span>
+                    <span className="arc-demo-scope ml-2">
+                      <CopyButton
+                        value={a.confirmationCode}
+                        label="Copy booking code"
+                        iconOnly
+                        variant="plain"
+                      />
+                    </span>
                     {a.tokenNo ? ` · Token ${a.tokenNo}` : ""}
                   </p>
                   {a.originChannel === "whatsapp" && (
@@ -454,18 +567,67 @@ function AppointmentDetails({
                     Patient details & medical history
                   </Button>
                 )}
-                {a.status === "confirmed" && (can("appointments.reschedule") || can("appointments.cancel") || can("appointments.check_in")) && (
-                  <div className="arc-demo-scope">
-                    <DropdownMenu label="More actions" disabled={locked || move} items={[
-                      ...(can("appointments.reschedule") ? [{ label: "Move appointment", icon: <CalendarClock size={16} />, disabled: locked || move,
-                        onSelect: () => requestLeave(() => { setAction(""); setReason(""); setMove(true); }) }] : []),
-                      ...(can("appointments.cancel") ? [{ label: "Cancel appointment", icon: <XCircle size={16} />, destructive: true, separatorBefore: can("appointments.reschedule"), disabled: locked || move,
-                        onSelect: () => requestLeave(() => { setAction("cancel"); setReason(""); }) }] : []),
-                      ...(can("appointments.check_in") ? [{ label: "Mark no-show", icon: <UserX size={16} />, destructive: true, disabled: locked || move,
-                        onSelect: () => requestLeave(() => { setAction("no-show"); setReason(""); }) }] : []),
-                    ]} />
-                  </div>
-                )}
+                {a.status === "confirmed" &&
+                  (can("appointments.reschedule") ||
+                    can("appointments.cancel") ||
+                    can("appointments.check_in")) && (
+                    <div className="arc-demo-scope">
+                      <DropdownMenu
+                        label="More actions"
+                        disabled={locked || move}
+                        items={[
+                          ...(can("appointments.reschedule")
+                            ? [
+                                {
+                                  label: "Move appointment",
+                                  icon: <CalendarClock size={16} />,
+                                  disabled: locked || move,
+                                  onSelect: () =>
+                                    requestLeave(() => {
+                                      setAction("");
+                                      setReason("");
+                                      setMove(true);
+                                    }),
+                                },
+                              ]
+                            : []),
+                          ...(can("appointments.cancel")
+                            ? [
+                                {
+                                  label: "Cancel appointment",
+                                  icon: <XCircle size={16} />,
+                                  destructive: true,
+                                  separatorBefore: can(
+                                    "appointments.reschedule",
+                                  ),
+                                  disabled: locked || move,
+                                  onSelect: () =>
+                                    requestLeave(() => {
+                                      setAction("cancel");
+                                      setReason("");
+                                    }),
+                                },
+                              ]
+                            : []),
+                          ...(can("appointments.check_in")
+                            ? [
+                                {
+                                  label: "Mark no-show",
+                                  icon: <UserX size={16} />,
+                                  destructive: true,
+                                  disabled: locked || move,
+                                  onSelect: () =>
+                                    requestLeave(() => {
+                                      setAction("no-show");
+                                      setReason("");
+                                    }),
+                                },
+                              ]
+                            : []),
+                        ]}
+                      />
+                    </div>
+                  )}
               </div>
             </header>
             {action && (
@@ -622,15 +784,55 @@ function AppointmentDetails({
                                 Change
                               </Button>
                             </p>
+                          ) : quick ? (
+                            <div className="max-w-xl space-y-4">
+                              <QuickPatientFields
+                                value={arrival}
+                                onChange={setArrival}
+                                disabled={locked}
+                              />
+                              <Button
+                                disabled={locked || !arrivalReady(arrival)}
+                                onClick={checkIn}
+                              >
+                                Check in and issue token
+                              </Button>
+                            </div>
                           ) : !register ? (
                             <PatientLookup onSelect={setPatient} />
                           ) : null}
                           {can("patients.register") && !patient && (
                             <Button
                               variant="ghost"
-                              onClick={() => requestLeave(() => setRegister((v) => !v))}
+                              disabled={locked}
+                              onClick={() =>
+                                requestLeave(() => {
+                                  setRegister((v) => !v);
+                                  setQuick(false);
+                                  setArrival({ name: "", phone: "" });
+                                })
+                              }
                             >
-                              {register ? "Back to patient search" : "Register patient"}
+                              {register
+                                ? "Back to patient search"
+                                : "Register patient"}
+                            </Button>
+                          )}
+                          {can("patients.register") && !patient && (
+                            <Button
+                              variant="outline"
+                              disabled={locked}
+                              onClick={() =>
+                                requestLeave(() => {
+                                  setQuick((v) => !v);
+                                  setRegister(false);
+                                  setArrival({ name: "", phone: "" });
+                                })
+                              }
+                            >
+                              {quick
+                                ? "Find existing patient"
+                                : "Quick check-in · name only"}
                             </Button>
                           )}
                           {register && !patient && (
@@ -649,14 +851,20 @@ function AppointmentDetails({
             )}
             <ErrorMessage text={cmd.error} />
             {cmd.unknown && (
-              <Button variant="outline" disabled={cmd.busy} onClick={async () => {
-                if (cmd.canReplay) {
-                  if (await cmd.replay()) await changed();
-                } else {
-                  await result.refresh();
-                }
-              }}>
-                {cmd.canReplay ? "Check original request" : "Refresh appointment (outcome still unconfirmed)"}
+              <Button
+                variant="outline"
+                disabled={cmd.busy}
+                onClick={async () => {
+                  if (cmd.canReplay) {
+                    if (await cmd.replay()) await changed();
+                  } else {
+                    await result.refresh();
+                  }
+                }}
+              >
+                {cmd.canReplay
+                  ? "Check original request"
+                  : "Refresh appointment (outcome still unconfirmed)"}
               </Button>
             )}
           </>

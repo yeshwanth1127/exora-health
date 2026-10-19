@@ -1,5 +1,6 @@
+import { BirthDateField } from "./BirthDateField";
 import { CopyButton } from "@/components/arc/copy-button/copy-button";
-import { DateField, PhoneField } from "@/components/WorkspaceFields";
+import { PhoneField } from "@/components/WorkspaceFields";
 import { Combobox } from "@/components/arc/combobox/combobox";
 import { toast } from "@/components/toast-events";
 import { Input as ArcInput } from "@/components/arc/input/input";
@@ -75,18 +76,41 @@ export function PatientLookup({
     search.length >= 2 ? `/v1/patients?${query(params)}` : null,
   );
   const pending = text.trim() !== search || result.loading;
-  const patients = search.length >= 2 && !pending && !result.error ? result.data?.items ?? [] : [];
+  const patients =
+    search.length >= 2 && !pending && !result.error
+      ? (result.data?.items ?? [])
+      : [];
   return (
     <div className="space-y-3">
       <div className="arc-demo-scope">
-        <Combobox label="Patient search" ref={searchInput} placeholder="Type a name, MRN or phone"
-          autoComplete="off" value="" onQueryChange={setText} filterOptions={false}
+        <Combobox
+          label="Patient search"
+          ref={searchInput}
+          placeholder="Type a name, MRN or phone"
+          autoComplete="off"
+          value=""
+          onQueryChange={setText}
+          filterOptions={false}
           aria-busy={text.trim().length >= 2 && pending}
-          options={patients.map((patient) => ({ value: patient.patientId,
+          options={patients.map((patient) => ({
+            value: patient.patientId,
             label: `${patientDisplayName(patient.patientId, patient.name)} · MRN ${patient.mrn} · ${patient.phone ?? "No phone recorded"}${isTestPatient(patient.patientId) ? " · Test patient" : ""}${patient.status !== "active" ? " · Inactive" : ""}`,
-            disabled: patient.status !== "active" }))}
-          emptyMessage={text.trim().length < 2 ? "Type at least 2 characters" : pending ? "Searching…" : result.error ? "Search could not load. Try again." : "No patient found"}
-          onValueChange={(id) => { const patient = patients.find((p) => p.patientId === id); if (patient?.status === "active") onSelect(patient); }} />
+            disabled: patient.status !== "active",
+          }))}
+          emptyMessage={
+            text.trim().length < 2
+              ? "Type at least 2 characters"
+              : pending
+                ? "Searching…"
+                : result.error
+                  ? "Search could not load. Try again."
+                  : "No patient found"
+          }
+          onValueChange={(id) => {
+            const patient = patients.find((p) => p.patientId === id);
+            if (patient?.status === "active") onSelect(patient);
+          }}
+        />
       </div>
       <ErrorMessage text={result.error} />
       {search.length >= 2 &&
@@ -124,7 +148,8 @@ export function RegisterPatient({
     [birthDate, setBirthDate] = useState(""),
     [sex, setSex] = useState("unknown");
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const touch = (key: string) => setTouched((current) => ({ ...current, [key]: true }));
+  const touch = (key: string) =>
+    setTouched((current) => ({ ...current, [key]: true }));
   useUnsaved(
     !!(givenName || familyName || phone || birthDate) || sex !== "unknown",
     { pending: cmd.busy || cmd.unknown },
@@ -134,7 +159,10 @@ export function RegisterPatient({
       className="space-y-4"
       onSubmit={async (e) => {
         e.preventDefault();
-        if (phone && !E164.test(phone)) { touch("phone"); return; }
+        if (phone && !E164.test(phone)) {
+          touch("phone");
+          return;
+        }
         const result = await cmd.run<{ patientId: string; mrn: string }>(
           "/v1/patients",
           {
@@ -166,7 +194,11 @@ export function RegisterPatient({
         <div className="arc-demo-scope">
           <ArcInput
             label="Given name (required)"
-            error={touched.given && !givenName.trim() ? "Enter the patient’s given name." : undefined}
+            error={
+              touched.given && !givenName.trim()
+                ? "Enter the patient’s given name."
+                : undefined
+            }
             onBlur={() => touch("given")}
             id="given-name"
             autoFocus
@@ -197,10 +229,24 @@ export function RegisterPatient({
           }))}
         />
       </Field>
-      <DateField monthYearSelection id="birth-date" label="Date of birth (optional)" value={birthDate} onValueChange={setBirthDate} />
-      <PhoneField label="Phone (optional, with country code)" id="patient-phone" value={phone} onValueChange={setPhone}
-        error={touched.phone && phone && !E164.test(phone) ? "Enter a phone number with its country code." : undefined}
-        onBlur={() => touch("phone")} />
+      <BirthDateField
+        id="birth-date"
+        label="Date of birth (optional)"
+        value={birthDate}
+        onValueChange={setBirthDate}
+      />
+      <PhoneField
+        label="Phone (optional, with country code)"
+        id="patient-phone"
+        value={phone}
+        onValueChange={setPhone}
+        error={
+          touched.phone && phone && !E164.test(phone)
+            ? "Enter a phone number with its country code."
+            : undefined
+        }
+        onBlur={() => touch("phone")}
+      />
       <ErrorMessage text={cmd.error} />
       <Button type="submit" disabled={cmd.busy || !givenName.trim()}>
         {cmd.busy ? "Registering…" : (submitLabel ?? "Register patient")}
@@ -349,7 +395,17 @@ function ClinicPatients({
                     </Button>
                     <TestPatientBadge patientId={p.patientId} />
                   </TableCell>
-                  <TableCell><span className="arc-demo-scope inline-flex items-center gap-2">{p.mrn}<CopyButton value={p.mrn} label="Copy MRN" iconOnly variant="plain" /></span></TableCell>
+                  <TableCell>
+                    <span className="arc-demo-scope inline-flex items-center gap-2">
+                      {p.mrn}
+                      <CopyButton
+                        value={p.mrn}
+                        label="Copy MRN"
+                        iconOnly
+                        variant="plain"
+                      />
+                    </span>
+                  </TableCell>
                   <TableCell>{p.phone ?? "—"}</TableCell>
                   <TableCell>
                     {label(p.sex)} · {p.birthDate ?? "not recorded"}
@@ -817,7 +873,9 @@ function EditPatient({
               }
             : {}),
         };
-        if (await cmd.run(`/v1/patients/${d.patientId}`, body, false, "PATCH")) {
+        if (
+          await cmd.run(`/v1/patients/${d.patientId}`, body, false, "PATCH")
+        ) {
           toast.success("Patient details saved");
           onDone(true);
         }
@@ -840,7 +898,12 @@ function EditPatient({
             }))}
           />
         </Field>
-        <DateField monthYearSelection id="pt-birthDate" label="Date of birth" value={f.birthDate} onValueChange={set("birthDate")} />
+        <BirthDateField
+          id="pt-birthDate"
+          label="Date of birth"
+          value={f.birthDate}
+          onValueChange={set("birthDate")}
+        />
       </div>
       <label className="flex items-center gap-2 text-sm">
         <input
@@ -852,7 +915,12 @@ function EditPatient({
       </label>
       <div className="grid grid-cols-2 gap-3">
         <Field title="Phone (with country code)" id="pt-phone">
-          <PhoneField id="pt-phone" label="Phone (with country code)" value={f.phone} onValueChange={set("phone")} />
+          <PhoneField
+            id="pt-phone"
+            label="Phone (with country code)"
+            value={f.phone}
+            onValueChange={set("phone")}
+          />
         </Field>
         {text("email", "Email", { type: "email", maxLength: 254 })}
       </div>

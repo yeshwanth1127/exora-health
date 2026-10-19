@@ -112,3 +112,11 @@
 - Share typed destinations in `workspace-navigation.ts` across sidebar, page tabs and command search; retain compatible query/deep links and guarded Back/Forward/dirty/pending navigation. Keep queue view switches, settings editors and recording access review contextual.
 - Current main's managed integration contracts supersede earlier preview-only operation guidance: retain actual queries/actions, permission/capability/version/idempotency checks, truthful loading/error/unavailable/delivery state. Never substitute sample analytics, local-only connection success or fake saved/provider results.
 - Component inventory remains 48 folders; 243 staff tests and 449 API/database tests passed. Targeted local navigation was browser checked, but connected-provider states and full demo parity remain unverified. No production deployment is established by publishing source.
+
+
+## User-approved appointment and arrival refinements
+
+- Read `HMS_NEW/docs/admin-dashboard-arc-sidebar/appointment-arrival-polish.md`. DOB specifically uses direct Day / Month / Year Arc Inputs; retain strict calendar-day, partial, leap-year and future-date validation. Appointment/report date pickers remain unchanged.
+- Booking uses the RadioCards existing minColumnWidth option so labels fit, and wraps actions/headers rather than clipping content. No new Arc folder or general restyling is introduced.
+- Quick arrival belongs on a full page from Appointments and Queue. Capture name and optional phone, choose doctor, then check in. Keep existing-patient search and full registration available. Never auto-match or merge identities or copy a caller's phone as a patient contact.
+- A new identity and visit/token are saved atomically with original idempotency, audit/events and capacity/day/permission checks. Quick identity creation additionally requires patients.register at that clinic. DOB/sex stay unknown until actually recorded; no shared anonymous charts or fake saved states.

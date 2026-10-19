@@ -63,6 +63,9 @@ const OverbookBody = BookFields.extend({
   slotStart: z.iso.datetime({ offset: true }),
   overbookReason: z.string().trim().min(3).max(500),
 }).refine(party, 'give patientId, bookingParty, or both');
+const ArrivalPatient = z.object({ name: z.string().trim().min(1).max(100), phone: e164.optional() }).strict();
+const ArrivalIdentity = z.object({ patientId: uuid.optional(), newPatient: ArrivalPatient.optional() })
+  .refine(b => !(b.patientId && b.newPatient), 'choose an existing patient or a new arrival, not both');
 const FacilityParams = z.object({ facilityId: uuid });
 
 export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
@@ -271,17 +274,20 @@ export function registerBookingRoutes(app: FastifyInstance, db: Kysely<DB>) {
 
   app.post('/v1/appointments/:appointmentId/check-in', async (request) => {
     const { appointmentId } = parse(AppointmentParams, request.params);
-    const body = parse(z.object({ patientId: uuid.optional() }), request.body ?? {});
-    await authorizedAppointment(request, appointmentId, 'appointments.check_in');
-    return checkIn(db, callerOf(request), { appointmentId, patientId: body.patientId }, idempotencyKey(request));
+    const body = parse(ArrivalIdentity, request.body ?? {});
+    const appt = await authorizedAppointment(request, appointmentId, 'appointments.check_in');
+    if (body.newPatient) authorize(principalOf(request), 'patients.register', appt.facilityId);
+    return checkIn(db, callerOf(request), { appointmentId, ...body }, idempotencyKey(request));
   });
 
   app.post('/v1/walk-ins', async (request, reply) => {
     const body = parse(
-      z.object({ staffId: uuid, facilityId: uuid, patientId: uuid, priority: Priority.optional(), visitType: VisitType.optional(), reason: z.string().max(500).optional() }),
+      z.object({ staffId: uuid, facilityId: uuid, patientId: uuid.optional(), newPatient: ArrivalPatient.optional(), priority: Priority.optional(), visitType: VisitType.optional(), reason: z.string().max(500).optional() })
+        .refine(b => !!b.patientId !== !!b.newPatient, 'choose an existing patient or enter a new arrival'),
       request.body,
     );
     authorize(principalOf(request), 'appointments.check_in', body.facilityId);
+    if (body.newPatient) authorize(principalOf(request), 'patients.register', body.facilityId);
     return reply.status(201).send(await bookWalkIn(db, callerOf(request), body, idempotencyKey(request)));
   });
 }
