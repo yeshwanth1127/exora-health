@@ -23,3 +23,6 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm staff:test
       - run: pnpm staff:build
+      - run: pnpm website:test
+      - run: pnpm website:build
+      - run: pnpm platform:build

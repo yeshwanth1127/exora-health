@@ -1,3 +1,4 @@
+import { Onboarding } from './onboarding.ts';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
@@ -25,22 +26,6 @@ const superadminToken = process.env.SUPERADMIN_TOKEN;
 const provisionerToken = process.env.PROVISIONER_TOKEN;
 const isSuperadmin = (authorization?: string) => !!superadminToken && authorization === `Bearer ${superadminToken}`;
 const isProvisioner = (authorization?: string) => !!provisionerToken && authorization === `Bearer ${provisionerToken}`;
-
-const Onboarding = z.object({
-  organisation: z.string().trim().min(2).max(120),
-  slug: z.string().regex(/^[a-z0-9][a-z0-9-]{1,62}$/),
-  ownerName: z.string().trim().min(2).max(100),
-  email: z.email().max(254),
-  phone: z.string().trim().max(30).optional(),
-  city: z.string().trim().min(2).max(80),
-  timezone: z.string().trim().min(3).max(64),
-  facilityName: z.string().trim().min(2).max(120),
-  facilityType: z.enum(['clinic', 'hospital', 'diagnostic_centre', 'virtual']),
-  plan: z.enum(['launch', 'connect', 'scale']),
-  voice: z.boolean(),
-  whatsapp: z.boolean(),
-  termsAccepted: z.literal(true),
-}).refine((value) => !value.voice || value.plan !== 'launch', { path: ['voice'], message: 'Voice requires the Connect or Scale plan.' });
 
 async function schema() {
   await pool.query(`
@@ -206,7 +191,7 @@ async function markReady(id: string, payload: z.infer<typeof Onboarding>, port: 
 }
 
 async function provision(id: string, payload: z.infer<typeof Onboarding>, port: number) {
-  const args = [path.join(root, 'scripts/provision-tenant.mjs'), '--slug', payload.slug, '--name', payload.organisation, '--email', payload.email, '--owner', payload.ownerName, '--facility', payload.facilityName, '--city', payload.city, '--plan', payload.plan, '--voice', String(payload.voice), '--port', String(port)];
+  const args = [path.join(root, 'scripts/provision-tenant.mjs'), '--slug', payload.slug, '--name', payload.organisation, '--email', payload.email, '--owner', payload.ownerName, '--facility', payload.facilityName, '--city', payload.city, '--plan', payload.plan, '--voice', String(payload.voice), '--port', String(port), '--website-template', payload.websiteTemplate];
   const child = spawn(process.execPath, args, { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
   let failure = '';
   child.stderr.on('data', (chunk) => { failure = `${failure}${String(chunk)}`.slice(-4000); });

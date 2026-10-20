@@ -24,7 +24,7 @@ COPY packages ./packages
 COPY db ./db
 COPY scripts ./scripts
 RUN pnpm install --frozen-lockfile
-RUN pnpm public:build && pnpm staff:build
+RUN pnpm public:build && VITE_BOOKING_MODE=hms pnpm website:build && pnpm staff:build
 
 FROM node:22-bookworm-slim AS runtime
 
