@@ -20,6 +20,7 @@ facility="$(jq -er '.payload.facilityName' "$request_path")"
 city="$(jq -er '.payload.city' "$request_path")"
 plan="$(jq -er '.payload.plan' "$request_path")"
 voice="$(jq -er '.payload.voice' "$request_path")"
+website_template="$(jq -er '.payload.websiteTemplate // "standard" | select(. == "standard" or . == "sri-lakshmi")' "$request_path")"
 port="$(jq -er '.allocated_port' "$request_path")"
 tenant_dir="$TENANT_ROOT/$slug"
 secrets="$tenant_dir/secrets.json"
@@ -73,6 +74,7 @@ env_line() { printf '%s=%s\n' "$1" "$(jq -Rn --arg value "$2" '$value')"; }
 umask 077
 {
   env_line TENANT_SLUG "$slug"
+  env_line WEBSITE_TEMPLATE "$website_template"
   env_line TENANT_PORT "$port"
   env_line TENANT_PLAN "$plan"
   env_line VOICE_REQUESTED "$([[ $voice == true ]] && echo 1 || echo 0)"

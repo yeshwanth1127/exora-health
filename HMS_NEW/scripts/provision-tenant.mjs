@@ -28,6 +28,8 @@ const city = args.get('city')?.trim() || 'Bengaluru';
 const plan = args.get('plan')?.trim() || 'connect';
 const voice = (args.get('voice')?.trim() || (plan === 'launch' ? 'false' : 'true')) === 'true';
 const port = Number(args.get('port') ?? '8081');
+const websiteTemplate = args.get('website-template') ?? 'standard';
+if (!['standard', 'sri-lakshmi'].includes(websiteTemplate)) throw new Error('Unknown website template');
 if (!/^[a-z0-9][a-z0-9-]{1,62}$/.test(slug)) throw new Error('--slug must be lower-case letters, numbers and hyphens');
 if (!/.+@.+\..+/.test(email)) throw new Error('--email must be a valid email');
 if (!['launch', 'connect', 'scale'].includes(plan)) throw new Error('--plan must be launch, connect or scale');
@@ -47,6 +49,7 @@ const tenantUuid = (() => {
 })();
 const values = {
   TENANT_SLUG: slug,
+  WEBSITE_TEMPLATE: websiteTemplate,
   TENANT_PORT: String(port),
   TENANT_PLAN: plan,
   VOICE_REQUESTED: voice ? '1' : '0',

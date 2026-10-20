@@ -32,6 +32,7 @@ type FormState = {
   plan: Plan;
   voice: boolean;
   whatsapp: boolean;
+  websiteTemplate: "standard" | "sri-lakshmi";
 };
 type ProvisioningState = {
   onboardingId: string;
@@ -55,6 +56,7 @@ const emptyForm: FormState = {
   plan: "connect",
   voice: true,
   whatsapp: false,
+  websiteTemplate: "standard",
 };
 
 const steps = [
@@ -209,11 +211,11 @@ function Onboarding({ onClose }: { onClose: () => void }) {
         <h2>{ready ? `${form.organisation} is ready.` : `We’re building ${form.organisation}.`}</h2>
         <p>{ready ? "Your isolated website, staff workspace and database are online." : "Exora has accepted the launch configuration. This screen updates as the isolated deployment is created."}</p>
         <div className="launch-links">
-          <div><span>Patient website</span><strong>{submitted.public_url || `${form.slug}.exora.health · preparing`}</strong></div>
-          <div><span>Staff workspace</span><strong>{submitted.staff_url || `staff.${form.slug}.exora.health · preparing`}</strong></div>
+          <div><span>Patient website</span><strong>{submitted.public_url || `${form.slug}.health.exora.solutions · preparing`}</strong></div>
+          <div><span>Staff workspace</span><strong>{submitted.staff_url || `${form.slug}.health.exora.solutions/staff/ · preparing`}</strong></div>
         </div>
         {submitted.error && <p className="submit-error">{submitted.error}</p>}
-        <div className="success-actions">{ready && <a className="button primary" href={submitted.public_url}>Open patient website</a>}<button className="button outline" onClick={onClose}>Return to Exora Health</button></div>
+        <div className="success-actions">{ready && <><a className="button primary" href={submitted.public_url}>Open patient website</a><a className="button outline" href={submitted.staff_url}>Open staff workspace</a></>}<button className="button outline" onClick={onClose}>Return to Exora Health</button></div>
       </div>
     );
   }
@@ -256,7 +258,7 @@ function Onboarding({ onClose }: { onClose: () => void }) {
           <div className="form-grid">
             <Field label="Organisation name" value={form.organisation} onChange={(e) => { set("organisation", e.target.value); if (!form.slug || form.slug === slugify(form.organisation)) set("slug", slugify(e.target.value)); }} placeholder="Northstar Health" autoFocus />
             <Field label="Workspace address" value={form.slug} onChange={(e) => set("slug", slugify(e.target.value))} placeholder="northstar-health" />
-            <div className="url-preview">{form.slug || "your-clinic"}.exora.health</div>
+            <div className="url-preview">{form.slug || "your-clinic"}.health.exora.solutions</div>
           </div>
         </>}
         {step === 2 && <>
@@ -265,6 +267,7 @@ function Onboarding({ onClose }: { onClose: () => void }) {
           <div className="form-grid two-column">
             <Field label="Facility name" value={form.facilityName} onChange={(e) => set("facilityName", e.target.value)} placeholder="Indiranagar Clinic" autoFocus />
             <label className="field"><span>Facility type</span><select value={form.facilityType} onChange={(e) => set("facilityType", e.target.value)}><option value="clinic">Clinic</option><option value="hospital">Hospital</option><option value="diagnostic_centre">Diagnostic centre</option><option value="virtual">Virtual clinic</option></select></label>
+            <label className="field"><span>Website</span><select value={form.websiteTemplate} onChange={(e) => set("websiteTemplate", e.target.value as FormState["websiteTemplate"])}><option value="standard">Standard clinic website</option><option value="sri-lakshmi">Sri Lakshmi Hospital website</option></select></label>
             <Field label="City" value={form.city} onChange={(e) => set("city", e.target.value)} placeholder="Bengaluru" />
             <label className="field"><span>Timezone</span><select value={form.timezone} onChange={(e) => set("timezone", e.target.value)}><option>Asia/Kolkata</option><option>Asia/Dubai</option><option>Europe/London</option><option>America/New_York</option></select></label>
           </div>
@@ -287,9 +290,10 @@ function Onboarding({ onClose }: { onClose: () => void }) {
             <div><span>Organisation</span><strong>{form.organisation}</strong></div>
             <div><span>Owner</span><strong>{form.ownerName} · {form.email}</strong></div>
             <div><span>First facility</span><strong>{form.facilityName}, {form.city}</strong></div>
+            <div><span>Website</span><strong>{form.websiteTemplate === "sri-lakshmi" ? "Sri Lakshmi Hospital website" : "Standard clinic website"}</strong></div>
             <div><span>Plan</span><strong>{plans.find((p) => p.id === form.plan)?.name}</strong></div>
             <div><span>Channels</span><strong>{[form.voice && "Voice", form.whatsapp && "WhatsApp"].filter(Boolean).join(", ") || "Web only"}</strong></div>
-            <div><span>Patient URL</span><strong>{form.slug}.exora.health</strong></div>
+            <div><span>Patient URL</span><strong>{form.slug}.health.exora.solutions</strong></div>
           </div>
           <label className="consent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} required /><span>I confirm these details and understand that clinical data will stay inside this organisation’s isolated deployment.</span></label>
           {submitError && <p className="submit-error">{submitError}</p>}

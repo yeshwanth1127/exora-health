@@ -67,3 +67,16 @@ password and a persistent application secret. Give the application a company-onl
 change the initial admin password, and generate a server API key before setting `UMAMI_ORIGIN`
 and `UMAMI_API_KEY` on HMS. Back up this database as well as the tenant databases; do not put the
 Umami console or its database on a public customer endpoint.
+
+## Sri Lakshmi website choice
+
+The existing **First facility** onboarding step now includes a Website selector. `websiteTemplate`
+is persisted in the control request and the provisioner writes `WEBSITE_TEMPLATE` into the tenant
+runtime. Missing selections remain `standard`. `sri-lakshmi` serves the copied Sri Lakshmi webpage;
+`/staff/` continues to serve the same tenant's staff dashboard. Both use the existing public booking
+registry and database; no client records or schedules are cloned.
+
+Build the updated tenant and platform images and install this release's `provision-tenant-production`
+host script before exposing the choice. Keep the provisioner's `IMAGE_TAG` pointed at that tenant
+image. Existing tenants keep their current website unless their private environment is explicitly
+changed and the app recreated. See `apps/sri-lakshmi-web/README.md` for the data/setup boundaries.
