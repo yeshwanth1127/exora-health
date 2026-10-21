@@ -6,6 +6,9 @@ import {
 import { isDevelopmentLoginConfigured } from "@/hms/runtime-flags";
 const authority = import.meta.env.VITE_OIDC_AUTHORITY,
   clientId = import.meta.env.VITE_OIDC_CLIENT_ID;
+export const identityAccountUrl = authority
+  ? `${authority.replace(/\/$/, "")}/account/#/security/signingin`
+  : null;
 export const devLoginEnabled =
   isDevelopmentLoginConfigured(import.meta.env.VITE_HMS_DEV_LOGIN);
 export const devAutoSignInSubject = devLoginEnabled

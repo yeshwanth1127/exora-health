@@ -14,3 +14,30 @@
 }
 
 .success-actions a { text-decoration: none; }
+
+.admin-credentials {
+  width: 100%;
+  margin: 0 0 24px;
+  padding: 20px;
+  border: 1px solid #b9d8ca;
+  border-radius: 14px;
+  background: #f2faf6;
+  color: #17312d;
+}
+
+.credential-heading { display: flex; gap: 12px; align-items: flex-start; }
+.credential-heading svg { color: #167a67; flex: 0 0 auto; }
+.credential-heading strong, .credential-heading span { display: block; }
+.credential-heading span, .admin-credentials > p { margin-top: 4px; color: #60756e; font-size: 12px; line-height: 1.5; }
+.admin-credentials dl { margin: 16px 0 12px; }
+.admin-credentials dl > div { display: grid; grid-template-columns: 150px 1fr; gap: 16px; padding: 10px 0; border-top: 1px solid #d7e9e0; }
+.admin-credentials dt { color: #60756e; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.admin-credentials dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.admin-credentials code { font: 700 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.copy-credential { margin-left: 12px; border: 0; background: transparent; color: #167a67; font-weight: 800; cursor: pointer; }
+.copy-credential svg { vertical-align: -3px; }
+
+@media (max-width: 700px) {
+  .admin-credentials dl > div { grid-template-columns: 1fr; gap: 5px; }
+  .copy-credential { display: block; margin: 8px 0 0; }
+}

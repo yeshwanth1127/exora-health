@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+config=${KEYCLOAK_IDENTITY_CONFIG:-/etc/exora-health/identity.env}
+[[ -r $config ]] || { echo "missing $config" >&2; exit 1; }
+# shellcheck disable=SC1090
+source "$config"
+
+: "${KEYCLOAK_INTERNAL_URL:=http://127.0.0.1:8120}"
+: "${KEYCLOAK_ADMIN_USERNAME:?KEYCLOAK_ADMIN_USERNAME is required}"
+: "${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD is required}"
+: "${KEYCLOAK_REALM:=exora-health}"
+: "${KEYCLOAK_PROVISIONER_CLIENT_ID:=tenant-provisioner}"
+: "${KEYCLOAK_PROVISIONER_CLIENT_SECRET:?KEYCLOAK_PROVISIONER_CLIENT_SECRET is required}"
+: "${OIDC_CLIENT_ID:=exora-health-staff}"
+: "${OIDC_AUDIENCE:=exora-health-api}"
+
+for _ in $(seq 1 90); do
+  if curl -fsS --connect-timeout 2 --max-time 3 "$KEYCLOAK_INTERNAL_URL/realms/master/.well-known/openid-configuration" >/dev/null; then
+    break
+  fi
+  sleep 2
+done
+curl -fsS --connect-timeout 5 --max-time 10 "$KEYCLOAK_INTERNAL_URL/realms/master/.well-known/openid-configuration" >/dev/null
+
+admin_token() {
+  curl -fsS --connect-timeout 5 --max-time 20 \
+    --data-urlencode grant_type=password \
+    --data-urlencode client_id=admin-cli \
+    --data-urlencode username="$KEYCLOAK_ADMIN_USERNAME" \
+    --data-urlencode password="$KEYCLOAK_ADMIN_PASSWORD" \
+    "$KEYCLOAK_INTERNAL_URL/realms/master/protocol/openid-connect/token" | jq -er .access_token
+}
+
+token="$(admin_token)"
+auth_header="Authorization: Bearer $token"
+
+realm_status="$(curl -sS -o /dev/null -w '%{http_code}' -H "$auth_header" \
+  "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM")"
+if [[ $realm_status == 404 ]]; then
+  realm="$(jq -n --arg realm "$KEYCLOAK_REALM" \
+    '{realm:$realm,displayName:"Exora Health",enabled:true,sslRequired:"external",
+      registrationAllowed:false,registrationEmailAsUsername:true,loginWithEmailAllowed:true,
+      duplicateEmailsAllowed:false,resetPasswordAllowed:true,editUsernameAllowed:false,
+      verifyEmail:true,bruteForceProtected:true,failureFactor:5,waitIncrementSeconds:60,
+      maxFailureWaitSeconds:900,passwordPolicy:"length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1)"}')"
+  curl -fsS --connect-timeout 5 --max-time 20 -o /dev/null -X POST \
+    -H "$auth_header" -H 'content-type: application/json' --data "$realm" \
+    "$KEYCLOAK_INTERNAL_URL/admin/realms"
+elif [[ $realm_status != 200 ]]; then
+  echo "could not inspect Keycloak realm (HTTP $realm_status)" >&2
+  exit 1
+fi
+
+token="$(admin_token)"
+auth_header="Authorization: Bearer $token"
+
+client_uuid() {
+  local client_id=$1 encoded clients
+  encoded="$(jq -rn --arg value "$client_id" '$value|@uri')"
+  clients="$(curl -fsS --connect-timeout 5 --max-time 20 -H "$auth_header" \
+    "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/clients?clientId=$encoded")"
+  [[ $(jq 'length' <<<"$clients") == 1 ]] || return 1
+  jq -er '.[0].id' <<<"$clients"
+}
+
+ensure_client() {
+  local client_id=$1 representation=$2 uuid
+  if ! uuid="$(client_uuid "$client_id")"; then
+    curl -fsS --connect-timeout 5 --max-time 20 -o /dev/null -X POST \
+      -H "$auth_header" -H 'content-type: application/json' --data "$representation" \
+      "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/clients"
+    uuid="$(client_uuid "$client_id")"
+  fi
+  printf '%s\n' "$uuid"
+}
+
+api_representation="$(jq -n --arg id "$OIDC_AUDIENCE" \
+  '{clientId:$id,name:"Exora Health API",enabled:true,protocol:"openid-connect",bearerOnly:true,
+    publicClient:false,standardFlowEnabled:false,directAccessGrantsEnabled:false,serviceAccountsEnabled:false}')"
+api_uuid="$(ensure_client "$OIDC_AUDIENCE" "$api_representation")"
+
+staff_representation="$(jq -n --arg id "$OIDC_CLIENT_ID" \
+  '{clientId:$id,name:"Exora Health Staff",description:"First-party staff browser application for managed tenants",
+    enabled:true,protocol:"openid-connect",publicClient:true,bearerOnly:false,standardFlowEnabled:true,
+    implicitFlowEnabled:false,directAccessGrantsEnabled:false,serviceAccountsEnabled:false,
+    frontchannelLogout:true,redirectUris:[],webOrigins:[],attributes:{"pkce.code.challenge.method":"S256"}}')"
+staff_uuid="$(ensure_client "$OIDC_CLIENT_ID" "$staff_representation")"
+
+mappers="$(curl -fsS --connect-timeout 5 --max-time 20 -H "$auth_header" \
+  "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/clients/$staff_uuid/protocol-mappers/models")"
+if ! jq -e '.[] | select(.name == "exora-health-api-audience")' <<<"$mappers" >/dev/null; then
+  mapper="$(jq -n --arg audience "$OIDC_AUDIENCE" \
+    '{name:"exora-health-api-audience",protocol:"openid-connect",protocolMapper:"oidc-audience-mapper",
+      consentRequired:false,config:{"included.client.audience":$audience,"access.token.claim":"true","id.token.claim":"false"}}')"
+  curl -fsS --connect-timeout 5 --max-time 20 -o /dev/null -X POST \
+    -H "$auth_header" -H 'content-type: application/json' --data "$mapper" \
+    "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/clients/$staff_uuid/protocol-mappers/models"
+fi
+
+provisioner_representation="$(jq -n --arg id "$KEYCLOAK_PROVISIONER_CLIENT_ID" --arg secret "$KEYCLOAK_PROVISIONER_CLIENT_SECRET" \
+  '{clientId:$id,name:"Exora Health tenant provisioner",enabled:true,protocol:"openid-connect",
+    publicClient:false,bearerOnly:false,clientAuthenticatorType:"client-secret",secret:$secret,
+    standardFlowEnabled:false,directAccessGrantsEnabled:false,serviceAccountsEnabled:true}')"
+provisioner_uuid="$(ensure_client "$KEYCLOAK_PROVISIONER_CLIENT_ID" "$provisioner_representation")"
+service_user="$(curl -fsS --connect-timeout 5 --max-time 20 -H "$auth_header" \
+  "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/clients/$provisioner_uuid/service-account-user")"
+service_user_uuid="$(jq -er .id <<<"$service_user")"
+realm_management_uuid="$(client_uuid realm-management)"
+roles='[]'
+for role_name in manage-clients view-clients manage-users view-users; do
+  role="$(curl -fsS --connect-timeout 5 --max-time 20 -H "$auth_header" \
+    "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/clients/$realm_management_uuid/roles/$role_name")"
+  roles="$(jq --argjson role "$role" '. + [$role]' <<<"$roles")"
+done
+curl -fsS --connect-timeout 5 --max-time 20 -o /dev/null -X POST \
+  -H "$auth_header" -H 'content-type: application/json' --data "$roles" \
+  "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/users/$service_user_uuid/role-mappings/clients/$realm_management_uuid"
+
+printf 'Keycloak realm %s is configured.\n' "$KEYCLOAK_REALM"
+printf 'Issuer: https://auth.health.exora.solutions/realms/%s\n' "$KEYCLOAK_REALM"
+printf 'Browser client: %s\n' "$OIDC_CLIENT_ID"
+printf 'API audience: %s\n' "$OIDC_AUDIENCE"

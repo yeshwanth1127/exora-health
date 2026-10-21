@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+config=${KEYCLOAK_PROVISIONER_CONFIG:-/etc/exora-health/keycloak-provisioner.env}
+[[ -r $config ]] || { echo "missing $config" >&2; exit 1; }
+# shellcheck disable=SC1090
+source "$config"
+
+: "${KEYCLOAK_INTERNAL_URL:?KEYCLOAK_INTERNAL_URL is required}"
+: "${KEYCLOAK_PUBLIC_URL:?KEYCLOAK_PUBLIC_URL is required}"
+: "${KEYCLOAK_REALM:?KEYCLOAK_REALM is required}"
+: "${KEYCLOAK_PROVISIONER_CLIENT_ID:?KEYCLOAK_PROVISIONER_CLIENT_ID is required}"
+: "${KEYCLOAK_PROVISIONER_CLIENT_SECRET:?KEYCLOAK_PROVISIONER_CLIENT_SECRET is required}"
+: "${OIDC_CLIENT_ID:?OIDC_CLIENT_ID is required}"
+: "${OIDC_AUDIENCE:?OIDC_AUDIENCE is required}"
+
+payload="$(cat)"
+slug="$(jq -er '.slug | select(test("^[a-z0-9][a-z0-9-]{1,62}$"))' <<<"$payload")"
+email="$(jq -er '.email | ascii_downcase | select(test("^[^@[:space:]]+@[^@[:space:]]+\\.[^@[:space:]]+$"))' <<<"$payload")"
+origin="$(jq -er --arg slug "$slug" '.origin | select(. == "https://" + $slug + ".health.exora.solutions")' <<<"$payload")"
+temporary_password="$(jq -er '.temporaryPassword | select(type == "string" and length >= 20 and length <= 128)' <<<"$payload")"
+redirect_uri="$origin/staff/callback"
+
+exec 9>/run/lock/exora-health-oidc.lock
+flock -x 9
+
+token_response="$(curl -fsS --connect-timeout 5 --max-time 20 \
+  --data-urlencode grant_type=client_credentials \
+  --data-urlencode client_id="$KEYCLOAK_PROVISIONER_CLIENT_ID" \
+  --data-urlencode client_secret="$KEYCLOAK_PROVISIONER_CLIENT_SECRET" \
+  "$KEYCLOAK_INTERNAL_URL/realms/$KEYCLOAK_REALM/protocol/openid-connect/token")"
+access_token="$(jq -er .access_token <<<"$token_response")"
+auth_header="Authorization: Bearer $access_token"
+client_query="$(jq -rn --arg value "$OIDC_CLIENT_ID" '$value|@uri')"
+
+clients="$(curl -fsS --connect-timeout 5 --max-time 20 -H "$auth_header" \
+  "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/clients?clientId=$client_query")"
+[[ $(jq 'length' <<<"$clients") == 1 ]] || { echo "expected exactly one OIDC browser client" >&2; exit 1; }
+client_uuid="$(jq -er '.[0].id' <<<"$clients")"
+client="$(curl -fsS --connect-timeout 5 --max-time 20 -H "$auth_header" \
+  "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/clients/$client_uuid")"
+updated_client="$(jq --arg redirect "$redirect_uri" --arg origin "$origin" \
+  '.redirectUris=((.redirectUris // []) + [$redirect] | unique) |
+   .webOrigins=((.webOrigins // []) + [$origin] | unique)' <<<"$client")"
+curl -fsS --connect-timeout 5 --max-time 20 -o /dev/null -X PUT \
+  -H "$auth_header" -H 'content-type: application/json' --data "$updated_client" \
+  "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/clients/$client_uuid"
+
+email_query="$(jq -rn --arg value "$email" '$value|@uri')"
+users="$(curl -fsS --connect-timeout 5 --max-time 20 -H "$auth_header" \
+  "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/users?email=$email_query&exact=true")"
+if [[ $(jq 'length' <<<"$users") == 0 ]]; then
+  new_user="$(jq -n --arg email "$email" --arg slug "$slug" \
+    '{username:$email,email:$email,enabled:true,emailVerified:true,requiredActions:["UPDATE_PASSWORD"],attributes:{exoraTenant:[$slug]}}')"
+  curl -fsS --connect-timeout 5 --max-time 20 -o /dev/null -X POST \
+    -H "$auth_header" -H 'content-type: application/json' --data "$new_user" \
+    "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/users"
+  users="$(curl -fsS --connect-timeout 5 --max-time 20 -H "$auth_header" \
+    "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/users?email=$email_query&exact=true")"
+  [[ $(jq 'length' <<<"$users") == 1 ]] || { echo "created Keycloak owner could not be resolved" >&2; exit 1; }
+  user_uuid="$(jq -er '.[0].id' <<<"$users")"
+elif [[ $(jq 'length' <<<"$users") == 1 ]]; then
+  user_uuid="$(jq -er '.[0].id' <<<"$users")"
+  user="$(curl -fsS --connect-timeout 5 --max-time 20 -H "$auth_header" \
+    "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/users/$user_uuid")"
+  updated_user="$(jq --arg slug "$slug" \
+    '.emailVerified=true | .requiredActions=((.requiredActions // []) - ["VERIFY_EMAIL"] + ["UPDATE_PASSWORD"] | unique) |
+     .attributes=(.attributes // {}) | .attributes.exoraTenant=(((.attributes.exoraTenant // []) + [$slug]) | unique)' <<<"$user")"
+  curl -fsS --connect-timeout 5 --max-time 20 -o /dev/null -X PUT \
+    -H "$auth_header" -H 'content-type: application/json' --data "$updated_user" \
+    "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/users/$user_uuid"
+else
+  echo "multiple Keycloak users have the same owner email" >&2
+  exit 1
+fi
+
+password_credential="$(jq -n --arg value "$temporary_password" '{type:"password",value:$value,temporary:true}')"
+curl -fsS --connect-timeout 5 --max-time 20 -o /dev/null -X PUT \
+  -H "$auth_header" -H 'content-type: application/json' --data "$password_credential" \
+  "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/users/$user_uuid/reset-password"
+
+issuer="$KEYCLOAK_PUBLIC_URL/realms/$KEYCLOAK_REALM"
+jq -n --arg issuer "$issuer" \
+  --arg jwksUrl "$issuer/protocol/openid-connect/certs" \
+  --arg audience "$OIDC_AUDIENCE" --arg clientId "$OIDC_CLIENT_ID" \
+  --arg scope "${OIDC_SCOPE:-openid profile email}" \
+  '{issuer:$issuer,jwksUrl:$jwksUrl,audience:$audience,clientId:$clientId,scope:$scope}'

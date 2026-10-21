@@ -17,7 +17,6 @@ facility="$(jq -er '.payload.facilityName' "$request_path")"
 city="$(jq -er '.payload.city' "$request_path")"
 plan="$(jq -er '.payload.plan' "$request_path")"
 voice="$(jq -er '.payload.voice' "$request_path")"
-website_template="$(jq -er '.payload.websiteTemplate // "standard" | select(. == "standard" or . == "sri-lakshmi")' "$request_path")"
 port="$(jq -er '.allocated_port' "$request_path")"
 origin="https://$slug.health.exora.solutions"
 tenant_dir="$TENANT_ROOT/$slug"
@@ -27,16 +26,6 @@ cert_dir="/etc/letsencrypt/live/$WILDCARD_CERT_NAME"
 data_known_hosts="${DATA_SSH_KNOWN_HOSTS:-/etc/exora-health/known_hosts}"
 [[ -s $cert_dir/fullchain.pem && -s $cert_dir/privkey.pem ]] || { echo "wildcard certificate $WILDCARD_CERT_NAME is not installed" >&2; exit 2; }
 [[ -r $data_known_hosts ]] || { echo "SSH known-hosts file $data_known_hosts is not readable" >&2; exit 2; }
-
-# Register the tenant's exact browser origin before allocating data resources. The operation is
-# idempotent, so retries reuse the same first-party OIDC client and owner identity.
-oidc_state="$(jq -n --arg slug "$slug" --arg email "$email" --arg origin "$origin" \
-  '{slug:$slug,email:$email,origin:$origin}' | "$OIDC_PROVISIONER")"
-oidc_issuer="$(jq -er .issuer <<<"$oidc_state")"
-oidc_jwks_url="$(jq -er .jwksUrl <<<"$oidc_state")"
-oidc_audience="$(jq -er .audience <<<"$oidc_state")"
-oidc_client_id="$(jq -er .clientId <<<"$oidc_state")"
-oidc_scope="$(jq -er .scope <<<"$oidc_state")"
 
 install -d -m 700 "$tenant_dir"
 if [[ ! -f $secrets ]]; then
@@ -49,7 +38,8 @@ if [[ ! -f $secrets ]]; then
     --arg voiceServiceKey "$(openssl rand -hex 40)" \
     --arg voiceSigningSecret "$(openssl rand -hex 40)" \
     --arg voiceCallbackSecret "$(openssl rand -hex 40)" \
-    '{databasePassword:$databasePassword,appPassword:$appPassword,jwtSecret:$jwtSecret,jitsiSecret:$jitsiSecret,voiceServiceKey:$voiceServiceKey,voiceSigningSecret:$voiceSigningSecret,voiceCallbackSecret:$voiceCallbackSecret}' > "$secrets"
+    --arg ownerTemporaryPassword "Ex!$(openssl rand -hex 16)" \
+    '{databasePassword:$databasePassword,appPassword:$appPassword,jwtSecret:$jwtSecret,jitsiSecret:$jitsiSecret,voiceServiceKey:$voiceServiceKey,voiceSigningSecret:$voiceSigningSecret,voiceCallbackSecret:$voiceCallbackSecret,ownerTemporaryPassword:$ownerTemporaryPassword}' > "$secrets"
   chmod 600 "$secrets"
 fi
 if [[ $(jq -r '.voiceCallbackSecret // empty' "$secrets") == '' ]]; then
@@ -60,15 +50,33 @@ if [[ $(jq -r '.voiceCallbackSecret // empty' "$secrets") == '' ]]; then
 fi
 
 # Generate missing managed secrets once; never rotate existing encrypted connections on restart.
-for field in integrationsKey bookingSecret whatsappVerifyToken bookingStaffId; do
+for field in integrationsKey bookingSecret whatsappVerifyToken bookingStaffId voiceServiceAccountId ownerTemporaryPassword; do
   if [[ $(jq -r --arg field "$field" '.[$field] // empty' "$secrets") == '' ]]; then
-    if [[ $field == bookingStaffId ]]; then value="$(cat /proc/sys/kernel/random/uuid)"; else value="$(openssl rand -hex 32)"; fi
+    if [[ $field == bookingStaffId || $field == voiceServiceAccountId ]]; then
+      value="$(cat /proc/sys/kernel/random/uuid)"
+    elif [[ $field == ownerTemporaryPassword ]]; then
+      value="Ex!$(openssl rand -hex 16)"
+    else
+      value="$(openssl rand -hex 32)"
+    fi
     secret_temp="$(mktemp "$tenant_dir/.secrets.XXXXXX")"
     jq --arg field "$field" --arg value "$value" '.[$field]=$value' "$secrets" > "$secret_temp"
     chmod 600 "$secret_temp"
     mv "$secret_temp" "$secrets"
   fi
 done
+
+# Register the tenant origin and issue the owner a strong temporary password. Retries reuse the
+# same root-only secret, so infrastructure failures do not silently rotate the displayed login.
+owner_temporary_password="$(jq -er .ownerTemporaryPassword "$secrets")"
+oidc_state="$(jq -n --arg slug "$slug" --arg email "$email" --arg origin "$origin" \
+  --arg temporaryPassword "$owner_temporary_password" \
+  '{slug:$slug,email:$email,origin:$origin,temporaryPassword:$temporaryPassword}' | "$OIDC_PROVISIONER")"
+oidc_issuer="$(jq -er .issuer <<<"$oidc_state")"
+oidc_jwks_url="$(jq -er .jwksUrl <<<"$oidc_state")"
+oidc_audience="$(jq -er .audience <<<"$oidc_state")"
+oidc_client_id="$(jq -er .clientId <<<"$oidc_state")"
+oidc_scope="$(jq -er .scope <<<"$oidc_state")"
 
 database_password="$(jq -r .databasePassword "$secrets")"
 app_password="$(jq -r .appPassword "$secrets")"
@@ -77,13 +85,12 @@ database_port="$(jq -er .databasePort <<<"$data_state")"
 export_path="$(jq -er .exportPath <<<"$data_state")"
 tenant_id="$(node -e "const{createHash}=require('crypto');let b=createHash('sha256').update('exora-tenant:'+process.argv[1]).digest().subarray(0,16);b[6]=(b[6]&15)|80;b[8]=(b[8]&63)|128;let h=b.toString('hex');console.log([h.slice(0,8),h.slice(8,12),h.slice(12,16),h.slice(16,20),h.slice(20)].join('-'))" "$slug")"
 facility_id="$(node -e "const{createHash}=require('crypto');let b=createHash('sha256').update('exora-facility:'+process.argv[1]).digest().subarray(0,16);b[6]=(b[6]&15)|80;b[8]=(b[8]&63)|128;let h=b.toString('hex');console.log([h.slice(0,8),h.slice(8,12),h.slice(12,16),h.slice(16,20),h.slice(20)].join('-'))" "$slug")"
-voice_account="$(cat /proc/sys/kernel/random/uuid)"
+voice_account="$(jq -er .voiceServiceAccountId "$secrets")"
 
 env_line() { printf '%s=%s\n' "$1" "$(jq -Rn --arg value "$2" '$value')"; }
 umask 077
 {
   env_line TENANT_SLUG "$slug"
-  env_line WEBSITE_TEMPLATE "$website_template"
   env_line TENANT_PORT "$port"
   env_line TENANT_PLAN "$plan"
   env_line VOICE_REQUESTED "$([[ $voice == true ]] && echo 1 || echo 0)"
@@ -131,10 +138,16 @@ umask 077
   env_line VOICE_SERVICE_ACCOUNT_ID "$voice_account"
   env_line VOICE_NOTICE_VERSION 2026-10-14
   env_line VOICE_SESSION_SECONDS 900
-  env_line VOICE_CALLBACK_TENANT_ID "$tenant_id"
-  env_line VOICE_CALLBACK_FACILITY_ID "$facility_id"
-  env_line VOICE_CALLBACK_ACCOUNT_ID "$voice_account"
-  env_line VOICE_CALLBACK_SECRET "$(jq -r .voiceCallbackSecret "$secrets")"
+  if [[ $voice == true && -n ${SARVAM_API_KEY:-} && -n ${SARVAM_ORG_ID:-} &&
+        -n ${SARVAM_WORKSPACE_ID:-} && -n ${SARVAM_APP_ID:-} && -n ${SARVAM_APP_VERSION:-} ]]; then
+    env_line VOICE_CALLBACK_TENANT_ID "$tenant_id"
+    env_line VOICE_CALLBACK_FACILITY_ID "$facility_id"
+    env_line VOICE_CALLBACK_ACCOUNT_ID "$voice_account"
+    env_line VOICE_CALLBACK_SECRET "$(jq -r .voiceCallbackSecret "$secrets")"
+    for key in SARVAM_API_KEY SARVAM_ORG_ID SARVAM_WORKSPACE_ID SARVAM_APP_ID SARVAM_APP_VERSION SARVAM_AGENT_NAME SARVAM_PHONE_NUMBER; do
+      if [[ -n ${!key:-} ]]; then env_line "$key" "${!key}"; fi
+    done
+  fi
 } > "$env_path"
 
 tenant_compose_file="${TENANT_COMPOSE_FILE:-$REPO_ROOT/deploy/production/tenant.compose.yml}"
@@ -187,4 +200,5 @@ docker compose -f "$GATEWAY_DIR/compose.yaml" exec -T nginx nginx -s reload
 for _ in $(seq 1 60); do curl -fsS "http://127.0.0.1:$port/public/v1/bootstrap" >/dev/null && break; sleep 2; done
 curl -fsS "http://127.0.0.1:$port/public/v1/bootstrap" >/dev/null
 jq -n --arg tenantId "$tenant_id" --arg composeProject "exora-$slug" --arg image "exora/hms:$IMAGE_TAG" --arg publicUrl "$origin/" --arg staffUrl "$origin/staff/appointments" \
-  '{tenantId:$tenantId,composeProject:$composeProject,image:$image,publicUrl:$publicUrl,staffUrl:$staffUrl}'
+  --arg adminUsername "$email" --arg temporaryPassword "$owner_temporary_password" \
+  '{tenantId:$tenantId,composeProject:$composeProject,image:$image,publicUrl:$publicUrl,staffUrl:$staffUrl,adminUsername:$adminUsername,temporaryPassword:$temporaryPassword}'

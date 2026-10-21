@@ -1,0 +1,301 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+
+docker_bin=/usr/bin/docker
+systemctl_bin=/usr/bin/systemctl
+journalctl_bin=/usr/bin/journalctl
+logger_bin=/usr/bin/logger
+
+source_root=/srv/apps/exora-health/HMS_NEW
+tenant_root=/srv/apps/exora-health/tenants
+managed_root=/etc/exora-health/compose
+platform_compose="$managed_root/platform.compose.yml"
+tenant_compose="$managed_root/tenant.compose.yml"
+platform_env="$managed_root/platform.env"
+identity_compose="$managed_root/keycloak.compose.yml"
+identity_env=/etc/exora-health/identity.env
+backup_root=/var/backups/exora-health/volumes
+helper_image=busybox:1.36
+
+die() {
+  printf 'exora-healthctl: %s\n' "$*" >&2
+  exit 2
+}
+
+usage() {
+  cat <<'EOF'
+Usage:
+  exora-healthctl containers
+  exora-healthctl container <inspect|logs|start|stop|restart|kill|pause|unpause|remove|remove-force|stats|top|shell|exec> NAME [ARGS...]
+  exora-healthctl platform <ps|config-check|build|pull|up|deploy|start|stop|restart|logs|down>
+  exora-healthctl identity <ps|config-check|build|pull|up|deploy|start|stop|restart|logs|down>
+  exora-healthctl tenants
+  exora-healthctl tenant SLUG <ps|config-check|build|pull|up|deploy|start|stop|restart|logs|down|destroy>
+  exora-healthctl volumes
+  exora-healthctl volume <inspect|backup|restore|shell|clear|remove> NAME [BACKUP]
+  exora-healthctl provisioner <status|logs|follow|start|stop|restart>
+
+"destroy", "clear", "remove", and "remove-force" are destructive.
+EOF
+}
+
+audit() {
+  local actor=${SUDO_USER:-${USER:-unknown}}
+  "$logger_bin" -t exora-healthctl -- "actor=$actor action=$1 target=${2:-none}"
+}
+
+valid_resource_name() {
+  [[ $1 =~ ^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$ ]]
+}
+
+valid_slug() {
+  [[ $1 =~ ^[a-z0-9][a-z0-9-]{1,62}$ ]]
+}
+
+allowed_tenant_slug() {
+  local slug=$1
+  valid_slug "$slug" || return 1
+  [[ $slug == test-hospital || -d "$tenant_root/$slug" ]]
+}
+
+allowed_project() {
+  local project=$1
+  if [[ $project == exora-health-platform || $project == exora-health-identity ]]; then
+    return 0
+  fi
+  [[ $project == exora-* ]] || return 1
+  allowed_tenant_slug "${project#exora-}"
+}
+
+run_identity() {
+  local action=${1:-}
+  [[ -r $identity_compose && -r $identity_env ]] || die "managed identity deployment is not installed"
+  case "$action" in
+    ps) audit identity-ps identity; exec "$docker_bin" compose --env-file "$identity_env" -f "$identity_compose" ps ;;
+    config-check) audit identity-config-check identity; exec "$docker_bin" compose --env-file "$identity_env" -f "$identity_compose" config --quiet ;;
+    build) audit identity-build identity; exec "$docker_bin" compose --env-file "$identity_env" -f "$identity_compose" build ;;
+    pull) audit identity-pull identity; exec "$docker_bin" compose --env-file "$identity_env" -f "$identity_compose" pull ;;
+    up) audit identity-up identity; exec "$docker_bin" compose --env-file "$identity_env" -f "$identity_compose" up -d --no-build ;;
+    deploy) audit identity-deploy identity; "$docker_bin" compose --env-file "$identity_env" -f "$identity_compose" build; exec "$docker_bin" compose --env-file "$identity_env" -f "$identity_compose" up -d --remove-orphans ;;
+    start|stop|restart) audit "identity-$action" identity; exec "$docker_bin" compose --env-file "$identity_env" -f "$identity_compose" "$action" ;;
+    logs) audit identity-logs identity; exec "$docker_bin" compose --env-file "$identity_env" -f "$identity_compose" logs --tail 500 -f ;;
+    down) audit identity-down identity; exec "$docker_bin" compose --env-file "$identity_env" -f "$identity_compose" down --remove-orphans ;;
+    *) die "unsupported identity action" ;;
+  esac
+}
+
+container_project() {
+  "$docker_bin" inspect --type container --format '{{index .Config.Labels "com.docker.compose.project"}}' "$1" 2>/dev/null
+}
+
+require_container() {
+  local name=$1 project
+  valid_resource_name "$name" || die "invalid container name"
+  project=$(container_project "$name") || die "container does not exist"
+  allowed_project "$project" || die "container is not managed by Exora Health"
+}
+
+list_containers() {
+  local name project status
+  printf '%-46s %-28s %s\n' CONTAINER PROJECT STATUS
+  while IFS='|' read -r name project status; do
+    if allowed_project "$project"; then
+      printf '%-46s %-28s %s\n' "$name" "$project" "$status"
+    fi
+  done < <("$docker_bin" ps -a --format '{{.Names}}|{{.Label "com.docker.compose.project"}}|{{.Status}}')
+}
+
+volume_attached_to_allowed_container() {
+  local volume=$1 container project mounted
+  while IFS='|' read -r container project; do
+    allowed_project "$project" || continue
+    mounted=$("$docker_bin" inspect --type container --format '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}}{{"\n"}}{{end}}{{end}}' "$container")
+    if grep -Fxq -- "$volume" <<<"$mounted"; then
+      return 0
+    fi
+  done < <("$docker_bin" ps -a --format '{{.Names}}|{{.Label "com.docker.compose.project"}}')
+  return 1
+}
+
+volume_project() {
+  "$docker_bin" volume inspect --format '{{index .Labels "com.docker.compose.project"}}' "$1" 2>/dev/null
+}
+
+allowed_volume() {
+  local name=$1 project
+  valid_resource_name "$name" || return 1
+  project=$(volume_project "$name") || return 1
+  if [[ -n $project ]] && allowed_project "$project"; then
+    return 0
+  fi
+  volume_attached_to_allowed_container "$name"
+}
+
+require_volume() {
+  allowed_volume "$1" || die "volume does not exist or is not managed by Exora Health"
+}
+
+list_volumes() {
+  local name project container mounted
+  declare -A attached=()
+
+  while IFS='|' read -r container project; do
+    allowed_project "$project" || continue
+    while IFS= read -r mounted; do
+      [[ -n $mounted ]] && attached["$mounted"]=1
+    done < <("$docker_bin" inspect --type container --format '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}}{{"\n"}}{{end}}{{end}}' "$container")
+  done < <("$docker_bin" ps -a --format '{{.Names}}|{{.Label "com.docker.compose.project"}}')
+
+  printf '%-66s %s\n' VOLUME PROJECT
+  while IFS='|' read -r name project; do
+    if { [[ -n $project ]] && allowed_project "$project"; } || [[ ${attached[$name]:-0} == 1 ]]; then
+      [[ -n $project ]] || project='attached-volume'
+      printf '%-66s %s\n' "$name" "$project"
+    fi
+  done < <("$docker_bin" volume ls --format '{{.Name}}|{{.Label "com.docker.compose.project"}}')
+}
+
+tenant_env() {
+  local slug=$1 path
+  allowed_tenant_slug "$slug" || die "unknown Exora Health tenant"
+  if [[ $slug == test-hospital ]]; then
+    path="$managed_root/test-hospital.env"
+  else
+    path="$tenant_root/$slug/.env"
+  fi
+  [[ -f $path ]] || die "tenant environment is not installed"
+  [[ $(stat -c '%u' "$path") == 0 ]] || die "tenant environment must be owned by root"
+  [[ $((8#$(stat -c '%a' "$path") & 8#022)) == 0 ]] || die "tenant environment must not be group/world writable"
+  printf '%s\n' "$path"
+}
+
+run_platform() {
+  local action=${1:-}
+  [[ -r $platform_compose && -r $platform_env ]] || die "managed platform deployment is not installed"
+  case "$action" in
+    ps) audit platform-ps platform; exec "$docker_bin" compose --env-file "$platform_env" -f "$platform_compose" ps ;;
+    config-check) audit platform-config-check platform; exec "$docker_bin" compose --env-file "$platform_env" -f "$platform_compose" config --quiet ;;
+    build) audit platform-build platform; exec "$docker_bin" compose --env-file "$platform_env" -f "$platform_compose" build ;;
+    pull) audit platform-pull platform; exec "$docker_bin" compose --env-file "$platform_env" -f "$platform_compose" pull ;;
+    up) audit platform-up platform; exec "$docker_bin" compose --env-file "$platform_env" -f "$platform_compose" up -d --no-build ;;
+    deploy) audit platform-deploy platform; "$docker_bin" compose --env-file "$platform_env" -f "$platform_compose" build; exec "$docker_bin" compose --env-file "$platform_env" -f "$platform_compose" up -d --remove-orphans ;;
+    start|stop|restart) audit "platform-$action" platform; exec "$docker_bin" compose --env-file "$platform_env" -f "$platform_compose" "$action" ;;
+    logs) audit platform-logs platform; exec "$docker_bin" compose --env-file "$platform_env" -f "$platform_compose" logs --tail 500 -f ;;
+    down) audit platform-down platform; exec "$docker_bin" compose --env-file "$platform_env" -f "$platform_compose" down --remove-orphans ;;
+    *) die "unsupported platform action" ;;
+  esac
+}
+
+run_tenant() {
+  local slug=${1:-} action=${2:-} env_path
+  allowed_tenant_slug "$slug" || die "unknown Exora Health tenant"
+  env_path=$(tenant_env "$slug")
+  [[ -r $tenant_compose ]] || die "managed tenant deployment is not installed"
+  case "$action" in
+    ps) audit tenant-ps "$slug"; exec "$docker_bin" compose --env-file "$env_path" -f "$tenant_compose" ps ;;
+    config-check) audit tenant-config-check "$slug"; exec "$docker_bin" compose --env-file "$env_path" -f "$tenant_compose" config --quiet ;;
+    build) audit tenant-build "$slug"; exec "$docker_bin" compose --env-file "$env_path" -f "$tenant_compose" build ;;
+    pull) audit tenant-pull "$slug"; exec "$docker_bin" compose --env-file "$env_path" -f "$tenant_compose" pull ;;
+    up) audit tenant-up "$slug"; exec "$docker_bin" compose --env-file "$env_path" -f "$tenant_compose" up -d --no-build ;;
+    deploy) audit tenant-deploy "$slug"; "$docker_bin" compose --env-file "$env_path" -f "$tenant_compose" build; exec "$docker_bin" compose --env-file "$env_path" -f "$tenant_compose" up -d --remove-orphans ;;
+    start|stop|restart) audit "tenant-$action" "$slug"; exec "$docker_bin" compose --env-file "$env_path" -f "$tenant_compose" "$action" ;;
+    logs) audit tenant-logs "$slug"; exec "$docker_bin" compose --env-file "$env_path" -f "$tenant_compose" logs --tail 500 -f ;;
+    down) audit tenant-down "$slug"; exec "$docker_bin" compose --env-file "$env_path" -f "$tenant_compose" down --remove-orphans ;;
+    destroy) audit tenant-destroy "$slug"; exec "$docker_bin" compose --env-file "$env_path" -f "$tenant_compose" down --volumes --remove-orphans ;;
+    *) die "unsupported tenant action" ;;
+  esac
+}
+
+run_container() {
+  local action=${1:-} name=${2:-}
+  [[ -n $name ]] || die "container name is required"
+  require_container "$name"
+  case "$action" in
+    inspect) audit container-inspect "$name"; exec "$docker_bin" inspect --type container "$name" ;;
+    logs) audit container-logs "$name"; exec "$docker_bin" logs --tail 500 -f "$name" ;;
+    start|stop|restart|kill|pause|unpause) audit "container-$action" "$name"; exec "$docker_bin" "$action" "$name" ;;
+    remove) audit container-remove "$name"; exec "$docker_bin" rm "$name" ;;
+    remove-force) audit container-remove-force "$name"; exec "$docker_bin" rm -f "$name" ;;
+    stats) audit container-stats "$name"; exec "$docker_bin" stats "$name" ;;
+    top) audit container-top "$name"; exec "$docker_bin" top "$name" ;;
+    shell)
+      audit container-shell "$name"
+      if [[ -t 0 && -t 1 ]]; then exec "$docker_bin" exec -it --user 0 "$name" /bin/sh; else exec "$docker_bin" exec -i --user 0 "$name" /bin/sh; fi
+      ;;
+    exec)
+      shift 2
+      [[ ${1:-} == -- ]] && shift
+      (( $# > 0 )) || die "container exec requires a command"
+      audit container-exec "$name"
+      if [[ -t 0 && -t 1 ]]; then exec "$docker_bin" exec -it --user 0 "$name" "$@"; else exec "$docker_bin" exec -i --user 0 "$name" "$@"; fi
+      ;;
+    *) die "unsupported container action" ;;
+  esac
+}
+
+run_volume() {
+  local action=${1:-} name=${2:-} backup=${3:-}
+  [[ -n $name ]] || die "volume name is required"
+  require_volume "$name"
+  case "$action" in
+    inspect) audit volume-inspect "$name"; exec "$docker_bin" volume inspect "$name" ;;
+    backup)
+      local safe_name timestamp output
+      safe_name=${name//[^A-Za-z0-9_.-]/_}
+      timestamp=$(date -u +%Y%m%dT%H%M%SZ)
+      output="$safe_name-$timestamp.tgz"
+      audit volume-backup "$name"
+      "$docker_bin" run --rm --network none --mount "type=volume,src=$name,dst=/source,readonly" --mount "type=bind,src=$backup_root,dst=/backup" "$helper_image" tar -czf "/backup/$output" -C /source .
+      printf '%s/%s\n' "$backup_root" "$output"
+      ;;
+    restore)
+      [[ $backup =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*\.tgz$ ]] || die "a valid backup filename is required"
+      [[ -f $backup_root/$backup ]] || die "backup does not exist"
+      [[ $(stat -c '%u' "$backup_root/$backup") == 0 ]] || die "backup must be owned by root"
+      audit volume-restore "$name"
+      exec "$docker_bin" run --rm --network none --mount "type=volume,src=$name,dst=/target" --mount "type=bind,src=$backup_root,dst=/backup,readonly" "$helper_image" tar -xzf "/backup/$backup" -C /target
+      ;;
+    shell)
+      audit volume-shell "$name"
+      if [[ -t 0 && -t 1 ]]; then exec "$docker_bin" run --rm -it --network none --mount "type=volume,src=$name,dst=/data" "$helper_image" /bin/sh; else exec "$docker_bin" run --rm -i --network none --mount "type=volume,src=$name,dst=/data" "$helper_image" /bin/sh; fi
+      ;;
+    clear)
+      audit volume-clear "$name"
+      exec "$docker_bin" run --rm --network none --mount "type=volume,src=$name,dst=/data" "$helper_image" /bin/sh -c 'find /data -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +'
+      ;;
+    remove) audit volume-remove "$name"; exec "$docker_bin" volume rm "$name" ;;
+    *) die "unsupported volume action" ;;
+  esac
+}
+
+run_provisioner() {
+  local action=${1:-}
+  case "$action" in
+    status) audit provisioner-status provisioner; exec "$systemctl_bin" --no-pager --full status exora-health-provisioner.service ;;
+    logs) audit provisioner-logs provisioner; exec "$journalctl_bin" -u exora-health-provisioner.service -n 500 --no-pager ;;
+    follow) audit provisioner-follow provisioner; exec "$journalctl_bin" -u exora-health-provisioner.service -n 100 -f ;;
+    start|stop|restart) audit "provisioner-$action" provisioner; exec "$systemctl_bin" "$action" exora-health-provisioner.service ;;
+    *) die "unsupported provisioner action" ;;
+  esac
+}
+
+command=${1:-help}
+case "$command" in
+  help|-h|--help) usage ;;
+  containers) list_containers ;;
+  container) shift; run_container "$@" ;;
+  platform) shift; run_platform "$@" ;;
+  identity) shift; run_identity "$@" ;;
+  tenants)
+    printf '%s\n' test-hospital
+    if [[ -d $tenant_root ]]; then find "$tenant_root" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort; fi
+    ;;
+  tenant) shift; run_tenant "$@" ;;
+  volumes) list_volumes ;;
+  volume) shift; run_volume "$@" ;;
+  provisioner) shift; run_provisioner "$@" ;;
+  *) usage >&2; exit 2 ;;
+esac

@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleCheck,
+  Copy,
   Globe2,
   HeartPulse,
   LayoutDashboard,
@@ -32,7 +33,6 @@ type FormState = {
   plan: Plan;
   voice: boolean;
   whatsapp: boolean;
-  websiteTemplate: "standard" | "sri-lakshmi";
 };
 type ProvisioningState = {
   onboardingId: string;
@@ -41,6 +41,9 @@ type ProvisioningState = {
   public_url?: string;
   staff_url?: string;
   error?: string;
+  admin_username?: string;
+  temporary_password?: string;
+  credential_expires_at?: string;
 };
 type ApiError = {
   message?: string;
@@ -60,7 +63,6 @@ const emptyForm: FormState = {
   plan: "connect",
   voice: true,
   whatsapp: false,
-  websiteTemplate: "standard",
 };
 
 const steps = [
@@ -150,7 +152,11 @@ function Onboarding({ onClose }: { onClose: () => void }) {
       return emptyForm;
     }
   });
-  const [submitted, setSubmitted] = useState<ProvisioningState | null>(null);
+  const [submitted, setSubmitted] = useState<ProvisioningState | null>(() => {
+    try { return JSON.parse(localStorage.getItem("exora-onboarding-active") || "null"); }
+    catch { return null; }
+  });
+  const [copied, setCopied] = useState(false);
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -165,14 +171,23 @@ function Onboarding({ onClose }: { onClose: () => void }) {
   }, [form, step]);
 
   useEffect(() => {
-    if (!submitted?.accessToken || !["queued", "provisioning"].includes(submitted.status)) return;
-    const poll = window.setInterval(async () => {
+    if (!submitted?.accessToken) return;
+    const refresh = async () => {
       const response = await fetch(`/control/v1/onboarding/${submitted.onboardingId}`, { headers: { authorization: `Bearer ${submitted.accessToken}` } });
       if (!response.ok) return;
       const next = await response.json() as ProvisioningState;
-      setSubmitted((current) => current ? { ...current, ...next } : current);
-    }, 2000);
-    return () => clearInterval(poll);
+      setSubmitted((current) => {
+        if (!current) return current;
+        const merged = { ...current, ...next };
+        const { temporary_password: _password, ...restorable } = merged;
+        localStorage.setItem("exora-onboarding-active", JSON.stringify(restorable));
+        return merged;
+      });
+    };
+    void refresh();
+    if (!["queued", "provisioning"].includes(submitted.status)) return;
+    const poll = window.setInterval(() => void refresh(), 2000);
+    return () => window.clearInterval(poll);
   }, [submitted?.accessToken, submitted?.onboardingId, submitted?.status]);
 
   const submit = async () => {
@@ -203,7 +218,10 @@ function Onboarding({ onClose }: { onClose: () => void }) {
         throw new Error(body.message || validationMessage || "We could not create the workspace request.");
       }
       setSubmitted(body as ProvisioningState);
-      if (body.accessToken) localStorage.setItem(`exora-onboarding-token:${body.onboardingId}`, body.accessToken);
+      if (body.accessToken) {
+        localStorage.setItem(`exora-onboarding-token:${body.onboardingId}`, body.accessToken);
+        localStorage.setItem("exora-onboarding-active", JSON.stringify(body));
+      }
     } catch (reason) {
       setSubmitError((reason as Error).message);
     } finally {
@@ -221,11 +239,19 @@ function Onboarding({ onClose }: { onClose: () => void }) {
         <h2>{ready ? `${form.organisation} is ready.` : `We’re building ${form.organisation}.`}</h2>
         <p>{ready ? "Your isolated website, staff workspace and database are online." : "Exora has accepted the launch configuration. This screen updates as the isolated deployment is created."}</p>
         <div className="launch-links">
-          <div><span>Patient website</span><strong>{submitted.public_url || `${form.slug}.health.exora.solutions · preparing`}</strong></div>
-          <div><span>Staff workspace</span><strong>{submitted.staff_url || `${form.slug}.health.exora.solutions/staff/ · preparing`}</strong></div>
+          <div><span>Patient website</span><strong>{submitted.public_url || `${form.slug}.exora.health · preparing`}</strong></div>
+          <div><span>Staff workspace</span><strong>{submitted.staff_url || `staff.${form.slug}.exora.health · preparing`}</strong></div>
         </div>
+        {ready && submitted.admin_username && submitted.temporary_password && <section className="admin-credentials" aria-label="Administrator sign-in details">
+          <div className="credential-heading"><ShieldCheck /><div><strong>Administrator sign-in</strong><span>Save these details now. The temporary password is available here for 24 hours.</span></div></div>
+          <dl>
+            <div><dt>Email</dt><dd>{submitted.admin_username}</dd></div>
+            <div><dt>Temporary password</dt><dd><code>{submitted.temporary_password}</code><button className="copy-credential" onClick={() => { void navigator.clipboard.writeText(submitted.temporary_password!); setCopied(true); }}><Copy size={15} /> {copied ? "Copied" : "Copy"}</button></dd></div>
+          </dl>
+          <p>You’ll be required to replace this password when you first sign in. Afterward, use <strong>Workspace settings → My account → Manage password</strong>.</p>
+        </section>}
         {submitted.error && <p className="submit-error">{submitted.error}</p>}
-        <div className="success-actions">{ready && <><a className="button primary" href={submitted.public_url}>Open patient website</a><a className="button outline" href={submitted.staff_url}>Open staff workspace</a></>}<button className="button outline" onClick={onClose}>Return to Exora Health</button></div>
+        <div className="success-actions">{ready && <a className="button primary" href={submitted.staff_url}>Open staff workspace</a>}{ready && <a className="button outline" href={submitted.public_url}>Open patient website</a>}<button className="button outline" onClick={onClose}>Return to Exora Health</button></div>
       </div>
     );
   }
@@ -268,7 +294,7 @@ function Onboarding({ onClose }: { onClose: () => void }) {
           <div className="form-grid">
             <Field label="Organisation name" value={form.organisation} onChange={(e) => { set("organisation", e.target.value); if (!form.slug || form.slug === slugify(form.organisation)) set("slug", slugify(e.target.value)); }} placeholder="Northstar Health" autoFocus />
             <Field label="Workspace address" value={form.slug} onChange={(e) => set("slug", slugify(e.target.value))} placeholder="northstar-health" />
-            <div className="url-preview">{form.slug || "your-clinic"}.health.exora.solutions</div>
+            <div className="url-preview">{form.slug || "your-clinic"}.exora.health</div>
           </div>
         </>}
         {step === 2 && <>
@@ -277,7 +303,6 @@ function Onboarding({ onClose }: { onClose: () => void }) {
           <div className="form-grid two-column">
             <Field label="Facility name" value={form.facilityName} onChange={(e) => set("facilityName", e.target.value)} placeholder="Indiranagar Clinic" autoFocus />
             <label className="field"><span>Facility type</span><select value={form.facilityType} onChange={(e) => set("facilityType", e.target.value)}><option value="clinic">Clinic</option><option value="hospital">Hospital</option><option value="diagnostic_centre">Diagnostic centre</option><option value="virtual">Virtual clinic</option></select></label>
-            <label className="field"><span>Website</span><select value={form.websiteTemplate} onChange={(e) => set("websiteTemplate", e.target.value as FormState["websiteTemplate"])}><option value="standard">Standard clinic website</option><option value="sri-lakshmi">Sri Lakshmi Hospital website</option></select></label>
             <Field label="City" value={form.city} onChange={(e) => set("city", e.target.value)} placeholder="Bengaluru" />
             <label className="field"><span>Timezone</span><select value={form.timezone} onChange={(e) => set("timezone", e.target.value)}><option>Asia/Kolkata</option><option>Asia/Dubai</option><option>Europe/London</option><option>America/New_York</option></select></label>
           </div>
@@ -300,10 +325,9 @@ function Onboarding({ onClose }: { onClose: () => void }) {
             <div><span>Organisation</span><strong>{form.organisation}</strong></div>
             <div><span>Owner</span><strong>{form.ownerName} · {form.email}</strong></div>
             <div><span>First facility</span><strong>{form.facilityName}, {form.city}</strong></div>
-            <div><span>Website</span><strong>{form.websiteTemplate === "sri-lakshmi" ? "Sri Lakshmi Hospital website" : "Standard clinic website"}</strong></div>
             <div><span>Plan</span><strong>{plans.find((p) => p.id === form.plan)?.name}</strong></div>
             <div><span>Channels</span><strong>{[form.voice && "Voice", form.whatsapp && "WhatsApp"].filter(Boolean).join(", ") || "Web only"}</strong></div>
-            <div><span>Patient URL</span><strong>{form.slug}.health.exora.solutions</strong></div>
+            <div><span>Patient URL</span><strong>{form.slug}.exora.health</strong></div>
           </div>
           <label className="consent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} required /><span>I confirm these details and understand that clinical data will stay inside this organisation’s isolated deployment.</span></label>
           {submitError && <p className="submit-error">{submitError}</p>}

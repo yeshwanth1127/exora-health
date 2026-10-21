@@ -1,5 +1,4 @@
-import { Onboarding } from './onboarding.ts';
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,6 +25,41 @@ const superadminToken = process.env.SUPERADMIN_TOKEN;
 const provisionerToken = process.env.PROVISIONER_TOKEN;
 const isSuperadmin = (authorization?: string) => !!superadminToken && authorization === `Bearer ${superadminToken}`;
 const isProvisioner = (authorization?: string) => !!provisionerToken && authorization === `Bearer ${provisionerToken}`;
+const credentialKey = provisionerToken
+  ? createHash('sha256').update(`exora-onboarding-credential:${provisionerToken}`).digest()
+  : undefined;
+function encryptCredential(value: string) {
+  if (!credentialKey) throw new Error('PROVISIONER_TOKEN is required to protect onboarding credentials');
+  const iv = randomBytes(12), cipher = createCipheriv('aes-256-gcm', credentialKey, iv);
+  const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+  return ['v1', iv.toString('base64url'), cipher.getAuthTag().toString('base64url'), encrypted.toString('base64url')].join('.');
+}
+function decryptCredential(value: string) {
+  if (!credentialKey) return undefined;
+  try {
+    const [version, iv, tag, encrypted] = value.split('.');
+    if (version !== 'v1' || !iv || !tag || !encrypted) return undefined;
+    const decipher = createDecipheriv('aes-256-gcm', credentialKey, Buffer.from(iv, 'base64url'));
+    decipher.setAuthTag(Buffer.from(tag, 'base64url'));
+    return Buffer.concat([decipher.update(Buffer.from(encrypted, 'base64url')), decipher.final()]).toString('utf8');
+  } catch { return undefined; }
+}
+
+const Onboarding = z.object({
+  organisation: z.string().trim().min(2).max(120),
+  slug: z.string().regex(/^[a-z0-9][a-z0-9-]{1,62}$/),
+  ownerName: z.string().trim().min(2).max(100),
+  email: z.string().trim().email().max(254),
+  phone: z.string().trim().max(30).optional(),
+  city: z.string().trim().min(2).max(80),
+  timezone: z.string().trim().min(3).max(64),
+  facilityName: z.string().trim().min(2).max(120),
+  facilityType: z.enum(['clinic', 'hospital', 'diagnostic_centre', 'virtual']),
+  plan: z.enum(['launch', 'connect', 'scale']),
+  voice: z.boolean(),
+  whatsapp: z.boolean(),
+  termsAccepted: z.literal(true),
+}).refine((value) => !value.voice || value.plan !== 'launch', { path: ['voice'], message: 'Voice requires the Connect or Scale plan.' });
 
 async function schema() {
   await pool.query(`
@@ -40,9 +74,13 @@ async function schema() {
       status text NOT NULL CHECK(status IN ('queued','provisioning','ready','failed')),
       allocated_port integer NOT NULL UNIQUE,
       error text,
+      admin_credential_ciphertext text,
+      credential_expires_at timestamptz,
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     );
+    ALTER TABLE control.onboarding_request ADD COLUMN IF NOT EXISTS admin_credential_ciphertext text;
+    ALTER TABLE control.onboarding_request ADD COLUMN IF NOT EXISTS credential_expires_at timestamptz;
     CREATE TABLE IF NOT EXISTS control.customer (
       id uuid PRIMARY KEY,
       onboarding_id uuid NOT NULL UNIQUE REFERENCES control.onboarding_request(id),
@@ -145,6 +183,8 @@ type CompletedDeployment = {
   image?: string;
   publicUrl?: string;
   staffUrl?: string;
+  adminUsername?: string;
+  temporaryPassword?: string;
 };
 
 async function markReady(id: string, payload: z.infer<typeof Onboarding>, port: number, deployment: CompletedDeployment = {}) {
@@ -184,14 +224,18 @@ async function markReady(id: string, payload: z.infer<typeof Onboarding>, port: 
         [randomUUID(), customer.id, `voice:onboarding:${id}`]);
       await client.query("UPDATE control.customer SET voice_status='configuring' WHERE id=$1", [customer.id]);
     }
-    await client.query("UPDATE control.onboarding_request SET status='ready',error=NULL,updated_at=now() WHERE id=$1", [id]);
+    const protectedCredential = deployment.temporaryPassword ? encryptCredential(deployment.temporaryPassword) : null;
+    await client.query(`UPDATE control.onboarding_request SET status='ready',error=NULL,
+      admin_credential_ciphertext=COALESCE($2,admin_credential_ciphertext),
+      credential_expires_at=CASE WHEN $2 IS NOT NULL THEN now()+interval '24 hours' ELSE credential_expires_at END,
+      updated_at=now() WHERE id=$1`, [id, protectedCredential]);
     await client.query('COMMIT');
   } catch (error) { await client.query('ROLLBACK'); throw error; }
   finally { client.release(); }
 }
 
 async function provision(id: string, payload: z.infer<typeof Onboarding>, port: number) {
-  const args = [path.join(root, 'scripts/provision-tenant.mjs'), '--slug', payload.slug, '--name', payload.organisation, '--email', payload.email, '--owner', payload.ownerName, '--facility', payload.facilityName, '--city', payload.city, '--plan', payload.plan, '--voice', String(payload.voice), '--port', String(port), '--website-template', payload.websiteTemplate];
+  const args = [path.join(root, 'scripts/provision-tenant.mjs'), '--slug', payload.slug, '--name', payload.organisation, '--email', payload.email, '--owner', payload.ownerName, '--facility', payload.facilityName, '--city', payload.city, '--plan', payload.plan, '--voice', String(payload.voice), '--port', String(port)];
   const child = spawn(process.execPath, args, { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
   let failure = '';
   child.stderr.on('data', (chunk) => { failure = `${failure}${String(chunk)}`.slice(-4000); });
@@ -241,6 +285,8 @@ const Completion = z.object({
   image: z.string().min(3).max(200),
   publicUrl: z.url(),
   staffUrl: z.url(),
+  adminUsername: z.string().trim().email().max(254),
+  temporaryPassword: z.string().min(20).max(128),
 });
 
 app.post('/control/v1/internal/provisioning/claim', async (request, reply) => {
@@ -301,10 +347,20 @@ app.get('/control/v1/onboarding/:id', async (request, reply) => {
   const id = z.uuid().safeParse((request.params as { id?: string }).id);
   const bearer = request.headers.authorization?.replace(/^Bearer\s+/i, '');
   if (!id.success || !bearer) return reply.status(401).send({ error: 'unauthorized' });
-  const { rows: [row] } = await pool.query(`SELECT r.id,r.status,r.slug,r.error,d.public_url,d.staff_url,d.health,c.voice_status
+  const { rows: [row] } = await pool.query(`SELECT r.id,r.status,r.slug,r.owner_email,r.error,r.admin_credential_ciphertext,r.credential_expires_at,
+      d.public_url,d.staff_url,d.health,c.voice_status
     FROM control.onboarding_request r LEFT JOIN control.customer c ON c.onboarding_id=r.id LEFT JOIN control.deployment d ON d.customer_id=c.id
     WHERE r.id=$1 AND r.access_token_hash=$2`, [id.data, hash(bearer)]);
   if (!row) return reply.status(404).send({ error: 'not_found' });
+  if (row.status === 'ready') {
+    row.admin_username = row.owner_email;
+    if (row.admin_credential_ciphertext && row.credential_expires_at && new Date(row.credential_expires_at) > new Date()) {
+      row.temporary_password = decryptCredential(row.admin_credential_ciphertext);
+      row.credential_expires_at = new Date(row.credential_expires_at).toISOString();
+    }
+  }
+  delete row.owner_email;
+  delete row.admin_credential_ciphertext;
   return row;
 });
 
