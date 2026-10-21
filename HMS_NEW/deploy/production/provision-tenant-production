@@ -4,13 +4,10 @@ set -euo pipefail
 request_path=${1:?claim JSON path is required}
 config=${EXORA_PROVISIONER_CONFIG:-/etc/exora-health/provisioner.env}
 [[ -r $config ]] || { echo "missing $config" >&2; exit 1; }
-# Real tenant hostnames must never expose the password-free development issuer.
 # shellcheck disable=SC1090
 source "$config"
-: "${OIDC_ISSUER:?Configure the company identity provider before provisioning customers}"
-: "${OIDC_JWKS_URL:?OIDC_JWKS_URL is required}"
-: "${OIDC_AUDIENCE:?OIDC_AUDIENCE is required}"
-: "${OIDC_CLIENT_ID:?OIDC_CLIENT_ID is required; the image must be built with matching browser settings}"
+: "${OIDC_PROVISIONER:=/usr/local/sbin/exora-health-provision-oidc}"
+[[ -x $OIDC_PROVISIONER ]] || { echo "OIDC provisioner $OIDC_PROVISIONER is not executable" >&2; exit 1; }
 
 slug="$(jq -er '.payload.slug | select(test("^[a-z0-9][a-z0-9-]{1,62}$"))' "$request_path")"
 name="$(jq -er '.payload.organisation' "$request_path")"
@@ -22,11 +19,24 @@ plan="$(jq -er '.payload.plan' "$request_path")"
 voice="$(jq -er '.payload.voice' "$request_path")"
 website_template="$(jq -er '.payload.websiteTemplate // "standard" | select(. == "standard" or . == "sri-lakshmi")' "$request_path")"
 port="$(jq -er '.allocated_port' "$request_path")"
+origin="https://$slug.health.exora.solutions"
 tenant_dir="$TENANT_ROOT/$slug"
 secrets="$tenant_dir/secrets.json"
 env_path="$tenant_dir/.env"
 cert_dir="/etc/letsencrypt/live/$WILDCARD_CERT_NAME"
+data_known_hosts="${DATA_SSH_KNOWN_HOSTS:-/etc/exora-health/known_hosts}"
 [[ -s $cert_dir/fullchain.pem && -s $cert_dir/privkey.pem ]] || { echo "wildcard certificate $WILDCARD_CERT_NAME is not installed" >&2; exit 2; }
+[[ -r $data_known_hosts ]] || { echo "SSH known-hosts file $data_known_hosts is not readable" >&2; exit 2; }
+
+# Register the tenant's exact browser origin before allocating data resources. The operation is
+# idempotent, so retries reuse the same first-party OIDC client and owner identity.
+oidc_state="$(jq -n --arg slug "$slug" --arg email "$email" --arg origin "$origin" \
+  '{slug:$slug,email:$email,origin:$origin}' | "$OIDC_PROVISIONER")"
+oidc_issuer="$(jq -er .issuer <<<"$oidc_state")"
+oidc_jwks_url="$(jq -er .jwksUrl <<<"$oidc_state")"
+oidc_audience="$(jq -er .audience <<<"$oidc_state")"
+oidc_client_id="$(jq -er .clientId <<<"$oidc_state")"
+oidc_scope="$(jq -er .scope <<<"$oidc_state")"
 
 install -d -m 700 "$tenant_dir"
 if [[ ! -f $secrets ]]; then
@@ -62,12 +72,11 @@ done
 
 database_password="$(jq -r .databasePassword "$secrets")"
 app_password="$(jq -r .appPassword "$secrets")"
-data_state="$(jq -n --arg slug "$slug" --arg databasePassword "$database_password" '{slug:$slug,databasePassword:$databasePassword}' | ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$DATA_SSH_KEY" "$DATA_SSH_TARGET" provision)"
+data_state="$(jq -n --arg slug "$slug" --arg databasePassword "$database_password" '{slug:$slug,databasePassword:$databasePassword}' | ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$data_known_hosts" -i "$DATA_SSH_KEY" "$DATA_SSH_TARGET" provision)"
 database_port="$(jq -er .databasePort <<<"$data_state")"
 export_path="$(jq -er .exportPath <<<"$data_state")"
 tenant_id="$(node -e "const{createHash}=require('crypto');let b=createHash('sha256').update('exora-tenant:'+process.argv[1]).digest().subarray(0,16);b[6]=(b[6]&15)|80;b[8]=(b[8]&63)|128;let h=b.toString('hex');console.log([h.slice(0,8),h.slice(8,12),h.slice(12,16),h.slice(16,20),h.slice(20)].join('-'))" "$slug")"
 facility_id="$(node -e "const{createHash}=require('crypto');let b=createHash('sha256').update('exora-facility:'+process.argv[1]).digest().subarray(0,16);b[6]=(b[6]&15)|80;b[8]=(b[8]&63)|128;let h=b.toString('hex');console.log([h.slice(0,8),h.slice(8,12),h.slice(12,16),h.slice(16,20),h.slice(20)].join('-'))" "$slug")"
-origin="https://$slug.health.exora.solutions"
 voice_account="$(cat /proc/sys/kernel/random/uuid)"
 
 env_line() { printf '%s=%s\n' "$1" "$(jq -Rn --arg value "$2" '$value')"; }
@@ -96,11 +105,11 @@ umask 077
   env_line AUTH_MODE oidc
   env_line NODE_ENV production
   env_line VITE_HMS_DEV_LOGIN false
-  env_line OIDC_ISSUER "$OIDC_ISSUER"
-  env_line OIDC_JWKS_URL "$OIDC_JWKS_URL"
-  env_line OIDC_AUDIENCE "$OIDC_AUDIENCE"
-  env_line OIDC_CLIENT_ID "$OIDC_CLIENT_ID"
-  env_line OIDC_SCOPE "${OIDC_SCOPE:-openid profile email}"
+  env_line OIDC_ISSUER "$oidc_issuer"
+  env_line OIDC_JWKS_URL "$oidc_jwks_url"
+  env_line OIDC_AUDIENCE "$oidc_audience"
+  env_line OIDC_CLIENT_ID "$oidc_client_id"
+  env_line OIDC_SCOPE "$oidc_scope"
   env_line INTEGRATIONS_PUBLIC_ORIGIN "$origin"
   env_line INTEGRATIONS_ENCRYPTION_KEY "$(jq -r .integrationsKey "$secrets")"
   env_line MANAGED_BOOKING_STAFF_ID "$(jq -r .bookingStaffId "$secrets")"
@@ -128,7 +137,9 @@ umask 077
   env_line VOICE_CALLBACK_SECRET "$(jq -r .voiceCallbackSecret "$secrets")"
 } > "$env_path"
 
-docker compose --env-file "$env_path" -f "$REPO_ROOT/deploy/production/tenant.compose.yml" up -d --no-build
+tenant_compose_file="${TENANT_COMPOSE_FILE:-$REPO_ROOT/deploy/production/tenant.compose.yml}"
+[[ -r $tenant_compose_file ]] || { echo "tenant compose file $tenant_compose_file is not readable" >&2; exit 2; }
+docker compose --env-file "$env_path" -f "$tenant_compose_file" up -d --no-build
 
 nginx_path="$GATEWAY_DIR/nginx/sites/tenant-$slug.conf"
 nginx_temp="$(mktemp "$GATEWAY_DIR/nginx/sites/.tenant-$slug.XXXXXX")"

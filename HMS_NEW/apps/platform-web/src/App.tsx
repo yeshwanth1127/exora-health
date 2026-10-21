@@ -42,6 +42,10 @@ type ProvisioningState = {
   staff_url?: string;
   error?: string;
 };
+type ApiError = {
+  message?: string;
+  issues?: { path?: string; message?: string }[];
+};
 
 const emptyForm: FormState = {
   organisation: "",
@@ -154,7 +158,7 @@ function Onboarding({ onClose }: { onClose: () => void }) {
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
   const valid = useMemo(() => {
-    if (step === 0) return form.ownerName.trim().length > 1 && /.+@.+\..+/.test(form.email);
+    if (step === 0) return form.ownerName.trim().length > 1 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
     if (step === 1) return form.organisation.trim().length > 1 && form.slug.length > 1;
     if (step === 2) return form.facilityName.trim().length > 1 && form.city.trim().length > 1;
     return true;
@@ -188,10 +192,16 @@ function Onboarding({ onClose }: { onClose: () => void }) {
       const response = await fetch("/control/v1/onboarding", {
         method: "POST",
         headers: { "content-type": "application/json", "idempotency-key": requestKey, "x-onboarding-access": accessKey },
-        body: JSON.stringify({ ...form, termsAccepted: true }),
+        body: JSON.stringify({ ...form, email: form.email.trim(), termsAccepted: true }),
       });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.message || "We could not create the workspace request.");
+      const body = await response.json() as ProvisioningState & ApiError;
+      if (!response.ok) {
+        const validationMessage = body.issues
+          ?.map((issue) => [issue.path, issue.message].filter(Boolean).join(": "))
+          .filter(Boolean)
+          .join(" · ");
+        throw new Error(body.message || validationMessage || "We could not create the workspace request.");
+      }
       setSubmitted(body as ProvisioningState);
       if (body.accessToken) localStorage.setItem(`exora-onboarding-token:${body.onboardingId}`, body.accessToken);
     } catch (reason) {
