@@ -1,5 +1,7 @@
 # M09 — Pharmacy & medication administration (schema `pharmacy`)
 
+> **Clinic scope (2026-10-21):** the built schema is a trimmed version of this design — see [CLINIC_OPERATIONS_MODULES.md](../../plan/CLINIC_OPERATIONS_MODULES.md) and the migration `m09_pharmacy` for what exists.
+
 Prescribing, pharmacist verification, dispensing and administration are four separate lifecycles. Prescriptions have line items; every dispense line and every administered dose points at the line it fulfils, so outstanding quantity is always computable. Dispensing is to **registered patients only**.
 
 ```mermaid

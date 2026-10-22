@@ -21,6 +21,8 @@ Build the documented G19–G22 communications/growth slice and G25 contracts, af
 | G10 archive | Not needed | Keep reasoned cancellation/history; no new archive/delete command |
 | G37 all-clinics option | No new UI control | Keep current clinic-specific blocks. Preserve and test existing server all-clinic authorization without adding a screen |
 
+> **Superseded on 2026-10-21 for M07 inpatient, M09 pharmacy, M10 inventory and M11 billing, plus a new HR module:** the product owner approved building these as switchable clinic modules (backend first). See [CLINIC_OPERATIONS_MODULES.md](CLINIC_OPERATIONS_MODULES.md). The removed `0aaff77` code is reference material only. Everything else below still applies.
+
 Do not build M06–M12, M14–M17, prescriptions, pharmacy, inventory, billing, insurance, inpatient, laboratory/imaging, general documents, general work tasks or ABDM. G28–G33 remain out of scope. Campaign spend estimates and existing consultation prices do not authorize a billing module.
 
 ## 2. Use the ERD with narrow additions

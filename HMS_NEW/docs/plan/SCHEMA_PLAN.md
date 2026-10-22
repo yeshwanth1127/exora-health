@@ -141,6 +141,13 @@ Money `bigint` paise + `currency char(3)`; event times `timestamptz`; schedule t
 | 0009 | `m04_booking_kernel` | `schedulable_resource`, `schedule_rule`, `schedule_exception`, `facility_holiday`, `day_plan`, `day_plan_block`, `reservation` (exclusion constraint) |
 | 0010 | `m04_appointments` | `booking_party`, `web_booking_session`, `appointment`, `appointment_status_history`, `queue_token`, `waitlist_entry`, `waitlist_offer` |
 
+### 6a. Clinic operation modules (2026-10-21, [CLINIC_OPERATIONS_MODULES.md](CLINIC_OPERATIONS_MODULES.md))
+| File (module) | Creates |
+|---|---|
+| `20261022090000_m01_clinic_operation_modules` | `hr` module code; the new modules are off until `module_state` says `active` |
+| `20261022100000_m11_billing` | schema `billing`, role `mod_billing`: `cashier_shift`, `charge`, `charge_adjustment`, `invoice`, `invoice_line`, `credit_note(+_line)`, `payment`, `payment_allocation`, `receipt`, `refund` |
+| later | `m07_inpatient`, `m11_billing_ipd`, `m10_inventory`, `m09_pharmacy`, `m18_hr` |
+
 FKs that point to modules not yet built (e.g. `queue_token.encounter_id` → `clinical.encounter`, `schedulable_resource.equipment_id` → `operations.equipment`, `price_list.payer_id` → `insurance.payer`) are created as plain nullable `uuid` columns now and get their FK constraint in that module's first migration.
 
 ## 7. Seeds

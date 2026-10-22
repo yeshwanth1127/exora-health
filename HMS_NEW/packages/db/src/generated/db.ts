@@ -27,6 +27,292 @@ export type Numeric = ColumnType<string, number | string, number | string>;
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+export interface BillingBillingAccount {
+  account_no: string;
+  account_type: Generated<string>;
+  admission_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  final_invoice_id: string | null;
+  id: Generated<string>;
+  opened_at: Generated<Timestamp>;
+  patient_id: string;
+  settled_at: Timestamp | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface BillingCashierShift {
+  close_note: string | null;
+  closed_at: Timestamp | null;
+  counted_cash_minor: Int8 | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  expected_cash_minor: Int8 | null;
+  facility_id: string;
+  id: Generated<string>;
+  opened_at: Generated<Timestamp>;
+  opening_float_minor: Generated<Int8>;
+  staff_id: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  variance_minor: Generated<Int8 | null>;
+  verified_at: Timestamp | null;
+  verified_by: string | null;
+  version: Generated<number>;
+}
+
+export interface BillingCharge {
+  appointment_id: string | null;
+  bed_occupancy_id: string | null;
+  billing_account_id: string | null;
+  cgst_minor: Generated<Int8>;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  currency: Generated<string>;
+  description: string;
+  discount_minor: Generated<Int8>;
+  dispense_line_id: string | null;
+  encounter_id: string | null;
+  facility_id: string;
+  gross_minor: Int8;
+  gst_rate_bp: Generated<number>;
+  hsn_sac_code: string | null;
+  id: Generated<string>;
+  igst_minor: Generated<Int8>;
+  is_tax_exempt: boolean;
+  is_tax_inclusive: Generated<boolean>;
+  item_id: string | null;
+  net_minor: Int8;
+  patient_id: string | null;
+  posted_at: Generated<Timestamp>;
+  posted_by: string | null;
+  price_list_item_id: string | null;
+  quantity: Numeric;
+  reverse_reason: string | null;
+  reversed_at: Timestamp | null;
+  reversed_by: string | null;
+  service_date: string;
+  service_item_id: string | null;
+  sgst_minor: Generated<Int8>;
+  source_id: string | null;
+  source_type: string;
+  status: Generated<string>;
+  tax_rule_id: string | null;
+  taxable_minor: Int8;
+  tenant_id: string;
+  unit_price_minor: Int8;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface BillingChargeAdjustment {
+  amount_minor: Int8;
+  charge_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  decided_at: Timestamp | null;
+  decided_by: string | null;
+  decision_note: string | null;
+  id: Generated<string>;
+  kind: Generated<string>;
+  reason: string;
+  requested_at: Generated<Timestamp>;
+  requested_by: string | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface BillingCreditNote {
+  amount_minor: Int8;
+  approved_by: string;
+  cgst_minor: Generated<Int8>;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  financial_year: string;
+  id: Generated<string>;
+  igst_minor: Generated<Int8>;
+  invoice_id: string;
+  issued_at: Generated<Timestamp>;
+  note_no: string;
+  reason: string;
+  sgst_minor: Generated<Int8>;
+  taxable_minor: Int8;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface BillingCreditNoteLine {
+  amount_minor: Int8;
+  cgst_minor: Generated<Int8>;
+  charge_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  credit_note_id: string;
+  id: Generated<string>;
+  igst_minor: Generated<Int8>;
+  sgst_minor: Generated<Int8>;
+  taxable_minor: Int8;
+  tenant_id: string;
+}
+
+export interface BillingDepositRule {
+  alert_below_minor: Int8;
+  bed_category_id: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  min_deposit_minor: Int8;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface BillingInvoice {
+  bill_kind: string;
+  bill_to_name: string;
+  bill_to_phone: string | null;
+  billing_account_id: string | null;
+  cgst_minor: Generated<Int8>;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  credited_minor: Generated<Int8>;
+  currency: Generated<string>;
+  discount_minor: Generated<Int8>;
+  document_type: string | null;
+  facility_gstin: string | null;
+  facility_id: string;
+  financial_year: string | null;
+  gross_minor: Generated<Int8>;
+  id: Generated<string>;
+  igst_minor: Generated<Int8>;
+  invoice_no: string | null;
+  issued_at: Timestamp | null;
+  issued_by: string | null;
+  net_minor: Generated<Int8>;
+  paid_minor: Generated<Int8>;
+  patient_id: string | null;
+  place_of_supply: string | null;
+  round_off_minor: Generated<Int8>;
+  sgst_minor: Generated<Int8>;
+  status: Generated<string>;
+  taxable_minor: Generated<Int8>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+  void_reason: string | null;
+  voided_at: Timestamp | null;
+}
+
+export interface BillingInvoiceLine {
+  amount_minor: Int8;
+  charge_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  id: Generated<string>;
+  invoice_id: string;
+  line_no: number;
+  released_at: Timestamp | null;
+  share: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface BillingPayment {
+  amount_minor: Int8;
+  billing_account_id: string | null;
+  captured_at: Generated<Timestamp>;
+  cashier_shift_id: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  currency: Generated<string>;
+  facility_id: string;
+  id: Generated<string>;
+  is_advance: Generated<boolean>;
+  method: string;
+  patient_id: string | null;
+  payer_name: string;
+  received_by: string | null;
+  reference_no: string | null;
+  refunded_minor: Generated<Int8>;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface BillingPaymentAllocation {
+  allocated_at: Generated<Timestamp>;
+  amount_minor: Int8;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  id: Generated<string>;
+  invoice_id: string;
+  payment_id: string;
+  reversed_at: Timestamp | null;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface BillingReceipt {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  financial_year: string;
+  id: Generated<string>;
+  issued_at: Generated<Timestamp>;
+  payment_id: string;
+  receipt_no: string;
+  tenant_id: string;
+}
+
+export interface BillingRefund {
+  amount_minor: Int8;
+  cashier_shift_id: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  credit_note_id: string | null;
+  decided_at: Timestamp | null;
+  decided_by: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  method: string;
+  paid_at: Timestamp | null;
+  paid_by: string | null;
+  payment_id: string;
+  reason: string;
+  reference_no: string | null;
+  requested_at: Generated<Timestamp>;
+  requested_by: string | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
 export interface BookingAppointment {
   booking_kind: string;
   booking_party_id: string | null;
@@ -217,6 +503,7 @@ export interface BookingScheduleException {
   healthcare_service_id: string | null;
   id: Generated<string>;
   kind: string;
+  leave_request_id: string | null;
   on_date: string;
   reason: string | null;
   resource_id: string;
@@ -827,6 +1114,7 @@ export interface ClinicalDeathRecord {
 }
 
 export interface ClinicalEncounter {
+  admission_id: string | null;
   appointment_id: string | null;
   arrived_at: Generated<Timestamp>;
   attending_staff_id: string;
@@ -1661,6 +1949,628 @@ export interface CommsWhatsappWorkspace {
   version: Generated<number>;
 }
 
+export interface HrAttendanceDay {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  first_in: Timestamp | null;
+  id: Generated<string>;
+  is_locked: Generated<boolean>;
+  last_out: Timestamp | null;
+  late_minutes: Generated<number>;
+  on_date: string;
+  source: Generated<string>;
+  staff_id: string;
+  status: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+  worked_minutes: Generated<number>;
+}
+
+export interface HrAttendancePunch {
+  created_at: Generated<Timestamp>;
+  direction: string;
+  facility_id: string;
+  id: Generated<string>;
+  note: string | null;
+  punched_at: Timestamp;
+  recorded_by: string;
+  source: string;
+  staff_id: string;
+  tenant_id: string;
+}
+
+export interface HrAttendanceRegularisation {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  decided_at: Timestamp | null;
+  decided_by: string | null;
+  decision_note: string | null;
+  id: Generated<string>;
+  on_date: string;
+  reason: string;
+  requested_status: string;
+  staff_id: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface HrEmployeeProfile {
+  address: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  date_of_exit: string | null;
+  date_of_joining: string;
+  department_id: string | null;
+  designation: string;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  emergency_contact_relation: string | null;
+  exit_reason: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  reporting_to_staff_id: string | null;
+  staff_id: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface HrEmployeeStatutory {
+  account_holder: string | null;
+  bank_account_no: string | null;
+  bank_ifsc: string | null;
+  bank_name: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  esi_applicable: Generated<boolean>;
+  esic_no: string | null;
+  id: Generated<string>;
+  pan: string | null;
+  pf_applicable: Generated<boolean>;
+  pt_state_code: string | null;
+  staff_id: string;
+  tenant_id: string;
+  uan: string | null;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface HrLeaveLedger {
+  created_at: Generated<Timestamp>;
+  days: Numeric;
+  effective_on: string;
+  entry: string;
+  id: Generated<string>;
+  leave_request_id: string | null;
+  leave_type_id: string;
+  note: string | null;
+  recorded_by: string | null;
+  staff_id: string;
+  tenant_id: string;
+}
+
+export interface HrLeaveRequest {
+  cancelled_at: Timestamp | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  days: Numeric;
+  decided_at: Timestamp | null;
+  decided_by: string | null;
+  decision_note: string | null;
+  ends_on: string;
+  half_day: Generated<string>;
+  id: Generated<string>;
+  leave_type_id: string;
+  reason: string;
+  staff_id: string;
+  starts_on: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface HrLeaveType {
+  allow_negative: Generated<boolean>;
+  annual_quota_days: Generated<Numeric>;
+  carry_forward_max: Generated<Numeric>;
+  code: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  id: Generated<string>;
+  is_paid: Generated<boolean>;
+  name: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface HrPayrollRun {
+  approved_at: Timestamp | null;
+  approved_by: string | null;
+  computed_at: Timestamp | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  deductions_minor: Generated<Int8>;
+  facility_id: string;
+  gross_minor: Generated<Int8>;
+  id: Generated<string>;
+  locked_at: Timestamp | null;
+  net_minor: Generated<Int8>;
+  paid_at: Timestamp | null;
+  period_month: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface HrPayrollSetting {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  esi_employee_rate_bp: Generated<number>;
+  esi_gross_ceiling_minor: Generated<Int8>;
+  id: Generated<string>;
+  pf_employee_rate_bp: Generated<number>;
+  pf_wage_ceiling_minor: Generated<Int8>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface HrPayslip {
+  bank_account_last4: string | null;
+  bank_ifsc: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  days_in_month: number;
+  deductions_minor: Int8;
+  gross_minor: Int8;
+  id: Generated<string>;
+  lop_days: Generated<Numeric>;
+  net_minor: Int8;
+  paid_days: Numeric;
+  payment_ref: string | null;
+  payroll_run_id: string;
+  staff_id: string;
+  tds_minor: Generated<Int8>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface HrPayslipLine {
+  amount_minor: Int8;
+  code: string;
+  created_at: Generated<Timestamp>;
+  display_order: Generated<number>;
+  id: Generated<string>;
+  kind: string;
+  name: string;
+  payslip_id: string;
+  salary_component_id: string | null;
+  tenant_id: string;
+}
+
+export interface HrProfessionalTaxSlab {
+  amount_minor: Int8;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  id: Generated<string>;
+  max_gross_minor: Int8 | null;
+  min_gross_minor: Int8;
+  state_code: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface HrRosterAssignment {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  kind: Generated<string>;
+  on_date: string;
+  shift_definition_id: string | null;
+  staff_id: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface HrSalaryComponent {
+  calc: string;
+  code: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  display_order: Generated<number>;
+  id: Generated<string>;
+  is_basic: Generated<boolean>;
+  kind: string;
+  name: string;
+  prorate: Generated<boolean>;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface HrSalaryStructure {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  effective_from: string;
+  id: Generated<string>;
+  note: string | null;
+  staff_id: string;
+  tenant_id: string;
+}
+
+export interface HrSalaryStructureLine {
+  amount_minor: Int8 | null;
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  percent_bp: number | null;
+  salary_component_id: string;
+  salary_structure_id: string;
+  tenant_id: string;
+}
+
+export interface HrShiftDefinition {
+  break_minutes: Generated<number>;
+  code: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  end_local: string;
+  facility_id: string;
+  grace_minutes: Generated<number>;
+  id: Generated<string>;
+  name: string;
+  start_local: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InpatientAdmission {
+  admission_reason: string;
+  admission_type: string;
+  admitted_at: Generated<Timestamp>;
+  admitting_staff_id: string;
+  cancel_reason: string | null;
+  cancelled_at: Timestamp | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  department_id: string | null;
+  discharged_at: Timestamp | null;
+  expected_discharge_on: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  ip_no: string;
+  patient_id: string;
+  requested_bed_category_id: string | null;
+  source_encounter_id: string | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InpatientAdmissionStatusHistory {
+  actor_staff_id: string | null;
+  admission_id: string;
+  from_status: string | null;
+  id: Generated<string>;
+  occurred_at: Generated<Timestamp>;
+  reason: string | null;
+  tenant_id: string;
+  to_status: string;
+}
+
+export interface InpatientBedOccupancy {
+  admission_id: string;
+  bed_location_id: string;
+  billed_bed_category_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  kind: Generated<string>;
+  period: string;
+  reason: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InpatientBedStatus {
+  bed_location_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  reason: string | null;
+  set_by: string | null;
+  since: Generated<Timestamp>;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InpatientBedStatusHistory {
+  actor_staff_id: string | null;
+  bed_location_id: string;
+  from_status: string | null;
+  id: Generated<string>;
+  occurred_at: Generated<Timestamp>;
+  reason: string | null;
+  tenant_id: string;
+  to_status: string;
+}
+
+export interface InpatientDischarge {
+  admission_id: string;
+  cancel_reason: string | null;
+  cancelled_at: Timestamp | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  decided_at: Generated<Timestamp>;
+  decided_by: string;
+  departed_at: Timestamp | null;
+  discharge_prescription_id: string | null;
+  discharge_type: string;
+  expected_departure_at: Timestamp | null;
+  id: Generated<string>;
+  notes: string | null;
+  status: Generated<string>;
+  summary_note_id: string | null;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InpatientDischargeClearance {
+  cleared_at: Timestamp | null;
+  cleared_by: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  discharge_id: string;
+  id: Generated<string>;
+  kind: string;
+  note: string | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+  waiver_reason: string | null;
+}
+
+export interface InpatientTransfer {
+  admission_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  from_occupancy_id: string;
+  id: Generated<string>;
+  moved_at: Generated<Timestamp>;
+  moved_by: string | null;
+  reason: string;
+  retained_occupancy_id: string | null;
+  tenant_id: string;
+  to_occupancy_id: string;
+}
+
+export interface InventoryDrugProduct {
+  brand_name: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  default_route: string | null;
+  dosage_form: string;
+  generic_name: string;
+  id: Generated<string>;
+  is_high_alert: Generated<boolean>;
+  is_ndps: Generated<boolean>;
+  is_nlem: Generated<boolean>;
+  item_id: string;
+  manufacturer: string | null;
+  regulatory_schedule: Generated<string>;
+  strength: string | null;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryGoodsReceipt {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  facility_id: string;
+  grn_no: string;
+  id: Generated<string>;
+  invoice_total_minor: Int8 | null;
+  notes: string | null;
+  received_at: Generated<Timestamp>;
+  received_by: string;
+  store_id: string;
+  supplier_id: string;
+  supplier_invoice_no: string;
+  supplier_invoice_on: string;
+  tenant_id: string;
+}
+
+export interface InventoryGoodsReceiptLine {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  goods_receipt_id: string;
+  gst_rate_bp: Generated<number>;
+  id: Generated<string>;
+  item_batch_id: string;
+  item_id: string;
+  qty_free: Generated<Numeric>;
+  qty_received: Numeric;
+  tenant_id: string;
+  unit_cost_minor: Int8;
+}
+
+export interface InventoryItem {
+  base_uom: string;
+  code: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  deleted_at: Timestamp | null;
+  hsn_code: string | null;
+  id: Generated<string>;
+  is_billable: Generated<boolean>;
+  is_expiry_tracked: Generated<boolean>;
+  item_type: string;
+  name: string;
+  pack_size: Numeric | null;
+  pack_uom: string | null;
+  reorder_level: Generated<Numeric>;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryItemBatch {
+  batch_no: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  currency: Generated<string>;
+  expiry_date: string | null;
+  id: Generated<string>;
+  item_id: string;
+  manufactured_on: string | null;
+  mrp_minor: Int8 | null;
+  received_at: Generated<Timestamp>;
+  status: Generated<string>;
+  status_reason: string | null;
+  supplier_id: string | null;
+  tenant_id: string;
+  unit_cost_minor: Generated<Int8>;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryStockAdjustment {
+  adjustment_no: string;
+  created_at: Generated<Timestamp>;
+  created_by: string;
+  facility_id: string;
+  id: Generated<string>;
+  kind: string;
+  reason: string;
+  store_id: string;
+  supplier_id: string | null;
+  tenant_id: string;
+}
+
+export interface InventoryStockBalance {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  id: Generated<string>;
+  item_batch_id: string;
+  item_id: string;
+  on_hand: Generated<Numeric>;
+  store_id: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventoryStockBalanceDrift {
+  item_batch_id: string | null;
+  ledger_total: Numeric | null;
+  on_hand: Numeric | null;
+  store_id: string | null;
+  tenant_id: string | null;
+}
+
+export interface InventoryStockMovement {
+  actor_staff_id: string | null;
+  adjustment_id: string | null;
+  created_at: Generated<Timestamp>;
+  dispense_line_id: string | null;
+  goods_receipt_line_id: string | null;
+  id: Generated<string>;
+  item_batch_id: string;
+  item_id: string;
+  medication_return_id: string | null;
+  movement_type: string;
+  occurred_at: Generated<Timestamp>;
+  patient_id: string | null;
+  quantity: Numeric;
+  store_id: string;
+  tenant_id: string;
+  unit_cost_minor: Int8;
+}
+
+export interface InventoryStore {
+  can_dispense_to_patient: Generated<boolean>;
+  code: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  drug_licence_no: string | null;
+  facility_id: string;
+  id: Generated<string>;
+  name: string;
+  status: Generated<string>;
+  store_type: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface InventorySupplier {
+  address: string | null;
+  code: string;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  drug_licence_no: string | null;
+  email: string | null;
+  gstin: string | null;
+  id: Generated<string>;
+  name: string;
+  payment_terms_days: Generated<number>;
+  phone: string | null;
+  state_code: string | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
 export interface PatientPatient {
   birth_date: string | null;
   birth_date_estimated: Generated<boolean>;
@@ -1824,6 +2734,207 @@ export interface PatientRelatedPerson {
   updated_by: string | null;
   valid_to: string | null;
   version: Generated<number>;
+}
+
+export interface PharmacyControlledDrugRegister {
+  batch_no: string | null;
+  dispense_id: string | null;
+  dispense_no: string | null;
+  dispensed_at: Timestamp | null;
+  dispensed_by: string | null;
+  facility_id: string | null;
+  generic_name: string | null;
+  is_ndps: boolean | null;
+  item_name: string | null;
+  mrn: string | null;
+  patient_id: string | null;
+  patient_name: string | null;
+  prescriber_name: string | null;
+  prescriber_staff_id: string | null;
+  quantity: Numeric | null;
+  regulatory_schedule: string | null;
+  returned_qty: Numeric | null;
+  store_id: string | null;
+  tenant_id: string | null;
+}
+
+export interface PharmacyDispense {
+  buyer_name: string | null;
+  buyer_phone: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  dispense_no: string;
+  dispense_type: string;
+  dispensed_at: Generated<Timestamp>;
+  dispensed_by: string;
+  encounter_id: string | null;
+  facility_id: string;
+  handed_over_to: string | null;
+  id: Generated<string>;
+  patient_id: string | null;
+  patient_indent_id: string | null;
+  prescription_id: string | null;
+  status: Generated<string>;
+  store_id: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface PharmacyDispenseLine {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  dispense_id: string;
+  id: Generated<string>;
+  item_batch_id: string;
+  item_id: string;
+  mrp_snapshot_minor: Int8 | null;
+  patient_indent_line_id: string | null;
+  prescription_item_id: string | null;
+  price_list_item_id: string | null;
+  quantity: Numeric;
+  returned_qty: Generated<Numeric>;
+  substituted_from_item_id: string | null;
+  substitution_approved_by: string | null;
+  tenant_id: string;
+  unit_price_minor: Int8;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface PharmacyMedicationAdministration {
+  administered_at: Timestamp | null;
+  administered_by: string;
+  created_at: Generated<Timestamp>;
+  dispense_line_id: string | null;
+  dose_given: Numeric | null;
+  dose_unit: string | null;
+  encounter_id: string;
+  id: Generated<string>;
+  is_prn: Generated<boolean>;
+  patient_id: string;
+  prescription_item_id: string;
+  prn_reason: string | null;
+  reason: string | null;
+  recorded_at: Generated<Timestamp>;
+  requires_witness: Generated<boolean>;
+  route: string | null;
+  scheduled_at: Timestamp | null;
+  site: string | null;
+  status: string;
+  tenant_id: string;
+  witness_staff_id: string | null;
+}
+
+export interface PharmacyMedicationReturn {
+  created_at: Generated<Timestamp>;
+  dispense_line_id: string;
+  id: Generated<string>;
+  is_restockable: boolean;
+  patient_id: string | null;
+  quantity: Numeric;
+  reason: string;
+  received_at: Generated<Timestamp>;
+  received_by: string;
+  store_id: string;
+  tenant_id: string;
+}
+
+export interface PharmacyPatientIndent {
+  admission_id: string;
+  cancel_reason: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  encounter_id: string;
+  facility_id: string;
+  id: Generated<string>;
+  indent_no: string;
+  notes: string | null;
+  patient_id: string;
+  pharmacy_store_id: string;
+  requested_at: Generated<Timestamp>;
+  requested_by: string;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface PharmacyPatientIndentLine {
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  id: Generated<string>;
+  item_id: string;
+  patient_indent_id: string;
+  prescription_item_id: string | null;
+  qty_dispensed: Generated<Numeric>;
+  qty_requested: Numeric;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+}
+
+export interface PharmacyPrescription {
+  advice: string | null;
+  cancel_reason: string | null;
+  cancelled_at: Timestamp | null;
+  cancelled_by: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  encounter_id: string;
+  facility_id: string;
+  id: Generated<string>;
+  patient_id: string;
+  prescriber_staff_id: string;
+  setting: string;
+  signed_at: Timestamp | null;
+  status: Generated<string>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  valid_until: string | null;
+  version: Generated<number>;
+}
+
+export interface PharmacyPrescriptionItem {
+  brand_name: string | null;
+  created_at: Generated<Timestamp>;
+  created_by: string | null;
+  dose: Numeric;
+  dose_unit: string;
+  duration_unit: string | null;
+  duration_value: number | null;
+  food_relation: Generated<string>;
+  frequency_code: string;
+  frequency_text: string | null;
+  generic_name: string;
+  id: Generated<string>;
+  instructions: string | null;
+  is_prn: Generated<boolean>;
+  item_id: string;
+  line_no: number;
+  override_reason: string | null;
+  prescription_id: string;
+  prn_min_interval_minutes: number | null;
+  quantity_dispensed: Generated<Numeric>;
+  quantity_prescribed: Numeric | null;
+  route: string;
+  start_at: Timestamp | null;
+  status: Generated<string>;
+  stop_at: Timestamp | null;
+  stop_reason: string | null;
+  stopped_by: string | null;
+  strength: string | null;
+  substitution_allowed: Generated<boolean>;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string | null;
+  version: Generated<number>;
+  warnings: Generated<Json>;
 }
 
 export interface PlatformAuditEvent {
@@ -2199,6 +3310,19 @@ export interface PlatformUserAccount {
 }
 
 export interface DB {
+  "billing.billing_account": BillingBillingAccount;
+  "billing.cashier_shift": BillingCashierShift;
+  "billing.charge": BillingCharge;
+  "billing.charge_adjustment": BillingChargeAdjustment;
+  "billing.credit_note": BillingCreditNote;
+  "billing.credit_note_line": BillingCreditNoteLine;
+  "billing.deposit_rule": BillingDepositRule;
+  "billing.invoice": BillingInvoice;
+  "billing.invoice_line": BillingInvoiceLine;
+  "billing.payment": BillingPayment;
+  "billing.payment_allocation": BillingPaymentAllocation;
+  "billing.receipt": BillingReceipt;
+  "billing.refund": BillingRefund;
   "booking.appointment": BookingAppointment;
   "booking.appointment_status_history": BookingAppointmentStatusHistory;
   "booking.booking_party": BookingBookingParty;
@@ -2295,6 +3419,43 @@ export interface DB {
   "comms.voice_transcript": CommsVoiceTranscript;
   "comms.voice_transcript_revision": CommsVoiceTranscriptRevision;
   "comms.whatsapp_workspace": CommsWhatsappWorkspace;
+  "hr.attendance_day": HrAttendanceDay;
+  "hr.attendance_punch": HrAttendancePunch;
+  "hr.attendance_regularisation": HrAttendanceRegularisation;
+  "hr.employee_profile": HrEmployeeProfile;
+  "hr.employee_statutory": HrEmployeeStatutory;
+  "hr.leave_ledger": HrLeaveLedger;
+  "hr.leave_request": HrLeaveRequest;
+  "hr.leave_type": HrLeaveType;
+  "hr.payroll_run": HrPayrollRun;
+  "hr.payroll_setting": HrPayrollSetting;
+  "hr.payslip": HrPayslip;
+  "hr.payslip_line": HrPayslipLine;
+  "hr.professional_tax_slab": HrProfessionalTaxSlab;
+  "hr.roster_assignment": HrRosterAssignment;
+  "hr.salary_component": HrSalaryComponent;
+  "hr.salary_structure": HrSalaryStructure;
+  "hr.salary_structure_line": HrSalaryStructureLine;
+  "hr.shift_definition": HrShiftDefinition;
+  "inpatient.admission": InpatientAdmission;
+  "inpatient.admission_status_history": InpatientAdmissionStatusHistory;
+  "inpatient.bed_occupancy": InpatientBedOccupancy;
+  "inpatient.bed_status": InpatientBedStatus;
+  "inpatient.bed_status_history": InpatientBedStatusHistory;
+  "inpatient.discharge": InpatientDischarge;
+  "inpatient.discharge_clearance": InpatientDischargeClearance;
+  "inpatient.transfer": InpatientTransfer;
+  "inventory.drug_product": InventoryDrugProduct;
+  "inventory.goods_receipt": InventoryGoodsReceipt;
+  "inventory.goods_receipt_line": InventoryGoodsReceiptLine;
+  "inventory.item": InventoryItem;
+  "inventory.item_batch": InventoryItemBatch;
+  "inventory.stock_adjustment": InventoryStockAdjustment;
+  "inventory.stock_balance": InventoryStockBalance;
+  "inventory.stock_balance_drift": InventoryStockBalanceDrift;
+  "inventory.stock_movement": InventoryStockMovement;
+  "inventory.store": InventoryStore;
+  "inventory.supplier": InventorySupplier;
   "patient.patient": PatientPatient;
   "patient.patient_address": PatientPatientAddress;
   "patient.patient_consent": PatientPatientConsent;
@@ -2303,6 +3464,15 @@ export interface DB {
   "patient.patient_identifier": PatientPatientIdentifier;
   "patient.patient_link": PatientPatientLink;
   "patient.related_person": PatientRelatedPerson;
+  "pharmacy.controlled_drug_register": PharmacyControlledDrugRegister;
+  "pharmacy.dispense": PharmacyDispense;
+  "pharmacy.dispense_line": PharmacyDispenseLine;
+  "pharmacy.medication_administration": PharmacyMedicationAdministration;
+  "pharmacy.medication_return": PharmacyMedicationReturn;
+  "pharmacy.patient_indent": PharmacyPatientIndent;
+  "pharmacy.patient_indent_line": PharmacyPatientIndentLine;
+  "pharmacy.prescription": PharmacyPrescription;
+  "pharmacy.prescription_item": PharmacyPrescriptionItem;
   "platform.audit_event": PlatformAuditEvent;
   "platform.care_assignment": PlatformCareAssignment;
   "platform.config_setting": PlatformConfigSetting;

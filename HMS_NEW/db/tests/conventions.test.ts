@@ -14,6 +14,11 @@ const MODULE_ROLE: Record<string, string> = {
   booking: 'mod_booking',
   clinical: 'mod_clinical',
   comms: 'mod_comms',
+  billing: 'mod_billing',
+  inpatient: 'mod_inpatient',
+  inventory: 'mod_inventory',
+  pharmacy: 'mod_pharmacy',
+  hr: 'mod_hr',
 };
 const SCHEMAS = Object.keys(MODULE_ROLE);
 
@@ -41,7 +46,13 @@ const SHARED_WRITE = new Set([
 /** Tables where DELETE is a legitimate (audited) admin action. */
 const DELETE_ALLOWED = new Set([
   // Expiring anonymous request counters contain no patient data or raw addresses.
-  'booking.public_request_budget','platform.role_permission']);
+  'booking.public_request_budget','platform.role_permission',
+  // A draft invoice's lines are rebuilt; issued invoices' lines are frozen by trigger.
+  'billing.invoice_line',
+  // Draft prescription lines are replaced; signed ones are frozen by trigger.
+  'pharmacy.prescription_item',
+  // Rebuilt while still editable: roster days, PT slabs, a not-yet-approved run's payslips.
+  'hr.roster_assignment', 'hr.professional_tax_slab', 'hr.payslip']);
 
 interface TableRow {
   oid: number;

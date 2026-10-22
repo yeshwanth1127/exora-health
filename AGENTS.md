@@ -112,3 +112,9 @@
 - Share typed destinations in `workspace-navigation.ts` across sidebar, page tabs and command search; retain compatible query/deep links and guarded Back/Forward/dirty/pending navigation. Keep queue view switches, settings editors and recording access review contextual.
 - Current main's managed integration contracts supersede earlier preview-only operation guidance: retain actual queries/actions, permission/capability/version/idempotency checks, truthful loading/error/unavailable/delivery state. Never substitute sample analytics, local-only connection success or fake saved/provider results.
 - Component inventory remains 48 folders; 243 staff tests and 449 API/database tests passed. Targeted local navigation was browser checked, but connected-provider states and full demo parity remain unverified. No production deployment is established by publishing source.
+
+## Clinic operation modules (backend)
+
+- The product owner approved (2026-10-21) inpatient, billing, pharmacy + inventory and HR/payroll as tenant-switchable backend modules. This supersedes the "out of scope / do not restore" notes for M07, M09, M10 and M11. Read `HMS_NEW/docs/plan/CLINIC_OPERATIONS_MODULES.md` before working on them; mark phases done there.
+- These modules are off until `platform.module_state` says `active` (`SWITCHED_MODULES` in `@hms/platform`): `runCommand` refuses their writes and the worker skips their consumers. Pharmacy switches inventory with it; inpatient needs billing.
+- No frontend for them yet. Future menu items must be gated by permission **and** module state (`GET /v1/session-context` → `modules`).

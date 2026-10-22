@@ -1,7 +1,7 @@
 // Workspace administration beyond accounts and roles (ERD m01): professional registrations, care
 // assignments, break-glass review, module switches, invites that expire, and the session context.
 import { sql, type DB, type Kysely } from '@hms/db';
-import { conflict, DomainError, invalid, notFound, pgCode, preconditionFailed, runCommand, runQuery } from '@hms/platform';
+import { conflict, DomainError, invalid, notFound, pgCode, preconditionFailed, runCommand, runQuery, SWITCHED_MODULES } from '@hms/platform';
 import { clock, type Caller } from '../../caller.ts';
 
 // ---- professional registrations (signing needs a current one) -----------------------------------------
@@ -205,7 +205,7 @@ export async function reviewBreakGlass(db: Kysely<DB>, caller: Caller, input: { 
 
 export const MODULES = [
   'platform', 'patient', 'catalog', 'booking', 'clinical', 'diagnostics', 'inpatient', 'theatre', 'pharmacy', 'inventory', 'billing',
-  'insurance', 'comms', 'documents', 'operations', 'integration', 'abdm',
+  'insurance', 'comms', 'documents', 'operations', 'integration', 'abdm', 'hr',
 ] as const;
 export type ModuleCode = (typeof MODULES)[number];
 /** The core never switches off: everything else hangs off it. */
@@ -221,40 +221,65 @@ const NEXT: Record<ModuleStatus, ModuleStatus[]> = {
 };
 
 /**
- * A module's state; a module with no row is active (tenants created before switches existed keep
- * working). Suspended modules refuse new work; their records stay readable.
+ * A module's state. A module with no row is active (tenants created before switches existed keep
+ * working), except the separately switched clinic modules (SWITCHED_MODULES), which stay off until
+ * switched on. Suspended modules refuse new work; their records stay readable.
  */
+const stateOf = (module: string, row: { state: string } | undefined) =>
+  (row?.state ?? (SWITCHED_MODULES.includes(module) ? 'not_provisioned' : 'active')) as ModuleStatus;
+/** Inventory is the pharmacy's stock: it is switched with pharmacy, never on its own. */
+const SWITCHED_TOGETHER: Partial<Record<ModuleCode, ModuleCode[]>> = { pharmacy: ['pharmacy', 'inventory'] };
+/** A module that can only be on while another is (inpatient discharge needs finance clearance). */
+const REQUIRES: Partial<Record<ModuleCode, ModuleCode>> = { inpatient: 'billing' };
 export async function moduleStates(db: Kysely<DB>, caller: Caller) {
   return runQuery(db, caller.tenantId, async (tx) => {
     const rows = await tx.selectFrom('platform.module_state').select(['module_code', 'state', 'config_version', 'version', 'updated_at']).execute();
     const by = new Map(rows.map((r) => [r.module_code, r]));
     return MODULES.map((m) => {
       const r = by.get(m);
-      return { module: m, state: (r?.state ?? 'active') as ModuleStatus, core: CORE.includes(m), version: r?.version ?? 0, updatedAt: r?.updated_at ?? null };
+      return { module: m, state: stateOf(m, r), core: CORE.includes(m), version: r?.version ?? 0, updatedAt: r?.updated_at ?? null };
     });
   });
 }
 
 export async function setModuleState(db: Kysely<DB>, caller: Caller, input: { module: ModuleCode; state: ModuleStatus; version: number; reason: string }, idempotencyKey?: string) {
   if (CORE.includes(input.module)) throw invalid('core modules are always on', { reason: 'core_module' });
+  if (input.module === 'inventory') throw invalid('inventory is switched on and off with pharmacy', { reason: 'switched_with', module: 'pharmacy' });
   return runCommand(db, { ...caller, module: 'platform', name: 'platform.set_module_state', idempotencyKey, request: input }, async (ctx) => {
-    const r = await ctx.tx.selectFrom('platform.module_state').selectAll().where('module_code', '=', input.module).forUpdate().executeTakeFirst();
-    const from = (r?.state ?? 'active') as ModuleStatus;
+    const rows = await ctx.tx.selectFrom('platform.module_state').selectAll().forUpdate().execute();
+    const by = new Map(rows.map((x) => [x.module_code as string, x]));
+    const r = by.get(input.module);
+    const from = stateOf(input.module, r);
     if ((r?.version ?? 0) !== input.version) throw conflict('this module was changed by someone else; reload and try again', { reason: 'stale_version', currentVersion: r?.version ?? 0 });
     if (from === input.state) return { module: input.module, state: from, version: r?.version ?? 0 };
     if (!NEXT[from].includes(input.state)) throw preconditionFailed(`a module can't go from ${from} to ${input.state}`, { reason: 'invalid_transition', allowed: NEXT[from] });
-    const row = r
-      ? await ctx.tx.updateTable('platform.module_state').set({ state: input.state, config_version: r.config_version + 1, changed_by: ctx.actor.staffId ?? null, updated_by: ctx.actor.staffId ?? null }).where('id', '=', r.id).returning(['id', 'version']).executeTakeFirstOrThrow()
-      : await ctx.tx.insertInto('platform.module_state').values({ tenant_id: ctx.tenantId, module_code: input.module, state: input.state, changed_by: ctx.actor.staffId ?? null, created_by: ctx.actor.staffId ?? null }).returning(['id', 'version']).executeTakeFirstOrThrow();
-    ctx.audit({ action: 'status_change', subjectType: 'platform.module_state', subjectId: row.id, reason: input.reason, diff: { module: input.module, state: [from, input.state] } });
-    ctx.emit({ eventType: input.state === 'suspended' ? 'module.suspended' : 'module.state_changed', aggregateType: 'platform.module_state', aggregateId: row.id, payload: { module: input.module, from, to: input.state } });
-    return { module: input.module, state: input.state, version: row.version };
+    const needs = REQUIRES[input.module];
+    if (needs && input.state === 'active' && stateOf(needs, by.get(needs)) !== 'active') {
+      throw preconditionFailed(`switch on ${needs} before ${input.module}`, { reason: 'module_required', module: needs });
+    }
+    if (input.state !== 'active') {
+      const dependant = (Object.entries(REQUIRES) as [ModuleCode, ModuleCode][]).find(([m, req]) => req === input.module && stateOf(m, by.get(m)) === 'active');
+      if (dependant) throw preconditionFailed(`${dependant[0]} needs ${input.module}; switch ${dependant[0]} off first`, { reason: 'module_required_by', module: dependant[0] });
+    }
+    let version = 0;
+    for (const module of SWITCHED_TOGETHER[input.module] ?? [input.module]) {
+      const cur = by.get(module);
+      const was = stateOf(module, cur);
+      if (was === input.state) continue;
+      const row = cur
+        ? await ctx.tx.updateTable('platform.module_state').set({ state: input.state, config_version: cur.config_version + 1, changed_by: ctx.actor.staffId ?? null, updated_by: ctx.actor.staffId ?? null }).where('id', '=', cur.id).returning(['id', 'version']).executeTakeFirstOrThrow()
+        : await ctx.tx.insertInto('platform.module_state').values({ tenant_id: ctx.tenantId, module_code: module, state: input.state, changed_by: ctx.actor.staffId ?? null, created_by: ctx.actor.staffId ?? null }).returning(['id', 'version']).executeTakeFirstOrThrow();
+      if (module === input.module) version = row.version;
+      ctx.audit({ action: 'status_change', subjectType: 'platform.module_state', subjectId: row.id, reason: input.reason, diff: { module, state: [was, input.state] } });
+      ctx.emit({ eventType: input.state === 'suspended' ? 'module.suspended' : 'module.state_changed', aggregateType: 'platform.module_state', aggregateId: row.id, payload: { module, from: was, to: input.state } });
+    }
+    return { module: input.module, state: input.state, version };
   });
 }
 
 /** Refuses new work in a module that isn't active (reads stay available). */
 export async function assertModuleActive(db: Kysely<DB>, caller: Caller, module: ModuleCode) {
-  const state = await runQuery(db, caller.tenantId, async (tx) => (await tx.selectFrom('platform.module_state').select('state').where('module_code', '=', module).executeTakeFirst())?.state ?? 'active');
+  const state = await runQuery(db, caller.tenantId, async (tx) => stateOf(module, await tx.selectFrom('platform.module_state').select('state').where('module_code', '=', module).executeTakeFirst()));
   if (state !== 'active') throw preconditionFailed(`the ${module} module is ${state.replaceAll('_', ' ')} for this hospital`, { reason: 'module_inactive', module, state });
 }
 

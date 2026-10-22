@@ -1,5 +1,7 @@
 # M10 — Inventory & procurement (schema `inventory`)
 
+> **Clinic scope (2026-10-21):** the built schema is a trimmed version of this design — see [CLINIC_OPERATIONS_MODULES.md](../../plan/CLINIC_OPERATIONS_MODULES.md) and the migration `m10_inventory` for what exists.
+
 Stock derives from an **append-only movement ledger**. `stock_balance` is a running total updated in the same transaction as each movement, with a check that on-hand never goes negative. Drugs are inventory items with a drug profile, so pharmacy and stores share one catalogue. All quantities are in base units; batches are picked FEFO (first expiry first out).
 
 ```mermaid

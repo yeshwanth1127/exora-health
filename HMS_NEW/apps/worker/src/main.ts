@@ -7,6 +7,7 @@ import { dispatchBookingChats } from "../../api/src/modules/comms/managed-bookin
 import { dispatchManagedWhatsApp } from "../../api/src/modules/comms/managed-whatsapp.ts";
 import { loadManagedSettings } from "../../api/src/modules/comms/managed-config.ts";
 import { evaluateDueNotifications } from "../../api/src/modules/comms/notifications.ts";
+import { runBedDayCharges } from "../../api/src/modules/billing/stays.ts";
 import { dispatchTemplateSubmissions } from "../../api/src/modules/comms/template-submissions.ts";
 import { createDb } from "@hms/db";
 import { config } from "../../../db/scripts/config.mjs";
@@ -61,6 +62,8 @@ void every("outbox", 1_000, () => dispatchOnce(db, handlers, { log }));
 void every("expire-holds", 30_000, () => expireHolds(db));
 void every("partitions", 24 * 3600_000, () => maintainPartitions(db));
 void every("purge-idempotency", 3600_000, () => purgeIdempotencyRecords(db));
+// Bed days are charged once per occupancy per date, so hourly reruns only pick up newly due days.
+void every("bed-day-charges", 3600_000, () => runBedDayCharges(db));
 
 void every("notification-readback", 5_000, () => evaluateDueNotifications(db));
 // Dedicated dispatcher commits each provider attempt before POST; outbox retries must never resend it.

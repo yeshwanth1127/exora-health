@@ -83,13 +83,13 @@ describe('M01 administration', () => {
 
   it('module switches: optional modules suspend and resume, the core never does, stale edits are refused', async () => {
     const mods = ok(await k.call(p.frontDesk, 'GET', '/v1/modules')).items;
-    expect(mods.find((m: { module: string }) => m.module === 'billing')).toMatchObject({ state: 'active', core: false, version: 0 });
-    expect((await k.call(p.branchAdmin, 'PUT', '/v1/modules/billing', { state: 'suspended', version: 0, reason: 'Pilot paused' })).status).toBe(403);
+    expect(mods.find((m: { module: string }) => m.module === 'insurance')).toMatchObject({ state: 'active', core: false, version: 0 });
+    expect((await k.call(p.branchAdmin, 'PUT', '/v1/modules/insurance', { state: 'suspended', version: 0, reason: 'Pilot paused' })).status).toBe(403);
     expect(reason(await k.call(p.admin, 'PUT', '/v1/modules/booking', { state: 'suspended', version: 0, reason: 'nope' }))).toBe('core_module');
-    const s = ok(await k.call(p.admin, 'PUT', '/v1/modules/billing', { state: 'suspended', version: 0, reason: 'Pilot paused' }));
-    expect(reason(await k.call(p.admin, 'PUT', '/v1/modules/billing', { state: 'active', version: 0, reason: 'again' }))).toBe('stale_version');
-    expect(reason(await k.call(p.admin, 'PUT', '/v1/modules/billing', { state: 'validated', version: s.version, reason: 'skip' }))).toBe('invalid_transition');
-    ok(await k.call(p.admin, 'PUT', '/v1/modules/billing', { state: 'active', version: s.version, reason: 'Pilot resumed' }));
+    const s = ok(await k.call(p.admin, 'PUT', '/v1/modules/insurance', { state: 'suspended', version: 0, reason: 'Pilot paused' }));
+    expect(reason(await k.call(p.admin, 'PUT', '/v1/modules/insurance', { state: 'active', version: 0, reason: 'again' }))).toBe('stale_version');
+    expect(reason(await k.call(p.admin, 'PUT', '/v1/modules/insurance', { state: 'validated', version: s.version, reason: 'skip' }))).toBe('invalid_transition');
+    ok(await k.call(p.admin, 'PUT', '/v1/modules/insurance', { state: 'active', version: s.version, reason: 'Pilot resumed' }));
     const ctx = ok(await k.call(p.frontDesk, 'GET', '/v1/session-context'));
     expect(ctx).toMatchObject({ tenant: { tenantId: k.tenant.tenantId }, staff: { displayName: 'Ravi Desk' } });
     expect(ctx.facilities.map((f: { facilityId: string }) => f.facilityId)).toEqual([f1]);

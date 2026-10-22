@@ -16,6 +16,8 @@ overview, appointments, doctors, schedules, waitlist, catalogue, operations, wha
 
 Patients, Queue, Consultations and Walk-in were added during integration. They stay and must not regress.
 
+> **Superseded on 2026-10-21 for M07 inpatient, M09 pharmacy, M10 inventory and M11 billing, plus a new HR module:** the product owner approved building these as switchable clinic modules (backend first). See [CLINIC_OPERATIONS_MODULES.md](CLINIC_OPERATIONS_MODULES.md). The removed `0aaff77` code is reference material only. Everything else below still applies.
+
 **Out of scope. Do not build these:**
 - ERD modules M06 diagnostics, M07 inpatient, M08 theatre, M09 pharmacy, M10 inventory, M11 billing, M12 insurance, M14 documents (beyond what WhatsApp uploads need, see G20), M15 operations work tasks, M16 integration and M17 ABDM.
 - Ledger items G28 prescriptions, G29 lab/imaging, G30 billing, G31 general uploads, G32 inpatient and G33 public booking API.

@@ -13,6 +13,7 @@ export interface EncounterRow {
   facility_id: string;
   attending_staff_id: string;
   appointment_id: string | null;
+  admission_id: string | null;
   status: string;
   version: number;
 }
@@ -20,7 +21,7 @@ export interface EncounterRow {
 export async function lockEncounter(tx: Transaction<DB>, encounterId: string): Promise<EncounterRow> {
   const row = await tx
     .selectFrom('clinical.encounter')
-    .select(['id', 'patient_id', 'facility_id', 'attending_staff_id', 'appointment_id', 'status', 'version'])
+    .select(['id', 'patient_id', 'facility_id', 'attending_staff_id', 'appointment_id', 'admission_id', 'status', 'version'])
     .where('id', '=', encounterId)
     .forUpdate()
     .executeTakeFirst();

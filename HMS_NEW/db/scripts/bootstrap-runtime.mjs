@@ -38,6 +38,15 @@ if (process.env.TENANT_BOOTSTRAP === 'custom') {
   const plan = process.env.TENANT_PLAN ?? 'launch';
   if (!/^[a-z0-9][a-z0-9-]{1,62}$/.test(slug)) throw new Error('TENANT_SLUG is invalid');
   if (!['launch', 'connect', 'scale'].includes(plan)) throw new Error('TENANT_PLAN must be launch, connect, or scale');
+  const CLINIC_MODULES = ['inpatient', 'billing', 'inventory', 'pharmacy', 'hr'];
+  const clinicModules = process.env.TENANT_CLINIC_MODULES === undefined
+    ? CLINIC_MODULES
+    : process.env.TENANT_CLINIC_MODULES.split(',').map((m) => m.trim()).filter(Boolean);
+  const unknownModule = clinicModules.find((m) => !CLINIC_MODULES.includes(m));
+  if (unknownModule) throw new Error(`TENANT_CLINIC_MODULES has an unknown module: ${unknownModule}`);
+  // Inventory is pharmacy's stock, and inpatient discharge needs billing.
+  if (clinicModules.includes('pharmacy') && !clinicModules.includes('inventory')) clinicModules.push('inventory');
+  if (clinicModules.includes('inpatient') && !clinicModules.includes('billing')) throw new Error('TENANT_CLINIC_MODULES: inpatient needs billing');
   const client = new pg.Client({ connectionString: config.databaseUrl });
   await client.connect();
   try {
@@ -100,6 +109,13 @@ if (process.env.TENANT_BOOTSTRAP === 'custom') {
           `INSERT INTO platform.module_state(tenant_id,module_code,state)
            SELECT $1,module,'active' FROM unnest($2::text[]) AS module`,
           [tenantId, active],
+        );
+        // Clinic operation modules are entitled but off ('configured'); the clinic admin switches them on
+        // under Settings / Modules. TENANT_CLINIC_MODULES (comma list) narrows the entitlement.
+        await client.query(
+          `INSERT INTO platform.module_state(tenant_id,module_code,state)
+           SELECT $1,module,'configured' FROM unnest($2::text[]) AS module`,
+          [tenantId, clinicModules],
         );
         await client.query('COMMIT');
         console.log(`Provisioned tenant ${slug} (${tenantId})`);

@@ -1,5 +1,7 @@
 # M11 — Billing, cashier & ledger (schema `billing`)
 
+> **Clinic scope (2026-10-21):** the built schema is a trimmed version of this design — see [CLINIC_OPERATIONS_MODULES.md](../../plan/CLINIC_OPERATIONS_MODULES.md) and the migration `m11_billing / m11_billing_ipd` for what exists.
+
 Keeps estimate, charge, invoice, payment, allocation, receipt and refund separate. Charges point back to the source record that caused them, with a unique key that stops a retry from double-charging. Invoices list charges through invoice lines, so one charge can be split between patient and payer.
 
 ```mermaid

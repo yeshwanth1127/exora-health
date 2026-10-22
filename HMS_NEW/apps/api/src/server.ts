@@ -40,6 +40,11 @@ import { registerRegistryRoutes } from "./http/routes/registry.ts";
 import { registerDirectoryRoutes } from "./http/routes/directory.ts";
 import { registerPatientRoutes } from "./http/routes/patients.ts";
 import { registerQueueRoutes } from "./http/routes/queue.ts";
+import { registerBillingRoutes } from "./http/routes/billing.ts";
+import { registerInpatientRoutes } from "./http/routes/inpatient.ts";
+import { registerInventoryRoutes } from "./http/routes/inventory.ts";
+import { registerPharmacyRoutes } from "./http/routes/pharmacy.ts";
+import { registerHrRoutes } from "./http/routes/hr.ts";
 import {
   registerTelehealthRoutes,
   TELE_TOKEN_HEADER,
@@ -309,6 +314,11 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   registerBookingRoutes(app, deps.db);
   registerPublicBookingRoutes(app, deps.db, publicBooking, managed);
   registerQueueRoutes(app, deps.db);
+  registerBillingRoutes(app, deps.db);
+  registerInpatientRoutes(app, deps.db);
+  registerInventoryRoutes(app, deps.db);
+  registerPharmacyRoutes(app, deps.db);
+  registerHrRoutes(app, deps.db);
   registerClinicalRoutes(app, deps.db);
   registerAdminRoutes(app, deps.db);
   registerAlertRoutes(app, deps.db);
