@@ -1,3 +1,4 @@
+import { pageMetadata } from "../../../lib/seo";
 import { BRAND_NAME } from "../../../lib/brand";
 import CaptureBrand from "../../components/brand";
 import SiteFooter from "../../components/site-footer";
@@ -1368,3 +1369,5 @@ export default function Page() {
     </>
   );
 }
+
+export const metadata = pageMetadata("/product/features");

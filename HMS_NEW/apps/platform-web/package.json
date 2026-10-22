@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1 --port 5190",
-    "build": "next build && node scripts/export-platform.mjs",
+    "build": "node scripts/social-card.mjs && next build && node scripts/export-platform.mjs",
     "start": "node scripts/preview-platform.mjs",
     "typecheck": "tsc --noEmit",
     "preview": "node scripts/preview-platform.mjs",
-    "test": "node --test scripts/*.test.mjs"
+    "test": "node --test scripts/*.test.mjs",
+    "seo:check": "node scripts/audit-search.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.8.0",
@@ -17,7 +18,8 @@
     "motion": "14.1.0",
     "next": "15.5.27",
     "react": "19.2.7",
-    "react-dom": "19.2.7"
+    "react-dom": "19.2.7",
+    "posthog-js": "1.438.15"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",

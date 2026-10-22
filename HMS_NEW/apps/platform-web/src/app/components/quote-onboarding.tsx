@@ -1,5 +1,6 @@
 "use client";
 
+import {trackWebsite} from "../../lib/website-analytics";
 import { BRAND_NAME } from "../../lib/brand";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Stethoscope, Users, Hospital, ArrowRight, ChevronLeft, X, Check, Gift, MapPin, MessageCircle, Megaphone, Sparkles, Globe, Download, ChartNoAxesColumnIncreasing, Target, CircleHelp } from "lucide-react";
@@ -122,6 +123,7 @@ function OfferReveal({ draft, onReady }: { draft: WizardDraft; onReady: (ready: 
 
 export default function QuoteOnboarding() {
   const [step, setStep] = useState(0);
+  useEffect(()=>{const send=()=>trackWebsite('quote_step_viewed',{path:'/quote',stage:quoteSteps[step]?.id});send();window.addEventListener('website:analytics-ready',send);return()=>window.removeEventListener('website:analytics-ready',send);},[step]);
   const [draft, setDraft] = useState<WizardDraft>({ ...initialWizardDraft, channels: [] });
   const [skipped, setSkipped] = useState<string[]>([]);
   const [restored,setRestored]=useState(false);

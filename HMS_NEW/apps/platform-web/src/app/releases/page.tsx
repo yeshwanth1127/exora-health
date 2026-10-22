@@ -1,8 +1,9 @@
+import { pageMetadata } from "../../lib/seo";
 import { BRAND_NAME } from "../../lib/brand";
 import { ArrowRight } from 'lucide-react';
 import MarketingAsset from '../components/marketing-asset';
 import ResourceShell from '../components/resource-shell';
-export const metadata={title:("What’s new · " + BRAND_NAME),description:("Release notes and product updates from " + BRAND_NAME + ".")};
+
 const features=[
  {id:'ai-reception',title:'AI reception and call handling',body:'A clearer path from the first call to the next appointment. Bring routine patient enquiries, call activity and booking requests into your front-desk workflow, with visible handoffs for your team.'},
  {id:'appointments',title:'Appointments and doctor schedules',body:'Manage bookings, review upcoming visits and find availability across your doctors. See booked, available, held and blocked time in the schedule, so your team can make the next booking with context.'},
@@ -16,3 +17,5 @@ const features=[
  {id:'alerts',title:'Notifications and team handoffs',body:'Review workspace notifications and use the alerts inbox to see what needs attention. Keep next steps visible as work moves between reception, doctors and clinic managers.'}
 ];
 export default function ReleasesPage(){return <ResourceShell><main className="resource-page releases-page"><header className="release-page-heading"><div><h1>What’s new</h1><p>A closer look at what’s new in {BRAND_NAME}.</p></div><img className="release-heading-doctors" src="/assets/capture-navigation/doctors-v2.webp" width="240" height="240" alt="Two doctors working together"/></header><article className="release-entry" aria-labelledby="release-1-title"><aside className="release-meta"><span>First release</span><a href="#release-1-title" aria-label="Release version 1.0.0">1.0.0</a></aside><div className="release-body"><p className="release-kicker">INTRODUCING {BRAND_NAME.toUpperCase()}</p><h2 id="release-1-title">{BRAND_NAME} 1.0.0:<br/>Care starts with a connected team.</h2><div className="release-product-view"><MarketingAsset name="1d" /></div><p className="release-lead">From the first enquiry to the next follow-up, your team deserves a clearer view of the clinic day. {BRAND_NAME} brings reception, appointments, patient engagement and clinic activity into one workspace.</p><p>Our first release brings together the tools your front desk, doctors and clinic managers use to keep care moving.</p><a className="resource-text-link" href="/product/features">Explore {BRAND_NAME} <ArrowRight size={16}/></a><div className="release-features">{features.map(f=><section id={f.id} key={f.id}><h3>{f.title}</h3><p>{f.body}</p></section>)}</div><div className="release-connection-note"><strong>Connected to the way your clinic works.</strong><p>Voice, messaging, Google and remote-care features depend on the services connected and configured for your workspace.</p></div><p className="release-closing">This is the start. We’ll share future improvements and fixes here as {BRAND_NAME} grows with your team.</p><a className="resource-text-link" href="/help">Visit the help centre <ArrowRight size={16}/></a></div></article></main></ResourceShell>;}
+
+export const metadata = pageMetadata("/releases");

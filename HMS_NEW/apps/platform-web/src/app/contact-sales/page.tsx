@@ -1,3 +1,4 @@
+import { pageMetadata } from "../../lib/seo";
 import { BRAND_NAME } from "../../lib/brand";
 import CaptureBrand from "../components/brand";
 import "./ditto.css";
@@ -180,3 +181,5 @@ export default function Page() {
     </>
   );
 }
+
+export const metadata = pageMetadata("/contact-sales");

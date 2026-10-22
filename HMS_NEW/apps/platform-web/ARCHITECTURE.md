@@ -25,3 +25,9 @@ Temporary administrator passwords stay in React memory, never browser storage. O
 The two registered templates replace the old nine placeholder layout choices. The live API now imports its existing shared `onboarding.ts` schema; the prior duplicate inline schema discarded `websiteTemplate`.
 
 The selected template, facility type and timezone are forwarded through local and production provisioning commands. Compose supplies the facility settings to the tenant database bootstrap. Defaults preserve existing callers.
+
+## Search and website analytics
+
+`src/lib/site.ts` validates the build-time canonical origin and gates indexing. Production Docker/Compose supplies the configured HTTPS origin and search-enabled flag; local builds without it remain noindex. `src/lib/seo.ts` owns public route metadata; sitemap excludes setup/quote/dashboard routes. Static metadata, article/application/entity/breadcrumb JSON-LD and visible content share the same data. The original illustration galleries remain noindex. `scripts/audit-search.mjs` validates exported metadata and local destinations in CI.
+
+`website-analytics.tsx` loads PostHog only with a configured public project token, allowed cloud host, known route and consent. Explicit events use a property allowlist and before-send filtering. No SDK loads with a missing token. See `docs/search-launch/ANALYTICS-SETUP.md` for activation and `WEEK-ONE.md` for search submission/backlink work. IndexNow is prepared but requires a deliberate post-deployment submission.

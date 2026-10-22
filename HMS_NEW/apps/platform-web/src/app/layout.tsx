@@ -9,16 +9,20 @@ import "./flow-brand.css";
 import "./launch-polish.css";
 import type { ReactNode } from "react";
 import { SITE_ORIGIN } from "../lib/site";
+import { pageMetadata, organisationGraph, jsonLd } from "../lib/seo";
+import WebsiteAnalytics from "./components/website-analytics";
 
-export const metadata = { title: (BRAND_NAME + " · Care, connected"), description: "Reception, appointments and patient conversations in one connected clinic workspace.", icons: { icon: [{ url: "/capture-bell-icon-v3.png", type: "image/png" }], shortcut: "/capture-bell-icon-v3.png", apple: "/capture-bell-icon-v3.png" }, robots: { index: false, follow: false } };
+export const metadata = { ...pageMetadata('/'), referrer: 'strict-origin-when-cross-origin' as const, metadataBase: SITE_ORIGIN ? new URL(SITE_ORIGIN) : undefined,
+ verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined, other: process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION ? { 'msvalidate.01': process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION } : undefined },
+ icons: { icon: [{ url: '/capture-bell-icon-v3.png', type: 'image/png' }], apple: '/capture-bell-icon-v3.png' } };
 
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang={"en-us"}>
+    <html lang="en-IN">
       <head />
       <body className="cn0">
-        {children}<ReferenceInteractions /><MarketingMotion />
+        {organisationGraph() && <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(organisationGraph())}}/>}{children}<WebsiteAnalytics/><ReferenceInteractions /><MarketingMotion />
       </body>
     </html>
   );

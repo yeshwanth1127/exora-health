@@ -1,8 +1,8 @@
-import { BRAND_NAME } from "../../lib/brand";
+import { BRAND_NAME } from "../../lib/brand.ts";
 export const posts=[
  {slug:'a-clearer-front-desk',category:'Reception',title:'A clearer front desk starts with the first enquiry.',excerpt:'Give every call and booking request a clear next step, while keeping your team in control.',image:'/assets/capture-illustrations/appointments-blue.webp',alt:'A person organising a clinic calendar',sections:[
   {title:'Start with what patients need to know',body:'Opening hours, directions, available services and how to request an appointment are everyday questions. Keep these details in one maintained source so reception can give a consistent answer. Decide who checks the information when clinic hours or services change.'},
-  {title:'Give each enquiry a next step',body:("A useful reception workflow makes the next action clear: answer a routine question, record a booking request, or hand the conversation to a colleague. " + BRAND_NAME + " only the information needed to move that request forward. A request should remain a request until an appointment has actually been confirmed.")},
+  {title:'Give each enquiry a next step',body:"A useful reception workflow makes the next action clear: answer a routine question, record a booking request, or hand the conversation to a colleague. Record only the information needed to move that request forward. A request should remain a request until an appointment has actually been confirmed."},
   {title:'Make handoffs visible',body:'When a conversation needs a person, the receiving teammate needs context: what was asked, what has already been explained and what remains unresolved. A short, structured handoff is easier to act on than a long unfiltered transcript. Keep clinical questions and urgent concerns within your clinic’s established staff-led process.'},
   {title:'Review the workflow with your team',body:'Look at unanswered enquiries, pending requests and conversations awaiting a response. Use that review to improve the information you provide and clarify ownership. Begin with a focused workflow before adding more automation.'}
  ]},

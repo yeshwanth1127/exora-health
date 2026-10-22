@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type InputHTMLAttributes } from 'react';
+import {trackWebsite} from "../../lib/website-analytics";
 import { BRAND_NAME } from '../../lib/brand';
 import { readIntake } from '../../lib/capture-onboarding';
 import { STORAGE, emptyWorkspace, fromIntake, restoreDraft, restoreActive, persistActive, workspacePayload, requestWorkspace, readWorkspace, safeWorkspaceUrl, slugify, type WorkspaceDraft, type ProvisioningState, type PendingRequest } from '../../lib/workspace-onboarding';
@@ -17,6 +18,9 @@ export default function CaptureAccount() {
   const [step,setStep]=useState(0),[loaded,setLoaded]=useState(false),[consent,setConsent]=useState(false);
   const [active,setActive]=useState<ProvisioningState|null>(null),[pending,setPending]=useState<PendingRequest|null>(null);
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[copied,setCopied]=useState(false),[statusVerified,setStatusVerified]=useState(false);
+  const lastAnalyticsStatus=useRef('');
+  useEffect(()=>{const send=()=>{if(loaded&&!active)trackWebsite('onboarding_step_viewed',{path:'/onboarding',stage:['account','workspace','facility','launch','review'][step]});};send();window.addEventListener('website:analytics-ready',send);return()=>window.removeEventListener('website:analytics-ready',send);},[step,loaded,Boolean(active)]);
+  useEffect(()=>{const send=()=>{if(statusVerified&&active&&lastAnalyticsStatus.current!==active.status&&trackWebsite('workspace_status_changed',{path:'/onboarding',status:active.status}))lastAnalyticsStatus.current=active.status;};send();window.addEventListener('website:analytics-ready',send);return()=>window.removeEventListener('website:analytics-ready',send);},[statusVerified,active?.status]);
   const heading=useRef<HTMLHeadingElement>(null),inFlight=useRef(false);
   useEffect(()=>{
     const fallback=fromIntake(readIntake());
@@ -54,10 +58,12 @@ export default function CaptureAccount() {
       // Save the exact request before sending. A timeout must retry the same payload and keys.
       localStorage.setItem(STORAGE.pending,JSON.stringify(attempt));setPending(attempt);
       const state=await requestWorkspace(attempt,AbortSignal.timeout(20000));
+      trackWebsite('workspace_request_submitted',{path:'/onboarding',outcome:'accepted',plan:attempt.payload.plan,template:attempt.payload.websiteTemplate});
       persistActive(localStorage,state);setActive(state);setStatusVerified(false);localStorage.removeItem(STORAGE.pending);setPending(null);
       // Old recovery keys are replaced only after a successful server acknowledgement.
       localStorage.removeItem('exora-onboarding-key');localStorage.removeItem('exora-onboarding-access');
     }catch(e){
+      trackWebsite('workspace_request_failed',{path:'/onboarding',outcome:'unavailable'});
       if((e as Error & {canEdit?:boolean}).canEdit){localStorage.removeItem(STORAGE.pending);setPending(null);}
       setError((e as Error).name==='TimeoutError'?'The connection timed out. Retry to recover this same workspace request.':(e as Error).message);
     }finally{inFlight.current=false;setBusy(false);}

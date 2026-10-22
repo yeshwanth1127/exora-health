@@ -1,3 +1,4 @@
+import { pageMetadata } from "../lib/seo";
 import { BRAND_NAME } from "../lib/brand";
 import HomeClosingCta from "./components/home-closing-cta";
 import CaptureBrand from "./components/brand";
@@ -1171,3 +1172,5 @@ export default function Page() {
     </>
   );
 }
+
+export const metadata = pageMetadata("/");
