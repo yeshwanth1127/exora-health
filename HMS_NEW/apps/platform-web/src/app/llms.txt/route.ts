@@ -1,0 +1,3 @@
+import { BRAND_NAME } from "../../lib/brand";
+export const dynamic = "force-static";
+export function GET(){return new Response(("# " + BRAND_NAME + "\n\nHealthcare practice software for reception, appointments, patient conversations and clinic activity.\n\n## Explore\n- [Product](/product/features)\n- [For clinics](/teams)\n- [For hospitals](/enterprise)\n- [Pricing](/pricing)\n- [Blog](/blog)\n- [Help centre](/help)\n- [What’s new](/releases)\n- [Request a demo](/contact-sales)\n\nThis is a local product preview. Website concepts use synthetic data. Connected services and proposed pricing require qualification.\n"),{headers:{"content-type":"text/plain; charset=utf-8"}})}

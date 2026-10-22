@@ -1,0 +1,80 @@
+[
+  {
+    "slot": "Home \u00b7 hero edge illustrations",
+    "people": [
+      "home-portrait-b",
+      "home-portrait-a"
+    ],
+    "objects": [
+      "product-records",
+      "product-search"
+    ],
+    "why": "Small heads fit the narrow decorative spaces. Each side is a separate image.",
+    "url": "/"
+  },
+  {
+    "slot": "Product \u00b7 Capture knowledge",
+    "people": [
+      "home-portrait-a"
+    ],
+    "objects": [
+      "product-records"
+    ],
+    "why": "One head or one folder, at the existing 130px header size.",
+    "url": "/product/features#capture"
+  },
+  {
+    "slot": "Product \u00b7 Find answers",
+    "people": [
+      "home-portrait-b"
+    ],
+    "objects": [
+      "product-search"
+    ],
+    "why": "Glasses or a magnifier express finding information; the shield has been removed.",
+    "url": "/product/features#find"
+  },
+  {
+    "slot": "Product \u00b7 Automate busywork",
+    "people": [
+      "product-next-step",
+      "home-portrait-a",
+      "product-records"
+    ],
+    "objects": [
+      "product-next-step"
+    ],
+    "why": "Three separately generated cutouts form the composition. Objects-only keeps one card.",
+    "url": "/product/features#automate"
+  },
+  {
+    "slot": "Product \u00b7 Built for teams",
+    "people": [
+      "home-portrait-a",
+      "product-team",
+      "home-portrait-b"
+    ],
+    "objects": [
+      "product-team"
+    ],
+    "why": "Two independent portraits plus one separate badge. No generated group anatomy.",
+    "url": "/product/features#secure"
+  },
+  {
+    "slot": "Home \u00b7 small use-case icons",
+    "people": [
+      "product-records",
+      "product-search",
+      "product-next-step",
+      "product-team"
+    ],
+    "objects": [
+      "product-records",
+      "product-search",
+      "product-next-step",
+      "product-team"
+    ],
+    "why": "These stay as simple objects in both directions, because the real slots are only 40px.",
+    "url": "/#capture-use-cases"
+  }
+]

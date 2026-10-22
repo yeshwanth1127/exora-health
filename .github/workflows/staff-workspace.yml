@@ -25,4 +25,10 @@ jobs:
       - run: pnpm staff:build
       - run: pnpm website:test
       - run: pnpm website:build
+      - run: pnpm --filter @hms/platform-web test
       - run: pnpm platform:build
+      - name: Verify platform provisioning contracts
+        run: |
+          pnpm pg:start
+          trap 'pnpm pg:stop' EXIT
+          pnpm exec vitest run apps/control-api/src/onboarding-flow.test.ts apps/control-api/src/platform-pages.test.ts apps/control-api/src/workspace-bootstrap.test.ts apps/control-api/src/provisioner-input.test.ts

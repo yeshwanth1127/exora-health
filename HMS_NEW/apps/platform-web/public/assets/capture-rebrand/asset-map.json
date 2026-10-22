@@ -1,0 +1,912 @@
+[
+  {
+    "page": "/",
+    "slot": 0,
+    "replacement": "/assets/capture-illustrations/patient-records-lime.png",
+    "role": "section illustration",
+    "section": "Hero / navigation"
+  },
+  {
+    "page": "/",
+    "slot": 1,
+    "replacement": "/assets/capture-illustrations/appointments-blue.png",
+    "role": "section illustration",
+    "section": "Hero / navigation"
+  },
+  {
+    "page": "/",
+    "slot": 2,
+    "replacement": "/assets/capture-illustrations/care-messaging-coral.png",
+    "role": "section illustration",
+    "section": "Hero / navigation"
+  },
+  {
+    "page": "/",
+    "slot": 3,
+    "replacement": "/assets/capture-illustrations/clinic-team-lime.png",
+    "role": "section illustration",
+    "section": "Hero / navigation"
+  },
+  {
+    "page": "/",
+    "slot": 4,
+    "replacement": "/assets/capture-illustrations/secure-workspace.png",
+    "role": "section illustration",
+    "section": "Hero / navigation"
+  },
+  {
+    "page": "/",
+    "slot": 5,
+    "replacement": "/assets/capture-illustrations/care-coordination.png",
+    "role": "section illustration",
+    "section": "Hero / navigation"
+  },
+  {
+    "page": "/",
+    "slot": 6,
+    "replacement": "/assets/capture-illustrations/connected-clinics.png",
+    "role": "section illustration",
+    "section": "Hero / navigation"
+  },
+  {
+    "page": "/",
+    "slot": 7,
+    "replacement": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+    "role": "synthetic product concept",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 8,
+    "replacement": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+    "role": "synthetic product concept",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 9,
+    "replacement": "/assets/capture-rebrand/appointments.svg",
+    "role": "synthetic product concept",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 10,
+    "replacement": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+    "role": "synthetic product concept",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 11,
+    "replacement": "/assets/capture-rebrand/capability-1.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 12,
+    "replacement": "/assets/capture-rebrand/capability-4.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 13,
+    "replacement": "/assets/capture-rebrand/capability-2.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 14,
+    "replacement": "/assets/capture-rebrand/capability-6.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 15,
+    "replacement": "/assets/capture-rebrand/capability-3.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 16,
+    "replacement": "/assets/capture-rebrand/capability-1.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 17,
+    "replacement": "/assets/capture-rebrand/capability-2.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 18,
+    "replacement": "/assets/capture-rebrand/capability-5.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 19,
+    "replacement": "/assets/capture-rebrand/capability-4.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 20,
+    "replacement": "/assets/capture-rebrand/capability-5.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 21,
+    "replacement": "/assets/capture-rebrand/capability-6.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 22,
+    "replacement": "/assets/capture-rebrand/capability-0.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 23,
+    "replacement": "/assets/capture-rebrand/capability-4.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 24,
+    "replacement": "/assets/capture-rebrand/capability-2.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 25,
+    "replacement": "/assets/capture-rebrand/capability-3.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 26,
+    "replacement": "/assets/capture-rebrand/capability-4.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 27,
+    "replacement": "/assets/capture-rebrand/capability-5.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 28,
+    "replacement": "/assets/capture-rebrand/capability-6.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 29,
+    "replacement": "/assets/capture-rebrand/capability-0.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 30,
+    "replacement": "/assets/capture-rebrand/capability-1.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 31,
+    "replacement": "/assets/capture-rebrand/capability-6.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 32,
+    "replacement": "/assets/capture-rebrand/capability-3.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 33,
+    "replacement": "/assets/capture-rebrand/capability-4.svg",
+    "role": "workflow label",
+    "section": "Where teams and agents Create together."
+  },
+  {
+    "page": "/",
+    "slot": 34,
+    "replacement": "/assets/capture-rebrand/records.svg",
+    "role": "synthetic product concept",
+    "section": "Bring everything into one system of record."
+  },
+  {
+    "page": "/",
+    "slot": 35,
+    "replacement": "/assets/capture-rebrand/inbox.svg",
+    "role": "synthetic product concept",
+    "section": "Bring everything into one system of record."
+  },
+  {
+    "page": "/",
+    "slot": 36,
+    "replacement": "/assets/capture-rebrand/team.svg",
+    "role": "synthetic product concept",
+    "section": "Bring everything into one system of record."
+  },
+  {
+    "page": "/",
+    "slot": 37,
+    "replacement": "/assets/capture-rebrand/appointments.svg",
+    "role": "synthetic product concept",
+    "section": "Get answers, instantly\u2014with citations."
+  },
+  {
+    "page": "/",
+    "slot": 38,
+    "replacement": "/assets/capture-rebrand/records.svg",
+    "role": "synthetic product concept",
+    "section": "Get answers, instantly\u2014with citations."
+  },
+  {
+    "page": "/",
+    "slot": 39,
+    "replacement": "/assets/capture-rebrand/inbox.svg",
+    "role": "synthetic product concept",
+    "section": "Get answers, instantly\u2014with citations."
+  },
+  {
+    "page": "/",
+    "slot": 40,
+    "replacement": "/assets/capture-rebrand/team.svg",
+    "role": "synthetic product concept",
+    "section": "Keep work moving 24/7 with agents."
+  },
+  {
+    "page": "/",
+    "slot": 41,
+    "replacement": "/assets/capture-rebrand/appointments.svg",
+    "role": "synthetic product concept",
+    "section": "Keep work moving 24/7 with agents."
+  },
+  {
+    "page": "/",
+    "slot": 42,
+    "replacement": "/assets/capture-rebrand/records.svg",
+    "role": "synthetic product concept",
+    "section": "See what Capture can do"
+  },
+  {
+    "page": "/",
+    "slot": 43,
+    "replacement": "/assets/capture-rebrand/inbox.svg",
+    "role": "synthetic product concept",
+    "section": "Triage product feedback\u2192"
+  },
+  {
+    "page": "/",
+    "slot": 44,
+    "replacement": "/assets/capture-rebrand/team.svg",
+    "role": "synthetic product concept",
+    "section": "Resolve support tickets in Slack\u2192"
+  },
+  {
+    "page": "/",
+    "slot": 45,
+    "replacement": "/assets/capture-rebrand/appointments.svg",
+    "role": "synthetic product concept",
+    "section": "Respond to security alerts faster\u2192"
+  },
+  {
+    "page": "/",
+    "slot": 46,
+    "replacement": "/assets/capture-rebrand/records.svg",
+    "role": "synthetic product concept",
+    "section": "Automate weekly reporting\u2192"
+  },
+  {
+    "page": "/",
+    "slot": 47,
+    "replacement": "/assets/capture-rebrand/inbox.svg",
+    "role": "synthetic product concept",
+    "section": "Automate weekly reporting\u2192"
+  },
+  {
+    "page": "/",
+    "slot": 48,
+    "replacement": "/assets/capture-illustrations/appointments-blue.png",
+    "role": "section illustration",
+    "section": "Designed around the clinic day."
+  },
+  {
+    "page": "/",
+    "slot": 49,
+    "replacement": "/assets/capture-rebrand/capability-0.svg",
+    "role": "workflow label",
+    "section": "Designed around the clinic day."
+  },
+  {
+    "page": "/",
+    "slot": 50,
+    "replacement": "/assets/capture-illustrations/clinic-team-lime.png",
+    "role": "section illustration",
+    "section": "Designed around the clinic day."
+  },
+  {
+    "page": "/",
+    "slot": 51,
+    "replacement": "/assets/capture-rebrand/capability-1.svg",
+    "role": "workflow label",
+    "section": "Designed around the clinic day."
+  },
+  {
+    "page": "/",
+    "slot": 52,
+    "replacement": "/assets/capture-illustrations/care-messaging-coral.png",
+    "role": "section illustration",
+    "section": "Designed around the clinic day."
+  },
+  {
+    "page": "/",
+    "slot": 53,
+    "replacement": "/assets/capture-rebrand/capability-2.svg",
+    "role": "workflow label",
+    "section": "Designed around the clinic day."
+  },
+  {
+    "page": "/product/features",
+    "slot": 0,
+    "replacement": "/assets/capture-illustrations/patient-records-lime.png",
+    "role": "section illustration",
+    "section": "Capture knowledge."
+  },
+  {
+    "page": "/product/features",
+    "slot": 1,
+    "replacement": "/assets/capture-rebrand/appointments.svg",
+    "role": "synthetic product concept",
+    "section": "Capture knowledge."
+  },
+  {
+    "page": "/product/features",
+    "slot": 2,
+    "replacement": "/assets/capture-illustrations/secure-workspace.png",
+    "role": "section illustration",
+    "section": "Find answers."
+  },
+  {
+    "page": "/product/features",
+    "slot": 3,
+    "replacement": "/assets/capture-rebrand/records.svg",
+    "role": "synthetic product concept",
+    "section": "Find answers."
+  },
+  {
+    "page": "/product/features",
+    "slot": 4,
+    "replacement": "/assets/capture-illustrations/care-coordination.png",
+    "role": "section illustration",
+    "section": "Automate busywork."
+  },
+  {
+    "page": "/product/features",
+    "slot": 5,
+    "replacement": "/assets/capture-rebrand/inbox.svg",
+    "role": "synthetic product concept",
+    "section": "Automate busywork."
+  },
+  {
+    "page": "/product/features",
+    "slot": 6,
+    "replacement": "/assets/capture-illustrations/connected-clinics.png",
+    "role": "section illustration",
+    "section": "Built for teams."
+  },
+  {
+    "page": "/product/features",
+    "slot": 7,
+    "replacement": "/assets/capture-rebrand/team.svg",
+    "role": "synthetic product concept",
+    "section": "Built for teams."
+  },
+  {
+    "page": "/teams",
+    "slot": 0,
+    "replacement": "/assets/capture-illustrations/welcome-clinic.png",
+    "role": "section illustration",
+    "section": "Where teams work better, together."
+  },
+  {
+    "page": "/teams",
+    "slot": 1,
+    "replacement": "/assets/capture-rebrand/capability-0.svg",
+    "role": "workflow label",
+    "section": "Where teams work better, together."
+  },
+  {
+    "page": "/teams",
+    "slot": 2,
+    "replacement": "/assets/capture-rebrand/capability-1.svg",
+    "role": "workflow label",
+    "section": "Where teams work better, together."
+  },
+  {
+    "page": "/teams",
+    "slot": 3,
+    "replacement": "/assets/capture-rebrand/capability-2.svg",
+    "role": "workflow label",
+    "section": "Where teams work better, together."
+  },
+  {
+    "page": "/teams",
+    "slot": 4,
+    "replacement": "/assets/capture-rebrand/capability-3.svg",
+    "role": "workflow label",
+    "section": "Where teams work better, together."
+  },
+  {
+    "page": "/teams",
+    "slot": 5,
+    "replacement": "/assets/capture-rebrand/capability-4.svg",
+    "role": "workflow label",
+    "section": "Where teams work better, together."
+  },
+  {
+    "page": "/teams",
+    "slot": 6,
+    "replacement": "/assets/capture-rebrand/capability-5.svg",
+    "role": "workflow label",
+    "section": "Where teams work better, together."
+  },
+  {
+    "page": "/teams",
+    "slot": 7,
+    "replacement": "/assets/capture-rebrand/capability-6.svg",
+    "role": "workflow label",
+    "section": "Where teams work better, together."
+  },
+  {
+    "page": "/teams",
+    "slot": 8,
+    "replacement": "/assets/capture-rebrand/capability-0.svg",
+    "role": "workflow label",
+    "section": "Where teams work better, together."
+  },
+  {
+    "page": "/teams",
+    "slot": 9,
+    "replacement": "/assets/capture-rebrand/capability-1.svg",
+    "role": "workflow label",
+    "section": "Where teams work better, together."
+  },
+  {
+    "page": "/teams",
+    "slot": 10,
+    "replacement": "/assets/capture-rebrand/capability-2.svg",
+    "role": "workflow label",
+    "section": "Where teams work better, together."
+  },
+  {
+    "page": "/teams",
+    "slot": 11,
+    "replacement": "/assets/capture-rebrand/capability-3.svg",
+    "role": "workflow label",
+    "section": "Where teams work better, together."
+  },
+  {
+    "page": "/teams",
+    "slot": 12,
+    "replacement": "/assets/capture-rebrand/capability-4.svg",
+    "role": "workflow label",
+    "section": "Where teams work better, together."
+  },
+  {
+    "page": "/teams",
+    "slot": 13,
+    "replacement": "/assets/capture-rebrand/records.svg",
+    "role": "synthetic product concept",
+    "section": "Ship projects faster"
+  },
+  {
+    "page": "/teams",
+    "slot": 14,
+    "replacement": "/assets/capture-rebrand/team.svg",
+    "role": "synthetic product concept",
+    "section": "Your digital office"
+  },
+  {
+    "page": "/teams",
+    "slot": 15,
+    "replacement": "/assets/capture-rebrand/records.svg",
+    "role": "synthetic product concept",
+    "section": "Docs that keep everyone aligned"
+  },
+  {
+    "page": "/teams",
+    "slot": 16,
+    "replacement": "/assets/capture-rebrand/team.svg",
+    "role": "synthetic product concept",
+    "section": "Built for every team"
+  },
+  {
+    "page": "/teams",
+    "slot": 17,
+    "replacement": "/assets/capture-rebrand/appointments.svg",
+    "role": "synthetic product concept",
+    "section": "Built for every team"
+  },
+  {
+    "page": "/teams",
+    "slot": 18,
+    "replacement": "/assets/capture-rebrand/records.svg",
+    "role": "synthetic product concept",
+    "section": "Built for every team"
+  },
+  {
+    "page": "/teams",
+    "slot": 19,
+    "replacement": "/assets/capture-rebrand/inbox.svg",
+    "role": "synthetic product concept",
+    "section": "Headspace's design system"
+  },
+  {
+    "page": "/teams",
+    "slot": 20,
+    "replacement": "/assets/capture-rebrand/team.svg",
+    "role": "synthetic product concept",
+    "section": "Match Group's roadmap"
+  },
+  {
+    "page": "/teams",
+    "slot": 21,
+    "replacement": "/assets/capture-rebrand/appointments.svg",
+    "role": "synthetic product concept",
+    "section": "site is rated the best on G2"
+  },
+  {
+    "page": "/enterprise",
+    "slot": 0,
+    "replacement": "/assets/capture-illustrations/connected-clinics.png",
+    "role": "section illustration",
+    "section": "Knowledge and work. Connected."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 1,
+    "replacement": "/assets/capture-rebrand/capability-0.svg",
+    "role": "workflow label",
+    "section": "Knowledge and work. Connected."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 2,
+    "replacement": "/assets/capture-rebrand/capability-1.svg",
+    "role": "workflow label",
+    "section": "Knowledge and work. Connected."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 3,
+    "replacement": "/assets/capture-rebrand/capability-2.svg",
+    "role": "workflow label",
+    "section": "Knowledge and work. Connected."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 4,
+    "replacement": "/assets/capture-rebrand/capability-3.svg",
+    "role": "workflow label",
+    "section": "Knowledge and work. Connected."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 5,
+    "replacement": "/assets/capture-rebrand/capability-4.svg",
+    "role": "workflow label",
+    "section": "Knowledge and work. Connected."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 6,
+    "replacement": "/assets/capture-rebrand/capability-5.svg",
+    "role": "workflow label",
+    "section": "Knowledge and work. Connected."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 7,
+    "replacement": "/assets/capture-rebrand/team.svg",
+    "role": "synthetic product concept",
+    "section": "Knowledge and work. Connected."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 8,
+    "replacement": "/assets/capture-rebrand/appointments.svg",
+    "role": "synthetic product concept",
+    "section": "Knowledge and work. Connected."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 9,
+    "replacement": "/assets/capture-rebrand/records.svg",
+    "role": "synthetic product concept",
+    "section": "Knowledge and work. Connected."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 10,
+    "replacement": "/assets/capture-rebrand/inbox.svg",
+    "role": "synthetic product concept",
+    "section": "Knowledge and work. Connected."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 11,
+    "replacement": "/assets/capture-rebrand/team.svg",
+    "role": "synthetic product concept",
+    "section": "AI with all the right context"
+  },
+  {
+    "page": "/enterprise",
+    "slot": 12,
+    "replacement": "/assets/capture-rebrand/appointments.svg",
+    "role": "synthetic product concept",
+    "section": "One AI tool for everything"
+  },
+  {
+    "page": "/enterprise",
+    "slot": 13,
+    "replacement": "/assets/capture-rebrand/records.svg",
+    "role": "synthetic product concept",
+    "section": "Fully integrated in your daily work"
+  },
+  {
+    "page": "/enterprise",
+    "slot": 14,
+    "replacement": "/assets/capture-rebrand/inbox.svg",
+    "role": "synthetic product concept",
+    "section": "Powerful and secure"
+  },
+  {
+    "page": "/enterprise",
+    "slot": 15,
+    "replacement": "/assets/capture-rebrand/team.svg",
+    "role": "synthetic product concept",
+    "section": "EmpoweringEasy to start, delightful to use."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 16,
+    "replacement": "/assets/capture-rebrand/appointments.svg",
+    "role": "synthetic product concept",
+    "section": "CustomizableFlexible design that grows with you."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 17,
+    "replacement": "/assets/capture-rebrand/records.svg",
+    "role": "synthetic product concept",
+    "section": "ConnectedEvery team on the same page, always."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 18,
+    "replacement": "/assets/capture-rebrand/capability-4.svg",
+    "role": "workflow label",
+    "section": "Loved by the most innovative teams."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 19,
+    "replacement": "/assets/capture-rebrand/capability-5.svg",
+    "role": "workflow label",
+    "section": "Loved by the most innovative teams."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 20,
+    "replacement": "/assets/capture-rebrand/capability-6.svg",
+    "role": "workflow label",
+    "section": "Loved by the most innovative teams."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 21,
+    "replacement": "/assets/capture-rebrand/capability-0.svg",
+    "role": "workflow label",
+    "section": "Loved by the most innovative teams."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 22,
+    "replacement": "/assets/capture-rebrand/capability-1.svg",
+    "role": "workflow label",
+    "section": "Loved by the most innovative teams."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 23,
+    "replacement": "/assets/capture-rebrand/team.svg",
+    "role": "synthetic product concept",
+    "section": "Simplify your product development."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 24,
+    "replacement": "/assets/capture-rebrand/records.svg",
+    "role": "synthetic product concept",
+    "section": "ConnectionsConnect all your essential tools."
+  },
+  {
+    "page": "/enterprise",
+    "slot": 25,
+    "replacement": "/assets/capture-rebrand/inbox.svg",
+    "role": "synthetic product concept",
+    "section": "Harvard Report: How AI is Revolutionizing Knowledge Work"
+  },
+  {
+    "page": "/enterprise",
+    "slot": 26,
+    "replacement": "/assets/capture-rebrand/team.svg",
+    "role": "synthetic product concept",
+    "section": "Your centralized product development hub in site"
+  },
+  {
+    "page": "/enterprise",
+    "slot": 27,
+    "replacement": "/assets/capture-rebrand/appointments.svg",
+    "role": "synthetic product concept",
+    "section": "Take a self-guided demo of a site workspace."
+  },
+  {
+    "page": "/pricing",
+    "slot": 0,
+    "replacement": "/assets/capture-rebrand/capability-1.svg",
+    "role": "workflow label",
+    "section": "One tool to run your company."
+  },
+  {
+    "page": "/pricing",
+    "slot": 1,
+    "replacement": "/assets/capture-rebrand/capability-2.svg",
+    "role": "workflow label",
+    "section": "One tool to run your company."
+  },
+  {
+    "page": "/pricing",
+    "slot": 2,
+    "replacement": "/assets/capture-rebrand/capability-6.svg",
+    "role": "workflow label",
+    "section": "One tool to run your company."
+  },
+  {
+    "page": "/pricing",
+    "slot": 3,
+    "replacement": "/assets/capture-rebrand/capability-3.svg",
+    "role": "workflow label",
+    "section": "One tool to run your company."
+  },
+  {
+    "page": "/pricing",
+    "slot": 4,
+    "replacement": "/assets/capture-rebrand/capability-1.svg",
+    "role": "workflow label",
+    "section": "One tool to run your company."
+  },
+  {
+    "page": "/pricing",
+    "slot": 5,
+    "replacement": "/assets/capture-illustrations/care-coordination.png",
+    "role": "section illustration",
+    "section": "The AI workspace for work that matters."
+  },
+  {
+    "page": "/pricing",
+    "slot": 6,
+    "replacement": "/assets/capture-illustrations/connected-clinics.png",
+    "role": "section illustration",
+    "section": "Custom Agents"
+  },
+  {
+    "page": "/pricing",
+    "slot": 7,
+    "replacement": "/assets/capture-illustrations/welcome-clinic.png",
+    "role": "section illustration",
+    "section": "WorkersBeta"
+  },
+  {
+    "page": "/pricing",
+    "slot": 8,
+    "replacement": "/assets/capture-rebrand/capability-1.svg",
+    "role": "workflow label",
+    "section": "WorkersBeta"
+  },
+  {
+    "page": "/contact-sales",
+    "slot": 0,
+    "replacement": "/assets/capture-illustrations/welcome-clinic.png",
+    "role": "section illustration",
+    "section": "Hero / navigation"
+  },
+  {
+    "page": "/contact-sales",
+    "slot": 1,
+    "replacement": "/assets/capture-rebrand/capability-1.svg",
+    "role": "workflow label",
+    "section": "Hero / navigation"
+  },
+  {
+    "page": "/contact-sales",
+    "slot": 2,
+    "replacement": "/assets/capture-rebrand/capability-2.svg",
+    "role": "workflow label",
+    "section": "Hero / navigation"
+  },
+  {
+    "page": "/contact-sales",
+    "slot": 3,
+    "replacement": "/assets/capture-rebrand/capability-3.svg",
+    "role": "workflow label",
+    "section": "Hero / navigation"
+  },
+  {
+    "page": "/contact-sales",
+    "slot": 4,
+    "replacement": "/assets/capture-rebrand/capability-4.svg",
+    "role": "workflow label",
+    "section": "Hero / navigation"
+  },
+  {
+    "page": "/contact-sales",
+    "slot": 5,
+    "replacement": "/assets/capture-rebrand/capability-5.svg",
+    "role": "workflow label",
+    "section": "Hero / navigation"
+  },
+  {
+    "page": "/contact-sales",
+    "slot": 6,
+    "replacement": "/assets/capture-rebrand/capability-6.svg",
+    "role": "workflow label",
+    "section": "Hero / navigation"
+  },
+  {
+    "page": "/contact-sales",
+    "slot": 7,
+    "replacement": "/assets/capture-rebrand/capability-0.svg",
+    "role": "workflow label",
+    "section": "Hero / navigation"
+  },
+  {
+    "page": "/contact-sales",
+    "slot": 8,
+    "replacement": "/assets/capture-rebrand/capability-1.svg",
+    "role": "workflow label",
+    "section": "Hero / navigation"
+  }
+]

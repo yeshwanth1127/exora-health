@@ -1,0 +1,72 @@
+[
+  {
+    "page": "/?art=people",
+    "broken": [],
+    "documentWidth": 1194,
+    "modes": [
+      "people",
+      "people",
+      "people",
+      "people",
+      "people",
+      "people",
+      "people",
+      "people"
+    ],
+    "panels": [],
+    "width": 1194
+  },
+  {
+    "page": "/?art=objects",
+    "broken": [],
+    "documentWidth": 1194,
+    "modes": [
+      "objects",
+      "objects",
+      "objects",
+      "objects",
+      "objects",
+      "objects",
+      "objects",
+      "objects"
+    ],
+    "panels": [],
+    "width": 1194
+  },
+  {
+    "page": "/product/features?art=people",
+    "broken": [],
+    "documentWidth": 1194,
+    "modes": [
+      "people",
+      "people",
+      "people",
+      "people"
+    ],
+    "panels": [
+      "http://127.0.0.1:4488/assets/capture-rebrand/appointments.svg",
+      "http://127.0.0.1:4488/assets/capture-rebrand/records.svg",
+      "http://127.0.0.1:4488/assets/capture-rebrand/inbox.svg",
+      "http://127.0.0.1:4488/assets/capture-rebrand/team.svg"
+    ],
+    "width": 1194
+  },
+  {
+    "page": "/product/features?art=objects",
+    "broken": [],
+    "documentWidth": 1194,
+    "modes": [
+      "objects",
+      "objects",
+      "objects",
+      "objects"
+    ],
+    "panels": [
+      "http://127.0.0.1:4488/assets/capture-rebrand/appointments.svg",
+      "http://127.0.0.1:4488/assets/capture-rebrand/records.svg",
+      "http://127.0.0.1:4488/assets/capture-rebrand/inbox.svg",
+      "http://127.0.0.1:4488/assets/capture-rebrand/team.svg"
+    ],
+    "width": 1194
+  }
+]

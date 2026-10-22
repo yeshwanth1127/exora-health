@@ -26,12 +26,16 @@ beforeAll(async () => {
   });
 });
 afterEach(async () => {
-  for (const id of ids.splice(0)) await pool.query('DELETE FROM control.onboarding_request WHERE id=$1', [id]);
+  for (const id of ids.splice(0)) {
+    await pool.query('DELETE FROM control.deployment WHERE customer_id IN (SELECT id FROM control.customer WHERE onboarding_id=$1)', [id]);
+    await pool.query('DELETE FROM control.customer WHERE onboarding_id=$1', [id]);
+    await pool.query('DELETE FROM control.onboarding_request WHERE id=$1', [id]);
+  }
 });
 afterAll(async () => { child?.kill('SIGTERM'); await pool.end(); });
 async function submit(extra: object = {}) {
   const response = await fetch(`${origin}/control/v1/onboarding`, { method: 'POST', headers: { 'content-type': 'application/json', 'idempotency-key': randomUUID() }, body: JSON.stringify({ ...input, slug: `test-${randomUUID()}`, ...extra }) });
-  const body = await response.json() as { onboardingId?: string };
+  const body = await response.json() as { onboardingId?: string; accessToken?: string };
   if (body.onboardingId) ids.push(body.onboardingId);
   return { response, body };
 }
@@ -53,4 +57,28 @@ describe('website choice through the real control API and provisioning queue', (
   it('rejects an unregistered template before queuing a request', async () => {
     expect((await submit({ websiteTemplate: '../../private' })).response.status).toBe(400);
   });
+  it('recovers the same request and returns credentials only after authenticated completion', async () => {
+    const key = randomUUID(), access = randomUUID() + randomUUID();
+    const headers = { 'content-type': 'application/json', 'idempotency-key': key, 'x-onboarding-access': access };
+    const payload = { ...input, slug: `test-${randomUUID()}`, websiteTemplate: 'sri-lakshmi' };
+    const created = await fetch(`${origin}/control/v1/onboarding`, { method: 'POST', headers, body: JSON.stringify(payload) });
+    expect(created.status).toBe(202);
+    const body = await created.json() as { onboardingId: string; accessToken: string }; ids.push(body.onboardingId);
+    const replay = await fetch(`${origin}/control/v1/onboarding`, { method: 'POST', headers, body: JSON.stringify(payload) });
+    expect(await replay.json()).toMatchObject(body);
+    expect((await pool.query('SELECT id FROM control.onboarding_request WHERE idempotency_key=$1',[key])).rowCount).toBe(1);
+    const url = `${origin}/control/v1/onboarding/${body.onboardingId}`;
+    expect((await fetch(url)).status).toBe(401);
+    const auth = { authorization: `Bearer ${access}` };
+    expect(await (await fetch(url,{headers:auth})).json()).toMatchObject({status:'queued'});
+    await fetch(`${origin}/control/v1/internal/provisioning/claim`,{method:'POST',headers:{authorization:`Bearer ${provisionerToken}`}});
+    const complete = await fetch(`${origin}/control/v1/internal/provisioning/${body.onboardingId}/complete`,{
+      method:'POST', headers:{'content-type':'application/json',authorization:`Bearer ${provisionerToken}`},
+      body:JSON.stringify({tenantId:randomUUID(),composeProject:payload.slug,image:'local/test',publicUrl:'https://clinic.example.test',staffUrl:'https://clinic.example.test/staff',adminUsername:input.email,temporaryPassword:'local-test-password-only-123456'}),
+    });
+    expect(complete.status).toBe(200);
+    expect(await (await fetch(url,{headers:auth})).json()).toMatchObject({status:'ready',admin_username:input.email,temporary_password:'local-test-password-only-123456'});
+    expect((await fetch(url,{headers:{authorization:`Bearer ${randomUUID()}`}})).status).toBe(404);
+  });
+
 });

@@ -28,6 +28,7 @@
   ],
   "exclude": [
     "apps/staff-web",
-    "apps/sri-lakshmi-web"
+    "apps/sri-lakshmi-web",
+    "apps/platform-web"
   ]
 }

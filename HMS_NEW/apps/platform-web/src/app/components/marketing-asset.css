@@ -1,0 +1,9 @@
+@font-face{font-family:ClinicSheetAssetInter;src:url('/assets/claude-showcases/inter-latin.woff2') format('woff2');font-weight:100 900;font-display:swap}
+.marketing-asset{width:100%;min-width:0;margin:0;display:block}
+.marketing-asset-frame{position:relative;width:100%;overflow:hidden;border-radius:12px;background:#f7f8f7}
+.marketing-asset-canvas{position:absolute;top:0;left:0;transform-origin:top left;font-family:ClinicSheetAssetInter,Inter,Arial,sans-serif;font-size:16px;line-height:normal;color:#191918;text-align:left;letter-spacing:normal;font-weight:400;pointer-events:none}
+.marketing-asset-canvas *{box-sizing:border-box}
+.marketing-asset-canvas svg{display:inline-block;vertical-align:middle;flex-shrink:0}
+.marketing-asset-canvas img{display:inline-block;max-width:none;aspect-ratio:auto!important}
+.marketing-asset figcaption{padding:8px 12px;font-size:10px;line-height:1.4;color:#777b76;text-align:right;background:#fff}
+.home-marketing-stage{aspect-ratio:auto!important;min-height:0}

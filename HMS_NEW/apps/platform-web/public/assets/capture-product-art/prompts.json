@@ -1,0 +1,44 @@
+{
+  "jobs": [
+    {
+      "name": "ai-reception",
+      "prompt": "Create ONE original standalone healthcare SaaS editorial illustration for Capture's Product page. Reference image 1 is the user's on-disk Goodle doodle asset: take inspiration from its angular nose, expressive asymmetrical proportions, uneven hand-ink contours and economical detail. Do not copy its exact character or scene. Reference image 2 supplies the approved Capture flat white interiors and restrained colour. This must be distinct from the Home page's round floating portrait heads: draw an original waist-up or chest-up character when requested, with visible shoulders and purposeful pose. Crisp sparse black ink, opaque white interiors, one accent colour, no modelling, gradients, glow, texture or shadow. One centered subject only with 12% transparent margin. Readable at 140px. No collage, scene background, text, logos, lettering, interface screenshot or photorealism. Actual transparent background; do not make the subject white areas transparent. Square canvas. A calm friendly clinic receptionist drawn chest-up, with an original angular face and a lime #AACA60 over-ear headset with a slim boom microphone. Slightly turned toward the viewer, one hand lifted in a simple listening gesture. Only this person and their worn headset. No desk, phone, computer, robot, speech bubble or surrounding objects. The headset and listening pose are the clear focus.",
+      "referenced_image_paths": [
+        "/Users/deepakonda/.codex/worktrees/capture-site-base/brave-mendel/website-clones/capture-site/web/public/assets/capture-product-art/references/character-talking-to-robot-chatbot.png",
+        "/Users/deepakonda/.codex/worktrees/capture-site-base/brave-mendel/website-clones/capture-site/web/public/assets/capture-illustrations/patient-records-lime.png"
+      ],
+      "transparent_background": true,
+      "original_output": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-0760f40c-1720-4424-9fc0-a7b2923945c8.png"
+    },
+    {
+      "name": "whatsapp-outreach",
+      "prompt": "Create ONE original standalone healthcare SaaS editorial illustration for Capture's Product page. Reference image 1 is the user's on-disk Goodle doodle asset: take inspiration from its angular nose, expressive asymmetrical proportions, uneven hand-ink contours and economical detail. Do not copy its exact character or scene. Reference image 2 supplies the approved Capture flat white interiors and restrained colour. This must be distinct from the Home page's round floating portrait heads: draw an original waist-up or chest-up character when requested, with visible shoulders and purposeful pose. Crisp sparse black ink, opaque white interiors, one accent colour, no modelling, gradients, glow, texture or shadow. One centered subject only with 12% transparent margin. Readable at 140px. No collage, scene background, text, logos, lettering, interface screenshot or photorealism. Actual transparent background; do not make the subject white areas transparent. Square canvas. One original friendly clinic coordinator drawn waist-up in three-quarter side view, wearing a warm coral #EE927B shirt and holding ONE large simple smartphone at chest height. Focus on the person thoughtfully using the phone. The phone has a blank white screen with a single black speech-bubble outline. No WhatsApp logo, floating messages, stars, desk, second phone, other people or other props.",
+      "referenced_image_paths": [
+        "/Users/deepakonda/.codex/worktrees/capture-site-base/brave-mendel/website-clones/capture-site/web/public/assets/capture-product-art/references/character-with-phone-and-star.png",
+        "/Users/deepakonda/.codex/worktrees/capture-site-base/brave-mendel/website-clones/capture-site/web/public/assets/capture-illustrations/patient-records-lime.png"
+      ],
+      "transparent_background": true,
+      "original_output": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-18871045-dc09-4fb6-81e4-324e48168008.png"
+    },
+    {
+      "name": "google-business",
+      "prompt": "Create ONE original standalone healthcare SaaS editorial illustration for Capture's Product page. Reference image 1 is the user's on-disk Goodle doodle asset: take inspiration from its angular nose, expressive asymmetrical proportions, uneven hand-ink contours and economical detail. Do not copy its exact character or scene. Reference image 2 supplies the approved Capture flat white interiors and restrained colour. This must be distinct from the Home page's round floating portrait heads: draw an original waist-up or chest-up character when requested, with visible shoulders and purposeful pose. Crisp sparse black ink, opaque white interiors, one accent colour, no modelling, gradients, glow, texture or shadow. One centered subject only with 12% transparent margin. Readable at 140px. No collage, scene background, text, logos, lettering, interface screenshot or photorealism. Actual transparent background; do not make the subject white areas transparent. Square canvas. One small playful original clinic storefront as a single isolated architectural object. Loose hand-ink angular contours like the reference's drawn objects, opaque white walls, a soft sky-blue #79B8EF striped awning, simple door and one large window. A small plain medical cross is integrated into the blank sign above the door. No words, letters, Google logo, people, plants, street, floating icons or surrounding scene. Compact readable silhouette, slightly wonky but friendly.",
+      "referenced_image_paths": [
+        "/Users/deepakonda/.codex/worktrees/capture-site-base/brave-mendel/website-clones/capture-site/web/public/assets/capture-product-art/references/person-working-on-laptop.png",
+        "/Users/deepakonda/.codex/worktrees/capture-site-base/brave-mendel/website-clones/capture-site/web/public/assets/capture-illustrations/patient-records-lime.png"
+      ],
+      "transparent_background": true,
+      "original_output": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-f580f903-4bf3-42ef-96d5-0fbfab64b40b.png"
+    },
+    {
+      "name": "clinic-analytics",
+      "prompt": "Create ONE original standalone healthcare SaaS editorial illustration for Capture's Product page. Reference image 1 is the user's on-disk Goodle doodle asset: take inspiration from its angular nose, expressive asymmetrical proportions, uneven hand-ink contours and economical detail. Do not copy its exact character or scene. Reference image 2 supplies the approved Capture flat white interiors and restrained colour. This must be distinct from the Home page's round floating portrait heads: draw an original waist-up or chest-up character when requested, with visible shoulders and purposeful pose. Crisp sparse black ink, opaque white interiors, one accent colour, no modelling, gradients, glow, texture or shadow. One centered subject only with 12% transparent margin. Readable at 140px. No collage, scene background, text, logos, lettering, interface screenshot or photorealism. Actual transparent background; do not make the subject white areas transparent. Square canvas. One original clinic manager drawn chest-up, with an angular nose, short wavy black hair and round simple glasses. They hold ONE plain clipboard facing the viewer. The clipboard shows only three chunky unequal bars in lime #AACA60, sky blue #79B8EF and coral #EE927B, with no axis labels or numbers. The person's shirt is white. Only the manager and clipboard. No laptop, desk, floating charts, arrows, additional people or objects.",
+      "referenced_image_paths": [
+        "/Users/deepakonda/.codex/worktrees/capture-site-base/brave-mendel/website-clones/capture-site/web/public/assets/capture-product-art/references/person-working-on-laptop.png",
+        "/Users/deepakonda/.codex/worktrees/capture-site-base/brave-mendel/website-clones/capture-site/web/public/assets/capture-illustrations/patient-records-lime.png"
+      ],
+      "transparent_background": true,
+      "original_output": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-606ef5c6-09d9-4147-b4ac-dd36fb04be34.png"
+    }
+  ]
+}

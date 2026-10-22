@@ -1,0 +1,30 @@
+[
+  {
+    "name": "ai-reception",
+    "width": 1254,
+    "height": 1254,
+    "colour_type": 6,
+    "alpha_channel": true
+  },
+  {
+    "name": "whatsapp-outreach",
+    "width": 1254,
+    "height": 1254,
+    "colour_type": 6,
+    "alpha_channel": true
+  },
+  {
+    "name": "google-business",
+    "width": 1254,
+    "height": 1254,
+    "colour_type": 6,
+    "alpha_channel": true
+  },
+  {
+    "name": "clinic-analytics",
+    "width": 1254,
+    "height": 1254,
+    "colour_type": 6,
+    "alpha_channel": true
+  }
+]

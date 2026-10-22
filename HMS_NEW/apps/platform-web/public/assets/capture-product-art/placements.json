@@ -1,0 +1,22 @@
+[
+  {
+    "asset": "ai-reception.png",
+    "feature": "AI reception and call handling",
+    "section": "capture"
+  },
+  {
+    "asset": "whatsapp-outreach.png",
+    "feature": "WhatsApp outreach",
+    "section": "find"
+  },
+  {
+    "asset": "google-business.png",
+    "feature": "Google Business management",
+    "section": "automate"
+  },
+  {
+    "asset": "clinic-analytics.png",
+    "feature": "Clinic analytics",
+    "section": "secure"
+  }
+]

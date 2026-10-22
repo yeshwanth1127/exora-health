@@ -1,3 +1,5 @@
+import { Onboarding } from './onboarding.ts';
+import { exportedPlatformPage } from './platform-pages.ts';
 import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
@@ -45,21 +47,6 @@ function decryptCredential(value: string) {
   } catch { return undefined; }
 }
 
-const Onboarding = z.object({
-  organisation: z.string().trim().min(2).max(120),
-  slug: z.string().regex(/^[a-z0-9][a-z0-9-]{1,62}$/),
-  ownerName: z.string().trim().min(2).max(100),
-  email: z.string().trim().email().max(254),
-  phone: z.string().trim().max(30).optional(),
-  city: z.string().trim().min(2).max(80),
-  timezone: z.string().trim().min(3).max(64),
-  facilityName: z.string().trim().min(2).max(120),
-  facilityType: z.enum(['clinic', 'hospital', 'diagnostic_centre', 'virtual']),
-  plan: z.enum(['launch', 'connect', 'scale']),
-  voice: z.boolean(),
-  whatsapp: z.boolean(),
-  termsAccepted: z.literal(true),
-}).refine((value) => !value.voice || value.plan !== 'launch', { path: ['voice'], message: 'Voice requires the Connect or Scale plan.' });
 
 async function schema() {
   await pool.query(`
@@ -235,7 +222,7 @@ async function markReady(id: string, payload: z.infer<typeof Onboarding>, port: 
 }
 
 async function provision(id: string, payload: z.infer<typeof Onboarding>, port: number) {
-  const args = [path.join(root, 'scripts/provision-tenant.mjs'), '--slug', payload.slug, '--name', payload.organisation, '--email', payload.email, '--owner', payload.ownerName, '--facility', payload.facilityName, '--city', payload.city, '--plan', payload.plan, '--voice', String(payload.voice), '--port', String(port)];
+  const args = [path.join(root, 'scripts/provision-tenant.mjs'), '--slug', payload.slug, '--name', payload.organisation, '--email', payload.email, '--owner', payload.ownerName, '--facility', payload.facilityName, '--city', payload.city, '--plan', payload.plan, '--voice', String(payload.voice), '--website-template', payload.websiteTemplate, '--timezone', payload.timezone, '--facility-type', payload.facilityType, '--port', String(port)];
   const child = spawn(process.execPath, args, { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
   let failure = '';
   child.stderr.on('data', (chunk) => { failure = `${failure}${String(chunk)}`.slice(-4000); });
@@ -634,7 +621,12 @@ if (process.env.SERVE_PLATFORM_ASSETS === '1') {
   await app.register(fastifyStatic, { root: staticRoot, prefix: '/', wildcard: false, cacheControl: true, maxAge: '1h' });
   await app.register(fastifyStatic, { root: adminRoot, prefix: '/admin/', wildcard: false, decorateReply: false, cacheControl: true, maxAge: '1h' });
   app.get('/admin/*', async (_request, reply) => reply.sendFile('index.html', adminRoot));
-  app.get('/*', async (_request, reply) => reply.sendFile('index.html'));
+  app.get('/*', async (request, reply) => {
+    const page = await exportedPlatformPage(staticRoot, request.url);
+    if (page) return reply.sendFile(page, staticRoot);
+    if (request.url.startsWith('/control/')) return reply.code(404).send({ error: 'not_found' });
+    return reply.code(404).sendFile('404.html', staticRoot);
+  });
 }
 
 const shutdown = async () => { if (provisionTimer) clearTimeout(provisionTimer); if (voiceProvisionTimer) clearTimeout(voiceProvisionTimer); await app.close(); await pool.end(); process.exit(0); };

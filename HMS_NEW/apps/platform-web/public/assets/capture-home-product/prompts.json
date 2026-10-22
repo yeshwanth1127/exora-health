@@ -1,0 +1,70 @@
+{
+  "jobs": [
+    {
+      "name": "home-portrait-a",
+      "slot": "Home portrait option A",
+      "subject": "One original friendly nurse's head only, chin to top of head. Simple dark bob haircut, a small soft sky-blue #79B8EF hair clip. Three-quarter view with a small curved nose and calm cheerful expression. No neck, torso, hands, equipment, stethoscope, nurse cap or floating symbols. The face fills roughly 72% of the canvas.",
+      "prompt": "Create ONE standalone illustration asset for Capture, a healthcare SaaS website. Use the input only as a reference for economical editorial ink linework, simple geometry and small accent colour; invent an original subject rather than copying the reference face. Match the sparse hand-drawn website illustration approach: flat vector-like black lines, opaque white interiors, plain tiny dot eyes, very few marks, immediately readable when displayed at 80–120px. A single isolated subject centered with 12% clear padding. All strokes and fills crisp and flat, no texture, grey modelling, gradient, glow, shadow, background disk, background scene, words, letters, numbers, logos, border or montage. Actual transparent background. Square canvas. One original friendly nurse's head only, chin to top of head. Simple dark bob haircut, a small soft sky-blue #79B8EF hair clip. Three-quarter view with a small curved nose and calm cheerful expression. No neck, torso, hands, equipment, stethoscope, nurse cap or floating symbols. The face fills roughly 72% of the canvas.",
+      "referenced_image_paths": [
+        "/Users/deepakonda/.codex/worktrees/capture-site-base/brave-mendel/website-clones/capture-site/web/public/assets/cloned/images/7211bf466e14.gif"
+      ],
+      "transparent_background": true,
+      "original_output": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-18778b52-0ee5-4f1b-b303-bd9e1df880d4.png"
+    },
+    {
+      "name": "home-portrait-b",
+      "slot": "Home portrait option B",
+      "subject": "One original friendly clinic coordinator's head only, chin to top of head. Short dark curly hair and simple warm coral #EE927B round spectacles. A short angular nose and cheerful expression, facing slightly left. No neck, torso, hands, equipment or floating symbols. The face fills roughly 72% of the canvas.",
+      "prompt": "Create ONE standalone illustration asset for Capture, a healthcare SaaS website. Use the input only as a reference for economical editorial ink linework, simple geometry and small accent colour; invent an original subject rather than copying the reference face. Match the sparse hand-drawn website illustration approach: flat vector-like black lines, opaque white interiors, plain tiny dot eyes, very few marks, immediately readable when displayed at 80–120px. A single isolated subject centered with 12% clear padding. All strokes and fills crisp and flat, no texture, grey modelling, gradient, glow, shadow, background disk, background scene, words, letters, numbers, logos, border or montage. Actual transparent background. Square canvas. One original friendly clinic coordinator's head only, chin to top of head. Short dark curly hair and simple warm coral #EE927B round spectacles. A short angular nose and cheerful expression, facing slightly left. No neck, torso, hands, equipment or floating symbols. The face fills roughly 72% of the canvas.",
+      "referenced_image_paths": [
+        "/Users/deepakonda/.codex/worktrees/capture-site-base/brave-mendel/website-clones/capture-site/web/public/assets/cloned/images/7211bf466e14.gif"
+      ],
+      "transparent_background": true,
+      "original_output": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-474cc358-3b72-4f3f-8c8a-53e230d0fa7e.png"
+    },
+    {
+      "name": "product-records",
+      "slot": "Product records / Home records card",
+      "subject": "One single upright patient-record folder, slightly tilted. An original friendly little face with two dot eyes appears on the white folder. A small lime #AACA60 index tab, and one small plain lime heart symbol on its front. Simple flat rectangular folded-paper geometry, no paper stack, no people, no hands and no other objects.",
+      "prompt": "Create ONE standalone illustration asset for Capture, a healthcare SaaS website. Use the input only as a reference for economical editorial ink linework, simple geometry and small accent colour; invent an original subject rather than copying the reference face. Match the sparse hand-drawn website illustration approach: flat vector-like black lines, opaque white interiors, plain tiny dot eyes, very few marks, immediately readable when displayed at 80–120px. A single isolated subject centered with 12% clear padding. All strokes and fills crisp and flat, no texture, grey modelling, gradient, glow, shadow, background disk, background scene, words, letters, numbers, logos, border or montage. Actual transparent background. Square canvas. One single upright patient-record folder, slightly tilted. An original friendly little face with two dot eyes appears on the white folder. A small lime #AACA60 index tab, and one small plain lime heart symbol on its front. Simple flat rectangular folded-paper geometry, no paper stack, no people, no hands and no other objects.",
+      "referenced_image_paths": [
+        "/Users/deepakonda/.codex/worktrees/capture-site-base/brave-mendel/website-clones/capture-site/web/public/assets/cloned/images/9daf6533fe56.gif"
+      ],
+      "transparent_background": true,
+      "original_output": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-46ff0437-fd69-4b79-94c1-1057dcb1afe3.png"
+    },
+    {
+      "name": "product-search",
+      "slot": "Product find / Home search card",
+      "subject": "One single oversized magnifying glass held at a playful diagonal, with a soft sky-blue #79B8EF handle and a white lens. Two tiny dot eyes and one short curved smile live inside the white lens. The lens is solid white with no transparency or glass effect. No people, documents, hands, sparkles or other objects.",
+      "prompt": "Create ONE standalone illustration asset for Capture, a healthcare SaaS website. Use the input only as a reference for economical editorial ink linework, simple geometry and small accent colour; invent an original subject rather than copying the reference face. Match the sparse hand-drawn website illustration approach: flat vector-like black lines, opaque white interiors, plain tiny dot eyes, very few marks, immediately readable when displayed at 80–120px. A single isolated subject centered with 12% clear padding. All strokes and fills crisp and flat, no texture, grey modelling, gradient, glow, shadow, background disk, background scene, words, letters, numbers, logos, border or montage. Actual transparent background. Square canvas. One single oversized magnifying glass held at a playful diagonal, with a soft sky-blue #79B8EF handle and a white lens. Two tiny dot eyes and one short curved smile live inside the white lens. The lens is solid white with no transparency or glass effect. No people, documents, hands, sparkles or other objects.",
+      "referenced_image_paths": [
+        "/Users/deepakonda/.codex/worktrees/capture-site-base/brave-mendel/website-clones/capture-site/web/public/assets/cloned/images/9daf6533fe56.gif"
+      ],
+      "transparent_background": true,
+      "original_output": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-43a1bd89-026f-4876-bcec-d54c3815be6f.png"
+    },
+    {
+      "name": "product-next-step",
+      "slot": "Product next steps / Home workflow card",
+      "subject": "One single upright task card with a warm coral #EE927B folded corner. One large black hand-drawn checkmark centered on the card. The card has two very short tiny legs at its lower edge, giving it quiet character. No hands, people, extra cards, words, calendar grids, decorative marks or surrounding objects.",
+      "prompt": "Create ONE standalone illustration asset for Capture, a healthcare SaaS website. Use the input only as a reference for economical editorial ink linework, simple geometry and small accent colour; invent an original subject rather than copying the reference face. Match the sparse hand-drawn website illustration approach: flat vector-like black lines, opaque white interiors, plain tiny dot eyes, very few marks, immediately readable when displayed at 80–120px. A single isolated subject centered with 12% clear padding. All strokes and fills crisp and flat, no texture, grey modelling, gradient, glow, shadow, background disk, background scene, words, letters, numbers, logos, border or montage. Actual transparent background. Square canvas. One single upright task card with a warm coral #EE927B folded corner. One large black hand-drawn checkmark centered on the card. The card has two very short tiny legs at its lower edge, giving it quiet character. No hands, people, extra cards, words, calendar grids, decorative marks or surrounding objects.",
+      "referenced_image_paths": [
+        "/Users/deepakonda/.codex/worktrees/capture-site-base/brave-mendel/website-clones/capture-site/web/public/assets/cloned/images/9daf6533fe56.gif"
+      ],
+      "transparent_background": true,
+      "original_output": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-786a43cf-a9fc-4243-b900-c7d743f51dc7.png"
+    },
+    {
+      "name": "product-team",
+      "slot": "Product teams / Home care-team card",
+      "subject": "One single simple clinic staff ID badge hanging from a short loop of lime #AACA60 lanyard. Inside the white badge is a very simple black head silhouette portrait and two short horizontal black strokes suggesting details. One small lime corner accent. The badge alone, no actual people, hands, second badge or other objects.",
+      "prompt": "Create ONE standalone illustration asset for Capture, a healthcare SaaS website. Use the input only as a reference for economical editorial ink linework, simple geometry and small accent colour; invent an original subject rather than copying the reference face. Match the sparse hand-drawn website illustration approach: flat vector-like black lines, opaque white interiors, plain tiny dot eyes, very few marks, immediately readable when displayed at 80–120px. A single isolated subject centered with 12% clear padding. All strokes and fills crisp and flat, no texture, grey modelling, gradient, glow, shadow, background disk, background scene, words, letters, numbers, logos, border or montage. Actual transparent background. Square canvas. One single simple clinic staff ID badge hanging from a short loop of lime #AACA60 lanyard. Inside the white badge is a very simple black head silhouette portrait and two short horizontal black strokes suggesting details. One small lime corner accent. The badge alone, no actual people, hands, second badge or other objects.",
+      "referenced_image_paths": [
+        "/Users/deepakonda/.codex/worktrees/capture-site-base/brave-mendel/website-clones/capture-site/web/public/assets/cloned/images/9daf6533fe56.gif"
+      ],
+      "transparent_background": true,
+      "original_output": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-028a17b2-1274-4e50-bf55-d2d6a58a9678.png"
+    }
+  ]
+}

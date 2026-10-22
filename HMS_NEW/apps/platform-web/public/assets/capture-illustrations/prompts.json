@@ -1,0 +1,42 @@
+{
+  "created": "2026-10-19",
+  "tool": "built-in image_gen.imagegen",
+  "transparent_background": true,
+  "reference": "references/wavefind-person-laptop-white.png",
+  "extraReferenceLibrary": "/Users/deepakonda/Downloads/Free-Doodle-Illustrations---Hand-Drawn-Goodle-ALL/",
+  "reproducibility": "Prompts and input images reproduce the direction, not guaranteed byte-identical outputs. No seed or model override exposed by the built-in tool.",
+  "assets": [
+    {
+      "file": "clinic-team-lime.png",
+      "mode": "generate with style reference",
+      "prompt": "Create an original healthcare SaaS website illustration, using the attached Wavefind artwork as a STYLE REFERENCE only, not as an edit target. Match its deliberately simple human silhouettes, irregular hand-inked black outlines, expressive tiny eyes and angular noses, playful proportions, flat white interior fills, and sparse lime-green #AACA60 accents. Think minimalist editorial spot illustration with clear storytelling and very few objects, suitable for the white space of a site-like website. Do not reproduce any site proprietary character. No words, letters, numbers, logos, realistic UI, gradients, shadows, 3D, medical claims or detailed scenery. Keep every subject fully inside the frame, with generous transparent padding. True transparent background; white fills within people and paper objects should remain opaque. Landscape composition, approximately 3:2. A friendly clinician wearing a stethoscope and a front-desk teammate collaborate beside one small desk. The clinician gestures toward a single small lime-green appointment card held by the teammate. Two people, one desk, one card only. Warm cooperative body language, black clothing details, one lime-green chair."
+    },
+    {
+      "file": "appointments-lime.png",
+      "mode": "generate with style reference",
+      "prompt": "Create an original healthcare SaaS website illustration, using the attached Wavefind artwork as a STYLE REFERENCE only, not as an edit target. Match its deliberately simple human silhouettes, irregular hand-inked black outlines, expressive tiny eyes and angular noses, playful proportions, flat white interior fills, and sparse lime-green #AACA60 accents. Think minimalist editorial spot illustration with clear storytelling and very few objects, suitable for the white space of a site-like website. Do not reproduce any site proprietary character. No words, letters, numbers, logos, realistic UI, gradients, shadows, 3D, medical claims or detailed scenery. Keep every subject fully inside the frame, with generous transparent padding. True transparent background; white fills within people and paper objects should remain opaque. Square composition. One friendly person, wearing a simple shirt and trousers, stands beside an oversized desk calendar and places one large lime-green checkmark on one blank day. The calendar has a simple clean grid with no letters or numerals. One small lime doodle above the person's head. Keep the calendar legible as a calendar without tiny details."
+    },
+    {
+      "file": "patient-records-lime.png",
+      "mode": "generate with style reference",
+      "prompt": "Create an original healthcare SaaS website illustration, using the attached Wavefind artwork as a STYLE REFERENCE only, not as an edit target. Match its deliberately simple human silhouettes, irregular hand-inked black outlines, expressive tiny eyes and angular noses, playful proportions, flat white interior fills, and sparse lime-green #AACA60 accents. Think minimalist editorial spot illustration with clear storytelling and very few objects, suitable for the white space of a site-like website. Do not reproduce any site proprietary character. No words, letters, numbers, logos, realistic UI, gradients, shadows, 3D, medical claims or detailed scenery. Keep every subject fully inside the frame, with generous transparent padding. True transparent background; white fills within people and paper objects should remain opaque. Square composition. One friendly clinician with a tiny stethoscope sits and gathers three oversized paper record cards into a single open lime-green folder. The cards have only a small heart symbol, a short simple chart line, and a few black lines suggesting writing, with no readable text. A calm, organized scene with clear silhouette and minimal objects."
+    },
+    {
+      "file": "care-messaging-lime.png",
+      "mode": "generate with style reference",
+      "prompt": "Create an original healthcare SaaS website illustration, using the attached Wavefind artwork as a STYLE REFERENCE only, not as an edit target. Match its deliberately simple human silhouettes, irregular hand-inked black outlines, expressive tiny eyes and angular noses, playful proportions, flat white interior fills, and sparse lime-green #AACA60 accents. Think minimalist editorial spot illustration with clear storytelling and very few objects, suitable for the white space of a site-like website. Do not reproduce any site proprietary character. No words, letters, numbers, logos, realistic UI, gradients, shadows, 3D, medical claims or detailed scenery. Keep every subject fully inside the frame, with generous transparent padding. True transparent background; white fills within people and paper objects should remain opaque. Square composition. A friendly clinician with a tiny stethoscope holds a phone and looks at it with a relaxed smile. Two conversation bubbles float beside the phone: one lime-green bubble with a small black heart, one white bubble with a simple black outline and three large dots. No other scene elements. Balanced open composition."
+    },
+    {
+      "file": "appointments-blue.png",
+      "mode": "edit",
+      "reference": "appointments-lime.png",
+      "prompt": "Edit only the accent colour of the supplied illustration. Replace every lime-green accent with soft sky blue #79B8EF. Preserve exactly the composition, character identity, face, pose, black hand-drawn contours, white opaque fills, proportions, object count, canvas dimensions and framing. No new elements, no text. Preserve genuine transparent background. Remove any coloured outer glow or shadow beyond the drawn contours; keep clean cutout edges and flat colour accents. This is a colour variant of an existing healthcare website illustration, not a redesign."
+    },
+    {
+      "file": "care-messaging-coral.png",
+      "mode": "edit",
+      "reference": "care-messaging-lime.png",
+      "prompt": "Edit only the accent colour of the supplied illustration. Replace every lime-green accent with soft warm coral #EE927B. Preserve exactly the composition, character identity, face, pose, black hand-drawn contours, white opaque fills, proportions, object count, canvas dimensions and framing. No new elements, no text. Preserve genuine transparent background. Remove any coloured outer glow or shadow beyond the drawn contours; keep clean cutout edges and flat colour accents. This is a colour variant of an existing healthcare website illustration, not a redesign."
+    }
+  ]
+}

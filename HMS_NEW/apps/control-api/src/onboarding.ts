@@ -7,7 +7,7 @@ export const Onboarding = z.object({
   email: z.string().trim().email().max(254),
   phone: z.string().trim().max(30).optional(),
   city: z.string().trim().min(2).max(80),
-  timezone: z.string().trim().min(3).max(64),
+  timezone: z.string().trim().min(3).max(64).refine(value => { try { new Intl.DateTimeFormat('en', { timeZone: value }); return true; } catch { return false; } }, 'Choose a valid timezone.'),
   facilityName: z.string().trim().min(2).max(120),
   facilityType: z.enum(['clinic', 'hospital', 'diagnostic_centre', 'virtual']),
   plan: z.enum(['launch', 'connect', 'scale']),

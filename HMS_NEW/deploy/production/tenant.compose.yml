@@ -34,6 +34,8 @@ services:
       BOOTSTRAP_FACILITY_NAME: ${BOOTSTRAP_FACILITY_NAME:?BOOTSTRAP_FACILITY_NAME is required}
       BOOTSTRAP_FACILITY_ID: ${BOOTSTRAP_FACILITY_ID:-}
       BOOTSTRAP_CITY: ${BOOTSTRAP_CITY:-Bengaluru}
+      BOOTSTRAP_FACILITY_TYPE: ${BOOTSTRAP_FACILITY_TYPE:-clinic}
+      BOOTSTRAP_TIMEZONE: ${BOOTSTRAP_TIMEZONE:-Asia/Kolkata}
     network_mode: host
     security_opt:
       - no-new-privileges:true
