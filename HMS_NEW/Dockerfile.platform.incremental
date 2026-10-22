@@ -1,0 +1,20 @@
+# syntax=docker/dockerfile:1.7
+ARG BASE_IMAGE=exora/health-platform:credential-ui-20261021
+FROM ${BASE_IMAGE}
+
+USER root
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
+
+WORKDIR /app
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json vitest.config.ts ./
+COPY --chown=node:node apps/control-api ./apps/control-api
+COPY --chown=node:node apps/platform-web ./apps/platform-web
+COPY --chown=node:node apps/admin-web ./apps/admin-web
+COPY --chown=node:node packages ./packages
+
+RUN pnpm platform:build \
+  && pnpm admin:build
+
+USER node

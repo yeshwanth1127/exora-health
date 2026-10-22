@@ -133,6 +133,11 @@ umask 077
   env_line CORS_ORIGINS "$origin"
   env_line TELE_PATIENT_LINK_BASE "$origin/staff/video-consult"
   env_line TENANT_DATA_EXPORT "$export_path"
+  env_line TENANT_CONTROL_URL "${TENANT_CONTROL_URL:-https://health.exora.solutions}"
+  # Only this tenant's derived token reaches the container; the control API recomputes it from PROVISIONER_TOKEN.
+  if [[ -n ${PROVISIONER_TOKEN:-} ]]; then
+    env_line TENANT_CONTROL_TOKEN "$(printf '%s' "tenant-control:${tenant_id,,}" | openssl dgst -sha256 -hmac "$PROVISIONER_TOKEN" | awk '{print $NF}')"
+  fi
   env_line VOICE_SERVICE_KEY "$(jq -r .voiceServiceKey "$secrets")"
   env_line VOICE_SIGNING_SECRET "$(jq -r .voiceSigningSecret "$secrets")"
   env_line VOICE_SERVICE_ACCOUNT_ID "$voice_account"
@@ -199,6 +204,22 @@ docker compose -f "$GATEWAY_DIR/compose.yaml" exec -T nginx nginx -s reload
 
 for _ in $(seq 1 60); do curl -fsS "http://127.0.0.1:$port/public/v1/bootstrap" >/dev/null && break; sleep 2; done
 curl -fsS "http://127.0.0.1:$port/public/v1/bootstrap" >/dev/null
+
+# Send the owner invitation only after the tenant is reachable. The one-time Keycloak action link
+# requires a new password and then returns the owner to this tenant's staff dashboard. Record the
+# successful delivery so a later infrastructure retry does not send duplicate invitations.
+if [[ $(jq -r '.ownerInviteSentAt // empty' "$secrets") == '' ]]; then
+  jq -n --arg slug "$slug" --arg email "$email" --arg origin "$origin" \
+    --arg temporaryPassword "$owner_temporary_password" \
+    '{slug:$slug,email:$email,origin:$origin,temporaryPassword:$temporaryPassword,sendInvite:true}' | \
+    "$OIDC_PROVISIONER" >/dev/null
+  secret_temp="$(mktemp "$tenant_dir/.secrets.XXXXXX")"
+  jq --arg sentAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '.ownerInviteSentAt=$sentAt' \
+    "$secrets" > "$secret_temp"
+  chmod 600 "$secret_temp"
+  mv "$secret_temp" "$secrets"
+fi
+
 jq -n --arg tenantId "$tenant_id" --arg composeProject "exora-$slug" --arg image "exora/hms:$IMAGE_TAG" --arg publicUrl "$origin/" --arg staffUrl "$origin/staff/appointments" \
   --arg adminUsername "$email" --arg temporaryPassword "$owner_temporary_password" \
   '{tenantId:$tenantId,composeProject:$composeProject,image:$image,publicUrl:$publicUrl,staffUrl:$staffUrl,adminUsername:$adminUsername,temporaryPassword:$temporaryPassword}'

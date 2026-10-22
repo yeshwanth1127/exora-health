@@ -109,6 +109,29 @@ sends Exora's internal event shape.
 the manifest to Sarvam. Tenant setup ends in `requested`; there is no provisioning worker, publish
 action, reconciliation or automatic rollback.
 
+## 4a. Current operating model: clinic request, superadmin setup
+
+Sarvam's agent-authoring endpoints reject workspace API keys (`401`), and the Voice Agents MCP needs
+a browser SSO login that expires daily. Until Sarvam grants server-to-server authoring access, agents
+are created and changed by hand by an Exora superadmin:
+
+1. A clinic administrator (`voice.manage`) clicks **Create voice agent** on the Voice page. The
+   clinic server relays the request to its control-plane record using its own derived token
+   (`TENANT_CONTROL_TOKEN` = HMAC-SHA256 of `tenant-control:<tenant id>` keyed by `PROVISIONER_TOKEN`).
+2. The request appears under **Voice requests** in the superadmin dashboard with a badge. Its setup
+   kit lists the agent name, greeting, languages, prompt, the HTTP tools bound to that clinic's own
+   backend origin, and the command that reads the clinic's tool service key on the host.
+3. The superadmin builds the agent in Sarvam, commits a version, then enters the agent id and
+   version. **Test agent** asks Sarvam's runtime for a call URL with the workspace key; **Activate**
+   is accepted only for that exact tested agent and version, and an agent can be bound to one clinic only.
+4. The clinic server reads its bound agent from the control plane (cached for 60 seconds) and the
+   control plane issues browser call URLs, so no container restart or per-clinic Sarvam key is needed.
+5. Later changes: the clinic saves a draft and clicks **Request changes**. The superadmin applies it
+   in Sarvam, commits a newer version, tests and activates it. Either request type can be declined
+   with a reason the clinic sees.
+
+Onboarding no longer queues automatic provisioning, and the provisioning worker has been removed.
+
 ## 5. Target architecture
 
 ```text
@@ -369,13 +392,9 @@ the Exophone. Other providers use their documented webhook/media-stream setup.
 5. Create the inbound deployment and verify it.
 6. Alert before low credit or renewal failure can release it.
 
-Current implementation: onboarding now creates the default Voice revision and an idempotent
-`provision` operation automatically. Every provider-adapter request contains a required
-`dedicated_managed_number` allocation contract with the tenant allocation key and any existing
-binding. The adapter must lock provider inventory, exclude every number present in an inbound
-deployment or the Exora binding registry, then return `connectionId`, `phoneNumber` and
-`deploymentId` together. Exora rejects an incomplete result and enforces unique phone and
-deployment bindings in the control database.
+Current implementation: numbers are not allocated automatically. The superadmin enters the
+dedicated number and inbound deployment id when activating a clinic's voice request (section 4a).
+Exora still enforces unique phone and deployment bindings in the control database.
 
 Sarvam currently rents new numbers through its dashboard after KYC and a billable confirmation; the
 workspace API does not expose that purchase operation. Accordingly, automatic tenant provisioning

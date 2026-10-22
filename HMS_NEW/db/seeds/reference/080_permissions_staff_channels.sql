@@ -1,6 +1,7 @@
 INSERT INTO platform.permission(code,module_code,description,is_sensitive) VALUES
  ('campaigns.manage','comms','Prepare local outreach campaigns',true),('campaigns.approve','comms','Approve outreach audience and budget',true),
  ('voice.read','comms','Read staff call history and consented transcripts',true),('voice.recordings.read','comms','Review voice recordings and access history',true),
+ ('voice.manage','comms','Request the clinic voice agent and changes to it',true),
  ('growth.read','comms','Read clinic booking links and aggregate growth metrics',false),('growth.manage','comms','Manage clinic booking links',false)
 ON CONFLICT(code) DO UPDATE SET description=EXCLUDED.description,is_sensitive=EXCLUDED.is_sensitive;
 WITH bundle(role_code,permission_code) AS (

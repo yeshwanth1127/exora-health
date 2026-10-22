@@ -51,6 +51,8 @@ import {
 } from "./http/routes/telehealth.ts";
 import { registerVoiceIntegrationRoutes } from './http/routes/voice-integration.ts';
 import { registerPublicVoiceRoutes } from './http/routes/public-voice.ts';
+import { registerVoiceAgentSettingsRoutes } from './http/routes/voice-agent-settings.ts';
+import { controlVoiceSource, environmentVoiceSource, type VoiceAgentSource, type VoiceControlTarget } from './modules/comms/managed-voice.ts';
 import { registerTenantPublicBookingRoutes } from './http/routes/tenant-public-booking.ts';
 import { loadTelehealthSettings, loadVoiceRuntimeSettings, type TelehealthSettings, type VoiceRuntimeSettings } from './config.ts';
 import { registerAlertRoutes } from "./http/routes/alerts.ts";
@@ -81,6 +83,8 @@ export interface ServerDeps {
   publicTenantId?: string;
   /** Tenant-bound voice integration and optional Sarvam web-call binding. */
   voice?: VoiceRuntimeSettings;
+  /** Provisioner-authenticated control-plane target for clinic voice settings. */
+  voiceControl?: VoiceControlTarget;
 }
 
 const REQUEST_ID = /^[A-Za-z0-9_.:-]{8,128}$/;
@@ -302,7 +306,12 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   if (deps.publicTenantId) {
     const voice = deps.voice ?? loadVoiceRuntimeSettings();
     registerTenantPublicBookingRoutes(app, deps.db, deps.publicTenantId, managed);
-    registerPublicVoiceRoutes(app, deps.db, voice, channels);
+    // An agent pinned in this container's environment wins; otherwise use the one Exora bound in the control plane.
+    const agentSource: VoiceAgentSource = voice.agent && voice.sarvamApiKey
+      ? environmentVoiceSource(voice.agent, voice.sarvamApiKey, voice.assignedPhoneNumber ?? null)
+      : deps.voiceControl ? controlVoiceSource(deps.voiceControl, app.log) : async () => undefined;
+    registerPublicVoiceRoutes(app, deps.db, voice, channels, agentSource);
+    registerVoiceAgentSettingsRoutes(app, deps.voiceControl);
     if (voice.integration) registerVoiceIntegrationRoutes(app, deps.db, deps.publicTenantId, voice.integration);
   }
   registerCommsSummaryRoutes(app, deps.db);

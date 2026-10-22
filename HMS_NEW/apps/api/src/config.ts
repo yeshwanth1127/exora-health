@@ -1,5 +1,6 @@
 // API configuration from the environment. Local defaults match `pnpm pg:start` + `pnpm db:reset`.
 import { config as dbConfig } from '../../../db/scripts/config.mjs';
+import type { VoiceControlTarget } from './modules/comms/managed-voice.ts';
 
 export type AuthConfig =
   | { mode: 'dev'; secret: string; issuer: string }
@@ -19,6 +20,8 @@ export interface ApiConfig {
   publicTenantId?: string;
   /** Optional tenant-bound Sarvam booking integration and public web-call runtime. */
   voice: VoiceRuntimeSettings;
+  /** This clinic's control-plane Voice record (agent requests and the bound agent). The browser never receives the token. */
+  voiceControl?: VoiceControlTarget;
 }
 
 export interface VoiceAgentBinding {
@@ -140,6 +143,15 @@ export function loadTelehealthSettings(env: NodeJS.ProcessEnv = process.env): Te
 export const DEV_ISSUER = 'local-dev';
 export const DEV_SECRET_DEFAULT = 'local-dev-secret-change-me-0123456789abcdef';
 
+export function loadVoiceControl(env: NodeJS.ProcessEnv = process.env): VoiceControlTarget | undefined {
+  const url = env.CONTROL_URL?.trim().replace(/\/+$/, '');
+  const token = env.TENANT_CONTROL_TOKEN?.trim();
+  const tenantId = env.PUBLIC_TENANT_ID?.trim();
+  if (!url || !token || !tenantId) return undefined;
+  if (!/^https?:\/\//.test(url)) throw new Error('CONTROL_URL must be an http(s) URL');
+  return { url, token, tenantId };
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
   const mode = env.AUTH_MODE ?? 'dev';
   let auth: AuthConfig;
@@ -163,6 +175,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     telehealth: loadTelehealthSettings(env),
     publicTenantId: env.PUBLIC_TENANT_ID,
     voice: loadVoiceRuntimeSettings(env),
+    voiceControl: loadVoiceControl(env),
     corsOrigins: (env.CORS_ORIGINS ?? 'http://localhost:5173,http://127.0.0.1:5173').split(',').map((o) => o.trim()).filter(Boolean),
   };
 }

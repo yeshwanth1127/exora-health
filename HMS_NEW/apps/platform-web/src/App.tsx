@@ -194,20 +194,22 @@ function Onboarding({ onClose }: { onClose: () => void }) {
     setSubmitting(true);
     setSubmitError("");
     try {
+      const requestPayload = { ...form, email: form.email.trim(), termsAccepted: true as const };
+      const serializedPayload = JSON.stringify(requestPayload);
       let requestKey = localStorage.getItem("exora-onboarding-key");
       let accessKey = localStorage.getItem("exora-onboarding-access");
-      if (!requestKey) {
+      const previousPayload = localStorage.getItem("exora-onboarding-request-payload");
+      if (!requestKey || !accessKey || previousPayload !== serializedPayload) {
         requestKey = crypto.randomUUID();
-        localStorage.setItem("exora-onboarding-key", requestKey);
-      }
-      if (!accessKey) {
         accessKey = `${crypto.randomUUID()}${crypto.randomUUID()}`;
+        localStorage.setItem("exora-onboarding-key", requestKey);
         localStorage.setItem("exora-onboarding-access", accessKey);
+        localStorage.setItem("exora-onboarding-request-payload", serializedPayload);
       }
       const response = await fetch("/control/v1/onboarding", {
         method: "POST",
         headers: { "content-type": "application/json", "idempotency-key": requestKey, "x-onboarding-access": accessKey },
-        body: JSON.stringify({ ...form, email: form.email.trim(), termsAccepted: true }),
+        body: serializedPayload,
       });
       const body = await response.json() as ProvisioningState & ApiError;
       if (!response.ok) {
