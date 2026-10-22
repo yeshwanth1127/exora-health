@@ -15,6 +15,18 @@ source "$config"
 : "${OIDC_CLIENT_ID:=exora-health-staff}"
 : "${OIDC_AUDIENCE:=exora-health-api}"
 
+if [[ -n ${KEYCLOAK_SMTP_PASSWORD:-} ]]; then
+  : "${KEYCLOAK_SMTP_HOST:=smtp.hostinger.com}"
+  : "${KEYCLOAK_SMTP_PORT:=465}"
+  : "${KEYCLOAK_SMTP_FROM:=support@exora.solutions}"
+  : "${KEYCLOAK_SMTP_FROM_DISPLAY_NAME:=Exora Health Support}"
+  : "${KEYCLOAK_SMTP_USERNAME:=$KEYCLOAK_SMTP_FROM}"
+  : "${KEYCLOAK_SMTP_SSL:=true}"
+  : "${KEYCLOAK_SMTP_STARTTLS:=false}"
+  [[ $KEYCLOAK_SMTP_SSL == true || $KEYCLOAK_SMTP_SSL == false ]] || { echo "KEYCLOAK_SMTP_SSL must be true or false" >&2; exit 1; }
+  [[ $KEYCLOAK_SMTP_STARTTLS == true || $KEYCLOAK_SMTP_STARTTLS == false ]] || { echo "KEYCLOAK_SMTP_STARTTLS must be true or false" >&2; exit 1; }
+fi
+
 for _ in $(seq 1 90); do
   if curl -fsS --connect-timeout 2 --max-time 3 "$KEYCLOAK_INTERNAL_URL/realms/master/.well-known/openid-configuration" >/dev/null; then
     break
@@ -50,6 +62,22 @@ if [[ $realm_status == 404 ]]; then
 elif [[ $realm_status != 200 ]]; then
   echo "could not inspect Keycloak realm (HTTP $realm_status)" >&2
   exit 1
+fi
+
+if [[ -n ${KEYCLOAK_SMTP_PASSWORD:-} ]]; then
+  realm="$(curl -fsS --connect-timeout 5 --max-time 20 -H "$auth_header" \
+    "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM")"
+  realm="$(jq \
+    --arg host "$KEYCLOAK_SMTP_HOST" --arg port "$KEYCLOAK_SMTP_PORT" \
+    --arg from "$KEYCLOAK_SMTP_FROM" --arg display "$KEYCLOAK_SMTP_FROM_DISPLAY_NAME" \
+    --arg user "$KEYCLOAK_SMTP_USERNAME" --arg password "$KEYCLOAK_SMTP_PASSWORD" \
+    --arg ssl "$KEYCLOAK_SMTP_SSL" --arg starttls "$KEYCLOAK_SMTP_STARTTLS" \
+    '.smtpServer={host:$host,port:$port,from:$from,fromDisplayName:$display,
+      replyTo:$from,replyToDisplayName:$display,auth:"true",user:$user,password:$password,
+      ssl:$ssl,starttls:$starttls}' <<<"$realm")"
+  curl -fsS --connect-timeout 5 --max-time 20 -o /dev/null -X PUT \
+    -H "$auth_header" -H 'content-type: application/json' --data "$realm" \
+    "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM"
 fi
 
 token="$(admin_token)"

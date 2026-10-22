@@ -19,7 +19,10 @@ slug="$(jq -er '.slug | select(test("^[a-z0-9][a-z0-9-]{1,62}$"))' <<<"$payload"
 email="$(jq -er '.email | ascii_downcase | select(test("^[^@[:space:]]+@[^@[:space:]]+\\.[^@[:space:]]+$"))' <<<"$payload")"
 origin="$(jq -er --arg slug "$slug" '.origin | select(. == "https://" + $slug + ".health.exora.solutions")' <<<"$payload")"
 temporary_password="$(jq -er '.temporaryPassword | select(type == "string" and length >= 20 and length <= 128)' <<<"$payload")"
+send_invite="$(jq -r '(.sendInvite // false) as $value |
+  if ($value | type) == "boolean" then $value else error("sendInvite must be boolean") end' <<<"$payload")"
 redirect_uri="$origin/staff/callback"
+dashboard_uri="$origin/staff/appointments"
 
 exec 9>/run/lock/exora-health-oidc.lock
 flock -x 9
@@ -39,8 +42,8 @@ clients="$(curl -fsS --connect-timeout 5 --max-time 20 -H "$auth_header" \
 client_uuid="$(jq -er '.[0].id' <<<"$clients")"
 client="$(curl -fsS --connect-timeout 5 --max-time 20 -H "$auth_header" \
   "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/clients/$client_uuid")"
-updated_client="$(jq --arg redirect "$redirect_uri" --arg origin "$origin" \
-  '.redirectUris=((.redirectUris // []) + [$redirect] | unique) |
+updated_client="$(jq --arg redirect "$redirect_uri" --arg dashboard "$dashboard_uri" --arg origin "$origin" \
+  '.redirectUris=((.redirectUris // []) + [$redirect,$dashboard] | unique) |
    .webOrigins=((.webOrigins // []) + [$origin] | unique)' <<<"$client")"
 curl -fsS --connect-timeout 5 --max-time 20 -o /dev/null -X PUT \
   -H "$auth_header" -H 'content-type: application/json' --data "$updated_client" \
@@ -78,6 +81,14 @@ password_credential="$(jq -n --arg value "$temporary_password" '{type:"password"
 curl -fsS --connect-timeout 5 --max-time 20 -o /dev/null -X PUT \
   -H "$auth_header" -H 'content-type: application/json' --data "$password_credential" \
   "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/users/$user_uuid/reset-password"
+
+if [[ $send_invite == true ]]; then
+  invite_query="$(jq -rn --arg client "$OIDC_CLIENT_ID" --arg redirect "$dashboard_uri" \
+    '"client_id=" + ($client|@uri) + "&redirect_uri=" + ($redirect|@uri) + "&lifespan=86400"')"
+  curl -fsS --connect-timeout 5 --max-time 30 -o /dev/null -X PUT \
+    -H "$auth_header" -H 'content-type: application/json' --data '["UPDATE_PASSWORD"]' \
+    "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM/users/$user_uuid/execute-actions-email?$invite_query"
+fi
 
 issuer="$KEYCLOAK_PUBLIC_URL/realms/$KEYCLOAK_REALM"
 jq -n --arg issuer "$issuer" \

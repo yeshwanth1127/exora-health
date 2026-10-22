@@ -18,6 +18,7 @@ const app = buildServer({
   telehealth: config.telehealth,
   publicTenantId: config.publicTenantId,
   voice: config.voice,
+  voiceControl: config.voiceControl,
   ...(config.auth.mode === 'dev' ? { devLogin: (subject: string, email?: string) => signDevToken(subject, { secret: (config.auth as { secret: string }).secret, email: email ?? '' }) } : {}),
 });
 

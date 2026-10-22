@@ -1,0 +1,14 @@
+services:
+  app:
+    build:
+      context: /srv/apps/exora-health/HMS_NEW
+      dockerfile: Dockerfile.tenant.incremental
+      args:
+        BASE_IMAGE: exora/hms:credential-ui-20261021
+        VITE_HMS_DEV_LOGIN: ${VITE_HMS_DEV_LOGIN:-false}
+        VITE_OIDC_AUTHORITY: ${OIDC_ISSUER:-}
+        VITE_OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+        VITE_OIDC_AUDIENCE: ${OIDC_AUDIENCE:-}
+        VITE_OIDC_SCOPE: ${OIDC_SCOPE:-openid profile email}
+        VITE_HMS_DEFAULT_SUBJECT: ${VITE_HMS_DEFAULT_SUBJECT:-admin}
+    image: exora/hms:sarvam-20261021
