@@ -1,3 +1,4 @@
+import SiteImage from "../components/site-image";
 import { BRAND_NAME } from "../../lib/brand";
 import CaptureBrand from "../components/brand";
 import { pageMetadata } from "../../lib/seo";
@@ -146,7 +147,7 @@ export default function Page() {
                   </div>
                 </div>
                 <div className="flex justify-center items-center self-center flex-1 max-lg:hidden" data-ditto-id="style-div-18">
-                  <img className="w-[30.6875rem] h-[20.4375rem] block overflow-clip aspect-[auto_491/327] text-color-006" data-component="image" alt={(BRAND_NAME + " welcome clinic")} height="327" src="/assets/capture-illustrations/welcome-clinic.webp" srcSet="/assets/capture-illustrations/welcome-clinic.webp 1x, /assets/capture-illustrations/welcome-clinic.webp 2x" width="491" />
+                  <SiteImage className="w-[30.6875rem] h-[20.4375rem] block overflow-clip aspect-[auto_491/327] text-color-006" data-component="image" alt={(BRAND_NAME + " welcome clinic")} height="327" src="/assets/capture-illustrations/welcome-clinic.webp" srcSet="/assets/capture-illustrations/welcome-clinic.webp 1x, /assets/capture-illustrations/welcome-clinic.webp 2x" width="491" />
                 </div>
               </div>
             </main>

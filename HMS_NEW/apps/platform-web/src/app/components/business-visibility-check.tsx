@@ -1,4 +1,6 @@
 "use client";
+import SiteImage from "./site-image";
+
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowUpRight, Clock3, Globe, MapPin, Navigation, Phone, Search } from "lucide-react";
@@ -11,7 +13,7 @@ function ClinicPhoneMockup() {
   return <figure className="business-phone" role="img" aria-label="iPhone 15 Pro showing an illustrative Google clinic listing">
     <div className="business-phone-shell" aria-hidden="true">
       <div className="business-phone-screen">
-        <div className="business-phone-status"><img src="/assets/business-visibility/ios-status-bar-black.png" alt="" /></div>
+        <div className="business-phone-status"><SiteImage sizes="300px" src="/assets/business-visibility/ios-status-bar-black.png" alt="" /></div>
         <div className="business-phone-google-search"><ArrowLeft size={13} /><span className="business-phone-google-g">G</span><span>clinics near me</span><Search size={13} /></div>
         <div className="business-phone-photo">
           <svg viewBox="0 0 240 128" fill="none">
@@ -46,7 +48,7 @@ function ClinicPhoneMockup() {
         </div>
         <span className="business-phone-home" />
       </div>
-      <img className="business-phone-frame" src="/assets/business-visibility/iphone-15-pro-natural-titanium.png" width="1419" height="2796" alt="" />
+      <SiteImage sizes="(max-width: 640px) 280px, 340px" className="business-phone-frame" src="/assets/business-visibility/iphone-15-pro-natural-titanium.png" width="1419" height="2796" alt="" />
     </div>
   </figure>;
 }

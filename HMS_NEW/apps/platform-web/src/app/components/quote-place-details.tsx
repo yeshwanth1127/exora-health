@@ -1,4 +1,6 @@
 "use client";
+import SiteImage from "./site-image";
+
 
 import { useEffect, useState } from "react";
 import { type FacilityPlace } from "../../lib/google-facility-places";
@@ -28,7 +30,7 @@ export default function QuotePlaceDetails({ place: selection, curating }: { plac
     catch { setCopyState("failed"); }
   }
   return <div className="quote-facility-card-copy quote-place-profile">
-    {place.photo && !photoFailed && <div className="quote-place-photo"><img src={place.photo.src} alt={place.photo.alt} width="800" height="533" onError={() => setPhotoFailed(true)} /><span>{place.source === "sample" ? "Sample place · demo preview" : "Facility photo"}</span></div>}
+    {place.photo && !photoFailed && <div className="quote-place-photo"><SiteImage src={place.photo.src} alt={place.photo.alt} width="800" height="533" onError={() => setPhotoFailed(true)} /><span>{place.source === "sample" ? "Sample place · demo preview" : "Facility photo"}</span></div>}
     <div className="quote-place-profile-body">
       {(!place.photo || photoFailed) && <span className="quote-place-source">{place.source === "sample" ? "Sample place · demo preview" : "Google Maps"}</span>}
       <h2 tabIndex={-1}>{place.name}</h2>

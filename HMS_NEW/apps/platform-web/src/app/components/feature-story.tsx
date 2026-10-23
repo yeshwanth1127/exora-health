@@ -1,4 +1,6 @@
 "use client";
+import SiteImage from "./site-image";
+
 import { BRAND_NAME } from "../../lib/brand";
 import { useEffect, useRef, useState } from 'react';
 import { useInView, useReducedMotion, motion } from 'motion/react';
@@ -13,7 +15,7 @@ export default function FeatureStory({kind}:{kind:'reception'|'outreach'}) {
   {kind==='reception'?<>
    <motion.div className="story-reception-sheet" initial={{y:18,opacity:0}} whileInView={{y:0,opacity:1}} viewport={{once:true}} transition={{duration:reduce?0:.5}}>
     <div className="story-app-heading"><span className="story-app-icon"><Headphones size={17}/></span><strong>Reception</strong><span className="story-tiny-tag">Your clinic’s voice</span></div>
-    <div className="story-call-hero"><div className="story-call-avatar"><img src={photos+'sofia-ramirez.jpg'} alt=""/><span><Phone size={11}/></span></div><div><small>Incoming patient call</small><h3>Ananya Sharma</h3><p><span className="story-live-dot"/>{complete?'Enquiry captured':(BRAND_NAME + " is listening")}<span className="story-call-time">01:24</span></p></div></div>
+    <div className="story-call-hero"><div className="story-call-avatar"><SiteImage src={photos+'sofia-ramirez.jpg'} alt=""/><span><Phone size={11}/></span></div><div><small>Incoming patient call</small><h3>Ananya Sharma</h3><p><span className="story-live-dot"/>{complete?'Enquiry captured':(BRAND_NAME + " is listening")}<span className="story-call-time">01:24</span></p></div></div>
     <div className={`story-wave ${complete?'is-done':''}`} aria-hidden="true">{Array.from({length:39},(_,i)=><i key={i} style={{height:7+((i*17)%29),animationDelay:`${i*.055}s`}}/>)}</div>
     <div className="story-transcript"><div><span>Patient</span><p>“Can I see a doctor tomorrow morning?”</p></div><div><span><Sparkles size={10}/>{BRAND_NAME}</span><p>“Of course. Let’s find a time that works for you.”</p></div></div>
    </motion.div>
@@ -23,7 +25,7 @@ export default function FeatureStory({kind}:{kind:'reception'|'outreach'}) {
    <motion.div className="story-outreach-sheet" initial={{y:18,opacity:0}} whileInView={{y:0,opacity:1}} viewport={{once:true}} transition={{duration:reduce?0:.5,delay:reduce?0:.08}}>
     <div className="story-app-heading"><span className="story-app-icon"><MessageCircle size={17}/></span><strong>Patient outreach</strong><span className="story-campaign-state"><span/>{complete?'Replies arriving':'Campaign ready'}</span></div>
     <div className="story-outreach-title"><small>Stay in touch. Bring patients back.</small><h3>A little follow-up.<br/>A lasting connection.</h3></div>
-    <div className="story-audience"><div className="story-avatar-stack">{['jasmine-brooks','marcus-johnson','ava-mitchell'].map(name=><img key={name} src={photos+name+'.jpg'} alt=""/>)}</div><div><strong>Due for a follow-up</strong><span>36 patients in your audience</span></div><Users size={15}/></div>
+    <div className="story-audience"><div className="story-avatar-stack">{['jasmine-brooks','marcus-johnson','ava-mitchell'].map(name=><SiteImage key={name} src={photos+name+'.jpg'} alt=""/>)}</div><div><strong>Due for a follow-up</strong><span>36 patients in your audience</span></div><Users size={15}/></div>
     <div className="story-message"><span>Follow-up message</span><p>Hi Ananya, it’s time for your follow-up.<br/>Would you like us to help you find a visit time?</p><div><span>Personalised for each patient</span><span><Send size={12}/> WhatsApp</span></div></div>
    </motion.div>
    <div className={`story-outreach-results ${complete?'is-complete':''}`}><div><span className="story-result-heading"><MessageCircle size={13}/>Conversations started</span><strong>12<small>patient replies</small></strong></div><span className="story-results-divider"/><div><span className="story-result-heading"><CalendarDays size={13}/>The next visit</span><strong>6<small>booking requests</small></strong></div><span className="story-result-arrow"><ArrowUpRight size={18}/></span></div>

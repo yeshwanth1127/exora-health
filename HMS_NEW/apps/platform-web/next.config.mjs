@@ -17,6 +17,7 @@ const nextConfig = {
   }),
   webpack: (config) => { if (process.env.CAPTURE_DISABLE_BUILD_CACHE === "1") config.cache = false; return config; },
   images: { unoptimized: true },
+  ...(staticExport ? {} : { async headers() { return [{source:"/assets/optimized/:path*",headers:[{key:"Cache-Control",value:"public, max-age=31536000, immutable"}]}]; } }),
   reactStrictMode: false,
   eslint: { ignoreDuringBuilds: true },
   devIndicators: false,

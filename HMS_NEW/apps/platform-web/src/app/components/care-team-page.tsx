@@ -1,3 +1,4 @@
+import SiteImage from "./site-image";
 import { BRAND_NAME } from "../../lib/brand";
 import MarketingAsset from "./marketing-asset";
 import { audiencePages, type AudienceKey } from "../../lib/audience-pages";
@@ -34,7 +35,7 @@ export default function CareTeamPage({audience}:{audience:AudienceKey}) {
                     </div>
                     <div className="grid min-w-0 items-center justify-items-center [grid-column-start:center-mid-end] [grid-column-end:content-end] row-span-full grid-cols-[minmax(0,_1fr)] max-lg:mb-5 max-lg:order-[-1] max-lg:[grid-column-start:content-start] max-lg:[grid-row-start:initial] max-lg:[grid-row-end:initial]" data-ditto-id="style-div-131">
                       <div className="block max-w-98 max-lg:max-w-full" data-ditto-id="style-image-19">
-                        {copy.artworkPrefix ? <IllustrationSlot name={`${copy.artworkPrefix}-hero`} /> : <img className="w-98 h-64.5 block max-w-full overflow-clip aspect-[auto_6342/4166] max-md:w-[21.4375rem] max-md:h-[14.0625rem] max-lg:max-h-77.5 md:max-lg:w-118 md:max-lg:h-77.5" data-ditto-id="style-div-58" data-component="image" alt={copy.heroAlt} height="4166" src={copy.heroArt} width="6342" />}
+                        {copy.artworkPrefix ? <IllustrationSlot name={`${copy.artworkPrefix}-hero`} /> : <SiteImage className="w-98 h-64.5 block max-w-full overflow-clip aspect-[auto_6342/4166] max-md:w-[21.4375rem] max-md:h-[14.0625rem] max-lg:max-h-77.5 md:max-lg:w-118 md:max-lg:h-77.5" data-ditto-id="style-div-58" data-component="image" alt={copy.heroAlt} height="4166" loading="eager" fetchPriority="high" src={copy.heroArt} width="6342" />}
                       </div>
                     </div>
                   </div>
@@ -124,7 +125,7 @@ export default function CareTeamPage({audience}:{audience:AudienceKey}) {
                       </p>
                     </div>
                     <div className="block ml-8 rounded-tl-xl overflow-clip shadow-[var(--color-006)_0px_0.175px_1.041px_0px,var(--color-006)_0px_0.8px_2.925px_0px,var(--color-006)_0px_2.025px_7.847px_0px,var(--color-006)_0px_4px_18px_0px]" data-cid="n153">
-                      <img className="enterprise-service-art" src="/assets/capture-product-art/ai-reception.webp" alt="AI receptionist illustration" width="1254" height="1254" />
+                      <SiteImage className="enterprise-service-art" src="/assets/capture-product-art/ai-reception.webp" alt="AI receptionist illustration" width="1254" height="1254" />
                     </div>
                   </div>
                 </article>
@@ -139,7 +140,7 @@ export default function CareTeamPage({audience}:{audience:AudienceKey}) {
                       </p>
                     </div>
                     <div className="block overflow-clip" data-cid="n160">
-                      <img className="enterprise-service-art" src="/assets/capture-product-art/whatsapp-outreach.webp" alt="Patient outreach illustration" width="1254" height="1254" />
+                      <SiteImage className="enterprise-service-art" src="/assets/capture-product-art/whatsapp-outreach.webp" alt="Patient outreach illustration" width="1254" height="1254" />
                     </div>
                   </div>
                 </article>
@@ -156,7 +157,7 @@ export default function CareTeamPage({audience}:{audience:AudienceKey}) {
                       </p>
                     </div>
                     <div className="block overflow-clip" data-cid="n168">
-                      <img className="enterprise-service-art" src="/assets/capture-product-art/google-business.webp" alt="Clinic discovery illustration" width="1254" height="1254" />
+                      <SiteImage className="enterprise-service-art" src="/assets/capture-product-art/google-business.webp" alt="Clinic discovery illustration" width="1254" height="1254" />
                     </div>
                   </div>
                 </article>
@@ -171,7 +172,7 @@ export default function CareTeamPage({audience}:{audience:AudienceKey}) {
                       </p>
                     </div>
                     <div className="block ml-8 rounded-tl-xl overflow-clip shadow-[var(--color-006)_0px_0.175px_1.041px_0px,var(--color-006)_0px_0.8px_2.925px_0px,var(--color-006)_0px_2.025px_7.847px_0px,var(--color-006)_0px_4px_18px_0px]" data-cid="n175">
-                      <img className="enterprise-service-art" src="/assets/capture-product-art/clinic-analytics.webp" alt="Clinic analytics illustration" width="1254" height="1254" />
+                      <SiteImage className="enterprise-service-art" src="/assets/capture-product-art/clinic-analytics.webp" alt="Clinic analytics illustration" width="1254" height="1254" />
                     </div>
                   </div>
                 </article>

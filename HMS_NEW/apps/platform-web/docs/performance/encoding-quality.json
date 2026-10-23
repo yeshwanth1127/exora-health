@@ -1,0 +1,404 @@
+[
+  {
+    "source": "/assets/audience-icons-v1/clinic.webp",
+    "checkedVariant": "/assets/optimized/audience-icons-v1-clinic.7238be3f96.480.webp",
+    "psnrDb": 35.3,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/audience-icons-v1/dental.webp",
+    "checkedVariant": "/assets/optimized/audience-icons-v1-dental.15f879d132.480.webp",
+    "psnrDb": 38.65,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/audience-icons-v1/hospital.webp",
+    "checkedVariant": "/assets/optimized/audience-icons-v1-hospital.5d40fa1d9c.480.webp",
+    "psnrDb": 36.03,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/audience-icons-v1/labs.webp",
+    "checkedVariant": "/assets/optimized/audience-icons-v1-labs.5f882c30b9.480.webp",
+    "psnrDb": 36.56,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/audience-icons-v1/physiotherapy.webp",
+    "checkedVariant": "/assets/optimized/audience-icons-v1-physiotherapy.ebe262c4b9.480.webp",
+    "psnrDb": 36.02,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/business-visibility/ios-status-bar-black.png",
+    "checkedVariant": "/assets/optimized/business-visibility-ios-status-bar-black.b2fa2d5445.480.webp",
+    "psnrDb": 49.89,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/business-visibility/iphone-15-pro-natural-titanium.png",
+    "checkedVariant": "/assets/optimized/business-visibility-iphone-15-pro-natural-titanium.939a3b941d.480.webp",
+    "psnrDb": 44.18,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-brand/reception-bell.png",
+    "checkedVariant": "/assets/optimized/capture-brand-reception-bell.19466c3710.480.webp",
+    "psnrDb": 44.53,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-footer/bandages.webp",
+    "checkedVariant": "/assets/optimized/capture-footer-bandages.911f9fa67f.480.webp",
+    "psnrDb": 39.23,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-footer/first-aid.webp",
+    "checkedVariant": "/assets/optimized/capture-footer-first-aid.3bd5e093e6.480.webp",
+    "psnrDb": 40.48,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-footer/stethoscope.webp",
+    "checkedVariant": "/assets/optimized/capture-footer-stethoscope.79e95d2e9a.480.webp",
+    "psnrDb": 39.47,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-footer/syringe.webp",
+    "checkedVariant": "/assets/optimized/capture-footer-syringe.4593729086.480.webp",
+    "psnrDb": 40.42,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-home-enquiries/caller-lime.webp",
+    "checkedVariant": "/assets/optimized/capture-home-enquiries-caller-lime.a53532bdb1.480.webp",
+    "psnrDb": 40.2,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-home-enquiries/enquirer-blue.webp",
+    "checkedVariant": "/assets/optimized/capture-home-enquiries-enquirer-blue.c69e2c5e4a.480.webp",
+    "psnrDb": 38.3,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-home-enquiries/parent-lime.webp",
+    "checkedVariant": "/assets/optimized/capture-home-enquiries-parent-lime.a3407d7ee1.480.webp",
+    "psnrDb": 40.44,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-home-enquiries/texter-coral.webp",
+    "checkedVariant": "/assets/optimized/capture-home-enquiries-texter-coral.5e7b217403.480.webp",
+    "psnrDb": 39.43,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-home-product/home-portrait-a.webp",
+    "checkedVariant": "/assets/optimized/capture-home-product-home-portrait-a.210cb31ff8.480.webp",
+    "psnrDb": 41.92,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-home-product/home-portrait-b.webp",
+    "checkedVariant": "/assets/optimized/capture-home-product-home-portrait-b.96332ed840.480.webp",
+    "psnrDb": 40.64,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-home-product/product-next-step.webp",
+    "checkedVariant": "/assets/optimized/capture-home-product-product-next-step.1b383bdf4f.480.webp",
+    "psnrDb": 44.32,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-home-product/product-records.webp",
+    "checkedVariant": "/assets/optimized/capture-home-product-product-records.c9ab70b6f2.480.webp",
+    "psnrDb": 42.8,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-home-product/product-search.webp",
+    "checkedVariant": "/assets/optimized/capture-home-product-product-search.a41649521a.480.webp",
+    "psnrDb": 43.89,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-home-product/product-team.webp",
+    "checkedVariant": "/assets/optimized/capture-home-product-product-team.56fb5932f4.480.webp",
+    "psnrDb": 42.21,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-illustrations/appointments-blue.webp",
+    "checkedVariant": "/assets/optimized/capture-illustrations-appointments-blue.6a017b1e28.480.webp",
+    "psnrDb": 38.19,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-illustrations/appointments-lime.webp",
+    "checkedVariant": "/assets/optimized/capture-illustrations-appointments-lime.ec2b1308dd.480.webp",
+    "psnrDb": 37.71,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-illustrations/care-coordination.webp",
+    "checkedVariant": "/assets/optimized/capture-illustrations-care-coordination.652ab02b7d.480.webp",
+    "psnrDb": 39.4,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-illustrations/care-messaging-coral.webp",
+    "checkedVariant": "/assets/optimized/capture-illustrations-care-messaging-coral.110a3a409e.480.webp",
+    "psnrDb": 40.46,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-illustrations/clinic-team-lime.webp",
+    "checkedVariant": "/assets/optimized/capture-illustrations-clinic-team-lime.15b96b4e17.480.webp",
+    "psnrDb": 39.01,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-illustrations/connected-clinics.webp",
+    "checkedVariant": "/assets/optimized/capture-illustrations-connected-clinics.04c92fae8c.480.webp",
+    "psnrDb": 36.88,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-illustrations/patient-records-lime.webp",
+    "checkedVariant": "/assets/optimized/capture-illustrations-patient-records-lime.a1f9436592.480.webp",
+    "psnrDb": 40.14,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-illustrations/secure-workspace.webp",
+    "checkedVariant": "/assets/optimized/capture-illustrations-secure-workspace.e00cc1106f.480.webp",
+    "psnrDb": 39.6,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-illustrations/welcome-clinic.webp",
+    "checkedVariant": "/assets/optimized/capture-illustrations-welcome-clinic.2a3549df6a.480.webp",
+    "psnrDb": 38.48,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-navigation/clinic.webp",
+    "checkedVariant": "/assets/optimized/capture-navigation-clinic.7dc2e11ada.480.webp",
+    "psnrDb": 37.4,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-navigation/doctors-v2.webp",
+    "checkedVariant": "/assets/optimized/capture-navigation-doctors-v2.6539023dd2.480.webp",
+    "psnrDb": 36.98,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-navigation/hospital.webp",
+    "checkedVariant": "/assets/optimized/capture-navigation-hospital.34802b2d96.480.webp",
+    "psnrDb": 35.77,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-onboarding/account-phone.png",
+    "checkedVariant": "/assets/optimized/capture-onboarding-account-phone.70d487da2e.480.webp",
+    "psnrDb": 42.31,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-onboarding/account-phone.webp",
+    "checkedVariant": "/assets/optimized/capture-onboarding-account-phone.4ddf47c34e.480.webp",
+    "psnrDb": 38.59,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-onboarding/account-profile.png",
+    "checkedVariant": "/assets/optimized/capture-onboarding-account-profile.b1eb5b7cc3.480.webp",
+    "psnrDb": 41.32,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-onboarding/account-profile.webp",
+    "checkedVariant": "/assets/optimized/capture-onboarding-account-profile.ed04b3f4af.480.webp",
+    "psnrDb": 38.09,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-onboarding/account-verification.png",
+    "checkedVariant": "/assets/optimized/capture-onboarding-account-verification.afb341be13.480.webp",
+    "psnrDb": 40.25,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-onboarding/account-verification.webp",
+    "checkedVariant": "/assets/optimized/capture-onboarding-account-verification.2af37567a0.480.webp",
+    "psnrDb": 37.95,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-onboarding/doctor-choosing.png",
+    "checkedVariant": "/assets/optimized/capture-onboarding-doctor-choosing.5ea0ee9995.480.webp",
+    "psnrDb": 40.82,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-onboarding/doctor-choosing.webp",
+    "checkedVariant": "/assets/optimized/capture-onboarding-doctor-choosing.a2bc8beee2.480.webp",
+    "psnrDb": 38.18,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-onboarding/doctor-planning.png",
+    "checkedVariant": "/assets/optimized/capture-onboarding-doctor-planning.82f694cb2d.480.webp",
+    "psnrDb": 41.37,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-onboarding/doctor-planning.webp",
+    "checkedVariant": "/assets/optimized/capture-onboarding-doctor-planning.d79069a1d5.480.webp",
+    "psnrDb": 38.67,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-onboarding/doctor-ready.png",
+    "checkedVariant": "/assets/optimized/capture-onboarding-doctor-ready.05318f2c6a.480.webp",
+    "psnrDb": 40.37,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-onboarding/doctor-ready.webp",
+    "checkedVariant": "/assets/optimized/capture-onboarding-doctor-ready.e7f40f7c7f.480.webp",
+    "psnrDb": 38.03,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-onboarding/doctor-welcome.png",
+    "checkedVariant": "/assets/optimized/capture-onboarding-doctor-welcome.d4378daa56.480.webp",
+    "psnrDb": 43.04,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-onboarding/doctor-welcome.webp",
+    "checkedVariant": "/assets/optimized/capture-onboarding-doctor-welcome.195ecba3d6.480.webp",
+    "psnrDb": 38.52,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-product-art/ai-reception.webp",
+    "checkedVariant": "/assets/optimized/capture-product-art-ai-reception.10e27c4baa.480.webp",
+    "psnrDb": 40.64,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-product-art/clinic-analytics.webp",
+    "checkedVariant": "/assets/optimized/capture-product-art-clinic-analytics.dc239d4dd7.480.webp",
+    "psnrDb": 39.6,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-product-art/google-business.webp",
+    "checkedVariant": "/assets/optimized/capture-product-art-google-business.3c1d2478e7.480.webp",
+    "psnrDb": 39.61,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/capture-product-art/whatsapp-outreach.webp",
+    "checkedVariant": "/assets/optimized/capture-product-art-whatsapp-outreach.75c07d3fef.480.webp",
+    "psnrDb": 39.26,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/claude-showcases/portrait-1.jpg",
+    "checkedVariant": "/assets/optimized/claude-showcases-portrait-1.be55e192f0.400.webp",
+    "psnrDb": 37.77,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/claude-showcases/portrait-2.jpg",
+    "checkedVariant": "/assets/optimized/claude-showcases-portrait-2.a65639860e.400.webp",
+    "psnrDb": 39.61,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/claude-showcases/portrait-3.jpg",
+    "checkedVariant": "/assets/optimized/claude-showcases-portrait-3.ca1ab84070.400.webp",
+    "psnrDb": 38.91,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/claude-showcases/portrait-4.jpg",
+    "checkedVariant": "/assets/optimized/claude-showcases-portrait-4.06d9b53325.400.webp",
+    "psnrDb": 39.57,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/claude-showcases/portrait-5.jpg",
+    "checkedVariant": "/assets/optimized/claude-showcases-portrait-5.ea64d7084e.400.webp",
+    "psnrDb": 39.33,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/comparison/whatsapp-business.png",
+    "checkedVariant": "/assets/optimized/comparison-whatsapp-business.e6c191c1aa.192.webp",
+    "psnrDb": 45.67,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/dashboard-people/ava-mitchell.jpg",
+    "checkedVariant": "/assets/optimized/dashboard-people-ava-mitchell.ea64d7084e.400.webp",
+    "psnrDb": 39.33,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/dashboard-people/emma-collins.jpg",
+    "checkedVariant": "/assets/optimized/dashboard-people-emma-collins.ca1ab84070.400.webp",
+    "psnrDb": 38.91,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/dashboard-people/jasmine-brooks.jpg",
+    "checkedVariant": "/assets/optimized/dashboard-people-jasmine-brooks.06d9b53325.400.webp",
+    "psnrDb": 39.57,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/dashboard-people/marcus-johnson.jpg",
+    "checkedVariant": "/assets/optimized/dashboard-people-marcus-johnson.a65639860e.400.webp",
+    "psnrDb": 39.61,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/dashboard-people/sofia-ramirez.jpg",
+    "checkedVariant": "/assets/optimized/dashboard-people-sofia-ramirez.be55e192f0.400.webp",
+    "psnrDb": 37.77,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/showcases/heroes-v1/dental.webp",
+    "checkedVariant": "/assets/optimized/showcases-heroes-v1-dental.eeb9fa0008.480.webp",
+    "psnrDb": 36.86,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/showcases/heroes-v1/labs.webp",
+    "checkedVariant": "/assets/optimized/showcases-heroes-v1-labs.dc3fe3f018.480.webp",
+    "psnrDb": 37.79,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/showcases/heroes-v1/physiotherapy.webp",
+    "checkedVariant": "/assets/optimized/showcases-heroes-v1-physiotherapy.e16bf31333.480.webp",
+    "psnrDb": 36.8,
+    "aspectAndTransparencyPreserved": true
+  },
+  {
+    "source": "/assets/showcases/heroes-v1/teleconsultations.webp",
+    "checkedVariant": "/assets/optimized/showcases-heroes-v1-teleconsultations.0a077b8d33.480.webp",
+    "psnrDb": 38.52,
+    "aspectAndTransparencyPreserved": true
+  }
+]

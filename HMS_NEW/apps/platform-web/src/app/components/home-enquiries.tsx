@@ -1,3 +1,4 @@
+import SiteImage from "./site-image";
 import { BRAND_NAME } from "../../lib/brand";
 import "./home-enquiries.css";
 
@@ -20,7 +21,7 @@ export default function HomeEnquiries() {
   return <section className="home-enquiries" id="patient-conversations" aria-labelledby="home-enquiries-title">
     <div className="home-enquiries-scene">
       {enquiries.map((enquiry, index) => <figure className={`home-enquiry home-enquiry-${index + 1} ${!enquiry.text ? "home-enquiry-face-only" : ""}`} key={enquiry.asset}>
-        <div className={`home-enquiry-portrait ${enquiry.tone}`}><img src={enquiry.src} width="160" height="160" alt="" loading="lazy" /></div>
+        <div className={`home-enquiry-portrait ${enquiry.tone}`}><SiteImage sizes="80px" src={enquiry.src} width="160" height="160" alt="" loading="lazy" /></div>
         {enquiry.text && <figcaption><span className="home-enquiry-channel"><ChannelIcon call={enquiry.call} />{enquiry.channel}</span><p>{enquiry.text}</p></figcaption>}
       </figure>)}
       <div className="home-enquiries-copy">

@@ -1,3 +1,4 @@
+import SiteImage from "./site-image";
 import type { MediaCardStyles } from "../_styles";
 import { cn } from "../../lib/utils";
 export type MediaCardData = {
@@ -16,7 +17,7 @@ export default function MediaCard({ d, styles }: { d: MediaCardData; styles: Med
       </a>
       <div className="block relative pointer-events-none">
         <span className={cn("inline-grid min-w-[fit-content] rounded-full items-center justify-items-center text-accent text-[2.5rem] leading-15 pointer-events-none grid-cols-[minmax(0,_1fr)] grid-rows-1 aspect-square max-lg:text-[1.75rem] max-lg:leading-10.5", styles.className)}>
-          <img loading="lazy" decoding="async" className="w-10 h-10 block overflow-clip aspect-[auto_48/48] text-color-006 pointer-events-none max-lg:w-7 max-lg:h-7" data-component="image" alt="" height="48" src={d.imgSrc} srcSet={d.srcSet} width="48" />
+          <SiteImage loading="lazy" decoding="async" className="w-10 h-10 block overflow-clip aspect-[auto_48/48] text-color-006 pointer-events-none max-lg:w-7 max-lg:h-7" data-component="image" alt="" height="48" src={d.imgSrc} srcSet={d.srcSet} width="48" />
         </span>
       </div>
       <h3 className="block text-color-002 font-bold text-balance" data-component="heading">

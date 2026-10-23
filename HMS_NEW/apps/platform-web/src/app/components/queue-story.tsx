@@ -1,4 +1,6 @@
 "use client";
+import SiteImage from "./site-image";
+
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useInView, useReducedMotion } from 'motion/react';
 import { ArrowUpRight, Check, ChevronDown, Circle, Clock3, Ellipsis, LayoutGrid, ListFilter, Megaphone, Plus, Users } from 'lucide-react';
@@ -10,7 +12,7 @@ const patients=[
  {name:'Kavya Rao',photo:'jasmine-brooks',doctor:'Dr Meera Shah',token:'023',time:'10:15 am'},
  {name:'Arjun Kumar',photo:'emma-collins',doctor:'Dr Asha Rao',token:'022',time:'10:00 am'},
 ];
-function PatientCard({index,active=false}:{index:number;active?:boolean}){const reduce=useReducedMotion();const p=patients[index];return <motion.div layout className={`queue-patient ${active?'queue-patient-active':''}`} transition={{duration:reduce?0:.45}}><div className="queue-token"><span>Token {p.token}</span><Ellipsis size={13}/></div><div className="queue-person"><img src={people+p.photo+'.jpg'} alt=""/><strong>{p.name}</strong></div><p>{p.doctor}</p><div className="queue-card-bottom"><span><Clock3 size={10}/>{p.time}</span><span>{active?'Called':'In-person'}</span></div></motion.div>;}
+function PatientCard({index,active=false}:{index:number;active?:boolean}){const reduce=useReducedMotion();const p=patients[index];return <motion.div layout className={`queue-patient ${active?'queue-patient-active':''}`} transition={{duration:reduce?0:.45}}><div className="queue-token"><span>Token {p.token}</span><Ellipsis size={13}/></div><div className="queue-person"><SiteImage width={32} height={32} sizes="32px" src={people+p.photo+'.jpg'} alt=""/><strong>{p.name}</strong></div><p>{p.doctor}</p><div className="queue-card-bottom"><span><Clock3 size={10}/>{p.time}</span><span>{active?'Called':'In-person'}</span></div></motion.div>;}
 export default function QueueStory(){
  const ref=useRef<HTMLDivElement>(null),visible=useInView(ref,{amount:.35}),reduce=useReducedMotion();const [called,setCalled]=useState(false);const [active,setActive]=useState(true);
  useEffect(()=>{const update=()=>setActive(!document.hidden);update();document.addEventListener("visibilitychange",update);return()=>document.removeEventListener("visibilitychange",update);},[]);
@@ -27,7 +29,7 @@ export default function QueueStory(){
   </div>
   <div className="queue-handoff-sheet">
    <div className="queue-handoff-banner"><span><Megaphone size={22}/></span><small>ONE CONNECTED FRONT DESK</small></div>
-   <div className="queue-handoff-body"><span className="queue-panel-eyebrow">The next step, made clear.</span><h3>Less chasing.<br/>More caring.</h3><div className="queue-current-patient"><img src={people+'sofia-ramirez.jpg'} alt=""/><div><strong>Ananya Sharma</strong><span>Token 024 · Dr Asha Rao</span></div></div><div className={`queue-next-action ${called?'is-called':''}`}><Megaphone size={14}/><span>{called?'Patient called':'Call next patient'}</span>{called?<Check size={15}/>:<ArrowUpRight size={15}/>}</div><div className="queue-activity"><div><span className="queue-activity-dot"><Check size={10}/></span><p>Checked in at reception<small>10:24 am</small></p></div><div><span className={`queue-activity-dot ${called?'':'is-pending'}`}>{called?<Check size={10}/>:<Circle size={8}/>}</span><p>{called?'Called by the front desk':'Waiting for the front desk'}<small>{called?'Ready to see Dr Asha Rao':'Next in the queue'}</small></p></div></div></div>
+   <div className="queue-handoff-body"><span className="queue-panel-eyebrow">The next step, made clear.</span><h3>Less chasing.<br/>More caring.</h3><div className="queue-current-patient"><SiteImage width={32} height={32} sizes="32px" src={people+'sofia-ramirez.jpg'} alt=""/><div><strong>Ananya Sharma</strong><span>Token 024 · Dr Asha Rao</span></div></div><div className={`queue-next-action ${called?'is-called':''}`}><Megaphone size={14}/><span>{called?'Patient called':'Call next patient'}</span>{called?<Check size={15}/>:<ArrowUpRight size={15}/>}</div><div className="queue-activity"><div><span className="queue-activity-dot"><Check size={10}/></span><p>Checked in at reception<small>10:24 am</small></p></div><div><span className={`queue-activity-dot ${called?'':'is-pending'}`}>{called?<Check size={10}/>:<Circle size={8}/>}</span><p>{called?'Called by the front desk':'Waiting for the front desk'}<small>{called?'Ready to see Dr Asha Rao':'Next in the queue'}</small></p></div></div></div>
   </div>
 
  </div>;

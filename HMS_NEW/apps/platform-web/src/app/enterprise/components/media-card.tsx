@@ -1,3 +1,4 @@
+import SiteImage from "../../components/site-image";
 import type { MediaCardStyles } from "../_styles";
 import { cn } from "../../../lib/utils";
 export type MediaCardData = {
@@ -28,7 +29,7 @@ export default function MediaCard({ d, styles }: { d: MediaCardData; styles: Med
           </a>
         </div>
         <div className="block mb-7 mx-8 rounded-xl overflow-clip shadow-[var(--color-006)_0px_0.175px_1.041px_0px,var(--color-006)_0px_0.8px_2.925px_0px,var(--color-006)_0px_2.025px_7.847px_0px,var(--color-006)_0px_4px_18px_0px]">
-          <img className={cn("w-[16.0625rem] h-[10.0625rem] block max-w-full overflow-clip text-color-006 max-md:w-[17.1875rem] max-md:h-43 md:max-lg:w-142 md:max-lg:h-[22.1875rem]", styles.className)} data-component="image" alt="Acme Inc company wiki" height={d.height} src={d.imgSrc} srcSet={d.srcSet} width={d.width} />
+          <SiteImage className={cn("w-[16.0625rem] h-[10.0625rem] block max-w-full overflow-clip text-color-006 max-md:w-[17.1875rem] max-md:h-43 md:max-lg:w-142 md:max-lg:h-[22.1875rem]", styles.className)} data-component="image" alt="Acme Inc company wiki" height={d.height} src={d.imgSrc} srcSet={d.srcSet} width={d.width} />
         </div>
       </div>
     </article>

@@ -1,0 +1,2812 @@
+{
+  "encoder": "0.35.5",
+  "quality": 82,
+  "originalsPreserved": true,
+  "images": [
+    {
+      "source": "/assets/audience-icons-v1/clinic.webp",
+      "sourceSha256": "96504d9d0095705da91c9b9d3416f20151bf41e6bf752b72a4eb0356a6770312",
+      "originalBytes": 29474,
+      "width": 512,
+      "height": 512,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/audience-icons-v1-clinic.7238be3f96.32.webp",
+          "width": 32,
+          "bytes": 964
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-clinic.7238be3f96.64.webp",
+          "width": 64,
+          "bytes": 2182
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-clinic.7238be3f96.128.webp",
+          "width": 128,
+          "bytes": 4964
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-clinic.7238be3f96.256.webp",
+          "width": 256,
+          "bytes": 10726
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-clinic.7238be3f96.480.webp",
+          "width": 480,
+          "bytes": 21896
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-clinic.7238be3f96.512.webp",
+          "width": 512,
+          "bytes": 24446
+        }
+      ]
+    },
+    {
+      "source": "/assets/audience-icons-v1/dental.webp",
+      "sourceSha256": "644d5be430cfb88bbd85041d14722972a772149772a666d2ed52e8a95230e8cf",
+      "originalBytes": 23594,
+      "width": 512,
+      "height": 512,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/audience-icons-v1-dental.15f879d132.32.webp",
+          "width": 32,
+          "bytes": 772
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-dental.15f879d132.64.webp",
+          "width": 64,
+          "bytes": 1668
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-dental.15f879d132.128.webp",
+          "width": 128,
+          "bytes": 3642
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-dental.15f879d132.256.webp",
+          "width": 256,
+          "bytes": 7890
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-dental.15f879d132.480.webp",
+          "width": 480,
+          "bytes": 18424
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-dental.15f879d132.512.webp",
+          "width": 512,
+          "bytes": 19996
+        }
+      ]
+    },
+    {
+      "source": "/assets/audience-icons-v1/hospital.webp",
+      "sourceSha256": "5d6f8074af0488c34d0e41a8f39bd631ce4c786525794a5267cd73ae6feaef24",
+      "originalBytes": 20454,
+      "width": 512,
+      "height": 512,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/audience-icons-v1-hospital.5d40fa1d9c.32.webp",
+          "width": 32,
+          "bytes": 692
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-hospital.5d40fa1d9c.64.webp",
+          "width": 64,
+          "bytes": 1820
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-hospital.5d40fa1d9c.128.webp",
+          "width": 128,
+          "bytes": 3728
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-hospital.5d40fa1d9c.256.webp",
+          "width": 256,
+          "bytes": 8042
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-hospital.5d40fa1d9c.480.webp",
+          "width": 480,
+          "bytes": 15446
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-hospital.5d40fa1d9c.512.webp",
+          "width": 512,
+          "bytes": 16874
+        }
+      ]
+    },
+    {
+      "source": "/assets/audience-icons-v1/labs.webp",
+      "sourceSha256": "22999ac6d0e3ef34feef3e92f546d1363b8ed358a26485e71eab551b88b4879b",
+      "originalBytes": 30062,
+      "width": 512,
+      "height": 512,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/audience-icons-v1-labs.5f882c30b9.32.webp",
+          "width": 32,
+          "bytes": 862
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-labs.5f882c30b9.64.webp",
+          "width": 64,
+          "bytes": 1984
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-labs.5f882c30b9.128.webp",
+          "width": 128,
+          "bytes": 4514
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-labs.5f882c30b9.256.webp",
+          "width": 256,
+          "bytes": 10318
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-labs.5f882c30b9.480.webp",
+          "width": 480,
+          "bytes": 23288
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-labs.5f882c30b9.512.webp",
+          "width": 512,
+          "bytes": 25772
+        }
+      ]
+    },
+    {
+      "source": "/assets/audience-icons-v1/physiotherapy.webp",
+      "sourceSha256": "999d3b47d5a7e7a037e89c2ca751df89f962517cfa63cde6cebf80ee53f31288",
+      "originalBytes": 27966,
+      "width": 512,
+      "height": 512,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/audience-icons-v1-physiotherapy.ebe262c4b9.32.webp",
+          "width": 32,
+          "bytes": 784
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-physiotherapy.ebe262c4b9.64.webp",
+          "width": 64,
+          "bytes": 1734
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-physiotherapy.ebe262c4b9.128.webp",
+          "width": 128,
+          "bytes": 4110
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-physiotherapy.ebe262c4b9.256.webp",
+          "width": 256,
+          "bytes": 9714
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-physiotherapy.ebe262c4b9.480.webp",
+          "width": 480,
+          "bytes": 21492
+        },
+        {
+          "src": "/assets/optimized/audience-icons-v1-physiotherapy.ebe262c4b9.512.webp",
+          "width": 512,
+          "bytes": 23682
+        }
+      ]
+    },
+    {
+      "source": "/assets/business-visibility/ios-status-bar-black.png",
+      "sourceSha256": "55775286f6bb515795b7d3cadece59f39f7ff5c2924c41ebb7d5a3a7900a8d93",
+      "originalBytes": 17781,
+      "width": 1608,
+      "height": 248,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/business-visibility-ios-status-bar-black.b2fa2d5445.32.webp",
+          "width": 32,
+          "bytes": 204
+        },
+        {
+          "src": "/assets/optimized/business-visibility-ios-status-bar-black.b2fa2d5445.64.webp",
+          "width": 64,
+          "bytes": 316
+        },
+        {
+          "src": "/assets/optimized/business-visibility-ios-status-bar-black.b2fa2d5445.128.webp",
+          "width": 128,
+          "bytes": 574
+        },
+        {
+          "src": "/assets/optimized/business-visibility-ios-status-bar-black.b2fa2d5445.256.webp",
+          "width": 256,
+          "bytes": 1080
+        },
+        {
+          "src": "/assets/optimized/business-visibility-ios-status-bar-black.b2fa2d5445.480.webp",
+          "width": 480,
+          "bytes": 2116
+        },
+        {
+          "src": "/assets/optimized/business-visibility-ios-status-bar-black.b2fa2d5445.768.webp",
+          "width": 768,
+          "bytes": 3644
+        },
+        {
+          "src": "/assets/optimized/business-visibility-ios-status-bar-black.b2fa2d5445.1280.webp",
+          "width": 1280,
+          "bytes": 6756
+        }
+      ]
+    },
+    {
+      "source": "/assets/business-visibility/iphone-15-pro-natural-titanium.png",
+      "sourceSha256": "086895244cd67a06e57d4fcb7a5159df9901ccc7d2993974101c3dcc687c3412",
+      "originalBytes": 392819,
+      "width": 1419,
+      "height": 2796,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/business-visibility-iphone-15-pro-natural-titanium.939a3b941d.32.webp",
+          "width": 32,
+          "bytes": 776
+        },
+        {
+          "src": "/assets/optimized/business-visibility-iphone-15-pro-natural-titanium.939a3b941d.64.webp",
+          "width": 64,
+          "bytes": 1536
+        },
+        {
+          "src": "/assets/optimized/business-visibility-iphone-15-pro-natural-titanium.939a3b941d.128.webp",
+          "width": 128,
+          "bytes": 2830
+        },
+        {
+          "src": "/assets/optimized/business-visibility-iphone-15-pro-natural-titanium.939a3b941d.256.webp",
+          "width": 256,
+          "bytes": 5450
+        },
+        {
+          "src": "/assets/optimized/business-visibility-iphone-15-pro-natural-titanium.939a3b941d.480.webp",
+          "width": 480,
+          "bytes": 10756
+        },
+        {
+          "src": "/assets/optimized/business-visibility-iphone-15-pro-natural-titanium.939a3b941d.768.webp",
+          "width": 768,
+          "bytes": 18186
+        },
+        {
+          "src": "/assets/optimized/business-visibility-iphone-15-pro-natural-titanium.939a3b941d.1280.webp",
+          "width": 1280,
+          "bytes": 36924
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-brand/reception-bell.png",
+      "sourceSha256": "b533ee5ccc125a14bec112ae7675cbcf90fc6f5a0d91141d2d23ef908932b50b",
+      "originalBytes": 356384,
+      "width": 1254,
+      "height": 1254,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-brand-reception-bell.19466c3710.32.webp",
+          "width": 32,
+          "bytes": 616
+        },
+        {
+          "src": "/assets/optimized/capture-brand-reception-bell.19466c3710.64.webp",
+          "width": 64,
+          "bytes": 1166
+        },
+        {
+          "src": "/assets/optimized/capture-brand-reception-bell.19466c3710.128.webp",
+          "width": 128,
+          "bytes": 2428
+        },
+        {
+          "src": "/assets/optimized/capture-brand-reception-bell.19466c3710.256.webp",
+          "width": 256,
+          "bytes": 4988
+        },
+        {
+          "src": "/assets/optimized/capture-brand-reception-bell.19466c3710.480.webp",
+          "width": 480,
+          "bytes": 9884
+        },
+        {
+          "src": "/assets/optimized/capture-brand-reception-bell.19466c3710.768.webp",
+          "width": 768,
+          "bytes": 17582
+        },
+        {
+          "src": "/assets/optimized/capture-brand-reception-bell.19466c3710.1254.webp",
+          "width": 1254,
+          "bytes": 34310
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-footer/bandages.webp",
+      "sourceSha256": "6b65153107db4c4cae88ca7e66c1749045d39b1684280b2c048bdc20ab14484f",
+      "originalBytes": 24620,
+      "width": 640,
+      "height": 640,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-footer-bandages.911f9fa67f.32.webp",
+          "width": 32,
+          "bytes": 734
+        },
+        {
+          "src": "/assets/optimized/capture-footer-bandages.911f9fa67f.64.webp",
+          "width": 64,
+          "bytes": 1530
+        },
+        {
+          "src": "/assets/optimized/capture-footer-bandages.911f9fa67f.128.webp",
+          "width": 128,
+          "bytes": 3366
+        },
+        {
+          "src": "/assets/optimized/capture-footer-bandages.911f9fa67f.256.webp",
+          "width": 256,
+          "bytes": 7750
+        },
+        {
+          "src": "/assets/optimized/capture-footer-bandages.911f9fa67f.480.webp",
+          "width": 480,
+          "bytes": 16044
+        },
+        {
+          "src": "/assets/optimized/capture-footer-bandages.911f9fa67f.640.webp",
+          "width": 640,
+          "bytes": 23050
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-footer/first-aid.webp",
+      "sourceSha256": "689d86cd6737d9c40c136ebe0fb6015815686bcdd7be7a589a0a46bf7f74c6b5",
+      "originalBytes": 21828,
+      "width": 640,
+      "height": 640,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-footer-first-aid.3bd5e093e6.32.webp",
+          "width": 32,
+          "bytes": 716
+        },
+        {
+          "src": "/assets/optimized/capture-footer-first-aid.3bd5e093e6.64.webp",
+          "width": 64,
+          "bytes": 1518
+        },
+        {
+          "src": "/assets/optimized/capture-footer-first-aid.3bd5e093e6.128.webp",
+          "width": 128,
+          "bytes": 3218
+        },
+        {
+          "src": "/assets/optimized/capture-footer-first-aid.3bd5e093e6.256.webp",
+          "width": 256,
+          "bytes": 6904
+        },
+        {
+          "src": "/assets/optimized/capture-footer-first-aid.3bd5e093e6.480.webp",
+          "width": 480,
+          "bytes": 15270
+        },
+        {
+          "src": "/assets/optimized/capture-footer-first-aid.3bd5e093e6.640.webp",
+          "width": 640,
+          "bytes": 20654
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-footer/stethoscope.webp",
+      "sourceSha256": "0a1f60410131de8c0bc5862a7c84e74458ff45012fbdcf9d6c7f8efeaad76fc7",
+      "originalBytes": 29674,
+      "width": 640,
+      "height": 640,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-footer-stethoscope.79e95d2e9a.32.webp",
+          "width": 32,
+          "bytes": 736
+        },
+        {
+          "src": "/assets/optimized/capture-footer-stethoscope.79e95d2e9a.64.webp",
+          "width": 64,
+          "bytes": 1642
+        },
+        {
+          "src": "/assets/optimized/capture-footer-stethoscope.79e95d2e9a.128.webp",
+          "width": 128,
+          "bytes": 3530
+        },
+        {
+          "src": "/assets/optimized/capture-footer-stethoscope.79e95d2e9a.256.webp",
+          "width": 256,
+          "bytes": 8410
+        },
+        {
+          "src": "/assets/optimized/capture-footer-stethoscope.79e95d2e9a.480.webp",
+          "width": 480,
+          "bytes": 19062
+        },
+        {
+          "src": "/assets/optimized/capture-footer-stethoscope.79e95d2e9a.640.webp",
+          "width": 640,
+          "bytes": 27522
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-footer/syringe.webp",
+      "sourceSha256": "14cebe14ad896080fd29d7b33d7df9fdb4a5c0b839116edc359a326c9b970534",
+      "originalBytes": 19458,
+      "width": 640,
+      "height": 640,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-footer-syringe.4593729086.32.webp",
+          "width": 32,
+          "bytes": 592
+        },
+        {
+          "src": "/assets/optimized/capture-footer-syringe.4593729086.64.webp",
+          "width": 64,
+          "bytes": 1158
+        },
+        {
+          "src": "/assets/optimized/capture-footer-syringe.4593729086.128.webp",
+          "width": 128,
+          "bytes": 2444
+        },
+        {
+          "src": "/assets/optimized/capture-footer-syringe.4593729086.256.webp",
+          "width": 256,
+          "bytes": 5562
+        },
+        {
+          "src": "/assets/optimized/capture-footer-syringe.4593729086.480.webp",
+          "width": 480,
+          "bytes": 12404
+        },
+        {
+          "src": "/assets/optimized/capture-footer-syringe.4593729086.640.webp",
+          "width": 640,
+          "bytes": 18012
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-home-enquiries/caller-lime.webp",
+      "sourceSha256": "5cecaeab0bd649bda07c79e1a7cee0aea778a1261d1ce23133f6f052c84c2b22",
+      "originalBytes": 50150,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-home-enquiries-caller-lime.a53532bdb1.32.webp",
+          "width": 32,
+          "bytes": 750
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-caller-lime.a53532bdb1.64.webp",
+          "width": 64,
+          "bytes": 1628
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-caller-lime.a53532bdb1.128.webp",
+          "width": 128,
+          "bytes": 3620
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-caller-lime.a53532bdb1.256.webp",
+          "width": 256,
+          "bytes": 8090
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-caller-lime.a53532bdb1.480.webp",
+          "width": 480,
+          "bytes": 17758
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-caller-lime.a53532bdb1.768.webp",
+          "width": 768,
+          "bytes": 31802
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-caller-lime.a53532bdb1.1000.webp",
+          "width": 1000,
+          "bytes": 46862
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-home-enquiries/enquirer-blue.webp",
+      "sourceSha256": "b881237ed6a580395a6bed47ecd397282d1d4a08c78a2aa9fe267cf1d9a67fd5",
+      "originalBytes": 66184,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-home-enquiries-enquirer-blue.c69e2c5e4a.32.webp",
+          "width": 32,
+          "bytes": 872
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-enquirer-blue.c69e2c5e4a.64.webp",
+          "width": 64,
+          "bytes": 2030
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-enquirer-blue.c69e2c5e4a.128.webp",
+          "width": 128,
+          "bytes": 4708
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-enquirer-blue.c69e2c5e4a.256.webp",
+          "width": 256,
+          "bytes": 11104
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-enquirer-blue.c69e2c5e4a.480.webp",
+          "width": 480,
+          "bytes": 23552
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-enquirer-blue.c69e2c5e4a.768.webp",
+          "width": 768,
+          "bytes": 42126
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-enquirer-blue.c69e2c5e4a.1000.webp",
+          "width": 1000,
+          "bytes": 60914
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-home-enquiries/parent-lime.webp",
+      "sourceSha256": "f7f41a014286cf8527afe6110b6b075e8936e7bb6183369c34ffef3580c8a266",
+      "originalBytes": 55404,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-home-enquiries-parent-lime.a3407d7ee1.32.webp",
+          "width": 32,
+          "bytes": 790
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-parent-lime.a3407d7ee1.64.webp",
+          "width": 64,
+          "bytes": 1676
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-parent-lime.a3407d7ee1.128.webp",
+          "width": 128,
+          "bytes": 3756
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-parent-lime.a3407d7ee1.256.webp",
+          "width": 256,
+          "bytes": 8516
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-parent-lime.a3407d7ee1.480.webp",
+          "width": 480,
+          "bytes": 19454
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-parent-lime.a3407d7ee1.768.webp",
+          "width": 768,
+          "bytes": 36208
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-parent-lime.a3407d7ee1.1000.webp",
+          "width": 1000,
+          "bytes": 52278
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-home-enquiries/texter-coral.webp",
+      "sourceSha256": "954d751be799346584177b2dc79bde284519179988a77accb45784f49cd499b6",
+      "originalBytes": 54816,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-home-enquiries-texter-coral.5e7b217403.32.webp",
+          "width": 32,
+          "bytes": 812
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-texter-coral.5e7b217403.64.webp",
+          "width": 64,
+          "bytes": 1722
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-texter-coral.5e7b217403.128.webp",
+          "width": 128,
+          "bytes": 3994
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-texter-coral.5e7b217403.256.webp",
+          "width": 256,
+          "bytes": 8818
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-texter-coral.5e7b217403.480.webp",
+          "width": 480,
+          "bytes": 19248
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-texter-coral.5e7b217403.768.webp",
+          "width": 768,
+          "bytes": 35020
+        },
+        {
+          "src": "/assets/optimized/capture-home-enquiries-texter-coral.5e7b217403.1000.webp",
+          "width": 1000,
+          "bytes": 50540
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-home-product/home-portrait-a.webp",
+      "sourceSha256": "985fabab19f014861b78d7a6cbf5483e93d57cfdd463a29592b33a9545ee73cc",
+      "originalBytes": 39020,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-home-product-home-portrait-a.210cb31ff8.32.webp",
+          "width": 32,
+          "bytes": 656
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-home-portrait-a.210cb31ff8.64.webp",
+          "width": 64,
+          "bytes": 1312
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-home-portrait-a.210cb31ff8.128.webp",
+          "width": 128,
+          "bytes": 2802
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-home-portrait-a.210cb31ff8.256.webp",
+          "width": 256,
+          "bytes": 6322
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-home-portrait-a.210cb31ff8.480.webp",
+          "width": 480,
+          "bytes": 13652
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-home-portrait-a.210cb31ff8.768.webp",
+          "width": 768,
+          "bytes": 25778
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-home-portrait-a.210cb31ff8.1000.webp",
+          "width": 1000,
+          "bytes": 36972
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-home-product/home-portrait-b.webp",
+      "sourceSha256": "66d3a601a4fe604897a52abb165a191b1ee748056536c0253d396cc3849aca2c",
+      "originalBytes": 42530,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-home-product-home-portrait-b.96332ed840.32.webp",
+          "width": 32,
+          "bytes": 764
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-home-portrait-b.96332ed840.64.webp",
+          "width": 64,
+          "bytes": 1582
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-home-portrait-b.96332ed840.128.webp",
+          "width": 128,
+          "bytes": 3392
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-home-portrait-b.96332ed840.256.webp",
+          "width": 256,
+          "bytes": 7462
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-home-portrait-b.96332ed840.480.webp",
+          "width": 480,
+          "bytes": 15554
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-home-portrait-b.96332ed840.768.webp",
+          "width": 768,
+          "bytes": 27934
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-home-portrait-b.96332ed840.1000.webp",
+          "width": 1000,
+          "bytes": 39320
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-home-product/product-next-step.webp",
+      "sourceSha256": "ed5b313a5cbc35d160cdf7d01e58d89e805c5c06f8de34ea7549d90b66e7ec2c",
+      "originalBytes": 25906,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-home-product-product-next-step.1b383bdf4f.32.webp",
+          "width": 32,
+          "bytes": 594
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-next-step.1b383bdf4f.64.webp",
+          "width": 64,
+          "bytes": 1124
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-next-step.1b383bdf4f.128.webp",
+          "width": 128,
+          "bytes": 2124
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-next-step.1b383bdf4f.256.webp",
+          "width": 256,
+          "bytes": 4424
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-next-step.1b383bdf4f.480.webp",
+          "width": 480,
+          "bytes": 9260
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-next-step.1b383bdf4f.768.webp",
+          "width": 768,
+          "bytes": 16684
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-next-step.1b383bdf4f.1000.webp",
+          "width": 1000,
+          "bytes": 24810
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-home-product/product-records.webp",
+      "sourceSha256": "80c7f88ee0a58c156ec0d2858539ddf57a99845328f595559b6e2a43387cf7c4",
+      "originalBytes": 37966,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-home-product-product-records.c9ab70b6f2.32.webp",
+          "width": 32,
+          "bytes": 754
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-records.c9ab70b6f2.64.webp",
+          "width": 64,
+          "bytes": 1432
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-records.c9ab70b6f2.128.webp",
+          "width": 128,
+          "bytes": 2974
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-records.c9ab70b6f2.256.webp",
+          "width": 256,
+          "bytes": 6438
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-records.c9ab70b6f2.480.webp",
+          "width": 480,
+          "bytes": 13026
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-records.c9ab70b6f2.768.webp",
+          "width": 768,
+          "bytes": 24074
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-records.c9ab70b6f2.1000.webp",
+          "width": 1000,
+          "bytes": 35788
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-home-product/product-search.webp",
+      "sourceSha256": "e8d74f1fc20bdb7cd4d85c2f3afec29df7f54efb00b2c9ca092b61987cfb5999",
+      "originalBytes": 27016,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-home-product-product-search.a41649521a.32.webp",
+          "width": 32,
+          "bytes": 662
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-search.a41649521a.64.webp",
+          "width": 64,
+          "bytes": 1240
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-search.a41649521a.128.webp",
+          "width": 128,
+          "bytes": 2302
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-search.a41649521a.256.webp",
+          "width": 256,
+          "bytes": 4558
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-search.a41649521a.480.webp",
+          "width": 480,
+          "bytes": 9696
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-search.a41649521a.768.webp",
+          "width": 768,
+          "bytes": 18460
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-search.a41649521a.1000.webp",
+          "width": 1000,
+          "bytes": 25700
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-home-product/product-team.webp",
+      "sourceSha256": "97db5adb9c07d903791322cdfc7d46135cab552c44dbabb48fa36891ff473735",
+      "originalBytes": 38560,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-home-product-product-team.56fb5932f4.32.webp",
+          "width": 32,
+          "bytes": 716
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-team.56fb5932f4.64.webp",
+          "width": 64,
+          "bytes": 1568
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-team.56fb5932f4.128.webp",
+          "width": 128,
+          "bytes": 3204
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-team.56fb5932f4.256.webp",
+          "width": 256,
+          "bytes": 6888
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-team.56fb5932f4.480.webp",
+          "width": 480,
+          "bytes": 13922
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-team.56fb5932f4.768.webp",
+          "width": 768,
+          "bytes": 25442
+        },
+        {
+          "src": "/assets/optimized/capture-home-product-product-team.56fb5932f4.1000.webp",
+          "width": 1000,
+          "bytes": 36258
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-illustrations/appointments-blue.webp",
+      "sourceSha256": "69faacfd140de29d4acd4b9c0b06494e5b0cebcffadf873c5d79177fc87ec744",
+      "originalBytes": 76950,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-illustrations-appointments-blue.6a017b1e28.32.webp",
+          "width": 32,
+          "bytes": 868
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-appointments-blue.6a017b1e28.64.webp",
+          "width": 64,
+          "bytes": 2016
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-appointments-blue.6a017b1e28.128.webp",
+          "width": 128,
+          "bytes": 4626
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-appointments-blue.6a017b1e28.256.webp",
+          "width": 256,
+          "bytes": 11308
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-appointments-blue.6a017b1e28.480.webp",
+          "width": 480,
+          "bytes": 25782
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-appointments-blue.6a017b1e28.768.webp",
+          "width": 768,
+          "bytes": 48426
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-appointments-blue.6a017b1e28.1000.webp",
+          "width": 1000,
+          "bytes": 70990
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-illustrations/appointments-lime.webp",
+      "sourceSha256": "e202f5dd84b65ddf21afbbf5c01d3cbd1292fd9a62d315c6042e429dc159f8bd",
+      "originalBytes": 80038,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-illustrations-appointments-lime.ec2b1308dd.32.webp",
+          "width": 32,
+          "bytes": 842
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-appointments-lime.ec2b1308dd.64.webp",
+          "width": 64,
+          "bytes": 2040
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-appointments-lime.ec2b1308dd.128.webp",
+          "width": 128,
+          "bytes": 4800
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-appointments-lime.ec2b1308dd.256.webp",
+          "width": 256,
+          "bytes": 11744
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-appointments-lime.ec2b1308dd.480.webp",
+          "width": 480,
+          "bytes": 27208
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-appointments-lime.ec2b1308dd.768.webp",
+          "width": 768,
+          "bytes": 50892
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-appointments-lime.ec2b1308dd.1000.webp",
+          "width": 1000,
+          "bytes": 74864
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-illustrations/care-coordination.webp",
+      "sourceSha256": "43c6ab70a565ccb5862dc694b91a6c6b96ce3c453ecd7ec6372ded9c6f673ace",
+      "originalBytes": 65720,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-illustrations-care-coordination.652ab02b7d.32.webp",
+          "width": 32,
+          "bytes": 784
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-care-coordination.652ab02b7d.64.webp",
+          "width": 64,
+          "bytes": 1786
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-care-coordination.652ab02b7d.128.webp",
+          "width": 128,
+          "bytes": 4244
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-care-coordination.652ab02b7d.256.webp",
+          "width": 256,
+          "bytes": 10124
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-care-coordination.652ab02b7d.480.webp",
+          "width": 480,
+          "bytes": 22714
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-care-coordination.652ab02b7d.768.webp",
+          "width": 768,
+          "bytes": 42086
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-care-coordination.652ab02b7d.1000.webp",
+          "width": 1000,
+          "bytes": 61302
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-illustrations/care-messaging-coral.webp",
+      "sourceSha256": "6c3b2dea8965eed5989de37fe2cf4ad858b9240158c753bc1592e553731e5397",
+      "originalBytes": 62186,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-illustrations-care-messaging-coral.110a3a409e.32.webp",
+          "width": 32,
+          "bytes": 762
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-care-messaging-coral.110a3a409e.64.webp",
+          "width": 64,
+          "bytes": 1686
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-care-messaging-coral.110a3a409e.128.webp",
+          "width": 128,
+          "bytes": 3914
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-care-messaging-coral.110a3a409e.256.webp",
+          "width": 256,
+          "bytes": 9192
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-care-messaging-coral.110a3a409e.480.webp",
+          "width": 480,
+          "bytes": 21028
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-care-messaging-coral.110a3a409e.768.webp",
+          "width": 768,
+          "bytes": 39620
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-care-messaging-coral.110a3a409e.1000.webp",
+          "width": 1000,
+          "bytes": 57536
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-illustrations/clinic-team-lime.webp",
+      "sourceSha256": "3944487686887e21f3a43b04318ae9cae79ea194c2ab82604b12cd158bc4d041",
+      "originalBytes": 68034,
+      "width": 1000,
+      "height": 667,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-illustrations-clinic-team-lime.15b96b4e17.32.webp",
+          "width": 32,
+          "bytes": 684
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-clinic-team-lime.15b96b4e17.64.webp",
+          "width": 64,
+          "bytes": 1676
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-clinic-team-lime.15b96b4e17.128.webp",
+          "width": 128,
+          "bytes": 4156
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-clinic-team-lime.15b96b4e17.256.webp",
+          "width": 256,
+          "bytes": 10238
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-clinic-team-lime.15b96b4e17.480.webp",
+          "width": 480,
+          "bytes": 23290
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-clinic-team-lime.15b96b4e17.768.webp",
+          "width": 768,
+          "bytes": 45378
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-clinic-team-lime.15b96b4e17.1000.webp",
+          "width": 1000,
+          "bytes": 64386
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-illustrations/connected-clinics.webp",
+      "sourceSha256": "077e34f937eeba01d09eb67e0a7504f339f881a3a6ce764ef38fd69d286427d9",
+      "originalBytes": 77790,
+      "width": 1000,
+      "height": 667,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-illustrations-connected-clinics.04c92fae8c.32.webp",
+          "width": 32,
+          "bytes": 814
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-connected-clinics.04c92fae8c.64.webp",
+          "width": 64,
+          "bytes": 1962
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-connected-clinics.04c92fae8c.128.webp",
+          "width": 128,
+          "bytes": 4844
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-connected-clinics.04c92fae8c.256.webp",
+          "width": 256,
+          "bytes": 12070
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-connected-clinics.04c92fae8c.480.webp",
+          "width": 480,
+          "bytes": 27530
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-connected-clinics.04c92fae8c.768.webp",
+          "width": 768,
+          "bytes": 51742
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-connected-clinics.04c92fae8c.1000.webp",
+          "width": 1000,
+          "bytes": 72198
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-illustrations/patient-records-lime.webp",
+      "sourceSha256": "2dd94bfbc87ff748f0047e18eb1e7523a89a36302fbb9eb5142768efb0abdc7b",
+      "originalBytes": 82284,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-illustrations-patient-records-lime.a1f9436592.32.webp",
+          "width": 32,
+          "bytes": 836
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-patient-records-lime.a1f9436592.64.webp",
+          "width": 64,
+          "bytes": 1966
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-patient-records-lime.a1f9436592.128.webp",
+          "width": 128,
+          "bytes": 4752
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-patient-records-lime.a1f9436592.256.webp",
+          "width": 256,
+          "bytes": 11506
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-patient-records-lime.a1f9436592.480.webp",
+          "width": 480,
+          "bytes": 27036
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-patient-records-lime.a1f9436592.768.webp",
+          "width": 768,
+          "bytes": 52644
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-patient-records-lime.a1f9436592.1000.webp",
+          "width": 1000,
+          "bytes": 76548
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-illustrations/secure-workspace.webp",
+      "sourceSha256": "705dcf79db9787524cdffb37d4555e44910f349f4a1b0af33baadec7b3e1552c",
+      "originalBytes": 64068,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-illustrations-secure-workspace.e00cc1106f.32.webp",
+          "width": 32,
+          "bytes": 768
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-secure-workspace.e00cc1106f.64.webp",
+          "width": 64,
+          "bytes": 1766
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-secure-workspace.e00cc1106f.128.webp",
+          "width": 128,
+          "bytes": 4092
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-secure-workspace.e00cc1106f.256.webp",
+          "width": 256,
+          "bytes": 9756
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-secure-workspace.e00cc1106f.480.webp",
+          "width": 480,
+          "bytes": 21656
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-secure-workspace.e00cc1106f.768.webp",
+          "width": 768,
+          "bytes": 40626
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-secure-workspace.e00cc1106f.1000.webp",
+          "width": 1000,
+          "bytes": 58942
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-illustrations/welcome-clinic.webp",
+      "sourceSha256": "0eb163d1c7bd45c0ad7e289f6f17ba7333380f22c16befd61269bacf0454001a",
+      "originalBytes": 57872,
+      "width": 1000,
+      "height": 667,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-illustrations-welcome-clinic.2a3549df6a.32.webp",
+          "width": 32,
+          "bytes": 686
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-welcome-clinic.2a3549df6a.64.webp",
+          "width": 64,
+          "bytes": 1548
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-welcome-clinic.2a3549df6a.128.webp",
+          "width": 128,
+          "bytes": 3756
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-welcome-clinic.2a3549df6a.256.webp",
+          "width": 256,
+          "bytes": 9190
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-welcome-clinic.2a3549df6a.480.webp",
+          "width": 480,
+          "bytes": 20222
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-welcome-clinic.2a3549df6a.768.webp",
+          "width": 768,
+          "bytes": 38424
+        },
+        {
+          "src": "/assets/optimized/capture-illustrations-welcome-clinic.2a3549df6a.1000.webp",
+          "width": 1000,
+          "bytes": 53856
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-navigation/clinic.webp",
+      "sourceSha256": "aada9980c2e469cc9c4f41c98629a6546c45bb5f61a474d6af15a5d62029f838",
+      "originalBytes": 28700,
+      "width": 640,
+      "height": 640,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-navigation-clinic.7dc2e11ada.32.webp",
+          "width": 32,
+          "bytes": 724
+        },
+        {
+          "src": "/assets/optimized/capture-navigation-clinic.7dc2e11ada.64.webp",
+          "width": 64,
+          "bytes": 1714
+        },
+        {
+          "src": "/assets/optimized/capture-navigation-clinic.7dc2e11ada.128.webp",
+          "width": 128,
+          "bytes": 4008
+        },
+        {
+          "src": "/assets/optimized/capture-navigation-clinic.7dc2e11ada.256.webp",
+          "width": 256,
+          "bytes": 9386
+        },
+        {
+          "src": "/assets/optimized/capture-navigation-clinic.7dc2e11ada.480.webp",
+          "width": 480,
+          "bytes": 19652
+        },
+        {
+          "src": "/assets/optimized/capture-navigation-clinic.7dc2e11ada.640.webp",
+          "width": 640,
+          "bytes": 27668
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-navigation/doctors-v2.webp",
+      "sourceSha256": "38bff03ae7a499be5a4d266592408c0155d3db8b1e8875df1fac7fa89c6aabb4",
+      "originalBytes": 52404,
+      "width": 640,
+      "height": 640,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-navigation-doctors-v2.6539023dd2.32.webp",
+          "width": 32,
+          "bytes": 1006
+        },
+        {
+          "src": "/assets/optimized/capture-navigation-doctors-v2.6539023dd2.64.webp",
+          "width": 64,
+          "bytes": 2384
+        },
+        {
+          "src": "/assets/optimized/capture-navigation-doctors-v2.6539023dd2.128.webp",
+          "width": 128,
+          "bytes": 5824
+        },
+        {
+          "src": "/assets/optimized/capture-navigation-doctors-v2.6539023dd2.256.webp",
+          "width": 256,
+          "bytes": 14276
+        },
+        {
+          "src": "/assets/optimized/capture-navigation-doctors-v2.6539023dd2.480.webp",
+          "width": 480,
+          "bytes": 33992
+        },
+        {
+          "src": "/assets/optimized/capture-navigation-doctors-v2.6539023dd2.640.webp",
+          "width": 640,
+          "bytes": 49570
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-navigation/hospital.webp",
+      "sourceSha256": "0487313852f3b2bcb9ef6b606a4944d22815df9d8617c7121481a25eabf790a8",
+      "originalBytes": 30680,
+      "width": 640,
+      "height": 640,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-navigation-hospital.34802b2d96.32.webp",
+          "width": 32,
+          "bytes": 922
+        },
+        {
+          "src": "/assets/optimized/capture-navigation-hospital.34802b2d96.64.webp",
+          "width": 64,
+          "bytes": 2286
+        },
+        {
+          "src": "/assets/optimized/capture-navigation-hospital.34802b2d96.128.webp",
+          "width": 128,
+          "bytes": 4906
+        },
+        {
+          "src": "/assets/optimized/capture-navigation-hospital.34802b2d96.256.webp",
+          "width": 256,
+          "bytes": 10340
+        },
+        {
+          "src": "/assets/optimized/capture-navigation-hospital.34802b2d96.480.webp",
+          "width": 480,
+          "bytes": 20158
+        },
+        {
+          "src": "/assets/optimized/capture-navigation-hospital.34802b2d96.640.webp",
+          "width": 640,
+          "bytes": 27654
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-onboarding/account-phone.png",
+      "sourceSha256": "227416b8cb748f5ece1f17d4e5e8340a8b2e3192aeafb1b59a7bbab1650dd909",
+      "originalBytes": 683882,
+      "width": 1254,
+      "height": 1254,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-onboarding-account-phone.70d487da2e.32.webp",
+          "width": 32,
+          "bytes": 972
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-phone.70d487da2e.64.webp",
+          "width": 64,
+          "bytes": 2146
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-phone.70d487da2e.128.webp",
+          "width": 128,
+          "bytes": 5392
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-phone.70d487da2e.256.webp",
+          "width": 256,
+          "bytes": 11000
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-phone.70d487da2e.480.webp",
+          "width": 480,
+          "bytes": 22460
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-phone.70d487da2e.768.webp",
+          "width": 768,
+          "bytes": 39416
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-phone.70d487da2e.1254.webp",
+          "width": 1254,
+          "bytes": 74948
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-onboarding/account-phone.webp",
+      "sourceSha256": "109f92367c45985dddaf262edacacd66a6554f73d5f17293442dc05b5687b1c2",
+      "originalBytes": 32432,
+      "width": 640,
+      "height": 640,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-onboarding-account-phone.4ddf47c34e.32.webp",
+          "width": 32,
+          "bytes": 766
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-phone.4ddf47c34e.64.webp",
+          "width": 64,
+          "bytes": 1692
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-phone.4ddf47c34e.128.webp",
+          "width": 128,
+          "bytes": 4176
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-phone.4ddf47c34e.256.webp",
+          "width": 256,
+          "bytes": 9904
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-phone.4ddf47c34e.480.webp",
+          "width": 480,
+          "bytes": 21578
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-phone.4ddf47c34e.640.webp",
+          "width": 640,
+          "bytes": 30578
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-onboarding/account-profile.png",
+      "sourceSha256": "af000a7f2fe05ad0f9f42ba334fd46f4a6905f0d4214981153a025fb01df2024",
+      "originalBytes": 656365,
+      "width": 1254,
+      "height": 1254,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-onboarding-account-profile.b1eb5b7cc3.32.webp",
+          "width": 32,
+          "bytes": 1032
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-profile.b1eb5b7cc3.64.webp",
+          "width": 64,
+          "bytes": 2254
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-profile.b1eb5b7cc3.128.webp",
+          "width": 128,
+          "bytes": 4828
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-profile.b1eb5b7cc3.256.webp",
+          "width": 256,
+          "bytes": 10550
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-profile.b1eb5b7cc3.480.webp",
+          "width": 480,
+          "bytes": 21776
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-profile.b1eb5b7cc3.768.webp",
+          "width": 768,
+          "bytes": 38342
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-profile.b1eb5b7cc3.1254.webp",
+          "width": 1254,
+          "bytes": 74076
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-onboarding/account-profile.webp",
+      "sourceSha256": "2bc4d39df16a9f29f637e2b091f810ce5a89e67fca7628e4e2509820a8baf5e8",
+      "originalBytes": 31928,
+      "width": 640,
+      "height": 640,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-onboarding-account-profile.ed04b3f4af.32.webp",
+          "width": 32,
+          "bytes": 792
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-profile.ed04b3f4af.64.webp",
+          "width": 64,
+          "bytes": 1730
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-profile.ed04b3f4af.128.webp",
+          "width": 128,
+          "bytes": 3942
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-profile.ed04b3f4af.256.webp",
+          "width": 256,
+          "bytes": 9442
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-profile.ed04b3f4af.480.webp",
+          "width": 480,
+          "bytes": 20790
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-profile.ed04b3f4af.640.webp",
+          "width": 640,
+          "bytes": 29806
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-onboarding/account-verification.png",
+      "sourceSha256": "af8f4e2a095a8f20b9371ee829ffc6559b5dbe35888f6dd74e2f8fa5f5b644e0",
+      "originalBytes": 673295,
+      "width": 1254,
+      "height": 1254,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-onboarding-account-verification.afb341be13.32.webp",
+          "width": 32,
+          "bytes": 1096
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-verification.afb341be13.64.webp",
+          "width": 64,
+          "bytes": 2364
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-verification.afb341be13.128.webp",
+          "width": 128,
+          "bytes": 5146
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-verification.afb341be13.256.webp",
+          "width": 256,
+          "bytes": 11000
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-verification.afb341be13.480.webp",
+          "width": 480,
+          "bytes": 22776
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-verification.afb341be13.768.webp",
+          "width": 768,
+          "bytes": 39972
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-verification.afb341be13.1254.webp",
+          "width": 1254,
+          "bytes": 76320
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-onboarding/account-verification.webp",
+      "sourceSha256": "9069e915cd2bb5c0b19f83ec9ef4c5eb3c114aef1cb24a558f3f08a39d9665ff",
+      "originalBytes": 33134,
+      "width": 640,
+      "height": 640,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-onboarding-account-verification.2af37567a0.32.webp",
+          "width": 32,
+          "bytes": 858
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-verification.2af37567a0.64.webp",
+          "width": 64,
+          "bytes": 1790
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-verification.2af37567a0.128.webp",
+          "width": 128,
+          "bytes": 4220
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-verification.2af37567a0.256.webp",
+          "width": 256,
+          "bytes": 9798
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-verification.2af37567a0.480.webp",
+          "width": 480,
+          "bytes": 21594
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-account-verification.2af37567a0.640.webp",
+          "width": 640,
+          "bytes": 30822
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-onboarding/doctor-choosing.png",
+      "sourceSha256": "4ccfab99a8d617dbe41fb105b044138d2d3a4630e32a2f4e9dc12f63b960b17e",
+      "originalBytes": 661410,
+      "width": 1254,
+      "height": 1254,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-choosing.5ea0ee9995.32.webp",
+          "width": 32,
+          "bytes": 1076
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-choosing.5ea0ee9995.64.webp",
+          "width": 64,
+          "bytes": 2322
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-choosing.5ea0ee9995.128.webp",
+          "width": 128,
+          "bytes": 4916
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-choosing.5ea0ee9995.256.webp",
+          "width": 256,
+          "bytes": 10402
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-choosing.5ea0ee9995.480.webp",
+          "width": 480,
+          "bytes": 21372
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-choosing.5ea0ee9995.768.webp",
+          "width": 768,
+          "bytes": 37368
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-choosing.5ea0ee9995.1254.webp",
+          "width": 1254,
+          "bytes": 71066
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-onboarding/doctor-choosing.webp",
+      "sourceSha256": "e74c48118ab5493ec0683a2a584b4312e44b11ade6da7abcc4b6f906082adc7f",
+      "originalBytes": 31498,
+      "width": 640,
+      "height": 640,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-choosing.a2bc8beee2.32.webp",
+          "width": 32,
+          "bytes": 784
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-choosing.a2bc8beee2.64.webp",
+          "width": 64,
+          "bytes": 1734
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-choosing.a2bc8beee2.128.webp",
+          "width": 128,
+          "bytes": 4056
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-choosing.a2bc8beee2.256.webp",
+          "width": 256,
+          "bytes": 9236
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-choosing.a2bc8beee2.480.webp",
+          "width": 480,
+          "bytes": 20330
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-choosing.a2bc8beee2.640.webp",
+          "width": 640,
+          "bytes": 29138
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-onboarding/doctor-planning.png",
+      "sourceSha256": "a3a682350b9458e4a2b7b564e95019bea75807cda36417ac48b7463593c2e1f1",
+      "originalBytes": 614042,
+      "width": 1254,
+      "height": 1254,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-planning.82f694cb2d.32.webp",
+          "width": 32,
+          "bytes": 982
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-planning.82f694cb2d.64.webp",
+          "width": 64,
+          "bytes": 2162
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-planning.82f694cb2d.128.webp",
+          "width": 128,
+          "bytes": 4552
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-planning.82f694cb2d.256.webp",
+          "width": 256,
+          "bytes": 9728
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-planning.82f694cb2d.480.webp",
+          "width": 480,
+          "bytes": 20214
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-planning.82f694cb2d.768.webp",
+          "width": 768,
+          "bytes": 35720
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-planning.82f694cb2d.1254.webp",
+          "width": 1254,
+          "bytes": 68906
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-onboarding/doctor-planning.webp",
+      "sourceSha256": "08a7762878531cc307663a90c3cdd76c09bf423b4c8ddd4f8aefe2459ef4085f",
+      "originalBytes": 30128,
+      "width": 640,
+      "height": 640,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-planning.d79069a1d5.32.webp",
+          "width": 32,
+          "bytes": 752
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-planning.d79069a1d5.64.webp",
+          "width": 64,
+          "bytes": 1616
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-planning.d79069a1d5.128.webp",
+          "width": 128,
+          "bytes": 3730
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-planning.d79069a1d5.256.webp",
+          "width": 256,
+          "bytes": 8740
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-planning.d79069a1d5.480.webp",
+          "width": 480,
+          "bytes": 19458
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-planning.d79069a1d5.640.webp",
+          "width": 640,
+          "bytes": 27992
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-onboarding/doctor-ready.png",
+      "sourceSha256": "8bc9624b20704720e813ad71c7db2cefe074684f167c0f3c0ee7d2a762355ba5",
+      "originalBytes": 682725,
+      "width": 1254,
+      "height": 1254,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-ready.05318f2c6a.32.webp",
+          "width": 32,
+          "bytes": 1084
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-ready.05318f2c6a.64.webp",
+          "width": 64,
+          "bytes": 2360
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-ready.05318f2c6a.128.webp",
+          "width": 128,
+          "bytes": 5206
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-ready.05318f2c6a.256.webp",
+          "width": 256,
+          "bytes": 11338
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-ready.05318f2c6a.480.webp",
+          "width": 480,
+          "bytes": 23210
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-ready.05318f2c6a.768.webp",
+          "width": 768,
+          "bytes": 41120
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-ready.05318f2c6a.1254.webp",
+          "width": 1254,
+          "bytes": 78982
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-onboarding/doctor-ready.webp",
+      "sourceSha256": "98ff432c2cbf900d9ad0f8b969e737a18f30f3a69fe5c4ddfc0a9d44b62851e3",
+      "originalBytes": 34168,
+      "width": 640,
+      "height": 640,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-ready.e7f40f7c7f.32.webp",
+          "width": 32,
+          "bytes": 834
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-ready.e7f40f7c7f.64.webp",
+          "width": 64,
+          "bytes": 1826
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-ready.e7f40f7c7f.128.webp",
+          "width": 128,
+          "bytes": 4336
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-ready.e7f40f7c7f.256.webp",
+          "width": 256,
+          "bytes": 10026
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-ready.e7f40f7c7f.480.webp",
+          "width": 480,
+          "bytes": 22234
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-ready.e7f40f7c7f.640.webp",
+          "width": 640,
+          "bytes": 31826
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-onboarding/doctor-welcome.png",
+      "sourceSha256": "88d753b512c6c200f037cfbb64afef0bf2d6f5e7bde9588b4ec609324d3285fd",
+      "originalBytes": 667394,
+      "width": 1254,
+      "height": 1254,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-welcome.d4378daa56.32.webp",
+          "width": 32,
+          "bytes": 1100
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-welcome.d4378daa56.64.webp",
+          "width": 64,
+          "bytes": 2400
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-welcome.d4378daa56.128.webp",
+          "width": 128,
+          "bytes": 5260
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-welcome.d4378daa56.256.webp",
+          "width": 256,
+          "bytes": 11262
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-welcome.d4378daa56.480.webp",
+          "width": 480,
+          "bytes": 23322
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-welcome.d4378daa56.768.webp",
+          "width": 768,
+          "bytes": 41524
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-welcome.d4378daa56.1254.webp",
+          "width": 1254,
+          "bytes": 80836
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-onboarding/doctor-welcome.webp",
+      "sourceSha256": "3861edd4e2c98abd87cb3fe29d5706cbd694ba5935f6b143cbb422efc487e9dd",
+      "originalBytes": 34124,
+      "width": 640,
+      "height": 640,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-welcome.195ecba3d6.32.webp",
+          "width": 32,
+          "bytes": 840
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-welcome.195ecba3d6.64.webp",
+          "width": 64,
+          "bytes": 1830
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-welcome.195ecba3d6.128.webp",
+          "width": 128,
+          "bytes": 4254
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-welcome.195ecba3d6.256.webp",
+          "width": 256,
+          "bytes": 10046
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-welcome.195ecba3d6.480.webp",
+          "width": 480,
+          "bytes": 22138
+        },
+        {
+          "src": "/assets/optimized/capture-onboarding-doctor-welcome.195ecba3d6.640.webp",
+          "width": 640,
+          "bytes": 32332
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-product-art/ai-reception.webp",
+      "sourceSha256": "4c20ede3d7fa7c6a08671b313d408384066861a1777ae9ed4b45324aa74a76c5",
+      "originalBytes": 57340,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-product-art-ai-reception.10e27c4baa.32.webp",
+          "width": 32,
+          "bytes": 706
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-ai-reception.10e27c4baa.64.webp",
+          "width": 64,
+          "bytes": 1600
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-ai-reception.10e27c4baa.128.webp",
+          "width": 128,
+          "bytes": 3796
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-ai-reception.10e27c4baa.256.webp",
+          "width": 256,
+          "bytes": 9090
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-ai-reception.10e27c4baa.480.webp",
+          "width": 480,
+          "bytes": 20318
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-ai-reception.10e27c4baa.768.webp",
+          "width": 768,
+          "bytes": 38158
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-ai-reception.10e27c4baa.1000.webp",
+          "width": 1000,
+          "bytes": 53752
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-product-art/clinic-analytics.webp",
+      "sourceSha256": "97b9883fef8a16df0907113bdfe94de221095c27d5f6e32426b02640736f7e10",
+      "originalBytes": 73674,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-product-art-clinic-analytics.dc239d4dd7.32.webp",
+          "width": 32,
+          "bytes": 900
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-clinic-analytics.dc239d4dd7.64.webp",
+          "width": 64,
+          "bytes": 2074
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-clinic-analytics.dc239d4dd7.128.webp",
+          "width": 128,
+          "bytes": 5002
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-clinic-analytics.dc239d4dd7.256.webp",
+          "width": 256,
+          "bytes": 11618
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-clinic-analytics.dc239d4dd7.480.webp",
+          "width": 480,
+          "bytes": 26086
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-clinic-analytics.dc239d4dd7.768.webp",
+          "width": 768,
+          "bytes": 47864
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-clinic-analytics.dc239d4dd7.1000.webp",
+          "width": 1000,
+          "bytes": 68498
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-product-art/google-business.webp",
+      "sourceSha256": "bb37458376231351ac5d5fc2ca708083c22e1016a09e13bb0d78ed023f7066ee",
+      "originalBytes": 42620,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-product-art-google-business.3c1d2478e7.32.webp",
+          "width": 32,
+          "bytes": 664
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-google-business.3c1d2478e7.64.webp",
+          "width": 64,
+          "bytes": 1484
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-google-business.3c1d2478e7.128.webp",
+          "width": 128,
+          "bytes": 3212
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-google-business.3c1d2478e7.256.webp",
+          "width": 256,
+          "bytes": 7580
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-google-business.3c1d2478e7.480.webp",
+          "width": 480,
+          "bytes": 15406
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-google-business.3c1d2478e7.768.webp",
+          "width": 768,
+          "bytes": 26788
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-google-business.3c1d2478e7.1000.webp",
+          "width": 1000,
+          "bytes": 38782
+        }
+      ]
+    },
+    {
+      "source": "/assets/capture-product-art/whatsapp-outreach.webp",
+      "sourceSha256": "4f9f489119c5e23603a956a95e298d0913b2245c68b01bb6deeef7daba13b455",
+      "originalBytes": 63912,
+      "width": 1000,
+      "height": 1000,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/capture-product-art-whatsapp-outreach.75c07d3fef.32.webp",
+          "width": 32,
+          "bytes": 836
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-whatsapp-outreach.75c07d3fef.64.webp",
+          "width": 64,
+          "bytes": 1840
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-whatsapp-outreach.75c07d3fef.128.webp",
+          "width": 128,
+          "bytes": 4342
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-whatsapp-outreach.75c07d3fef.256.webp",
+          "width": 256,
+          "bytes": 10270
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-whatsapp-outreach.75c07d3fef.480.webp",
+          "width": 480,
+          "bytes": 22416
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-whatsapp-outreach.75c07d3fef.768.webp",
+          "width": 768,
+          "bytes": 41800
+        },
+        {
+          "src": "/assets/optimized/capture-product-art-whatsapp-outreach.75c07d3fef.1000.webp",
+          "width": 1000,
+          "bytes": 59024
+        }
+      ]
+    },
+    {
+      "source": "/assets/claude-showcases/portrait-1.jpg",
+      "sourceSha256": "12c866905f224b1f6d461941425723773bb9b21b082eb29f037a7fa40a5c8c39",
+      "originalBytes": 42864,
+      "width": 400,
+      "height": 400,
+      "hasAlpha": false,
+      "variants": [
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-1.be55e192f0.32.webp",
+          "width": 32,
+          "bytes": 492
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-1.be55e192f0.64.webp",
+          "width": 64,
+          "bytes": 1352
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-1.be55e192f0.128.webp",
+          "width": 128,
+          "bytes": 4012
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-1.be55e192f0.256.webp",
+          "width": 256,
+          "bytes": 12606
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-1.be55e192f0.400.webp",
+          "width": 400,
+          "bytes": 26336
+        }
+      ]
+    },
+    {
+      "source": "/assets/claude-showcases/portrait-2.jpg",
+      "sourceSha256": "a204a7c8ade17edb268b95e21acd21485c56ce781a692f794eeb5307c336956e",
+      "originalBytes": 27584,
+      "width": 400,
+      "height": 400,
+      "hasAlpha": false,
+      "variants": [
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-2.a65639860e.32.webp",
+          "width": 32,
+          "bytes": 440
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-2.a65639860e.64.webp",
+          "width": 64,
+          "bytes": 882
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-2.a65639860e.128.webp",
+          "width": 128,
+          "bytes": 2148
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-2.a65639860e.256.webp",
+          "width": 256,
+          "bytes": 5828
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-2.a65639860e.400.webp",
+          "width": 400,
+          "bytes": 12734
+        }
+      ]
+    },
+    {
+      "source": "/assets/claude-showcases/portrait-3.jpg",
+      "sourceSha256": "1fcae860bc93af6cd25cf0a3e511e6618840c7c2800c25c26e18000abf9ccafb",
+      "originalBytes": 32205,
+      "width": 400,
+      "height": 400,
+      "hasAlpha": false,
+      "variants": [
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-3.ca1ab84070.32.webp",
+          "width": 32,
+          "bytes": 524
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-3.ca1ab84070.64.webp",
+          "width": 64,
+          "bytes": 1206
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-3.ca1ab84070.128.webp",
+          "width": 128,
+          "bytes": 2840
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-3.ca1ab84070.256.webp",
+          "width": 256,
+          "bytes": 7228
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-3.ca1ab84070.400.webp",
+          "width": 400,
+          "bytes": 14054
+        }
+      ]
+    },
+    {
+      "source": "/assets/claude-showcases/portrait-4.jpg",
+      "sourceSha256": "b34636f34c96ac5c2a161d7091325c33d92c73f9dced23c8ab2dc58305d36303",
+      "originalBytes": 28932,
+      "width": 400,
+      "height": 400,
+      "hasAlpha": false,
+      "variants": [
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-4.06d9b53325.32.webp",
+          "width": 32,
+          "bytes": 482
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-4.06d9b53325.64.webp",
+          "width": 64,
+          "bytes": 1042
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-4.06d9b53325.128.webp",
+          "width": 128,
+          "bytes": 2636
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-4.06d9b53325.256.webp",
+          "width": 256,
+          "bytes": 7328
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-4.06d9b53325.400.webp",
+          "width": 400,
+          "bytes": 14976
+        }
+      ]
+    },
+    {
+      "source": "/assets/claude-showcases/portrait-5.jpg",
+      "sourceSha256": "9b6f6c5b231fd9567349209e0ce48b60453ff9e8ba8bebacc4ee0857896be47d",
+      "originalBytes": 30884,
+      "width": 400,
+      "height": 400,
+      "hasAlpha": false,
+      "variants": [
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-5.ea64d7084e.32.webp",
+          "width": 32,
+          "bytes": 482
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-5.ea64d7084e.64.webp",
+          "width": 64,
+          "bytes": 1064
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-5.ea64d7084e.128.webp",
+          "width": 128,
+          "bytes": 2580
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-5.ea64d7084e.256.webp",
+          "width": 256,
+          "bytes": 7458
+        },
+        {
+          "src": "/assets/optimized/claude-showcases-portrait-5.ea64d7084e.400.webp",
+          "width": 400,
+          "bytes": 15954
+        }
+      ]
+    },
+    {
+      "source": "/assets/comparison/whatsapp-business.png",
+      "sourceSha256": "bcc20635647ab557c88a091674957581a04888ff8501ef11850c2807867be26b",
+      "originalBytes": 5230,
+      "width": 192,
+      "height": 192,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/comparison-whatsapp-business.e6c191c1aa.32.webp",
+          "width": 32,
+          "bytes": 1242
+        },
+        {
+          "src": "/assets/optimized/comparison-whatsapp-business.e6c191c1aa.64.webp",
+          "width": 64,
+          "bytes": 3334
+        },
+        {
+          "src": "/assets/optimized/comparison-whatsapp-business.e6c191c1aa.128.webp",
+          "width": 128,
+          "bytes": 7050
+        },
+        {
+          "src": "/assets/optimized/comparison-whatsapp-business.e6c191c1aa.192.webp",
+          "width": 192,
+          "bytes": 5948
+        }
+      ]
+    },
+    {
+      "source": "/assets/dashboard-people/ava-mitchell.jpg",
+      "sourceSha256": "9b6f6c5b231fd9567349209e0ce48b60453ff9e8ba8bebacc4ee0857896be47d",
+      "originalBytes": 30884,
+      "width": 400,
+      "height": 400,
+      "hasAlpha": false,
+      "variants": [
+        {
+          "src": "/assets/optimized/dashboard-people-ava-mitchell.ea64d7084e.32.webp",
+          "width": 32,
+          "bytes": 482
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-ava-mitchell.ea64d7084e.64.webp",
+          "width": 64,
+          "bytes": 1064
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-ava-mitchell.ea64d7084e.128.webp",
+          "width": 128,
+          "bytes": 2580
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-ava-mitchell.ea64d7084e.256.webp",
+          "width": 256,
+          "bytes": 7458
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-ava-mitchell.ea64d7084e.400.webp",
+          "width": 400,
+          "bytes": 15954
+        }
+      ]
+    },
+    {
+      "source": "/assets/dashboard-people/emma-collins.jpg",
+      "sourceSha256": "1fcae860bc93af6cd25cf0a3e511e6618840c7c2800c25c26e18000abf9ccafb",
+      "originalBytes": 32205,
+      "width": 400,
+      "height": 400,
+      "hasAlpha": false,
+      "variants": [
+        {
+          "src": "/assets/optimized/dashboard-people-emma-collins.ca1ab84070.32.webp",
+          "width": 32,
+          "bytes": 524
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-emma-collins.ca1ab84070.64.webp",
+          "width": 64,
+          "bytes": 1206
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-emma-collins.ca1ab84070.128.webp",
+          "width": 128,
+          "bytes": 2840
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-emma-collins.ca1ab84070.256.webp",
+          "width": 256,
+          "bytes": 7228
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-emma-collins.ca1ab84070.400.webp",
+          "width": 400,
+          "bytes": 14054
+        }
+      ]
+    },
+    {
+      "source": "/assets/dashboard-people/jasmine-brooks.jpg",
+      "sourceSha256": "b34636f34c96ac5c2a161d7091325c33d92c73f9dced23c8ab2dc58305d36303",
+      "originalBytes": 28932,
+      "width": 400,
+      "height": 400,
+      "hasAlpha": false,
+      "variants": [
+        {
+          "src": "/assets/optimized/dashboard-people-jasmine-brooks.06d9b53325.32.webp",
+          "width": 32,
+          "bytes": 482
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-jasmine-brooks.06d9b53325.64.webp",
+          "width": 64,
+          "bytes": 1042
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-jasmine-brooks.06d9b53325.128.webp",
+          "width": 128,
+          "bytes": 2636
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-jasmine-brooks.06d9b53325.256.webp",
+          "width": 256,
+          "bytes": 7328
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-jasmine-brooks.06d9b53325.400.webp",
+          "width": 400,
+          "bytes": 14976
+        }
+      ]
+    },
+    {
+      "source": "/assets/dashboard-people/marcus-johnson.jpg",
+      "sourceSha256": "a204a7c8ade17edb268b95e21acd21485c56ce781a692f794eeb5307c336956e",
+      "originalBytes": 27584,
+      "width": 400,
+      "height": 400,
+      "hasAlpha": false,
+      "variants": [
+        {
+          "src": "/assets/optimized/dashboard-people-marcus-johnson.a65639860e.32.webp",
+          "width": 32,
+          "bytes": 440
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-marcus-johnson.a65639860e.64.webp",
+          "width": 64,
+          "bytes": 882
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-marcus-johnson.a65639860e.128.webp",
+          "width": 128,
+          "bytes": 2148
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-marcus-johnson.a65639860e.256.webp",
+          "width": 256,
+          "bytes": 5828
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-marcus-johnson.a65639860e.400.webp",
+          "width": 400,
+          "bytes": 12734
+        }
+      ]
+    },
+    {
+      "source": "/assets/dashboard-people/sofia-ramirez.jpg",
+      "sourceSha256": "12c866905f224b1f6d461941425723773bb9b21b082eb29f037a7fa40a5c8c39",
+      "originalBytes": 42864,
+      "width": 400,
+      "height": 400,
+      "hasAlpha": false,
+      "variants": [
+        {
+          "src": "/assets/optimized/dashboard-people-sofia-ramirez.be55e192f0.32.webp",
+          "width": 32,
+          "bytes": 492
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-sofia-ramirez.be55e192f0.64.webp",
+          "width": 64,
+          "bytes": 1352
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-sofia-ramirez.be55e192f0.128.webp",
+          "width": 128,
+          "bytes": 4012
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-sofia-ramirez.be55e192f0.256.webp",
+          "width": 256,
+          "bytes": 12606
+        },
+        {
+          "src": "/assets/optimized/dashboard-people-sofia-ramirez.be55e192f0.400.webp",
+          "width": 400,
+          "bytes": 26336
+        }
+      ]
+    },
+    {
+      "source": "/assets/showcases/heroes-v1/dental.webp",
+      "sourceSha256": "3fa970384bb43b57f2d59fc9a47017ea6a61ca49b52a539f4aa13d023162c282",
+      "originalBytes": 117736,
+      "width": 1200,
+      "height": 800,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-dental.eeb9fa0008.32.webp",
+          "width": 32,
+          "bytes": 900
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-dental.eeb9fa0008.64.webp",
+          "width": 64,
+          "bytes": 2262
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-dental.eeb9fa0008.128.webp",
+          "width": 128,
+          "bytes": 5408
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-dental.eeb9fa0008.256.webp",
+          "width": 256,
+          "bytes": 13050
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-dental.eeb9fa0008.480.webp",
+          "width": 480,
+          "bytes": 29404
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-dental.eeb9fa0008.768.webp",
+          "width": 768,
+          "bytes": 55512
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-dental.eeb9fa0008.1200.webp",
+          "width": 1200,
+          "bytes": 105902
+        }
+      ]
+    },
+    {
+      "source": "/assets/showcases/heroes-v1/labs.webp",
+      "sourceSha256": "3551a77e02067cde8712004f87b3e5a515fe85523530bb81f43fbaadf0f30677",
+      "originalBytes": 90108,
+      "width": 1200,
+      "height": 800,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-labs.dc3fe3f018.32.webp",
+          "width": 32,
+          "bytes": 720
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-labs.dc3fe3f018.64.webp",
+          "width": 64,
+          "bytes": 1696
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-labs.dc3fe3f018.128.webp",
+          "width": 128,
+          "bytes": 4150
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-labs.dc3fe3f018.256.webp",
+          "width": 256,
+          "bytes": 10314
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-labs.dc3fe3f018.480.webp",
+          "width": 480,
+          "bytes": 23850
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-labs.dc3fe3f018.768.webp",
+          "width": 768,
+          "bytes": 43406
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-labs.dc3fe3f018.1200.webp",
+          "width": 1200,
+          "bytes": 80858
+        }
+      ]
+    },
+    {
+      "source": "/assets/showcases/heroes-v1/physiotherapy.webp",
+      "sourceSha256": "0508cf4de50987979f8f3f3c049b0dd8bc5dc6b3e1300760dab8b9a26b7d09ce",
+      "originalBytes": 118480,
+      "width": 1200,
+      "height": 800,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-physiotherapy.e16bf31333.32.webp",
+          "width": 32,
+          "bytes": 864
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-physiotherapy.e16bf31333.64.webp",
+          "width": 64,
+          "bytes": 2216
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-physiotherapy.e16bf31333.128.webp",
+          "width": 128,
+          "bytes": 5270
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-physiotherapy.e16bf31333.256.webp",
+          "width": 256,
+          "bytes": 13322
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-physiotherapy.e16bf31333.480.webp",
+          "width": 480,
+          "bytes": 29972
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-physiotherapy.e16bf31333.768.webp",
+          "width": 768,
+          "bytes": 56368
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-physiotherapy.e16bf31333.1200.webp",
+          "width": 1200,
+          "bytes": 106532
+        }
+      ]
+    },
+    {
+      "source": "/assets/showcases/heroes-v1/teleconsultations.webp",
+      "sourceSha256": "38abd10105d64d6e22dd60be4c3b7cdec1a316edb23456653489d2fbaac366e3",
+      "originalBytes": 84280,
+      "width": 1200,
+      "height": 800,
+      "hasAlpha": true,
+      "variants": [
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-teleconsultations.0a077b8d33.32.webp",
+          "width": 32,
+          "bytes": 748
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-teleconsultations.0a077b8d33.64.webp",
+          "width": 64,
+          "bytes": 1772
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-teleconsultations.0a077b8d33.128.webp",
+          "width": 128,
+          "bytes": 4160
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-teleconsultations.0a077b8d33.256.webp",
+          "width": 256,
+          "bytes": 9838
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-teleconsultations.0a077b8d33.480.webp",
+          "width": 480,
+          "bytes": 21586
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-teleconsultations.0a077b8d33.768.webp",
+          "width": 768,
+          "bytes": 40852
+        },
+        {
+          "src": "/assets/optimized/showcases-heroes-v1-teleconsultations.0a077b8d33.1200.webp",
+          "width": 1200,
+          "bytes": 75244
+        }
+      ]
+    }
+  ]
+}

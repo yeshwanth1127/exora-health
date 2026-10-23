@@ -827,7 +827,7 @@ fieldset, legend { min-width: 0; }
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/assets/cloned/fonts/51ed8ad4b862.ttf") format("truetype");
+  src: url("/assets/optimized/fonts/51ed8ad4b862.c0e1c01854.woff2") format("woff2");
 }
 
 @font-face {

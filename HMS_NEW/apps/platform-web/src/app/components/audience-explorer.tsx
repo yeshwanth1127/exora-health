@@ -1,4 +1,6 @@
 'use client';
+import SiteImage from "./site-image";
+
 import {useId,useRef,useState} from 'react';
 import {ArrowRight} from 'lucide-react';
 import {organisationLinks,specialtyLinks} from '../../lib/site-navigation';
@@ -11,7 +13,7 @@ const details=[
 ];
 export default function AudienceExplorer({compact=false}:{compact?:boolean}) {
  const [active,setActive]=useState(0);const id=useId();const refs=useRef<(HTMLButtonElement|null)[]>([]);
- if(compact)return <section className="audience-discover" aria-label="Explore more healthcare workflows"><header><h2>Find your workflow.</h2><p>Built around the way your team cares for patients.</p></header><nav className="audience-discover-cards" aria-label="Organisations and specialties">{[...organisationLinks,...specialtyLinks].map(link=><a className={`audience-discover-card audience-discover-${link.icon}`} href={link.href} key={link.href}><span className="audience-discover-art"><img src={audienceIcons[link.icon]} alt="" width="512" height="512" loading="lazy"/></span><span className="audience-discover-copy"><strong>{link.label}</strong><span>{link.description}</span><ArrowRight size={18} aria-hidden="true"/></span></a>)}</nav></section>;
+ if(compact)return <section className="audience-discover" aria-label="Explore more healthcare workflows"><header><h2>Find your workflow.</h2><p>Built around the way your team cares for patients.</p></header><nav className="audience-discover-cards" aria-label="Organisations and specialties">{[...organisationLinks,...specialtyLinks].map(link=><a className={`audience-discover-card audience-discover-${link.icon}`} href={link.href} key={link.href}><span className="audience-discover-art"><SiteImage src={audienceIcons[link.icon]} alt="" width="512" height="512" loading="lazy"/></span><span className="audience-discover-copy"><strong>{link.label}</strong><span>{link.description}</span><ArrowRight size={18} aria-hidden="true"/></span></a>)}</nav></section>;
  function move(event:React.KeyboardEvent,index:number){let next=index;if(event.key==='ArrowRight')next=(index+1)%organisationLinks.length;else if(event.key==='ArrowLeft')next=(index-1+organisationLinks.length)%organisationLinks.length;else if(event.key==='Home')next=0;else if(event.key==='End')next=organisationLinks.length-1;else return;event.preventDefault();setActive(next);refs.current[next]?.focus();}
  return <section className="audience-explorer" aria-labelledby={`${id}-heading`}>
   <header><p className="showcase-kicker">Built around your practice</p><h2 id={`${id}-heading`}>Different teams.<br/>One connected day.</h2></header>

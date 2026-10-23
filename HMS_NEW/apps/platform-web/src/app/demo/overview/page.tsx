@@ -1,4 +1,7 @@
 "use client";
+import { responsiveImage } from "../../../lib/responsive-image";
+import SiteImage from "../../components/site-image";
+
 import { BRAND_NAME } from "../../../lib/brand";
 import { useEffect, useState } from 'react';
 import { useReducedMotion } from 'motion/react';
@@ -50,14 +53,14 @@ export default function DemoOverview() {
  },[playing,visible,reduce]);
  const navigate=(id:string,accepted:()=>void)=>{accepted();setPlaying(false);setSelected(null);if(id==='overview'||id==='schedules')setView(id);};
  return <div className="arc-demo-scope hero-admin-preview">
-  <ArcSidebarLayout sections={sections} footer={[{id:'settings',label:'Workspace settings',icon:Settings2}]} active={view} togglePlacement="sidebar" hideBrand brand={{name:BRAND_NAME,detail:'Example Clinic · Bengaluru',icon:<HeartPulse />}} person={{name:'Priya Nair',role:'Clinic administrator',photo:'/assets/dashboard-people/emma-collins.jpg'}} onNavigate={navigate} renderHeader={()=> <header className="hero-admin-header"><span className="hero-admin-search"><Search size={16}/> Search <kbd>⌘ K</kbd></span><button className="hero-preview-play" onClick={()=>setPlaying(value=>!value)} aria-label={playing&&!reduce?"Pause dashboard animation":"Play dashboard animation"}>{playing&&!reduce?<Pause size={13}/>:<Play size={13}/>}</button><Bell size={17} aria-hidden="true"/></header>}>
+  <ArcSidebarLayout sections={sections} footer={[{id:'settings',label:'Workspace settings',icon:Settings2}]} active={view} togglePlacement="sidebar" hideBrand brand={{name:BRAND_NAME,detail:'Example Clinic · Bengaluru',icon:<HeartPulse />}} person={{name:'Priya Nair',role:'Clinic administrator',photo:responsiveImage('/assets/dashboard-people/emma-collins.jpg',{width:32})?.src}} onNavigate={navigate} renderHeader={()=> <header className="hero-admin-header"><span className="hero-admin-search"><Search size={16}/> Search <kbd>⌘ K</kbd></span><button className="hero-preview-play" onClick={()=>setPlaying(value=>!value)} aria-label={playing&&!reduce?"Pause dashboard animation":"Play dashboard animation"}>{playing&&!reduce?<Pause size={13}/>:<Play size={13}/>}</button><Bell size={17} aria-hidden="true"/></header>}>
    <div className="hero-admin-content">
     <div className="hero-admin-title"><h1>{view==='overview'?'Overview':'Schedules'}</h1><span>19 Oct 2026</span></div>
     {view==='overview'?<><div className="hero-admin-kpis">{tap&&<span className="hero-admin-tap" aria-hidden="true"/>}<KpiDrilldown embedded title="Clinic activity" caption={`Example clinic · Last ${range} days`} kpis={demoKpis} dimensions={[{value:'doctor',label:'Doctor'},{value:'channel',label:'Channel'}]} end="2026-10-19" range={range} onRangeChange={value=>{setPlaying(false);setRange(value);}} selected={selected} onSelectedChange={id=>{setPlaying(false);setSelected(id);}}/></div>
     <div className="hero-admin-report-note"><span>Compared with the previous {range} days</span><span>Tap a metric to explore</span></div>
     <section className="hero-admin-appointments" aria-label="Recent appointments">
      <header><h2>Recent appointments</h2><span>Today <span aria-hidden="true">↗</span></span></header>
-     <table><thead><tr><th>Patient</th><th>Doctor</th><th>Time</th><th>Status</th><th>Source</th></tr></thead><tbody>{appointments.map(a=><tr key={a.name}><td><img className="hero-admin-avatar" src={a.photo} alt=""/>{a.name}</td><td>{a.doctor}</td><td>{a.time}</td><td><span className={`hero-admin-status ${a.status==='Checked in'?'checked':''}`}>{a.status}</span></td><td><span className="hero-admin-source">{a.source==='AI reception'?<Headphones size={13}/>:a.source==='WhatsApp'?<MessageCircle size={13}/>:<CalendarDays size={13}/>} {a.source}</span></td></tr>)}</tbody></table>
+     <table><thead><tr><th>Patient</th><th>Doctor</th><th>Time</th><th>Status</th><th>Source</th></tr></thead><tbody>{appointments.map(a=><tr key={a.name}><td><SiteImage className="hero-admin-avatar" width={27} height={27} sizes="27px" src={a.photo} alt=""/>{a.name}</td><td>{a.doctor}</td><td>{a.time}</td><td><span className={`hero-admin-status ${a.status==='Checked in'?'checked':''}`}>{a.status}</span></td><td><span className="hero-admin-source">{a.source==='AI reception'?<Headphones size={13}/>:a.source==='WhatsApp'?<MessageCircle size={13}/>:<CalendarDays size={13}/>} {a.source}</span></td></tr>)}</tbody></table>
     </section>
     </>:<ScheduleShowcase/>}
     <footer className="hero-admin-footer">Example data · All names and activity are fictional.</footer>

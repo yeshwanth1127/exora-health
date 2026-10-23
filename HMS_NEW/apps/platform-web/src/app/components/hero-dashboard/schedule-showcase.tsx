@@ -1,4 +1,6 @@
 "use client";
+import SiteImage from "../site-image";
+
 import { useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 type State='booked'|'available'|'held'|'blocked';
@@ -24,7 +26,7 @@ export default function ScheduleShowcase(){
    <header><div><h2>Monday, 19 October</h2><p>4 doctors · {bookingCount} appointments · {openSlots} open slots</p></div><div className="hero-pipe-legend">{(['booked','available','held','blocked'] as State[]).map(state=><span key={state}><i className={state}/>{labels[state]}</span>)}</div></header>
    <div className="hero-schedule-axis"><span>Doctor / time · IST</span><div>{['9 am','10 am','11 am','12 pm','1 pm','2 pm'].map(t=><span key={t}>{t}</span>)}</div></div>
    {doctors.map((doctor,row)=>{let start=0;const periods=schedulePeriods[row];const nextIndex=periods.findIndex(p=>p.state==='available');const next=periods.slice(0,nextIndex).reduce((sum,p)=>sum+p.slots,0);return <div className="hero-schedule-row" key={doctor.name}>
-    <div className="hero-schedule-doctor"><img src={`/assets/dashboard-people/${doctor.photo}.jpg`} alt=""/><h3>{doctor.name}</h3><p>{doctor.specialty}</p><small>{periods.filter(p=>p.state==='booked').length} booked · {periods.filter(p=>p.state==='available').reduce((sum,p)=>sum+p.slots,0)} open</small></div>
+    <div className="hero-schedule-doctor"><SiteImage width={28} height={28} sizes="28px" src={`/assets/dashboard-people/${doctor.photo}.jpg`} alt=""/><h3>{doctor.name}</h3><p>{doctor.specialty}</p><small>{periods.filter(p=>p.state==='booked').length} booked · {periods.filter(p=>p.state==='available').reduce((sum,p)=>sum+p.slots,0)} open</small></div>
     <div className="hero-pipe-lane"><div className="hero-schedule-pipe" aria-label={`${doctor.name} availability`}>{periods.map((period,index)=>{const from=start;start+=period.slots;const text=`${labels[period.state]} · ${clock(from)}–${clock(start)}${period.patient?` · ${period.patient}`:''}`;return <button key={index} className={`hero-pipe-segment ${period.state}`} style={{flex:period.slots}} title={text} aria-label={`${doctor.name}: ${text}`} onClick={()=>setSelected({row,index})}/>})}</div><span className="hero-pipe-next">Next available · {clock(next)}</span></div>
    </div>})}
   </div>

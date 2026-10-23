@@ -12,7 +12,8 @@
     "seo:check": "node scripts/audit-search.mjs",
     "build:server": "node scripts/social-card.mjs && next build && node scripts/package-server.mjs",
     "start:server": "node .next/standalone/apps/platform-web/server.js",
-    "test:backend": "python3 -m unittest discover -s scripts -p \"*_test.py\""
+    "test:backend": "python3 -m unittest discover -s scripts -p \"*_test.py\"",
+    "media:optimize": "node scripts/optimize-media.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.8.0",
@@ -35,6 +36,7 @@
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "tailwindcss": "4.3.3",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "sharp": "0.35.5"
   }
 }

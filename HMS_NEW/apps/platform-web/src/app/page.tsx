@@ -1,3 +1,4 @@
+import SiteImage from "./components/site-image";
 import { pageMetadata } from "../lib/seo";
 import { BRAND_NAME } from "../lib/brand";
 import HomeClosingCta from "./components/home-closing-cta";
@@ -1019,10 +1020,10 @@ export default function Page() {
                   </div>
                   <div className="block relative min-w-0 mt-20 [grid-column-start:center-start] [grid-column-end:center-end] max-lg:mt-0 2xl:[grid-column-start:content-start] 2xl:[grid-column-end:content-end]">
                     <div className="w-40 h-42.5 block absolute right-0 z-2 transform-[matrix(1,0,0,1,0,-146)] pointer-events-none max-lg:hidden" aria-hidden="true">
-                      <img className="capture-home-character" src="/assets/capture-illustrations/care-messaging-coral.webp" width="1254" height="1254" alt="" />
+                      <SiteImage sizes="180px" className="capture-home-character" src="/assets/capture-illustrations/care-messaging-coral.webp" width="1254" height="1254" alt="" />
                     </div>
                     <div className="w-40 h-42.5 block absolute top-[clamp(300.4px,_50%,_calc(100%_-_300.4px))] z-2 transform-[matrix(1,0,0,1,-108,-85)] pointer-events-none max-lg:hidden" aria-hidden="true">
-                      <img className="capture-home-character" src="/assets/capture-illustrations/appointments-lime.webp" width="1254" height="1254" alt="" />
+                      <SiteImage sizes="180px" className="capture-home-character" src="/assets/capture-illustrations/appointments-lime.webp" width="1254" height="1254" alt="" />
                     </div>
                     <HeroDashboard />
                   </div>
@@ -1117,9 +1118,9 @@ export default function Page() {
                             </a>
                             <div className="block relative pointer-events-none">
                               <span className="inline-grid min-w-[fit-content] rounded-full items-center justify-items-center text-accent text-[2.5rem] leading-15 bg-clr-9 pointer-events-none grid-cols-[minmax(0,_1fr)] grid-rows-1 aspect-square max-lg:text-[1.75rem] max-lg:leading-10.5" data-ditto-id="style-span-87">
-                                <img className="w-10 h-10 block overflow-clip aspect-[auto_48/48] text-color-006 pointer-events-none max-lg:w-7 max-lg:h-7" data-ditto-id="style-image-25" data-component="image" alt={(BRAND_NAME + " records")} height="48" src="/assets/capture-home-product/product-team.webp" srcSet="/assets/capture-home-product/product-team.webp 1x" width="48" />
+                                <SiteImage className="w-10 h-10 block overflow-clip aspect-[auto_48/48] text-color-006 pointer-events-none max-lg:w-7 max-lg:h-7" data-ditto-id="style-image-25" data-component="image" alt={(BRAND_NAME + " records")} height="48" src="/assets/capture-home-product/product-team.webp" srcSet="/assets/capture-home-product/product-team.webp 1x" width="48" />
                               </span>
-                              <img className="w-6 h-6 block absolute -right-[1.35rem] bottom-[11.5px] overflow-clip aspect-[auto_24/24] text-color-006 [rotate:8.84deg] pointer-events-none max-lg:-right-[0.525rem] max-lg:bottom-[0.3125rem]" data-ditto-id="style-image-26" data-component="image" alt={(BRAND_NAME + " inbox")} height="24" src="/assets/capture-home-product/product-team.webp" srcSet="/assets/capture-home-product/product-team.webp 1x" width="24" />
+                              <SiteImage className="w-6 h-6 block absolute -right-[1.35rem] bottom-[11.5px] overflow-clip aspect-[auto_24/24] text-color-006 [rotate:8.84deg] pointer-events-none max-lg:-right-[0.525rem] max-lg:bottom-[0.3125rem]" data-ditto-id="style-image-26" data-component="image" alt={(BRAND_NAME + " inbox")} height="24" src="/assets/capture-home-product/product-team.webp" srcSet="/assets/capture-home-product/product-team.webp 1x" width="24" />
                             </div>
                             <h3 className="block text-color-002 font-bold text-balance" data-component="heading">
                               Find your clinic’s next step

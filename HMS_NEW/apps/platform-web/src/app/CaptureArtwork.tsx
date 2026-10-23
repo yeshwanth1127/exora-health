@@ -1,4 +1,6 @@
 "use client";
+import SiteImage from "./components/site-image";
+
 import { BRAND_NAME } from "../lib/brand";
 import { useEffect, useState } from "react";
 
@@ -9,6 +11,6 @@ export default function CaptureArtwork({ people, objects, className = "", label 
   useEffect(() => { setMode(new URLSearchParams(window.location.search).get("art") === "objects" ? "objects" : "people"); }, []);
   const parts = mode === "objects" && objects ? objects : people;
   return <span className={`capture-art ${className}`} role="img" aria-label={label} data-capture-art-mode={mode}>
-    {parts.map((part, index) => <img key={`${part}-${index}`} src={`${base}${part}.webp`} alt="" width="1254" height="1254" data-capture-art-part={part} />)}
+    {parts.map((part, index) => <SiteImage key={`${part}-${index}`} src={`${base}${part}.webp`} alt="" width="1254" height="1254" data-capture-art-part={part} />)}
   </span>;
 }

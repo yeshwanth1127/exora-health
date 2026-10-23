@@ -1,3 +1,4 @@
+import SiteImage from "../../components/site-image";
 import { BRAND_NAME } from "../../../lib/brand";
 const tools = [
   { name: BRAND_NAME, tag: "Built around your clinic", description: "Reception, outreach and visibility. Together.", logo: "/capture-bell-icon-v3.png", featured: true },
@@ -27,7 +28,7 @@ export default function ClinicComparison() {
             <th scope="col" className="clinic-comparison-intro"><span>Find the right fit<br />for your clinic.</span><small>Your everyday work,<br />side by side.</small></th>
             {tools.map(tool => <th scope="col" key={tool.name} className={tool.featured ? "is-capture" : undefined}>
               <span className="clinic-tool-tag">{tool.tag}</span>
-              <span className="clinic-tool-mark" aria-hidden="true"><img src={tool.logo} width="40" height="40" alt="" loading="lazy" /></span>
+              <span className="clinic-tool-mark" aria-hidden="true"><SiteImage src={tool.logo} width="40" height="40" alt="" loading="lazy" /></span>
               <span className="clinic-tool-name">{tool.name}</span>
               <span className="clinic-tool-description">{tool.description}</span>
               {tool.featured && <a href="/contact-sales" className="clinic-compare-cta">Book a demo <span aria-hidden="true">→</span></a>}

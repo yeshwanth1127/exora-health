@@ -1,3 +1,4 @@
+import SiteImage from "./site-image";
 const guides: Record<string, { pose: string }> = {
   facility: { pose: "welcome" },
   volume: { pose: "planning" },
@@ -16,6 +17,6 @@ export default function OnboardingMascot({ stage, compact = false, account = fal
   const guide = guides[stage] || guides.facility;
   const asset = account ? `account-${stage === "otp" ? "verification" : stage === "phone" ? "phone" : "profile"}` : `doctor-${guide.pose}`;
   return <aside className={`onboarding-mascot${compact ? " is-compact" : ""}`} aria-hidden="true">
-    <div className="onboarding-mascot-art"><img key={asset} src={`/assets/capture-onboarding/${asset}.webp`} width="320" height="320" alt="" /></div>
+    <div className="onboarding-mascot-art"><SiteImage key={asset} src={`/assets/capture-onboarding/${asset}.webp`} width="320" height="320" alt="" /></div>
   </aside>;
 }
