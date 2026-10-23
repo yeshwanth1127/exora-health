@@ -9,6 +9,7 @@ import { ProgressDonut } from "../components/arc-report/progress-donut/progress-
 import { BottomSheet } from "../components/arc-report/bottom-sheet/bottom-sheet";
 import { Popover, PopoverTrigger, PopoverContent } from "../components/arc-report/popover/popover";
 import type { ReactNode } from "react";
+import HomeClosingCta from "../components/home-closing-cta";
 import { ClinicWidget } from "./clinic-widget";
 import "../components/arc-business/scope.css";
 import LocalRankMap, { type RankPreview } from "./local-rank-map";
@@ -130,5 +131,6 @@ export default function BusinessReport({ initialReport, rankPreview }: { initial
 
 
     </div>}
+    {report && profile && <HomeClosingCta demoOnly />}
   </main>;
 }
