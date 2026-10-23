@@ -6,6 +6,8 @@ import BlogCards from "./blog/blog-cards";
 import SiteFooter from "./components/site-footer";
 import HeroDashboard from "./components/hero-dashboard/hero-dashboard";
 import HomeEnquiries from "./components/home-enquiries";
+import DayNightStory from "./components/day-night-story";
+import BusinessVisibilityCheck from "./components/business-visibility-check";
 import "./home-product-art.css";
 import HomeFeatureVisual from "./components/home-feature-visual";
 import "./ditto.css";
@@ -1132,6 +1134,8 @@ export default function Page() {
                   </div>
                 </div>
               </div>
+              <DayNightStory />
+              <BusinessVisibilityCheck />
               <section className="block" data-ditto-id="style-span-47" id="home-blog" aria-labelledby="_R_bmH1_">
                 <div className="block py-24 px-[5.8rem] bg-background max-md:py-8 max-md:px-4 md:max-lg:px-[3.6rem] 2xl:px-[8.8rem]" data-ditto-id="style-span-48">
                   <div className="flex max-w-313 flex-col gap-16 mx-auto max-md:gap-8">

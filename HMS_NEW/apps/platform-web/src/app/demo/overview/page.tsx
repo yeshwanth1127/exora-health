@@ -25,7 +25,10 @@ export default function DemoOverview() {
  const [playing,setPlaying]=useState(true);
  const [visible,setVisible]=useState(false);
  const [tap,setTap]=useState(false);
- const reduce=useReducedMotion();
+ // Keep server and first client markup identical; apply the browser preference after hydration.
+ const motionPreference=useReducedMotion();
+ const [reduce,setReduce]=useState(false);
+ useEffect(()=>setReduce(Boolean(motionPreference)),[motionPreference]);
  useEffect(()=>{
   if(window.parent===window){setVisible(true);return;}
   const handler=(event:MessageEvent)=>{if(event.source===window.parent&&event.origin===window.location.origin&&event.data?.type==='capture-preview-visible')setVisible(Boolean(event.data.visible));};

@@ -16,6 +16,10 @@ export const publicPages = [
  {path:'/solutions/google-business-management',title:`Google Business Profile Management for Clinics | ${BRAND_NAME}`,description:'Manage your clinic’s Google Business information, local discovery and patient enquiries alongside appointment and reception workflows.'},
  {path:'/solutions/clinic-analytics',title:`Clinic Booking & Patient Enquiry Analytics | ${BRAND_NAME}`,description:'Understand enquiries, bookings, cancellations and appointment sources with clinic analytics that keep workflow states and measurement limits clear.'},
  {path:'/resources/clinic-front-desk-checklist',title:`Clinic Front-Desk Workflow Checklist | ${BRAND_NAME}`,description:'A practical checklist for patient calls, booking requests, arrivals, queue handoffs and follow-ups. Read online or download the editable checklist.'},
+ {path:'/labs-diagnostics',title:`Lab & Diagnostic Centre Reception Software | ${BRAND_NAME}`,description:'Connect service enquiries, test appointments, patient arrivals and administrative follow-ups for laboratories and diagnostic centres.'},
+ {path:'/specialties/dental',title:`Dental Practice Reception & Appointment Workflows | ${BRAND_NAME}`,description:'Coordinate dental enquiries, consultation and treatment appointments, patient reminders and recall conversations in one reception workflow.'},
+ {path:'/specialties/physiotherapy',title:`Physiotherapy Appointment & Patient Follow-up Workflows | ${BRAND_NAME}`,description:'Keep initial assessment bookings, ongoing sessions, attendance and administrative follow-ups connected for your physiotherapy practice.'},
+ {path:'/solutions/teleconsultations',title:`Teleconsultation Appointment Workflows for Healthcare Teams | ${BRAND_NAME}`,description:'Connect remote appointment coordination, joining information and administrative follow-ups to your configured teleconsultation service.'},
  {path:'/privacy',title:`Website Analytics & Privacy | ${BRAND_NAME}`,description:'How optional website analytics works, which information is excluded and how to change your analytics preference.'},
 ] as const;
 export const privateRobots = {index:false,follow:true};

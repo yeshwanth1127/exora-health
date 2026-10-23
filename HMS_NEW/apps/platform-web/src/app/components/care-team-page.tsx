@@ -1,44 +1,15 @@
 import { BRAND_NAME } from "../../lib/brand";
 import MarketingAsset from "./marketing-asset";
-import FeatureCard2 from "../enterprise/components/feature-card2";
+import { audiencePages, type AudienceKey } from "../../lib/audience-pages";
+import IllustrationSlot from "./illustration-slot";
+import FaqSection from "./faq";
+import AudienceExplorer from "./audience-explorer";
+import ResearchBenchmarks from "./research-benchmarks";
 import "./care-team-page.css";
 
-const content = {
- teams: {
-  eyebrow: (BRAND_NAME + " for clinics"),
-  hero: "A calmer clinic day starts here.",
-  intro: "Answer patient enquiries, keep appointments moving and stay in touch after every visit. Give your small team one place to manage the day.",
-  heroArt: "/assets/capture-illustrations/welcome-clinic.webp", heroAlt: "A welcoming local clinic",
-  rows: [
-   {title:"A front desk that can keep up.",body:"Let AI reception handle routine questions and capture booking requests, while your team takes care of the conversations that need a person. Keep each enquiry connected to its next step.",alt:"Appointments workspace with illustrative data"},
-   {title:"Keep the clinic day in one view.",body:"Bring appointments, arrivals and patient handoffs into a shared workspace. Reception and doctors can see what comes next without checking separate lists or asking for another update.",alt:"Shared care team workspace with illustrative data"},
-   {title:"Keep the conversation going.",body:"Reach patients on WhatsApp with timely follow-ups, keep your Google Business Profile up to date and see which enquiries become bookings. Make it easier for patients to find you and return.",alt:"Care inbox workspace with illustrative data"}
-  ],
-  starterIntro:"You do not have to change everything at once. Focus on the part of your clinic day that needs the most support.",
-  starters:[{title:"Reception & arrivals",body:"Start with calls, appointment requests and a clear queue for your front desk."},{title:"Follow-ups & patient outreach",body:"Keep patient conversations organised and make the next visit easier to arrange."}],
-  rolloutTitle:"A practical start for your practice.",
-  rollout:{title:"Map your clinic day",description:"Walk through your calls, bookings and patient handoffs.",title2:"Bring your team together",description2:"Plan doctor schedules, staff access and front-desk responsibilities.",title3:"Start with a focused workflow",description3:"Choose where to begin, then review what your team wants to add next."},
-  cta:("See how " + BRAND_NAME + " fits your patients, your team and your everyday workflow.")
- },
- enterprise: {
-  eyebrow: (BRAND_NAME + " for hospitals"),
-  hero: "Connected care, across every team.",
-  intro: "Bring reception, patient engagement and clinic activity into a shared workspace. Help growing healthcare teams work together without adding more disconnected tools.",
-  heroArt:"/assets/capture-illustrations/connected-clinics.webp",heroAlt:"Care teams working across connected clinics",
-  rows:[
-   {title:"A consistent first point of contact.",body:"Give patients a clear path from an incoming call to a booking request. Use AI reception for routine enquiries and keep handoffs visible to the front-desk team that needs to respond.",alt:"Appointments workspace with illustrative data"},
-   {title:"Keep care teams on the same page.",body:"Connect appointments, arrivals and patient handoffs in one working view. Give reception, doctors and clinic managers the context they need to coordinate the day and spot where attention is needed.",alt:"Shared care team workspace with illustrative data"},
-   {title:"Build lasting patient relationships.",body:"Bring WhatsApp outreach, Google Business management and booking analytics into the same conversation. Help your teams follow up consistently and understand how patients discover and return to your clinics.",alt:"Care inbox workspace with illustrative data"}
-  ],
-  starterIntro:"Build around the needs of your care teams. Choose a focused starting point before broadening the rollout.",
-  starters:[{title:"Clinic operations",body:"Align reception, appointment queues and team handoffs around the way each clinic works."},{title:"Patient engagement",body:"Connect outreach, local visibility and enquiry tracking with the teams responsible for growth."}],
-  rolloutTitle:"Plan a rollout around your organisation.",
-  rollout:{title:"Map teams and workflows",description:"Review your clinic structure, responsibilities and patient journey.",title2:"Review access and setup",description2:"Discuss staff roles, operating requirements and the systems you already use.",title3:"Agree on a focused first phase",description3:"Choose the first clinic or workflow and define what to review before expanding."},
-  cta:"Walk through your organisation’s patient journey and discuss a focused first phase."
- }
-};
-export default function CareTeamPage({audience}:{audience:"teams"|"enterprise"}) {
- const copy=content[audience];
+
+export default function CareTeamPage({audience}:{audience:AudienceKey}) {
+ const copy=audiencePages[audience];
  return <main className="care-team-page" data-audience={audience}>
 <section className="block relative py-20 bg-background max-lg:py-10" data-ditto-id="style-div-21" aria-labelledby="_R_2kkbm_">
               <div className="block" data-ditto-id="style-header">
@@ -63,7 +34,7 @@ export default function CareTeamPage({audience}:{audience:"teams"|"enterprise"})
                     </div>
                     <div className="grid min-w-0 items-center justify-items-center [grid-column-start:center-mid-end] [grid-column-end:content-end] row-span-full grid-cols-[minmax(0,_1fr)] max-lg:mb-5 max-lg:order-[-1] max-lg:[grid-column-start:content-start] max-lg:[grid-row-start:initial] max-lg:[grid-row-end:initial]" data-ditto-id="style-div-131">
                       <div className="block max-w-98 max-lg:max-w-full" data-ditto-id="style-image-19">
-                        <img className="w-98 h-64.5 block max-w-full overflow-clip aspect-[auto_6342/4166] max-md:w-[21.4375rem] max-md:h-[14.0625rem] max-lg:max-h-77.5 md:max-lg:w-118 md:max-lg:h-77.5" data-ditto-id="style-div-58" data-component="image" alt={copy.heroAlt} height="4166" src={copy.heroArt} width="6342" />
+                        {copy.artworkPrefix ? <IllustrationSlot name={`${copy.artworkPrefix}-hero`} /> : <img className="w-98 h-64.5 block max-w-full overflow-clip aspect-[auto_6342/4166] max-md:w-[21.4375rem] max-md:h-[14.0625rem] max-lg:max-h-77.5 md:max-lg:w-118 md:max-lg:h-77.5" data-ditto-id="style-div-58" data-component="image" alt={copy.heroAlt} height="4166" src={copy.heroArt} width="6342" />}
                       </div>
                     </div>
                   </div>
@@ -85,7 +56,7 @@ export default function CareTeamPage({audience}:{audience:"teams"|"enterprise"})
                     </p>
                   </div>
                   <div className="border border-solid border-color-006 block rounded-[10px] col-start-2 row-start-1 shadow-[var(--color-006)_0px_0.175px_1.041px_0px,var(--color-006)_0px_0.8px_2.925px_0px,var(--color-006)_0px_2.025px_7.847px_0px,var(--color-006)_0px_4px_18px_0px] max-lg:[grid-column-start:initial] max-lg:[grid-row-start:initial]" data-ditto-id="style-source-3">
-                    <MarketingAsset name={"1a"} />
+                    {copy.artworkPrefix ? <IllustrationSlot name={`${copy.artworkPrefix}-workflow-1`} /> : <MarketingAsset name={"1a"} />}
                   </div>
                 </div>
               </article>
@@ -105,7 +76,7 @@ export default function CareTeamPage({audience}:{audience:"teams"|"enterprise"})
                     </p>
                   </div>
                   <div className="border border-solid border-color-006 block rounded-[10px] col-start-1 row-start-1 shadow-[var(--color-006)_0px_0.175px_1.041px_0px,var(--color-006)_0px_0.8px_2.925px_0px,var(--color-006)_0px_2.025px_7.847px_0px,var(--color-006)_0px_4px_18px_0px] max-lg:[grid-column-start:initial] max-lg:[grid-row-start:initial]" data-ditto-id="style-figma">
-                    <MarketingAsset name={"3a"} />
+                    {copy.artworkPrefix ? <IllustrationSlot name={`${copy.artworkPrefix}-workflow-2`} /> : <MarketingAsset name={"3a"} />}
                   </div>
                 </div>
               </article>
@@ -125,7 +96,7 @@ export default function CareTeamPage({audience}:{audience:"teams"|"enterprise"})
                     </p>
                   </div>
                   <div className="border border-solid border-color-006 block rounded-[10px] col-start-2 row-start-1 shadow-[var(--color-006)_0px_0.175px_1.041px_0px,var(--color-006)_0px_0.8px_2.925px_0px,var(--color-006)_0px_2.025px_7.847px_0px,var(--color-006)_0px_4px_18px_0px] max-lg:[grid-column-start:initial] max-lg:[grid-row-start:initial]" data-ditto-id="style-image-20">
-                    <MarketingAsset name={audience === "enterprise" ? "1d" : "1b"} />
+                    {copy.artworkPrefix ? <IllustrationSlot name={`${copy.artworkPrefix}-workflow-3`} /> : <MarketingAsset name={audience === "enterprise" ? "1d" : "1b"} />}
                   </div>
                 </div>
               </article>
@@ -181,7 +152,7 @@ export default function CareTeamPage({audience}:{audience:"teams"|"enterprise"})
                         Google Business management
                       </h3>
                       <p className="block text-foreground [font-feature-settings:'lnum',_'locl'_0]" data-cid="n167">
-                        Keep your clinic profile current and help nearby patients find the right information.
+                        Keep your location profile current and help nearby patients find the right information.
                       </p>
                     </div>
                     <div className="block overflow-clip" data-cid="n168">
@@ -196,7 +167,7 @@ export default function CareTeamPage({audience}:{audience:"teams"|"enterprise"})
                         Clinic analytics
                       </h3>
                       <p className="block text-foreground [font-feature-settings:'lnum',_'locl'_0]" data-cid="n174">
-                        See enquiries, bookings and appointment trends to understand what brings patients to your clinic.
+                        See enquiries, bookings and appointment trends to understand what brings patients to your team.
                       </p>
                     </div>
                     <div className="block ml-8 rounded-tl-xl overflow-clip shadow-[var(--color-006)_0px_0.175px_1.041px_0px,var(--color-006)_0px_0.8px_2.925px_0px,var(--color-006)_0px_2.025px_7.847px_0px,var(--color-006)_0px_4px_18px_0px]" data-cid="n175">
@@ -239,7 +210,7 @@ export default function CareTeamPage({audience}:{audience:"teams"|"enterprise"})
                       </a>
                     </div>
                     <div className="block ml-8 rounded-tl-xl overflow-clip shadow-[var(--color-006)_0px_0.175px_1.041px_0px,var(--color-006)_0px_0.8px_2.925px_0px,var(--color-006)_0px_2.025px_7.847px_0px,var(--color-006)_0px_4px_18px_0px]" data-ditto-id="style-div-144">
-                      <MarketingAsset name="3b" />
+                      {copy.artworkPrefix ? <IllustrationSlot name={`${copy.artworkPrefix}-starter-1`} /> : <MarketingAsset name="3b" />}
                     </div>
                   </div>
                 </article>
@@ -262,27 +233,24 @@ export default function CareTeamPage({audience}:{audience:"teams"|"enterprise"})
                       </a>
                     </div>
                     <div className="block ml-8 rounded-tl-xl overflow-clip shadow-[var(--color-006)_0px_0.175px_1.041px_0px,var(--color-006)_0px_0.8px_2.925px_0px,var(--color-006)_0px_2.025px_7.847px_0px,var(--color-006)_0px_4px_18px_0px]" data-ditto-id="style-div-146">
-                      <MarketingAsset name="3c" />
+                      {copy.artworkPrefix ? <IllustrationSlot name={`${copy.artworkPrefix}-starter-2`} /> : <MarketingAsset name="3c" />}
                     </div>
                   </div>
                 </article>
               </div>
             </section>
-<section className="block relative pb-20 bg-background max-lg:pb-10" data-cid="n304" aria-labelledby="_R_dkkbm_">
-              <div className="flex mb-8 flex-col-reverse justify-center items-center gap-6 text-center max-lg:mb-6" data-ditto-id="style-div-31">
-                <div className="flex min-w-0 flex-col items-center" data-cid="n306">
-                  <h2 className="block max-w-[693.7px] text-foreground text-[2.625rem] font-bold leading-12 tracking-[-1.5px] text-balance [font-feature-settings:'lnum',_'locl'_0] max-lg:max-w-[528.5px] max-lg:text-[2rem] max-lg:leading-10 max-lg:tracking-[-0.75px]" data-cid="n307" data-component="heading" id="_R_dkkbm_">
-                    <span className="inline" data-cid="n308">
-                      {copy.rolloutTitle}
-                    </span>
-                  </h2>
-                </div>
-              </div>
-              <FeatureCard2 d={copy.rollout} styles={{className:"my-6"}} />
-            </section>
+<ResearchBenchmarks />
+<section className="audience-additional" aria-labelledby="audience-extra-title">
+<div className="audience-additional-copy"><h2 id="audience-extra-title">Care beyond the front desk.</h2>
+<p>Keep in-person and remote appointments connected to the team coordinating the day.</p>
+<a className="audience-text-link" href="/solutions/teleconsultations">Explore teleconsultation workflows <span aria-hidden="true">→</span></a></div>
+<IllustrationSlot name="teleconsultations-callout" />
+</section>
+{copy.faqs && <FaqSection className="audience-faq" id="audience-faq-title" items={copy.faqs}/>}
+<AudienceExplorer compact />
 <section className="min-h-140 flex -mx-32 py-16 px-8 flex-col justify-center items-center gap-3 text-center bg-border max-md:-mx-4 max-lg:min-h-0 md:max-lg:-mx-16.5 2xl:min-h-180 2xl:-mx-112" data-ditto-id="style-blockquote" aria-labelledby="_R_ekkbm_">
               <h2 className="block mb-1 text-foreground text-[2.625rem] font-bold leading-12 tracking-[-1.5px] text-balance [font-feature-settings:'lnum',_'locl'_0] max-lg:text-[1.625rem] max-lg:leading-8 max-lg:tracking-[-0.62px]" data-ditto-id="style-br-2" data-component="heading" id="_R_ekkbm_">
-                See {BRAND_NAME} at your clinic.
+                See {BRAND_NAME} at your practice.
               </h2>
               <p className="block mb-3 text-xl leading-7 tracking-[-0.12px] [font-feature-settings:'lnum',_'locl'_0] max-md:[font-size:inherit] max-md:leading-[inherit] max-md:tracking-[inherit]" data-ditto-id="style-figcaption-2">
                 {copy.cta}

@@ -1,12 +1,24 @@
 /** @type {import('next').NextConfig} */
+const staticExport = process.env.CAPTURE_STATIC_EXPORT === "1";
+function serviceOrigin(value, name) {
+  const url = new URL(value);
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.pathname !== '/' || url.search || url.hash) throw new Error(`Invalid ${name}`);
+  return url.origin;
+}
 const nextConfig = {
-  output: "export",
-  ...(process.env.NODE_ENV === "development" ? { async rewrites() { return [{ source: "/control/:path*", destination: "http://127.0.0.1:3040/control/:path*" }]; } } : {}),
+  output: staticExport ? "export" : "standalone",
+  htmlLimitedBots: /.*/,
+  ...(staticExport ? {} : {
+    async rewrites() {
+      const control = serviceOrigin(process.env.CAPTURE_CONTROL_ORIGIN || 'http://127.0.0.1:3040', 'CAPTURE_CONTROL_ORIGIN');
+      const lookup = serviceOrigin(process.env.CAPTURE_LOOKUP_ORIGIN || 'http://127.0.0.1:4500', 'CAPTURE_LOOKUP_ORIGIN');
+      return [{source:'/control/:path*',destination:`${control}/control/:path*`},{source:'/business-lookup',destination:`${lookup}/business-lookup`}];
+    },
+  }),
   webpack: (config) => { if (process.env.CAPTURE_DISABLE_BUILD_CACHE === "1") config.cache = false; return config; },
   images: { unoptimized: true },
   reactStrictMode: false,
   eslint: { ignoreDuringBuilds: true },
-  // The dev-tools badge would leak into reviewer/validator screenshots.
   devIndicators: false,
 };
 export default nextConfig;

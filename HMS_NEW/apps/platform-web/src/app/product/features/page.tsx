@@ -7,6 +7,7 @@ import "../../home-product-art.css";
 import ProductArtwork from "../../ProductArtwork";
 import "./ditto.css";
 import "./product-polish.css";
+import CoreWorkflows from "../../components/core-workflows";
 import ClinicComparison from "./ClinicComparison";
 import MediaCard from "./components/media-card";
 import FeatureCard from "./components/feature-card";
@@ -1344,6 +1345,7 @@ export default function Page() {
               <MarketingAsset name="1d" />
               {FeatureCard_data.map((d, i) => <FeatureCard key={i} d={d} styles={FeatureCard_styles[i]} />)}
             </section>
+            <CoreWorkflows />
             <ClinicComparison />
             <section className="min-h-140 flex -mx-32 py-16 px-8 flex-col justify-center items-center gap-3 text-center bg-border max-md:-mx-4 max-lg:min-h-0 md:max-lg:-mx-16.5 2xl:min-h-180 2xl:-mx-112" data-ditto-id="style-header-2" aria-labelledby="_R_7kkbm_">
               <h2 className="block mb-1 text-foreground text-[2.625rem] font-bold leading-12 tracking-[-1.5px] text-balance [font-feature-settings:'lnum',_'locl'_0] max-lg:text-[1.625rem] max-lg:leading-8 max-lg:tracking-[-0.62px]" data-ditto-id="style-div-11" data-component="heading" id="_R_7kkbm_">

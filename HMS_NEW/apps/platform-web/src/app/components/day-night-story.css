@@ -1,0 +1,114 @@
+.day-night-story { margin-top:96px; isolation:isolate; scroll-margin-top:0; }
+.day-night-story { --story-sky:#fffaf0; --story-ink:#302c29; --story-muted:#746c62; --story-line:#46362428; --story-horizon:#f8e7cb; --story-glow:#ffe7b6; --cloud-opacity:.85; }
+.day-night-stage { position:relative; overflow:hidden; padding:64px max(28px,5.8vw) 30px; background:var(--story-sky); color:var(--story-ink); }
+.day-night-heading { position:relative; z-index:2; text-align:center; margin:0 auto; max-width:780px; }
+.day-night-heading h2 { color:inherit; font-size:clamp(40px,4.4vw,64px); font-weight:600; letter-spacing:-2.4px; line-height:1.04; margin:0; text-wrap:balance; }
+.day-night-heading > p { font-size:17px; line-height:1.5; color:var(--story-muted); margin:20px 0 0; }
+.day-night-sky { position:relative; height:170px; pointer-events:none; }
+.day-night-sun,.day-night-dawn { position:absolute; left:12%; top:22px; width:86px; height:86px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#ffe7a9,#f1ae55 85%); box-shadow:0 0 65px 20px #f4b3521c,inset -6px -8px 22px #e7882a18; }
+.day-night-moon { position:absolute; right:14%; top:20px; width:86px; height:86px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#f8f4e9,#c9d4ed); box-shadow:0 0 65px 12px #d0ddff12; opacity:0; }
+.day-night-moon::after { content:""; position:absolute; left:28px; top:-13px; width:79px; height:79px; border-radius:50%; background:var(--story-sky); }
+.day-night-dawn { left:17%; top:20px; opacity:0; }
+.day-night-stars { position:absolute; inset:0; opacity:0; }
+.day-night-stars i { position:absolute; width:3px; height:3px; border-radius:50%; background:#e6eaf5; }
+.day-night-phases { display:none; }
+.day-night-track { position:relative; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:40px 28px; list-style:none; padding:0; margin:10px 0 36px; }
+.day-night-moment { position:relative; min-width:0; }
+.day-night-event-icon { display:grid; place-items:center; width:42px; height:42px; border-radius:50%; background:var(--event-tone); color:#3c3d43; margin-bottom:13px; }
+.day-night-peach { --event-tone:#f4dcb9; }.day-night-green { --event-tone:#dce7c6; }.day-night-lilac { --event-tone:#e1d8ee; }.day-night-blue { --event-tone:#d5e3f1; }
+.day-night-time { display:block; font-size:14px; line-height:1.4; color:var(--story-muted); font-variant-numeric:tabular-nums; margin-bottom:8px; }
+.day-night-event h3 { font-size:20px; font-weight:550; line-height:1.25; letter-spacing:-.35px; margin:0 0 9px; color:inherit; }
+.day-night-event > p { font-size:14px; line-height:1.55; max-width:224px; color:var(--story-muted); margin:0; }
+
+/* CSS is a complete, ordered story until the motion enhancement is ready. */
+.day-night-story[data-animated=true] .day-night-stage { height:calc(100svh - 80px); min-height:540px; max-height:900px; padding-top:24px; padding-bottom:20px; display:flex; flex-direction:column; }
+.day-night-story[data-animated=true] .day-night-heading h2 { font-size:clamp(44px,4.1vw,60px); }
+.day-night-story[data-animated=true] .day-night-heading > p { margin-top:14px; font-size:16px; }
+.day-night-story[data-animated=true] .day-night-sky { position:absolute; left:0; right:0; top:140px; height:140px; }
+.day-night-story[data-animated=true] .day-night-phases { display:grid; position:relative; z-index:2; text-align:center; margin-top:20px; }
+.day-night-phase { grid-area:1/1; font-size:20px; letter-spacing:-.4px; line-height:1.4; margin:0; color:var(--story-ink); }
+.day-night-phase span { display:block; font-size:12px; letter-spacing:.1px; color:var(--story-muted); margin-bottom:9px; }
+.day-night-story[data-animated=true] .day-night-window { position:relative; flex:1; min-height:240px; margin:16px calc(-1 * max(28px,5.8vw)) 0; overflow:hidden; }
+.day-night-story[data-animated=true] .day-night-track { position:absolute; left:0; bottom:0; display:flex; align-items:flex-end; width:max-content; gap:0; padding:0 0 0 max(56px,8vw); margin:0; }
+.day-night-story[data-animated=true] .day-night-window::before { content:""; position:absolute; left:0; right:0; bottom:25px; height:1px; background:var(--story-line); }
+.day-night-story[data-animated=true] .day-night-moment { width:280px; flex:none; padding-right:38px; height:235px; display:flex; flex-direction:column; }
+.day-night-story[data-animated=true] .day-night-moment:nth-child(even) { height:195px; }
+.day-night-story[data-animated=true] .day-night-event { position:relative; padding-left:20px; z-index:1; }
+.day-night-story[data-animated=true] .day-night-event-icon { width:36px; height:36px; position:absolute; left:-18px; top:0; }
+.day-night-story[data-animated=true] .day-night-time { padding-top:8px; margin-bottom:14px; margin-left:8px; }
+.day-night-story[data-animated=true] .day-night-event h3 { font-size:19px; max-width:225px; }
+.day-night-story[data-animated=true] .day-night-event > p { font-size:13px; max-width:214px; }
+.day-night-story[data-animated=true] .day-night-stem { display:block; position:absolute; left:0; top:44px; bottom:25px; width:1px; background:var(--story-line); }
+.day-night-story[data-animated=true] .day-night-stem i { position:absolute; bottom:-4px; left:-3px; width:7px; height:7px; border-radius:50%; background:var(--event-tone); }
+@media(min-width:1450px) { .day-night-story[data-animated=true] .day-night-moment { width:320px; height:280px; }.day-night-story[data-animated=true] .day-night-moment:nth-child(even) { height:230px; } }
+@media(max-width:899px) { .day-night-story { margin-top:56px; }.day-night-stage { padding:48px 28px 28px; }.day-night-heading h2 { letter-spacing:-1.6px; }.day-night-heading > p { max-width:380px; margin:18px auto 0; }.day-night-track { grid-template-columns:repeat(2,minmax(0,1fr)); gap:32px; }.day-night-sky { height:140px; }.day-night-sun { width:64px; height:64px; left:18%; }.day-night-moon { display:block; opacity:1; width:64px; height:64px; right:18%; background:#d5def2; }.day-night-moon::after { width:60px; height:60px; left:21px; top:-10px; }.day-night-event h3 { font-size:18px; }.day-night-track .day-night-moment:last-child { grid-column:1/-1; } }
+@media(max-width:480px) { .day-night-stage { padding-inline:22px; }.day-night-heading h2 { font-size:40px; }.day-night-heading > p { font-size:15px; }.day-night-track { gap:30px 22px; }.day-night-event > p { font-size:13px; }.day-night-sky { height:125px; } }
+@media(prefers-reduced-motion:reduce) { .day-night-stage *, .day-night-stage *::after { animation:none!important; transition:none!important; }.day-night-moon { opacity:1; }.day-night-track { transform:none!important; } }
+
+/* An illustrated sky, with the chapter message as its focal point. */
+/* Both edges fade from the live sky colours, so the band never starts or ends on a hard line. */
+.day-night-story { position:relative; padding-top:72px; background:linear-gradient(#fff,var(--story-sky) 72px); }
+.day-night-story::after { content:""; display:block; height:120px; background:linear-gradient(var(--story-horizon),#fff); }
+.day-night-stage { background:radial-gradient(ellipse at 16% 42%,var(--story-glow) 0%,transparent 43%),linear-gradient(180deg,var(--story-sky) 12%,var(--story-sky) 36%,var(--story-horizon) 100%); }
+.day-night-heading > p { opacity:.8; }
+.day-night-sky { z-index:0; }
+.day-night-sun,.day-night-dawn { width:96px; height:96px; background:radial-gradient(circle at 36% 27%,#fff0b8,#f8c65e 68%,#efb345); box-shadow:0 0 0 15px #ffd37313,0 0 0 34px #ffd3730c,0 0 85px 25px #ffd37318,inset -5px -6px 12px #d78a2820; }
+.day-night-rays { position:absolute; inset:-17px; }
+.day-night-rays i { position:absolute; top:0; left:calc(50% - 2px); width:4px; height:10px; border-radius:4px; background:#eab550; transform-origin:2px 65px; transform:rotate(calc(var(--ray) * 30deg)); }
+.day-night-moon { width:88px; height:88px; background:radial-gradient(circle at 30% 60%,#fff8dc,#d6dff4); filter:drop-shadow(0 0 22px #d5e3ff2b); mask-image:radial-gradient(circle at 76% 24%,transparent 0 43%,#000 44%); }
+.day-night-moon::after { display:none; }
+.day-night-moon > i { position:absolute; border-radius:50%; background:#9aaed33b; }.day-night-moon > i:nth-child(1) { width:13px; height:13px; left:14px; top:44px; }.day-night-moon > i:nth-child(2) { width:7px; height:7px; left:31px; top:65px; }.day-night-moon > i:nth-child(3) { width:5px; height:5px; left:9px; top:30px; }
+.day-night-stars { z-index:0; }
+.day-night-stars i { width:var(--star-size)!important; height:var(--star-size)!important; background:#f9f0d4; box-shadow:0 0 8px #d9e9ff66; opacity:var(--star-opacity,.6); }
+.day-night-stars .star-sparkle { width:9px!important; height:9px!important; opacity:.9; border-radius:0; clip-path:polygon(50% 0,61% 38%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 38%); }
+.day-night-clouds { position:absolute; inset:0; opacity:var(--cloud-opacity); }
+.day-night-cloud { position:absolute; width:150px; height:35px; border-radius:70px; background:linear-gradient(#fff,#eef0f0); box-shadow:0 12px 30px #9dabc00c; opacity:.8; }
+.day-night-cloud > i { position:absolute; border-radius:50%; background:inherit; bottom:10px; }.day-night-cloud > i:nth-child(1) { width:58px; height:58px; left:21px; }.day-night-cloud > i:nth-child(2) { width:75px; height:75px; left:55px; bottom:6px; }.day-night-cloud > i:nth-child(3) { width:45px; height:45px; right:8px; bottom:6px; }
+.cloud-1 { left:0%; top:58%; transform:scale(.85); }.cloud-2 { right:4%; top:23%; transform:scale(1.1); }.cloud-3 { left:24%; top:65%; transform:scale(.55); opacity:.5; }.cloud-4 { right:22%; top:76%; transform:scale(.65); opacity:.45; }.cloud-5 { left:44%; top:4%; transform:scale(.4); opacity:.35; }
+.day-night-phases { position:relative; z-index:2; }
+.day-night-phase { font-family:"Capture Display",system-ui,sans-serif; font-size:clamp(27px,2.4vw,36px); font-weight:500; line-height:1.13; letter-spacing:-.85px; text-wrap:balance; }
+.day-night-phase > span { font-family:system-ui,sans-serif; font-size:12px; font-weight:500; line-height:1.5; letter-spacing:.2px; margin-bottom:12px; }
+.day-night-phase strong { font-weight:650; display:inline; background:linear-gradient(transparent 77%,#e6b96955 77%,#e6b96955 93%,transparent 93%); box-decoration-break:clone; -webkit-box-decoration-break:clone; }
+.day-night-chapter-progress { display:none; }
+.day-night-story[data-animated=true] .day-night-sky { inset:0; height:auto; }
+.day-night-story[data-animated=true] .day-night-sun { top:27%; left:13%; }
+.day-night-story[data-animated=true] .day-night-moon { top:28%; right:14%; }
+.day-night-story[data-animated=true] .day-night-dawn { top:27%; left:16%; }
+.day-night-story[data-animated=true] .day-night-phases { margin-top:32px; min-height:110px; }
+.day-night-story[data-animated=true] .day-night-chapter-progress { position:relative; z-index:2; display:flex; justify-content:center; gap:6px; margin:14px 0 0; }
+.day-night-chapter-progress i { height:3px; width:22px; border-radius:5px; background:currentColor; opacity:.16; }
+.day-night-stage[data-chapter="0"] .day-night-chapter-progress i:nth-child(1),.day-night-stage[data-chapter="1"] .day-night-chapter-progress i:nth-child(2),.day-night-stage[data-chapter="2"] .day-night-chapter-progress i:nth-child(3),.day-night-stage[data-chapter="3"] .day-night-chapter-progress i:nth-child(4) { opacity:.85; }
+.day-night-story[data-animated=true] .day-night-window { z-index:1; }
+@media(min-width:900px) and (max-height:800px) {
+ .day-night-story[data-animated=true] .day-night-heading h2 { font-size:40px; letter-spacing:-1.7px; }
+ .day-night-story[data-animated=true] .day-night-heading > p { font-size:14px; margin-top:10px; }
+ .day-night-story[data-animated=true] .day-night-phases { margin-top:18px; min-height:82px; }
+ .day-night-story[data-animated=true] .day-night-phase { font-size:26px; }
+ .day-night-story[data-animated=true] .day-night-phase > span { font-size:11px; margin-bottom:8px; }
+ .day-night-story[data-animated=true] .day-night-chapter-progress { margin-top:8px; }
+ .day-night-story[data-animated=true] .day-night-window { margin-top:12px; min-height:220px; }
+ .day-night-story[data-animated=true] .day-night-moment { height:215px; }
+ .day-night-story[data-animated=true] .day-night-moment:nth-child(even) { height:185px; }
+ .day-night-story[data-animated=true] .day-night-sun,.day-night-story[data-animated=true] .day-night-moon,.day-night-story[data-animated=true] .day-night-dawn { top:29%; }
+}
+@media(max-width:899px) {
+ .day-night-story { padding-top:40px; }.day-night-story::after { height:56px; }
+ .day-night-sky { height:200px; margin-bottom:10px; }
+ .day-night-sun,.day-night-dawn { width:76px; height:76px; top:40px; left:14%; }
+ .day-night-rays { inset:-14px; }.day-night-rays i { height:8px; transform-origin:2px 52px; }
+ .day-night-moon { width:70px; height:70px; right:15%; top:48px; }
+ .cloud-1 { top:56%; left:0; transform:scale(.5); }.cloud-2 { top:65%; right:0; transform:scale(.55); }.cloud-3,.cloud-4,.cloud-5 { display:none; }
+}
+@media(prefers-reduced-motion:reduce) { .day-night-stars { opacity:.25; }.day-night-cloud { transform:none; }.day-night-stage { --cloud-opacity:.85; } }
+
+
+.day-night-story[data-animated=true] .day-night-stage { padding-bottom:38px; }
+.day-night-story[data-animated=true] .day-night-window { margin-bottom:0; }
+.day-night-stars .star-sparkle { width:6px!important; height:6px!important; opacity:var(--star-opacity,.7); }
+
+/* Registered so the day/night text colour flip eases instead of snapping. */
+@property --story-ink { syntax:"<color>"; inherits:true; initial-value:#302c29; }
+@property --story-muted { syntax:"<color>"; inherits:true; initial-value:#746c62; }
+@property --story-line { syntax:"<color>"; inherits:true; initial-value:#46362428; }
+.day-night-stage { transition:--story-ink .6s ease,--story-muted .6s ease,--story-line .6s ease; }
+@media(prefers-reduced-motion:reduce) { .day-night-stage { transition:none; } }

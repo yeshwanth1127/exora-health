@@ -27,3 +27,12 @@ img[src^="/assets/capture-rebrand/capability-"] { object-fit:contain!important; 
 
 /* Longer Capture CTA labels must not wrap inside the captured button widths. */
 [data-ditto-id="style-div-149"]{width:auto;max-width:100%}[data-ditto-id="style-div-149"]>a{white-space:nowrap;flex-shrink:0}@media(max-width:767px){[data-ditto-id="style-div-149"]{width:100%}}
+
+/* Captured desktop named lines do not exist in the narrow-screen grid.
+   Explicit tracks keep the hero inside the viewport instead of an implicit edge column. */
+@media (max-width: 1023px) {
+  [data-reference-hero-grid] { grid-template-columns: 16px minmax(0, 1fr) 16px !important; }
+  [data-reference-hero-grid] > div { grid-column: 2 / 3 !important; }
+  [data-reference-hero-grid]::before,
+  [data-reference-hero-grid]::after { width: 100%; }
+}

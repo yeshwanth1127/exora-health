@@ -1,6 +1,6 @@
 // Only fixed route/event identifiers cross the analytics boundary. Never pass form values.
 export const ANALYTICS_CONSENT_KEY='website.analytics-consent.v1';
-export const analyticsPaths=['/','/product/features','/pricing','/teams','/enterprise','/contact-sales','/help','/releases','/blog','/blog/a-clearer-front-desk','/blog/a-shared-clinic-day','/blog/follow-ups-with-a-clear-next-step','/quote','/onboarding','/privacy','/resources/clinic-front-desk-checklist','/solutions/ai-receptionist','/solutions/whatsapp-outreach','/solutions/google-business-management','/solutions/clinic-analytics'];
+export const analyticsPaths=['/','/product/features','/pricing','/teams','/enterprise','/contact-sales','/help','/releases','/blog','/blog/a-clearer-front-desk','/blog/a-shared-clinic-day','/blog/follow-ups-with-a-clear-next-step','/quote','/onboarding','/privacy','/resources/clinic-front-desk-checklist','/solutions/ai-receptionist','/solutions/whatsapp-outreach','/solutions/google-business-management','/solutions/clinic-analytics','/solutions/teleconsultations','/labs-diagnostics','/specialties/dental','/specialties/physiotherapy'];
 export function analyticsPath(value:string):string|undefined {
  try{const path=new URL(value,'https://analytics.invalid').pathname.replace(/\/$/,'')||'/';return analyticsPaths.includes(path)?path:undefined;}catch{return undefined;}
 }

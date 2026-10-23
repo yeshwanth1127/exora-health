@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-23",
+  "layout": "Centered illustrative phone showing a Google clinic listing, then the question and a 680px search field; remains before the Capture blog.",
+  "mockup": "Static code-native example, marked Example listing; no invented ratings, reviews or operating status.",
+  "unchanged_behavior": "Existing Arc combobox, server-side Google autocomplete and separate report window.",
+  "checks": {
+    "production_export_and_type_validation": "PASS: 32 pages",
+    "existing_tests": "PASS: 12 tests",
+    "desktop_visual": "PASS: phone, question and wide search centered",
+    "narrow_layout": "PASS: 354 CSS pixel viewport, no horizontal overflow",
+    "search_focus_and_escape": "PASS on desktop and narrow viewport",
+    "additional_paid_api_calls": 0
+  },
+  "build_recovery": "Initial export encountered ENOSPC; removed only this checkout's generated .next/cache and successfully rebuilt with CAPTURE_DISABLE_BUILD_CACHE=1.",
+  "screenshots": ["phone-layout-desktop.png", "phone-layout-mobile.png"],
+  "deployment": "Local preview only"
+}

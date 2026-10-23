@@ -36,3 +36,20 @@
 @media(max-width:600px){.capture-solutions-menu{width:calc(100vw - 32px);grid-template-columns:1fr;gap:18px;padding:18px;max-height:calc(100vh - 90px);overflow:auto}.capture-solutions-support{border-left:0;border-top:1px solid #e8ecef;padding:16px 0 0}.capture-mobile-primary{gap:4px}.capture-solutions-menu small{font-size:12px}}
 
 .capture-solution-icon{background:transparent;width:48px;height:48px}.capture-solution-icon img{width:48px;height:48px;object-fit:contain}
+.capture-supporting-modules{display:flex;gap:24px;border-top:1px solid #e7ecf1;margin:16px 2px 0;padding:14px 0 0;font-size:13px;color:#425c72}.capture-supporting-modules a{display:inline-flex;gap:20px;align-items:center}.capture-supporting-modules a:hover{text-decoration:underline}
+.capture-solutions-menu{width:680px;grid-template-columns:1.15fr 1fr;gap:20px;padding:20px}.capture-solutions-menu strong{font-size:14px}.capture-solutions-menu small{line-height:1.5}.capture-solutions-menu a{gap:10px;padding:10px 6px}.capture-solutions-menu .capture-solution-icon{width:40px;height:40px;color:#335c7e}.capture-solutions-menu .capture-solution-icon img{width:40px;height:40px}.capture-solutions-specialties{border-left:1px solid #e8ecef;padding-left:20px}.capture-solutions-specialties a>span:nth-child(2){flex:1}.capture-solutions-specialties .capture-remote-link{display:block;margin-top:8px;padding-left:8px;color:#0875de}.capture-solutions-resources{display:flex!important;gap:24px;flex-wrap:wrap;grid-column:1/-1;border-top:1px solid #e8ecef;padding-top:12px;font-size:12px}.capture-solutions-resources a{padding:4px 0}.capture-menu-kicker{color:#73808c}
+@media(max-width:600px){.capture-solutions-menu{width:calc(100vw - 32px);grid-template-columns:1fr;gap:16px;padding:16px}.capture-solutions-specialties{border-left:0;border-top:1px solid #e8ecef;padding:16px 0 0}.capture-solutions-menu .capture-solution-icon{width:32px;height:32px}.capture-solutions-menu .capture-solution-icon img{width:32px;height:32px}.capture-solutions-resources{gap:20px}.capture-supporting-modules{gap:12px;flex-wrap:wrap}}
+/* Three equal navigation sections: organisations, specialties, help & updates. */
+.capture-solutions-menu{width:960px;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;padding:24px;align-items:start}
+.capture-solutions-primary,.capture-solutions-specialties,.capture-solutions-resources{min-width:0}
+.capture-solutions-specialties,.capture-solutions-resources{border-left:1px solid #e8edf2;padding-left:24px}
+.capture-solutions-resources{display:block!important;grid-column:auto;border-top:0;padding-top:0;font-size:14px}
+.capture-solutions-resources .capture-menu-kicker{margin-bottom:12px}.capture-solutions-resources a{display:flex;align-items:center;gap:10px;padding:10px 6px}.capture-solutions-resources a>span:nth-child(2){flex:1}.capture-resource-icon{display:grid;place-items:center;width:40px;height:40px;flex:none;color:#527894}
+.capture-solutions-menu .capture-solution-icon img{width:44px;height:44px}.capture-solutions-menu small{font-size:12px}
+@media(max-width:1023px){.capture-solutions-menu{width:calc(100vw - 32px);grid-template-columns:1fr;gap:18px;padding:18px;max-height:calc(100dvh - 88px);overflow:auto;overscroll-behavior:contain}.capture-solutions-specialties,.capture-solutions-resources{border-left:0;border-top:1px solid #e8edf2;padding:16px 0 0}.capture-solutions-menu .capture-solution-icon img{width:38px;height:38px}.capture-solutions-menu a{padding:9px 4px}.capture-solutions-resources a{padding:9px 4px}}
+
+/* Reuse original artwork: hue rotation leaves black/white outlines intact. */
+.capture-solution-hospital img,.audience-discover-hospital .audience-discover-art img{filter:hue-rotate(150deg) saturate(.85)}
+.capture-solution-labs img,.audience-discover-labs .audience-discover-art img{filter:hue-rotate(65deg) saturate(.65)}
+/* Named icon classes carry colour only; keep the artwork background transparent. */
+.capture-solutions-menu .capture-solution-icon{background:transparent}

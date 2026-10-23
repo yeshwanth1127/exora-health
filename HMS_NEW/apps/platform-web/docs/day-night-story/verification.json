@@ -1,0 +1,25 @@
+{
+  "target": "/Users/deepakonda/Documents/ClinicSheet-public-preview/web",
+  "placement": "Immediately before #home-blog in src/app/page.tsx",
+  "checks": {
+    "typecheck": "PASS",
+    "existing_tests": "PASS: 12 tests",
+    "production_public_export": "PASS: 31 static pages",
+    "desktop_scroll": "PASS: day, night and reverse scroll observed",
+    "compact_layout": "PASS: 354 CSS pixels observed, seven events, zero horizontal event clipping",
+    "reduced_motion": "Static fallback implemented; OS preference switching not exercised",
+    "deployment": "Local preview only"
+  },
+  "visuals": [
+    "daylight-clean.jpg",
+    "night-clean.jpg"
+  ],
+  "scope": [
+    "src/app/components/day-night-story.tsx",
+    "src/app/components/day-night-story.css",
+    "src/app/page.tsx",
+    "package.json",
+    "package-lock.json"
+  ],
+  "latest_adjustment": "Removed decorative orbit curves, order numbers, footer links, sun face, and white edge overlays. Added seeded irregular star positions and per-star drift/twinkling."
+}

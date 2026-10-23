@@ -1,0 +1,71 @@
+.rank-map { margin-top:38px; padding-bottom:38px; border-bottom:1px solid #e8e7e5; }
+.rank-map-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; }
+.rank-map-heading h2 { font-size:22px; font-weight:500; letter-spacing:-.035em; margin:0; line-height:1.3; }
+.rank-map-heading p { color:#8c8d88; font-size:12px; line-height:1.6; margin:8px 0 0; max-width:560px; }
+.rank-map-badge { flex:none; font-size:11px; color:#6b6d66; background:#f4f4f1; border-radius:999px; padding:6px 11px; }
+
+/* Headline numbers for whichever hospital the map is showing. */
+.rank-map-stats { display:grid; grid-template-columns:1.6fr repeat(3,1fr); margin:20px 0 16px; border:1px solid #e8e7e5; border-radius:14px; overflow:hidden; }
+.rank-map-stats>div { padding:12px 16px; border-left:1px solid #e8e7e5; min-width:0; }
+.rank-map-stats>div:first-child { border-left:0; }
+.rank-map-stats dt { font-size:11px; color:#8c8d88; }
+.rank-map-stats dd { margin:4px 0 0; font-size:20px; font-weight:500; letter-spacing:-.03em; color:#282827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rank-map-stats>div:first-child dd { font-size:15px; line-height:1.6; }
+.rank-map-stats small { font-size:12px; color:#8c8d88; font-weight:400; letter-spacing:0; }
+
+.rank-map-body { display:grid; grid-template-columns:minmax(0,1fr) 250px; gap:28px; align-items:start; }
+.rank-map-stage { min-width:0; }
+.rank-map-canvas { height:520px; border-radius:16px; overflow:hidden; box-shadow:0 0 0 1px #e8e7e5; background:#f2f2f0; }
+.rank-map-canvas:focus-visible { outline:2px solid #111827; outline-offset:3px; }
+.rank-map-canvas .maplibregl-ctrl-group { border-radius:10px; box-shadow:0 0 0 1px #e1e1dd; }
+.rank-map-legend { display:flex; flex-wrap:wrap; gap:8px 20px; margin-top:12px; font-size:12px; color:#6b6d66; }
+.rank-map-legend span { display:flex; align-items:center; gap:7px; }
+.rank-map-legend i { width:12px; height:12px; border-radius:50%; }
+
+.rank-map-point { padding-top:4px; }
+.rank-map-eyebrow { display:flex; gap:6px; align-items:center; color:#8c8d88; font-size:11px; }
+.rank-map-point h3 { font-size:18px; font-weight:500; letter-spacing:-.03em; margin:8px 0 2px; }
+.rank-map-coords { font-size:11px; color:#a2a49d; margin:0; font-variant-numeric:tabular-nums; }
+.rank-map-rank { font-size:56px; font-weight:500; letter-spacing:-.06em; line-height:1; margin:16px 0 0; }
+.rank-map-rank small { font-size:24px; opacity:.55; margin-right:3px; vertical-align:top; line-height:1.6; }
+.rank-map-label { font-size:11px; color:#8c8d88; margin:22px 0 8px; }
+.rank-map-results { list-style:none; margin:0; padding:0; display:grid; gap:6px; }
+.rank-map-results li { display:flex; align-items:center; gap:10px; font-size:12px; line-height:1.35; color:#5f615b; background:#f6f6f3; border-radius:10px; padding:9px 11px; }
+.rank-map-results li>span { display:grid; place-items:center; width:22px; height:22px; border-radius:50%; background:#fff; font-size:10px; font-weight:700; color:#6b6d66; flex:none; }
+.rank-map-results li.is-focus { background:#111827; color:#fff; font-weight:600; }
+.rank-map-results li.is-focus>span { background:#fff; color:#111827; }
+.rank-map-results .rank-map-gap { background:none; justify-content:center; padding:2px; font-size:10px; color:#a2a49d; }
+
+/* Leaderboard: one row per hospital, the clinic's own row marked, the mapped row filled. */
+.rank-board { margin-top:34px; }
+.rank-board-heading h3 { font-size:18px; font-weight:500; letter-spacing:-.03em; margin:0; }
+.rank-board-heading p { color:#8c8d88; font-size:12px; line-height:1.6; margin:6px 0 14px; }
+.rank-board-columns, .rank-board-list button { display:grid; grid-template-columns:36px minmax(0,1fr) 190px 80px 80px; align-items:center; gap:12px; }
+.rank-board-columns { padding:0 14px 8px; font-size:11px; color:#a2a49d; border-bottom:1px solid #e8e7e5; }
+.rank-board-columns span:nth-child(n+4) { text-align:right; }
+.rank-board-list { list-style:none; margin:0; padding:0; }
+.rank-board-list li { border-bottom:1px solid #f0efec; }
+.rank-board-list button { width:100%; padding:12px 14px; border:0; background:none; font:inherit; text-align:left; color:#3f413c; cursor:pointer; border-radius:12px; transition:background .15s; }
+.rank-board-list button:hover { background:#f7f7f5; }
+.rank-board-list button.is-focus { background:#111827; color:#fff; }
+.rank-board-list button:focus-visible { outline:2px solid #111827; outline-offset:2px; }
+.rank-board-place { font-size:13px; font-weight:700; color:#8c8d88; font-variant-numeric:tabular-nums; }
+.rank-board-list button.is-focus .rank-board-place { color:#9ca3af; }
+.rank-board-name { font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rank-board-name em { font-style:normal; font-size:10px; font-weight:700; color:#15803d; background:#dcfce7; border-radius:999px; padding:2px 7px; margin-left:8px; vertical-align:2px; }
+.rank-board-share { display:flex; align-items:center; gap:10px; font-size:13px; font-variant-numeric:tabular-nums; }
+.rank-board-share>span { flex:1; height:6px; border-radius:6px; background:#ecece8; overflow:hidden; }
+.rank-board-share i { display:block; height:100%; border-radius:6px; background:#16a34a; }
+.rank-board-list button.is-focus .rank-board-share>span { background:#ffffff26; }
+.rank-board-average, .rank-board-distance { text-align:right; font-size:13px; font-variant-numeric:tabular-nums; }
+.rank-board-distance { color:#8c8d88; }
+.rank-board-list button.is-focus .rank-board-distance { color:#9ca3af; }
+.rank-board-note { font-size:11px; color:#a2a49d; margin:12px 0 0; }
+
+@media(max-width:760px) {
+  .rank-map-body { grid-template-columns:1fr; } .rank-map-heading { flex-direction:column; } .rank-map-canvas { height:420px; }
+  .rank-map-stats { grid-template-columns:repeat(3,1fr); } .rank-map-stats>div:first-child { grid-column:1/-1; border-bottom:1px solid #e8e7e5; } .rank-map-stats>div:nth-child(2) { border-left:0; }
+  .rank-board-columns, .rank-board-list button { grid-template-columns:28px minmax(0,1fr) 90px; } .rank-board-columns span:nth-child(n+4), .rank-board-average, .rank-board-distance { display:none; }
+  .rank-board-share>span { display:none; } .rank-board-share { justify-content:flex-end; }
+}
+@media(prefers-reduced-motion:reduce) { .rank-board-list button { transition:none; } }

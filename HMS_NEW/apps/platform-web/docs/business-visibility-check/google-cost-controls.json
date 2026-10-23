@@ -1,0 +1,30 @@
+{
+  "verified_date": "2026-10-23",
+  "project": "capture-512419",
+  "key_name": "Maps Platform API Key",
+  "key_allowed_apis": ["Places API (New)"],
+  "daily_project_quotas": {
+    "AutocompletePlacesRequest": 2,
+    "GetPlaceRequest": 1,
+    "SearchTextRequest": 0,
+    "GetPhotoMediaRequest": 0,
+    "LookupMediaRequest": 0,
+    "LookupReviewPostsRequest": 0,
+    "LookupUserContentSummaryRequest": 0,
+    "SearchMediaRequest": 0,
+    "SearchNearbyRequest": 0,
+    "SearchReviewPostsRequest": 0
+  },
+  "provider_confirmation": "Google Cloud confirmed all ten quota decreases; saved credential list shows Places API (New) as the only permitted API.",
+  "cost_estimate": "At most 62 autocomplete requests and 31 details requests per 31-day month: USD 0.95046 before taxes using current global first paid-tier rates of 0.00283 per autocomplete and the highest details tier of 0.025 per request, ignoring free allowances. This is an estimate, not a dollar-denominated billing cap or protection against existing charges.",
+  "budget_alert_created": false,
+  "sources": [
+    "https://developers.google.com/maps/billing-and-pricing/pricing",
+    "https://developers.google.com/maps/billing-and-pricing/manage-costs"
+  ],
+  "notes": [
+    "Quotas apply across all keys in this project; API restriction applies to the named key.",
+    "Typing and pausing can consume both daily autocomplete requests quickly.",
+    "Do not raise quotas or broaden API permissions without user authorization."
+  ]
+}

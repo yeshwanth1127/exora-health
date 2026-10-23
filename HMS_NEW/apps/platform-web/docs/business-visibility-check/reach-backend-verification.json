@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-23",
+  "implementation": {
+    "endpoint": "/business-lookup?mode=report&id=<place-id>&session=<session-token>",
+    "rubric": "reach-readiness-1.0",
+    "checks": 17,
+    "weights": {
+      "google": 40,
+      "website": 20,
+      "search": 20,
+      "contact": 20
+    },
+    "ui": [
+      "Local Arc Gauge",
+      "Four category panels",
+      "Local Arc Donut with evidence filtering",
+      "Evidence and suggested fixes",
+      "Explicit partial and quota-error states"
+    ]
+  },
+  "checks": {
+    "backend_tests": "PASS: 27",
+    "existing_web_tests": "PASS: 12",
+    "production_export_and_types": "PASS: 33 pages, 739 sanitized files",
+    "invalid_place_http": "PASS: 400 before Google request",
+    "cross_origin_http": "PASS: 403",
+    "credential_public_export_scan": "PASS: no key in public export",
+    "arc_source_styles": "PASS: copied Gauge, Donut, MetricCard and AnimatedCounter files byte-identical to local sources",
+    "arc_geometry_comparison": "PASS: Gauge width 176px and number font 36px; metric padding 24px, radius 34px and Arial rendered family match reference",
+    "donut_pointer_filter": "PASS: review filter shows four rows, reset shows 17",
+    "donut_keyboard_filter": "PASS: ArrowUp and Enter change the selected result; partial example review filter shows one row",
+    "partial_state": "PASS: main label becomes Google profile score, 40% coverage, website categories show dashes and 11 unassessed checks",
+    "narrow_layout": "PASS: 354 CSS pixel viewport; no document or card overflow; Donut filter works",
+    "live_linked_website": "PASS: https://avoke.in/ retrieved and assessed; six homepage checks passed, four need attention, one unassessed",
+    "live_google_combined_report": "BLOCKED: Google returned quota exhausted on the single attempt; the UI showed the error and no score; provider limits were unchanged",
+    "reduced_motion": "Original source branches retained; OS reduced-motion setting not exercised"
+  },
+  "example": {
+    "fictional": true,
+    "score": 76,
+    "passed": 13,
+    "review": 4,
+    "unknown": 0
+  },
+  "limits": [
+    "Not deployed; static hosting still needs a hosted same-origin backend",
+    "Google-derived scoring requires permission/terms review before public launch",
+    "No traffic, ranking, revenue, completed booking, Lighthouse or accessibility compliance claims",
+    "Only homepage HTML and linked-host robots rules are inspected; JavaScript, linked flows and actual Google indexing are not tested",
+    "Gauge zero-value UI state and OS reduced-motion switching were not exercised; original source behavior is retained."
+  ],
+  "screenshots": [
+    "reach-score-summary.png",
+    "reach-donut-breakdown.png",
+    "reach-partial-report.png",
+    "reach-report-mobile.png",
+    "reach-live-quota-state.png"
+  ]
+}

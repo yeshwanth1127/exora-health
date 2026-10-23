@@ -3,7 +3,7 @@ import {SEARCH_ENABLED,SITE_ORIGIN} from '../lib/site';
 export const dynamic='force-static';
 export default function robots():MetadataRoute.Robots {
  if(!SEARCH_ENABLED)return {rules:{userAgent:'*',disallow:'/'}};
- const disallow=['/admin/','/control/','/staff/'];
+ const disallow=['/admin/','/control/','/staff/','/business-lookup'];
  // Setup/preview pages remain crawlable so their noindex tags can be read.
- return {rules:[{userAgent:'*',allow:'/',disallow},{userAgent:['OAI-SearchBot','PerplexityBot','Claude-SearchBot'],allow:'/',disallow}],sitemap:SITE_ORIGIN+'/sitemap.xml',host:SITE_ORIGIN};
+ return {rules:[{userAgent:'*',allow:'/',disallow},{userAgent:['OAI-SearchBot','GPTBot','ChatGPT-User','Claude-SearchBot','ClaudeBot','Claude-User','PerplexityBot','Perplexity-User','Googlebot','Google-Extended','bingbot'],allow:'/',disallow}],sitemap:SITE_ORIGIN+'/sitemap.xml',host:SITE_ORIGIN};
 }

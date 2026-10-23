@@ -3,6 +3,8 @@ import { useEffect } from 'react';
 import DropdownMenu, { type RTMenu } from './ditto/DropdownMenu';
 import { brandContent } from "../lib/brand";
 import referenceMenus from './reference-menus.json';
+import {navigationMenus} from '../lib/navigation-menus';
+const publicMenus=brandContent(navigationMenus(referenceMenus as RTMenu[]));
 
 /** Local media controls and truthful, disconnected reference forms. */
 export default function ReferenceInteractions() {
@@ -64,5 +66,5 @@ export default function ReferenceInteractions() {
     }
     return () => ac.abort();
   }, []);
-  return <DropdownMenu menus={brandContent(referenceMenus) as RTMenu[]} />;
+  return <DropdownMenu menus={publicMenus} />;
 }

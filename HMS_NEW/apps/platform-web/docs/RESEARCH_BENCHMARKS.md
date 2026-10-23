@@ -1,0 +1,8 @@
+# Appointment-reminder research benchmarks
+
+These figures are general published study findings. They are not Capture customer outcomes, forecasts or guarantees. They do not establish identical effects for WhatsApp, AI voice, teleconsultations or every specialty. At the user’s request, visible cards contain only the figure and outcome label. The section header identifies these as published appointment-reminder research findings. Exact comparisons, publication dates, limitations and sources are retained here for editorial verification.
+
+- **25% lower no-show risk** and **23% higher attendance**: Robotham et al., BMJ Open (2016), systematic review and meta-analysis. Electronic text reminders versus no reminders; relative risks 0.75 and 1.23 respectively. They are relative effects, not percentage-point changes. These are different outcomes from the same review, not additive independent benefits. Source: https://bmjopen.bmj.com/content/6/10/e012116 (DOI: 10.1136/bmjopen-2016-012116).
+- **55–65% lower SMS reminder costs per attendance**: two trials summarized by Gurol-Urganci et al., Cochrane review (2013). Comparator: telephone reminders. This is not a reduction in total operating costs or staffing requirements. Cochrane describes heterogeneous, low to moderate quality evidence. Source: https://www.cochrane.org/evidence/CD007458_mobile-phone-messaging-reminders-attendance-healthcare-appointments (DOI: 10.1002/14651858.CD007458.pub3).
+
+The current section heading is “Small touchpoints. Measurable potential.” Visible study links, descriptions and the footer note were removed at the user’s request; source provenance remains in this document. No fabricated reduction or patient-volume claim is included.

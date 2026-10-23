@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-23",
+  "layout": "iPhone 15 Pro asset; upper approximately 60 percent revealed through a white fade; overlapping headline; supporting text; thicker Arc search.",
+  "checks": {
+    "production_export_and_types": "PASS: 32 pages, 733 sanitized files",
+    "existing_tests": "PASS: 12 tests",
+    "desktop_reveal": "400px visible stage / 669.94px device height = 59.7 percent",
+    "desktop_search_height": "64px",
+    "narrow_search_height": "60px",
+    "narrow_layout": "PASS: 354 CSS pixel viewport, no horizontal overflow",
+    "assets": "Frame and iOS status PNG both loaded with their original intrinsic sizes",
+    "search_menu_and_escape": "PASS, no query submitted",
+    "paid_api_requests": 0
+  },
+  "screenshots": ["iphone-fade-desktop.png", "iphone-fade-mobile.png"],
+  "frame_provenance": "device-frame-provenance.md",
+  "scope": "Local preview; provider restrictions unchanged"
+}
