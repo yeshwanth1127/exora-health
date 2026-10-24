@@ -1,8 +1,43 @@
 # Apple Messages demo with Amazon Connect
 
-The user selected Amazon Connect on 24 October 2026. AWS and Apple Business Register
-accounts do not exist yet, so cloud deployment and a real iPhone test are pending.
+The user selected Amazon Connect on 24 October 2026. Apple Business Register sign-in
+and service-terms acceptance are complete; the Messages account application is at
+the policy declarations step, with no account submitted. AWS has not been provisioned.
+Cloud deployment and a real iPhone test are pending.
 The local build does not simulate Apple approval or external message delivery.
+
+## Eligibility blocker found during registration
+
+Apple's [current channel policies](https://register.apple.com/resources/messages/messaging-documentation/policies)
+(version 3.1, updated 21 July 2026; checked 24 October 2026) state that Apple is not
+onboarding businesses that primarily offer medical or health-related services or
+products. This materially affects the proposed clinic booking rollout. The earlier
+setup sequence did not identify this restriction; it must not be treated as evidence
+that a clinic can obtain an account.
+
+The [registration guide](https://register.apple.com/resources/messages/messaging-documentation/register-your-acct)
+describes internal test accounts, but no healthcare exemption was established in
+the reviewed guidance. A software-company-owned synthetic internal test is a
+different application from an operating clinic; its eligibility for this particular
+medical-booking use case is **unconfirmed**. Obtain clarification from Apple/the
+selected MSP before making eligibility declarations or provisioning paid resources
+for this channel. Use the actual business and disclose the intended clinic use case.
+Do not rename a clinic or omit its activity to bypass the restriction.
+
+Prepared clarification request (not sent):
+
+> We develop clinic management software and want to test an HMS appointment-booking
+> integration using Amazon Connect. The proposed internal test would use synthetic
+> patient details and a demo clinic, with human reception available. Your channel
+> policy says medical/health businesses are not currently being onboarded. Is a
+> software-company-owned internal account eligible for this specific use case?
+> Separately, is any production appointment-booking account for an operating clinic
+> eligible? Please confirm the applicable account and experience requirements before
+> we submit an application or provision the channel.
+
+The registration policy checkboxes are still unchecked. There is no Apple account
+ID, MSP link or test invitation yet. The following deployment steps are conditional
+on eligibility and provider approval.
 
 ## Run the local clinic now
 
@@ -34,7 +69,7 @@ PG_PORT=54349 corepack pnpm apple:demo send AGENT
 Reception can then reply in the dashboard. A local demo reply remains queued.
 The actual cloud worker refuses demo-only bindings, including in production config.
 
-## Account steps the owner must complete
+## Account steps after eligibility is confirmed
 
 1. Create the company [AWS account](https://aws.amazon.com/), complete billing and
    verification, and arrange a company-administered local AWS login. Use a dedicated

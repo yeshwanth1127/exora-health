@@ -1,10 +1,19 @@
 # Apple Messages for Business: implementation and provider decision
 
 24 October 2026. Branch `codex/apple-messages-foundation`, based on main `2c773da`.
-The user selected **Amazon Connect** after the comparison below. Neither an AWS
-account nor an Apple Business Register account exists yet. The local implementation
-and deployment package are available; cloud deployment, provider acceptance and a
-physical iPhone test remain pending.
+The user selected **Amazon Connect** after the comparison below. Apple Business
+Register sign-in and service-terms acceptance are complete; the Messages account
+application is at policy declarations and has not been submitted. AWS is not yet
+provisioned. The local implementation and deployment package are available; cloud
+deployment, provider acceptance and a physical iPhone test remain pending.
+
+**New eligibility blocker, checked during registration on 24 October 2026:**
+[Apple's channel policies](https://register.apple.com/resources/messages/messaging-documentation/policies)
+say Apple is not onboarding businesses that primarily offer medical or health-related
+services or products. Clinic eligibility must not be assumed. No exemption for a
+software-company-owned synthetic internal test of this clinic use case was established.
+The deployment guide contains a prepared, unsent clarification request; verify the
+actual business and obtain Apple/MSP guidance before submission or paid provisioning.
 
 ## Current implementation
 
