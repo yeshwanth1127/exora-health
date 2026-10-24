@@ -1,0 +1,24 @@
+# Allow only the build inputs; never send repository state or credentials.
+**
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!apps/
+!apps/platform-web/
+!apps/platform-web/package.json
+!apps/platform-web/next.config.mjs
+!apps/platform-web/next-env.d.ts
+!apps/platform-web/postcss.config.mjs
+!apps/platform-web/tsconfig.json
+!apps/platform-web/src/
+!apps/platform-web/src/**
+!apps/platform-web/public/
+!apps/platform-web/public/**
+!apps/platform-web/scripts/
+!apps/platform-web/scripts/**
+**/.env*
+**/.git/**
+**/node_modules/**
+**/artifacts/**
+**/__pycache__/**
+**/*.pyc

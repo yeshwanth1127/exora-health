@@ -1,27 +1,33 @@
-name: capture-website
+name: paperwhale-website
 services:
   web:
-    image: nginx:stable-alpine@sha256:c59d1f8b1e0e42da75be973424cd72e23f7f8adfb54e982f4d1cd0216a5a5576
-    user: "101:101"
-    entrypoint: ["nginx", "-g", "daemon off;"]
+    image: paperwhale-website:${PAPERWHALE_RELEASE:?Set the source commit}
+    build:
+      context: ../../..
+      dockerfile: apps/platform-web/deploy/Dockerfile
+      args:
+        SOURCE_COMMIT: ${PAPERWHALE_RELEASE}
     restart: unless-stopped
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
-    pids_limit: 100
-    mem_limit: 256m
-    cpus: 0.75
-    volumes:
-      - /opt/capture-site/current:/srv:ro
-      - /opt/capture-site/config/nginx.conf:/etc/nginx/nginx.conf:ro
+    pids_limit: 150
+    mem_limit: 768m
+    cpus: 1
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      NEXT_TELEMETRY_DISABLED: 1
     tmpfs:
       - /tmp:size=32m,mode=1777
     networks: [website]
     healthcheck:
-      test: [CMD-SHELL, "wget -q -O /dev/null http://127.0.0.1:8080/"]
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
-      timeout: 3s
+      timeout: 10s
       retries: 3
+      start_period: 20s
     logging:
       driver: json-file
       options: {max-size: 5m, max-file: "2"}
@@ -35,12 +41,14 @@ services:
     pids_limit: 100
     mem_limit: 256m
     cpus: 0.75
-    depends_on: [web]
+    depends_on:
+      web:
+        condition: service_healthy
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - /opt/capture-site/config/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     tmpfs:

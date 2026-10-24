@@ -142,7 +142,7 @@ export default function Page() {
                     <h1 className="block text-color-002 text-[2.625rem] font-bold leading-12 tracking-[-1.5px] [font-feature-settings:normal] max-md:text-[1.375rem] max-md:leading-7 max-md:tracking-[-0.25px] md:max-lg:text-[1.625rem] md:max-lg:leading-8 md:max-lg:tracking-[-0.62px]" data-ditto-id="style-span-9">
                       Let’s talk about your clinic.
                     </h1>
-                    <p className="contact-preview-note">Explore how reception, appointments and patient conversations come together. Account creation and online requests are closed on this website.</p>
+                    <p className="contact-preview-note">Explore how reception, appointments and patient conversations come together. For demo requests, email <a href="mailto:hello@paperwhale.health">hello@paperwhale.health</a>.</p>
                     <a href="/product/features" className="h-12 min-h-9 flex mt-2 py-3 px-5 rounded-[10px] justify-center items-center text-background font-medium bg-primary">Explore the product</a>
                   </div>
                 </div>

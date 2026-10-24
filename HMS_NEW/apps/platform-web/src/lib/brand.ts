@@ -1,5 +1,5 @@
 /** Change this line to rename the product across the website. */
-export const BRAND_NAME = "Capture";
+export const BRAND_NAME = "Paperwhale";
 
 /** Applies the configured name to saved HTML content and plain text assets. */
 export function brandText(value: string): string {
