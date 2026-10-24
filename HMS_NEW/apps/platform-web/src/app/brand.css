@@ -1,6 +1,6 @@
 @font-face{font-family:"Capture Display";src:url('/assets/optimized/fonts/bricolage-grotesque.413e735780.woff2') format('woff2');font-style:normal;font-weight:200 800;font-display:swap}
 .capture-wordmark{display:inline-flex;align-items:center;gap:6px;font-family:"Capture Display",system-ui,sans-serif;font-size:23px;line-height:1.1;font-weight:750;letter-spacing:-.8px;white-space:nowrap;color:#171b18}
 .capture-wordmark>.capture-brand-symbol{display:grid;place-items:center;position:relative;width:38px;height:38px;flex:none;overflow:hidden;background:transparent;border:0;border-radius:0}
-.capture-brand-symbol img{position:absolute;width:64px;height:64px;max-width:none;object-fit:contain;transform:translateY(-2px)}
+.capture-brand-symbol img{position:absolute;width:48px;height:48px;max-width:none;object-fit:contain;transform:translateY(-1px)}
 body:not(:has(.arc-demo-scope)) :is(h1,h2,h3){font-family:"Capture Display",system-ui,sans-serif!important;font-optical-sizing:auto}
-.capture-showcase-mark{background:transparent;border:0;border-radius:0;width:28px;height:28px;overflow:hidden}.capture-showcase-mark img{width:44px;height:44px;max-width:none;object-fit:contain}
+.capture-showcase-mark{background:transparent;border:0;border-radius:0;width:28px;height:28px;overflow:hidden}.capture-showcase-mark img{width:34px;height:34px;max-width:none;object-fit:contain}
