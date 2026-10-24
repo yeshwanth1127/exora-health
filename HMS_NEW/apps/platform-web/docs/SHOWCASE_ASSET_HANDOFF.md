@@ -45,3 +45,7 @@ Verified locally: production static export, TypeScript and 12 existing tests pas
 The four generated hero images and their exact prompts are documented in `docs/assets/solution-heroes-v1/README.md`. Optimized alpha-preserving WebP files live in `public/assets/showcases/heroes-v1/`; all originals remain in the asset documentation directory. Heroes load eagerly; workflow illustrations remain lazy-loaded. Existing clinic/hospital artwork is preserved.
 
 The former three rollout cards are replaced by the shared `ResearchBenchmarks` component on audience and product solution pages. Cards display general published study figures beneath a header identifying appointment-reminder research. At the user’s request, cards show only their large figure and outcome label; study links, comparator details and limitations are retained in the research documentation. No invented customer count or outcome is used. See `docs/RESEARCH_BENCHMARKS.md`.
+
+## Coded workflow mockups (24 October 2026)
+
+The 19 workflow, starter and callout slots are now coded product mockups in the same style as the clinic and hospital panels, not images. `scripts/showcase-panels.py` builds them and merges them into `src/app/components/claude-asset-data.json`. `IllustrationSlot` renders the panel when one exists for its slot name, so `showcase-artwork.ts` keeps only the four hero images. Every name, time and count in the mockups is illustrative. Clinical questions are shown being handed to the clinician or care team, never answered by reception.

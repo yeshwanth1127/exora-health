@@ -9,7 +9,7 @@ import { ProgressDonut } from "../components/arc-report/progress-donut/progress-
 import { BottomSheet } from "../components/arc-report/bottom-sheet/bottom-sheet";
 import { Popover, PopoverTrigger, PopoverContent } from "../components/arc-report/popover/popover";
 import type { ReactNode } from "react";
-import HomeClosingCta from "../components/home-closing-cta";
+import PracticeCta from "../components/practice-cta";
 import { ClinicWidget } from "./clinic-widget";
 import "../components/arc-business/scope.css";
 import LocalRankMap, { type RankPreview } from "./local-rank-map";
@@ -117,7 +117,6 @@ export default function BusinessReport({ initialReport, rankPreview }: { initial
       <section className="reach-category-progress" aria-label="Category scores">
         {report.categories.map(category => <ProgressDonut key={category.key} value={category.score} label={category.label} detail={category.score === null ? "Not checked" : `${category.assessedChecks}/${category.totalChecks} checks completed`} />)}
       </section>
-      {rankPreview && <LocalRankMap preview={rankPreview} example={report.example} />}
       <div className="reach-findings">
         <section className="reach-evidence" aria-labelledby="reach-evidence-title">
           <div className="reach-evidence-heading"><div><h2 id="reach-evidence-title">{issues.length ? "What to improve" : "Your assessed checks look good"}</h2><p>{issues.length > 4 ? `Top 4 of ${issues.length} issues. Highest impact first.` : "Highest impact first. Expand a row for the evidence."}</p></div><ChecksSheet report={report} initialScope={scope} trigger={<button type="button">Read all</button>} /></div>
@@ -128,9 +127,8 @@ export default function BusinessReport({ initialReport, rankPreview }: { initial
         </section>
         <ClinicWidget profile={profile} preview={report.example} />
       </div>
-
-
+      {rankPreview && <LocalRankMap preview={rankPreview} />}
     </div>}
-    {report && profile && <HomeClosingCta demoOnly />}
+    {report && profile && <PracticeCta text={`See how ${BRAND_NAME} fits your patients, your team and your everyday workflow.`} className="max-w-240 mx-auto mt-16 rounded-2xl" />}
   </main>;
 }

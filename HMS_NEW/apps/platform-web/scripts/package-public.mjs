@@ -15,7 +15,7 @@ export function contentPolicy(html) {
   const hashes=[...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
     .filter(m=>! /\bsrc\s*=/.test(m[1]) && m[2])
     .map(m=>"'sha256-"+createHash('sha256').update(m[2]).digest('base64')+"'");
-  return ["default-src 'self'", "script-src 'self' "+[...new Set(hashes)].join(' '), "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob: https:", "font-src 'self' data:", "worker-src 'self' blob:", "connect-src 'self' https://tiles.openfreemap.org https://us.i.posthog.com https://eu.i.posthog.com", "frame-src 'self'", "media-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'none'"].join('; ');
+  return ["default-src 'self'", "script-src 'self' "+[...new Set(hashes)].join(' '), "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob: https:", "font-src 'self' data:", "connect-src 'self' https://us.i.posthog.com https://eu.i.posthog.com", "frame-src 'self'", "media-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'none'"].join('; ');
 }
 export const hostingRules=`# Static public website only; Apache 2.4 / LiteSpeed shared hosting.
 Options -Indexes -MultiViews

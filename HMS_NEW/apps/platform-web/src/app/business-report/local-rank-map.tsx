@@ -1,160 +1,257 @@
 "use client";
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
-import { MapPin } from "lucide-react";
-import "maplibre-gl/dist/maplibre-gl.css";
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { motion } from "motion/react";
+import { RotateCcw } from "lucide-react";
+import { motionTokens } from "../components/arc-business/motion-tokens";
+import { createTerrain, type TerrainHandle, type TerrainTile } from "./rank-terrain";
+import RankWards from "./rank-wards";
 import "./local-rank-map.css";
 
 export type RankHospital = { id: string; name: string; lat: number; lng: number; prominence: number };
-export type RankPreview = { query: string; targetId: string; hospitals: RankHospital[] };
+// `regions` are named areas such as neighbourhoods: [unique name, SVG path in view box units, centre lat, centre lng, short note like "3 wards"].
+export type RankCity = { name: string; noun: string; viewBox: [number, number]; projection: { lat0: number; minx: number; miny: number; scale: number }; regions: [name: string, path: string, lat: number, lng: number, note: string][] };
+export type RankPreview = { query: string; targetId: string; hospitals: RankHospital[]; areas?: [name: string, lat: number, lng: number][]; city?: RankCity };
 
-// A square grid of search points, like the geo-grid scans used by local rank tools.
-const GRID = 9, SPACING = 500, DEPTH = 20;
+// Hexagonal search spots: every centre within 9.6 km of the clinic, 1.5 km apart.
+const SPACING = 1.5, REACH = 9.6, DEPTH = 20;
+// Least to most visible, matching the legend.
 const levels = [
-  { id: "top", label: "Top 3", color: "#16a34a" },
-  { id: "mid", label: "4–10", color: "#2563eb" },
-  { id: "low", label: "11+ or not in top 20", color: "#dc2626" },
+  { label: `Not in top ${DEPTH}`, rgb: [236, 232, 247] },
+  { label: `11–${DEPTH}`, rgb: [196, 184, 244] },
+  { label: "4–10", rgb: [151, 124, 236] },
+  { label: "2–3", rgb: [94, 52, 224] },
+  { label: "#1", rgb: [43, 18, 104] },
 ] as const;
-const levelOf = (rank: number | null) => rank !== null && rank <= 3 ? levels[0] : rank !== null && rank <= 10 ? levels[1] : levels[2];
+const fillOf = (level: number) => `rgb(${levels[level].rgb.join(" ")})`;
+const levelOf = (rank: number | null) => rank === null ? 0 : rank === 1 ? 4 : rank <= 3 ? 3 : rank <= 10 ? 2 : 1;
+const normOf = (rank: number | null) => rank === null ? 0 : (DEPTH + 1 - rank) / DEPTH;
 const kmBetween = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => Math.hypot((a.lat - b.lat) * 111.32, (a.lng - b.lng) * 111.32 * Math.cos(a.lat * Math.PI / 180));
 const compass = ["east", "northeast", "north", "northwest", "west", "southwest", "south", "southeast"];
+const bearing = (from: { lat: number; lng: number }, to: { lat: number; lng: number }) => compass[Math.round(((Math.atan2(to.lat - from.lat, (to.lng - from.lng) * Math.cos(from.lat * Math.PI / 180)) * 180 / Math.PI + 360) % 360) / 45) % 8];
 const hash = (text: string) => { let h = 2166136261; for (const c of text) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return (h >>> 0) / 4294967295; };
 
-// ponytail: illustrative ranking model until a real scan exists; replace `order` with scan results per point.
-function buildScan({ hospitals, targetId }: RankPreview) {
-  const center = hospitals.find(h => h.id === targetId)!;
-  const points = Array.from({ length: GRID * GRID }, (_, index) => {
-    const row = Math.floor(index / GRID), column = index % GRID, half = (GRID - 1) / 2;
-    const east = (column - half) * SPACING, north = (half - row) * SPACING;
-    const lat = center.lat + north / 111320, lng = center.lng + east / (111320 * Math.cos(center.lat * Math.PI / 180));
-    const order = hospitals.map(h => ({ id: h.id, score: h.prominence - 2.2 * kmBetween({ lat, lng }, h) + (hash(`${h.id}:${index}`) - 0.5) * 2.6 })).sort((a, b) => b.score - a.score).map(h => h.id);
-    const km = Math.hypot(east, north) / 1000, angle = (Math.atan2(north, east) * 180 / Math.PI + 360) % 360;
-    return { index, row, column, lat, lng, order, label: km < 0.01 ? "At your hospital" : `${km.toFixed(1)} km ${compass[Math.round(angle / 45) % 8]}` };
-  });
-  const rankOf = (id: string, point: typeof points[number]) => { const position = point.order.indexOf(id) + 1; return position && position <= DEPTH ? position : null; };
-  const board = hospitals.map(h => {
-    const ranks = points.map(point => rankOf(h.id, point)), found = ranks.filter((rank): rank is number => rank !== null);
-    return { ...h, top3: found.filter(rank => rank <= 3).length, found: found.length, average: found.length ? found.reduce((a, b) => a + b, 0) / found.length : null, km: kmBetween(center, h) };
-  }).sort((a, b) => b.top3 - a.top3 || (a.average ?? 99) - (b.average ?? 99));
-  return { center, points, rankOf, board };
+type Spot = { lat: number; lng: number; km: number; top: string[]; area: string; where: string };
+// ponytail: illustrative ranking model until a real scan exists; replace `top` with scan results per spot.
+function searchFrom(hospitals: RankHospital[], lat: number, lng: number, salt: string) {
+  return hospitals.map(h => ({ id: h.id, score: h.prominence - 0.5 * kmBetween({ lat, lng }, h) + (hash(`${h.id}:${salt}`) - 0.5) * 2 }))
+    .sort((a, b) => b.score - a.score).slice(0, DEPTH).map(h => h.id);
 }
+function spotAt(center: RankHospital, lat: number, lng: number, top: string[], area: string): Spot {
+  const km = kmBetween(center, { lat, lng });
+  return { lat, lng, km, top, area, where: km < 0.75 ? "Where your hospital is" : `${km.toFixed(1)} km ${bearing(center, { lat, lng })} of your hospital` };
+}
+function buildHexes({ hospitals, targetId, areas = [] }: RankPreview) {
+  const center = hospitals.find(h => h.id === targetId)!;
+  const kmPerLng = 111.32 * Math.cos(center.lat * Math.PI / 180), steps = Math.ceil(REACH / SPACING) + 1;
+  const cells = [];
+  for (let q = -steps; q <= steps; q++) for (let r = -steps; r <= steps; r++) {
+    const x = SPACING * (q + r / 2), z = SPACING * Math.sqrt(3) / 2 * r;
+    if (Math.hypot(x, z) > REACH) continue;
+    const lat = center.lat - z / 111.32, lng = center.lng + x / kmPerLng;
+    const near = areas.map(([name, aLat, aLng]) => ({ name, km: kmBetween({ lat, lng }, { lat: aLat, lng: aLng }) })).sort((a, b) => a.km - b.km)[0];
+    const spot = spotAt(center, lat, lng, searchFrom(hospitals, lat, lng, `${q}:${r}`), "");
+    spot.area = near && near.km < 1.6 ? near.name : spot.km < 0.75 ? center.name : `Spot ${spot.km.toFixed(1)} km ${bearing(center, spot)}`;
+    cells.push({ x, z, q, r, ...spot });
+  }
+  return { center, cells, home: cells.findIndex(c => c.q === 0 && c.r === 0) };
+}
+function buildAreas({ hospitals, targetId, city }: RankPreview) {
+  if (!city) return null;
+  const center = hospitals.find(h => h.id === targetId)!, k = Math.cos(city.projection.lat0 * Math.PI / 180);
+  const spots = city.regions.map(([name, , lat, lng]) => spotAt(center, lat, lng, searchFrom(hospitals, lat, lng, `a${name}`), name));
+  const shapes = city.regions.map(([name, path, , , note]) => ({ name, path, note }));
+  const home: [number, number] = [(center.lng * k - city.projection.minx) * city.projection.scale, (-center.lat - city.projection.miny) * city.projection.scale];
+  return { city, spots, shapes, home };
+}
+const rankIn = (spot: Spot, id: string) => spot.top.indexOf(id) + 1 || null;
 
-export default function LocalRankMap({ preview, example }: { preview: RankPreview; example: boolean }) {
-  const scan = useMemo(() => buildScan(preview), [preview]);
-  const { center, points, rankOf, board } = scan;
+export default function LocalRankMap({ preview }: { preview: RankPreview }) {
+  const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const hexes = useMemo(() => buildHexes(preview), [preview]);
+  const areas = useMemo(() => buildAreas(preview), [preview]);
+  const { center, cells, home } = hexes;
+  const byId = useMemo(() => new Map(preview.hospitals.map(h => [h.id, h])), [preview]);
+  const [view, setView] = useState<"hexes" | "areas">("hexes");
   const [focusId, setFocusId] = useState(preview.targetId);
-  const [selected, setSelected] = useState(Math.floor(GRID * GRID / 2) - GRID + 2);
-  const [ready, setReady] = useState(false);
-  const container = useRef<HTMLDivElement>(null);
-  const map = useRef<MapLibreMap | null>(null);
+  const focusHospital = byId.get(focusId)!, you = focusId === preview.targetId;
 
-  const focus = board.find(h => h.id === focusId)!;
-  const point = points[selected];
-  const rank = rankOf(focusId, point);
-  const position = board.findIndex(h => h.id === preview.targetId) + 1;
-  const shown = board.slice(0, 8);
-  if (!shown.some(h => h.id === preview.targetId)) shown.push(board[position - 1]);
+  // Leaderboard across the hex region: how often each hospital is in the top 3, and its average rank where found.
+  const board = useMemo(() => {
+    const found = new Map<string, number[]>();
+    for (const cell of cells) cell.top.forEach((hid, index) => { const list = found.get(hid) ?? []; list.push(index + 1); found.set(hid, list); });
+    return [...found].map(([hid, list]) => ({ ...byId.get(hid)!, top3: list.filter(rank => rank <= 3).length, average: list.reduce((a, b) => a + b, 0) / list.length, km: kmBetween(center, byId.get(hid)!) }))
+      .sort((a, b) => b.top3 - a.top3 || a.average - b.average);
+  }, [cells, byId, center]);
 
-  // Real map tiles: OpenFreeMap's Positron style (OpenStreetMap data, free, no key). Pins are placed by latitude and longitude.
-  useEffect(() => {
-    let cancelled = false;
-    import("maplibre-gl").then(({ default: maplibregl }) => {
-      if (cancelled || !container.current) return;
-      const instance = new maplibregl.Map({ container: container.current, style: "https://tiles.openfreemap.org/styles/positron", center: [center.lng, center.lat], zoom: 13.4, cooperativeGestures: true, dragRotate: false, pitchWithRotate: false, attributionControl: { compact: true } });
-      instance.touchZoomRotate.disableRotation();
-      instance.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-      const lats = points.map(p => p.lat), lngs = points.map(p => p.lng);
-      // Refit whenever the box changes size so the whole grid stays in view; the bottom padding clears the attribution.
-      const fit = () => instance.fitBounds([[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]], { padding: { top: 28, right: 56, bottom: 48, left: 28 }, animate: false });
-      fit();
-      instance.on("resize", fit);
-      instance.on("load", () => {
-        fit();
-        const empty = { type: "FeatureCollection" as const, features: [] };
-        instance.addSource("rank-grid", { type: "geojson", data: empty });
-        instance.addSource("rank-hospital", { type: "geojson", data: empty });
-        const radius = (extra: number) => ["interpolate", ["linear"], ["zoom"], 11, 6 + extra, 13.4, 14 + extra, 16, 24 + extra] as unknown as number;
-        instance.addLayer({ id: "rank-selected", type: "circle", source: "rank-grid", filter: ["==", ["get", "selected"], true], paint: { "circle-radius": radius(5), "circle-color": "rgba(0,0,0,0)", "circle-stroke-color": "#111827", "circle-stroke-width": 2.5 } });
-        instance.addLayer({ id: "rank-pins", type: "circle", source: "rank-grid", paint: { "circle-radius": radius(0), "circle-color": ["get", "color"], "circle-opacity": 0.92, "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
-        instance.addLayer({ id: "rank-labels", type: "symbol", source: "rank-grid", layout: { "text-field": ["get", "label"], "text-font": ["Noto Sans Bold"], "text-size": ["interpolate", ["linear"], ["zoom"], 11, 0, 12.4, 9, 13.4, 12, 16, 15], "text-allow-overlap": true, "text-ignore-placement": true }, paint: { "text-color": "#ffffff" } });
-        instance.addLayer({ id: "rank-hospital-dot", type: "circle", source: "rank-hospital", paint: { "circle-radius": 7, "circle-color": "#111827", "circle-stroke-color": "#ffffff", "circle-stroke-width": 3 } });
-        instance.addLayer({ id: "rank-hospital-name", type: "symbol", source: "rank-hospital", layout: { "text-field": ["get", "name"], "text-font": ["Noto Sans Bold"], "text-size": 12, "text-offset": [0, 1.1], "text-anchor": "top", "text-allow-overlap": true }, paint: { "text-color": "#111827", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
-        instance.on("click", "rank-pins", event => { const index = event.features?.[0]?.properties?.index; if (typeof index === "number") setSelected(index); });
-        instance.on("mouseenter", "rank-pins", () => { instance.getCanvas().style.cursor = "pointer"; });
-        instance.on("mouseleave", "rank-pins", () => { instance.getCanvas().style.cursor = ""; });
-        setReady(true);
-      });
-      map.current = instance;
-    });
-    return () => { cancelled = true; map.current?.remove(); map.current = null; setReady(false); };
-  }, [center, points]);
+  const spots: Spot[] = view === "areas" && areas ? areas.spots : cells;
+  const noun = view === "areas" && areas ? areas.city.noun : "spots";
+  const ranks = useMemo(() => spots.map(spot => rankIn(spot, focusId)), [spots, focusId]);
+  const counts = levels.map((_, level) => ranks.filter(rank => levelOf(rank) === level).length);
+  const found = ranks.filter(rank => rank !== null).length;
+  const best = ranks.reduce<number | null>((pick, rank, i) => rank !== null && (pick === null || rank < ranks[pick]! || (rank === ranks[pick] && spots[i].km < spots[pick].km)) ? i : pick, null);
+  const wins = new Map<string, number>(); for (const spot of spots) wins.set(spot.top[0], (wins.get(spot.top[0]) ?? 0) + 1);
+  const [usualLeader, usualWins] = [...wins].sort((a, b) => b[1] - a[1])[0];
+  const subject = you ? "you" : focusHospital.name;
 
-  useEffect(() => {
-    const instance = map.current;
-    if (!ready || !instance) return;
-    (instance.getSource("rank-grid") as GeoJSONSource).setData({ type: "FeatureCollection", features: points.map(p => {
-      const value = rankOf(focusId, p);
-      return { type: "Feature", geometry: { type: "Point", coordinates: [p.lng, p.lat] }, properties: { index: p.index, label: value === null ? "20+" : String(value), color: levelOf(value).color, selected: p.index === selected } };
-    }) });
-    (instance.getSource("rank-hospital") as GeoJSONSource).setData({ type: "FeatureCollection", features: [{ type: "Feature", geometry: { type: "Point", coordinates: [focus.lng, focus.lat] }, properties: { name: focus.name } }] });
-  }, [ready, focusId, selected, focus, points, rankOf]);
-
-  const move = (event: KeyboardEvent) => {
-    const delta: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
-    const step = delta[event.key]; if (!step) return;
-    event.preventDefault();
-    const row = Math.min(GRID - 1, Math.max(0, point.row + step[0])), column = Math.min(GRID - 1, Math.max(0, point.column + step[1]));
-    setSelected(row * GRID + column);
-  };
-
-  const share = (h: { top3: number }) => Math.round(h.top3 / points.length * 100);
-  return <section className="rank-map" aria-labelledby="rank-map-title">
-    <div className="rank-map-heading">
-      <div><h2 id="rank-map-title">Where patients can find you</h2><p>Each pin is one Google Maps search for “{preview.query}”, made from that spot. {points.length} spots, {SPACING / 1000} km apart, centred on {center.name}.</p></div>
-      {example && <span className="rank-map-badge">Illustrative ranks · no scan run</span>}
-    </div>
-
-    <dl className="rank-map-stats">
-      <div><dt>Showing</dt><dd>{focus.name}</dd></div>
-      <div><dt>Top 3 share</dt><dd>{share(focus)}%</dd></div>
-      <div><dt>Average rank</dt><dd>{focus.average === null ? "—" : focus.average.toFixed(1)}</dd></div>
-      <div><dt>Found in top {DEPTH}</dt><dd>{focus.found}<small>/{points.length}</small></dd></div>
-    </dl>
-
-    <div className="rank-map-body">
-      <div className="rank-map-stage">
-        <div ref={container} className="rank-map-canvas" tabIndex={0} onKeyDown={move} aria-label={`Map of ${points.length} search spots. Arrow keys move between spots; details appear beside the map.`} />
-        <div className="rank-map-legend" aria-label="Legend">{levels.map(level => <span key={level.id}><i style={{ background: level.color }} />{level.label}</span>)}</div>
+  const nearestFound = (i: number) => ranks.reduce<number | null>((pick, rank, j) => rank !== null && j !== i && (pick === null || kmBetween(spots[i], spots[j]) < kmBetween(spots[i], spots[pick])) ? j : pick, null);
+  function card(i: number) {
+    const spot = spots[i], rank = ranks[i], leader = byId.get(spot.top[0])!, near = rank === null ? nearestFound(i) : null;
+    return <div className="rank-card">
+      <div className="rank-card-head">
+        <p className="rank-card-place">{spot.area}</p>
+        <p className="rank-card-where">{view === "areas" && areas ? `${areas.shapes[i].note} · ` : ""}{spot.where}</p>
       </div>
-      <aside className="rank-map-point" aria-live="polite">
-        <span className="rank-map-eyebrow"><MapPin size={13} aria-hidden="true" /> Searching from</span>
-        <h3>{point.label}</h3>
-        <p className="rank-map-coords">{point.lat.toFixed(4)}, {point.lng.toFixed(4)}</p>
-        <div className="rank-map-rank" style={{ color: levelOf(rank).color }}><small>#</small>{rank ?? "20+"}</div>
-        <p className="rank-map-label">Top results here</p>
-        <ol className="rank-map-results">
-          {point.order.slice(0, 3).map((id, index) => { const h = board.find(item => item.id === id)!; return <li key={id} className={id === focusId ? "is-focus" : ""}><span>{index + 1}</span>{h.name}</li>; })}
-          {rank !== null && rank > 3 && <><li className="rank-map-gap" aria-hidden="true">{rank > 4 ? `${rank - 4} more` : ""}</li><li className="is-focus"><span>{rank}</span>{focus.name}</li></>}
-          {rank === null && <li className="rank-map-gap">{focus.name} is not in the top {DEPTH}</li>}
-        </ol>
-      </aside>
-    </div>
+      <dl className="rank-card-rows">
+        <div data-tone={rank === null ? "none" : rank <= 3 ? "good" : undefined}><dt>{you ? "Your rank" : "Rank"}</dt><dd>{rank === null ? `Not in top ${DEPTH}` : `#${rank}`}</dd></div>
+        <div><dt>Ranks first</dt><dd>{leader.id === preview.targetId ? "You" : leader.name}</dd></div>
+        {rank !== null && rank > 1 && <div><dt>Gap to #1</dt><dd>{rank - 1} {rank === 2 ? "place" : "places"}</dd></div>}
+        {near !== null && <div><dt>Nearest with {you ? "you" : "them"}</dt><dd>{spots[near].area} · #{ranks[near]}</dd></div>}
+      </dl>
+    </div>;
+  }
 
-    <div className="rank-board" aria-labelledby="rank-board-title">
-      <div className="rank-board-heading"><h3 id="rank-board-title">Top hospitals in this area</h3><p>Ranked by how often they appear in the top 3 across all {points.length} spots. Select one to see its map.</p></div>
+  const summary = <div className="rank-summary">
+    <p className="rank-summary-place">{view === "areas" && areas ? `${areas.city.name} · all ${spots.length} ${noun}` : `${spots.length} spots within ${REACH} km`}</p>
+    <p className="rank-summary-total"><span className="rank-summary-value">{found}<small> of {spots.length}</small></span><span className="rank-summary-label">{noun} show {subject} in the top {DEPTH}</span></p>
+    <p className="rank-summary-note">{best === null
+      ? `${you ? "You're" : `${focusHospital.name} is`} not in the top ${DEPTH} in any ${noun.replace(/s$/, "")} yet. ${byId.get(usualLeader)!.name} ranks first in ${usualWins} of them.`
+      : `Strongest in ${spots[best].area} at #${ranks[best]}.${found / spots.length < 0.25 ? ` Missing from ${spots.length - found} ${noun}.` : ""}`}</p>
+  </div>;
+
+  const position = board.findIndex(h => h.id === preview.targetId) + 1;
+  const leaders = board.slice(0, 8);
+  if (position > 8) leaders.push(board[position - 1]);
+  const share = (h: { top3: number }) => Math.round(h.top3 / cells.length * 100);
+  const views: { id: "hexes" | "areas"; label: string }[] = [{ id: "hexes", label: "Hex grid" }, ...(areas ? [{ id: "areas" as const, label: `${areas.city.name} ${areas.city.noun}` }] : [])];
+
+  return <section className="rank-terrain" aria-labelledby={`${id}-title`}>
+    <header className="rank-terrain-top">
+      <div className="rank-terrain-header">
+        <h2 id={`${id}-title`}>Where patients can find you</h2>
+        <p>{view === "areas" && areas ? `Each area is a Google Maps search for “${preview.query}” from its centre.` : `Each tile is a Google Maps search for “${preview.query}” from that spot, ${SPACING} km apart.`} Colour shows where {focusHospital.name} appears.</p>
+      </div>
+      {views.length > 1 && <div className="rank-switch" role="group" aria-label="Map view"><div className="rank-switch-track">
+        {views.map(option => <button key={option.id} type="button" className="rank-switch-button" aria-pressed={view === option.id} onClick={() => setView(option.id)}>
+          {view === option.id && <motion.span layoutId={`${id}-switch`} className="rank-switch-selection" transition={motionTokens.spring.snappy} />}
+          <span className="rank-switch-label">{option.label}</span>
+        </button>)}
+      </div></div>}
+    </header>
+
+    {view === "areas" && areas ? <RankWards
+      viewBox={areas.city.viewBox} home={areas.home} noun={noun} shapes={areas.shapes}
+      label={`Map of ${spots.length} ${areas.city.name} ${noun} coloured by where ${focusHospital.name} ranks for “${preview.query}”. ${levels.map((level, i) => `${counts[i]} ${level.label}`).join(", ")}. The ranked list that follows has every area.`}
+      fills={ranks.map(rank => fillOf(levelOf(rank)))} bins={ranks.map(levelOf)} norms={ranks.map(normOf)}
+      values={ranks.map(rank => rank === null ? "—" : `#${rank}`)}
+      order={spots.map((_, i) => i).sort((a, b) => (ranks[a] ?? 99) - (ranks[b] ?? 99) || spots[a].km - spots[b].km)}
+      legend={levels.map((level, i) => ({ label: level.label, fill: fillOf(i), count: counts[i] }))}
+      legendNote={`Shaded by where ${focusHospital.name} ranks. Areas without ${you ? "you" : "them"} are listed nearest first.`}
+      listMeta={`Ranked by ${you ? "your" : "their"} position`}
+      summary={summary}
+      openSummary={i => <div className="rank-summary">
+        <p className="rank-summary-place">{areas.shapes[i].note} · {spots[i].where}</p>
+        <p className="rank-summary-total"><span className="rank-summary-value">{areas.shapes[i].name}</span></p>
+        <p className="rank-summary-note">{ranks[i] === null ? `${you ? "You're" : "They're"} not in the top ${DEPTH} here.` : `${you ? "You rank" : "Ranks"} #${ranks[i]} here.`}</p>
+      </div>}
+      card={card}
+      detail={i => { const near = ranks[i] === null ? nearestFound(i) : null; return <>
+        <p className="rank-wards-detail-title">Top results in {spots[i].area}</p>
+        <ol className="rank-wards-results">
+          {spots[i].top.slice(0, 5).map((hid, index) => <li key={hid} data-on={hid === focusId || undefined}><span>{index + 1}</span>{byId.get(hid)!.name}</li>)}
+          {ranks[i] !== null && ranks[i]! > 5 && <li data-on><span>{ranks[i]}</span>{focusHospital.name}</li>}
+        </ol>
+        {ranks[i] === null && <p className="rank-wards-detail-text">{focusHospital.name} is not in the top {DEPTH} for this search.{near !== null && ` Nearest area where ${you ? "you" : "they"} appear: ${spots[near].area} (#${ranks[near]}).`}</p>}
+      </>; }}
+    /> : <HexView cells={cells} home={home} ranks={ranks} summary={summary} card={card} counts={counts}
+      label={`Hex heatmap of ${cells.length} Google Maps searches for “${preview.query}” around ${center.name}, coloured by where ${focusHospital.name} ranks. ${levels.map((level, i) => `${counts[i]} ${level.label}`).join(", ")}. The table that follows ranks hospitals across all spots.`} />}
+
+    <div className="rank-board" aria-labelledby={`${id}-board`}>
+      <div className="rank-board-heading"><h3 id={`${id}-board`}>Top hospitals in your region</h3><p>Ranked by how often they appear in the top 3 across the {cells.length} spots within {REACH} km. Select one to see its map.</p></div>
       <div className="rank-board-columns" aria-hidden="true"><span>#</span><span>Hospital</span><span>Top 3 share</span><span>Avg. rank</span><span>Distance</span></div>
       <ol className="rank-board-list">
-        {shown.map(h => { const place = board.indexOf(h) + 1, you = h.id === preview.targetId; return <li key={h.id}>
-          <button type="button" aria-pressed={h.id === focusId} className={`${h.id === focusId ? "is-focus" : ""}${you ? " is-you" : ""}`} onClick={() => setFocusId(h.id)}>
+        {leaders.map(h => { const place = board.indexOf(h) + 1, mine = h.id === preview.targetId; return <li key={h.id}>
+          <button type="button" aria-pressed={h.id === focusId} className={h.id === focusId ? "is-focus" : undefined} onClick={() => setFocusId(h.id)}>
             <span className="rank-board-place">{place}</span>
-            <span className="rank-board-name">{h.name}{you && <em>You</em>}</span>
+            <span className="rank-board-name">{h.name}{mine && <em>You</em>}</span>
             <span className="rank-board-share"><span><i style={{ width: `${share(h)}%` }} /></span>{share(h)}%</span>
-            <span className="rank-board-average">{h.average === null ? "—" : h.average.toFixed(1)}</span>
-            <span className="rank-board-distance">{you ? "—" : `${h.km.toFixed(1)} km`}</span>
+            <span className="rank-board-average">{h.average.toFixed(1)}</span>
+            <span className="rank-board-distance">{mine ? "—" : `${h.km.toFixed(1)} km`}</span>
           </button>
         </li>; })}
       </ol>
-      <p className="rank-board-note">Hospital names and locations from OpenStreetMap. Rankings are illustrative until a live scan runs.</p>
+      <p className="rank-board-note">Hospital, place and ward boundaries from OpenStreetMap; wards are grouped into neighbourhoods. Rankings are illustrative until a live scan runs.</p>
     </div>
   </section>;
+}
+
+type Cell = Spot & { x: number; z: number; q: number; r: number };
+function HexView({ cells, home, ranks, summary, card, counts, label }: { cells: Cell[]; home: number; ranks: (number | null)[]; summary: ReactNode; card(i: number): ReactNode; counts: number[]; label: string }) {
+  const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const [hover, setHover] = useState<number | null>(null);
+  const [focus, setFocus] = useState<number | null>(null);
+  const [shown, setShown] = useState<number | null>(null);
+  const [live, setLive] = useState("");
+  const plot = useRef<HTMLDivElement>(null), canvas = useRef<HTMLCanvasElement>(null), panel = useRef<HTMLDivElement>(null);
+  const engine = useRef<TerrainHandle | null>(null);
+  const tiles: TerrainTile[] = useMemo(() => ranks.map(rank => ({ rgb: levels[levelOf(rank)].rgb, norm: normOf(rank) })), [ranks]);
+  const firstTiles = useRef(tiles);
+  const describe = (i: number) => `${cells[i].area}, ${cells[i].where}: ${ranks[i] === null ? `not in the top ${DEPTH}` : `ranked #${ranks[i]}`}.`;
+
+  function fly(i: number | null) {
+    const next = i !== null && i === focus ? null : i;
+    setFocus(next); engine.current?.setFocus(next);
+    if (next !== null) { setShown(next); setLive(`Flew to ${describe(next)}`); } else if (focus !== null) setLive("Back to the whole area.");
+  }
+  const pick = useRef(fly);
+  useEffect(() => { pick.current = fly; });
+  useEffect(() => {
+    if (!plot.current || !canvas.current || !panel.current) return;
+    const handle = createTerrain({ plot: plot.current, canvas: canvas.current, panel: panel.current }, cells, firstTiles.current, home, SPACING, {
+      onHover(i) { setHover(i); if (i !== null) setShown(i); },
+      onPick(i) { pick.current(i); },
+    });
+    engine.current = handle;
+    return () => { handle.destroy(); engine.current = null; };
+  }, [cells, home]);
+  const seeded = useRef(false);
+  useEffect(() => { if (!seeded.current) { seeded.current = true; return; } engine.current?.setTiles(tiles, focus ?? hover); }, [tiles]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function activate(i: number | null) { setHover(i); if (i !== null) setShown(i); engine.current?.setActive(i); }
+  const keys = (event: KeyboardEvent) => {
+    const step: Record<string, [number, number]> = { ArrowRight: [1, 0], ArrowLeft: [-1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    if (event.key === "Escape") { if (focus !== null) fly(null); else if (hover !== null) { activate(null); setLive(""); } else return; event.preventDefault(); return; }
+    if (event.key === "+" || event.key === "=" || event.key === "-" || event.key === "_") { event.preventDefault(); engine.current?.zoom(event.key === "+" || event.key === "=" ? 1.25 : 0.8); return; }
+    if ((event.key === "Enter" || event.key === " ") && (hover ?? focus) !== null) { event.preventDefault(); fly(hover ?? focus); return; }
+    const move = step[event.key]; if (!move) return;
+    event.preventDefault();
+    const from = hover ?? focus ?? home, here = cells[from];
+    // The neighbour whose direction best matches the arrow.
+    const next = cells.map((c, i) => ({ i, dx: c.x - here.x, dz: c.z - here.z })).filter(c => c.i !== from && Math.hypot(c.dx, c.dz) < SPACING * 1.1)
+      .sort((a, b) => (b.dx * move[0] + b.dz * move[1]) - (a.dx * move[0] + a.dz * move[1]))[0];
+    if (next && next.dx * move[0] + next.dz * move[1] > 0) { activate(next.i); setLive(describe(next.i)); }
+  };
+
+  return <>
+    {summary}
+    <div className="rank-terrain-viewport">
+      <div ref={plot} className="rank-terrain-plot" tabIndex={0} role="group" aria-label="Search spots" aria-describedby={`${id}-hint`} onKeyDown={keys}
+        onFocus={event => { if (hover === null && focus === null && event.currentTarget.matches(":focus-visible")) { activate(home); setLive(describe(home)); } }}
+        onBlur={() => { if (hover !== null && focus === null) activate(null); }}>
+        <canvas ref={canvas} className="rank-terrain-canvas" role="img" aria-label={label} />
+        <div ref={panel} className="rank-terrain-panel" data-show={hover !== null || focus !== null ? "" : undefined} aria-hidden="true">{card(shown ?? home)}</div>
+      </div>
+      <button type="button" className="rank-terrain-reset" onClick={() => fly(null)} data-hidden={focus === null ? "" : undefined} aria-hidden={focus === null || undefined} tabIndex={focus === null ? -1 : undefined}>
+        <RotateCcw size={16} strokeWidth={1.75} aria-hidden="true" />Reset view
+      </button>
+    </div>
+    <div className="rank-terrain-legend">
+      <ol aria-label="Legend">{levels.map((level, i) => <li key={level.label}><i style={{ background: fillOf(i) }} />{level.label}<b>{counts[i]}</b></li>)}</ol>
+      <p id={`${id}-hint`} className="rank-terrain-hint">
+        <span className="rank-terrain-hint-fine">Hover a tile for details. Click to fly in.</span>
+        <span className="rank-terrain-hint-touch">Tap a tile to fly in.</span>
+        <span className="rank-terrain-sr"> Arrow keys move between spots, Enter flies in, plus and minus zoom, Escape returns.</span>
+      </p>
+    </div>
+    <p className="rank-terrain-sr" aria-live="polite">{live}</p>
+  </>;
 }
