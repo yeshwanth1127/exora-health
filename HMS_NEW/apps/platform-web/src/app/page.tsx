@@ -1008,11 +1008,11 @@ export default function Page() {
                       <p className="block mb-5 text-xl leading-7 tracking-[-0.12px] text-balance max-md:[font-size:inherit] max-md:leading-[inherit] max-md:tracking-[inherit]" data-ditto-id="style-p-29">
                         Answer calls, coordinate appointments and keep patient conversations moving with {BRAND_NAME}.
                       </p>
-                      <div className="w-[20.4625rem] grid max-w-full mx-auto flex-wrap justify-center gap-4 grid-cols-2 max-md:w-[21.4375rem] max-md:flex max-md:gap-2 max-md:mx-0 max-md:grid-cols-[initial]">
-                        <a className="w-full h-9.5 border border-solid border-clr-0 flex max-w-70 py-1.5 px-[0.9375rem] rounded-lg justify-center items-center gap-3 text-background font-medium bg-primary cursor-pointer" data-ditto-id="style-button-3" data-component="button" href="/quote">
+                      <div className="w-[24rem] grid max-w-full mx-auto flex-wrap justify-center gap-4 grid-cols-2 max-md:w-[21.4375rem] max-md:flex max-md:gap-2 max-md:mx-0 max-md:grid-cols-[initial]">
+                        <a className="w-full h-9.5 whitespace-nowrap border border-solid border-clr-0 flex max-w-70 py-1.5 px-[0.9375rem] rounded-lg justify-center items-center gap-3 text-background font-medium bg-primary cursor-pointer" data-ditto-id="style-button-3" data-component="button" href="/quote">
                           Explore {BRAND_NAME}
                         </a>
-                        <a className="w-full h-9.5 border border-solid border-clr-0 flex max-w-70 py-1.5 px-[0.9375rem] rounded-lg justify-center items-center gap-3 text-color-010 font-medium bg-color-011 cursor-pointer" data-ditto-id="style-div-15" data-component="button" href="/contact-sales">
+                        <a className="w-full h-9.5 whitespace-nowrap border border-solid border-clr-0 flex max-w-70 py-1.5 px-[0.9375rem] rounded-lg justify-center items-center gap-3 text-color-010 font-medium bg-color-011 cursor-pointer" data-ditto-id="style-div-15" data-component="button" href="/contact-sales">
                           Request a demo
                         </a>
                       </div>

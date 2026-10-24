@@ -32,11 +32,11 @@ export default function HeroSection({ tileData = tileDataContent, logos = logosC
             <p className="block mb-5 text-xl leading-7 tracking-[-0.12px] text-balance max-md:[font-size:inherit] max-md:leading-[inherit] max-md:tracking-[inherit]" data-ditto-id="style-p-29">
               {BRAND_NAME} context, find answers, and automate tasks with AI built for your team.
             </p>
-            <div className="w-[20.4625rem] grid max-w-full mx-auto flex-wrap justify-center gap-4 grid-cols-2 max-md:w-[21.4375rem] max-md:flex max-md:gap-2 max-md:mx-0 max-md:grid-cols-[initial]">
-              <a className="w-full h-9.5 border border-solid border-clr-1 flex max-w-70 py-1.5 px-[0.9375rem] rounded-lg justify-center items-center gap-3 text-background font-medium bg-primary cursor-pointer hover:bg-clr-9 focus:bg-clr-24 focus:outline-background focus:[outline-style:none] focus:outline-0" data-ditto-id="style-button-3" data-component="button" href="/quote">
+            <div className="w-[24rem] grid max-w-full mx-auto flex-wrap justify-center gap-4 grid-cols-2 max-md:w-[21.4375rem] max-md:flex max-md:gap-2 max-md:mx-0 max-md:grid-cols-[initial]">
+              <a className="w-full h-9.5 whitespace-nowrap border border-solid border-clr-1 flex max-w-70 py-1.5 px-[0.9375rem] rounded-lg justify-center items-center gap-3 text-background font-medium bg-primary cursor-pointer hover:bg-clr-9 focus:bg-clr-24 focus:outline-background focus:[outline-style:none] focus:outline-0" data-ditto-id="style-button-3" data-component="button" href="/quote">
                 Explore {BRAND_NAME}
               </a>
-              <a className="w-full h-9.5 border border-solid border-clr-1 flex max-w-70 py-1.5 px-[0.9375rem] rounded-lg justify-center items-center gap-3 text-clr-9 font-medium bg-clr-4 cursor-pointer hover:bg-clr-22 focus:bg-clr-25 focus:outline-clr-9 focus:[outline-style:none] focus:outline-0" data-ditto-id="style-div-15" data-component="button" href="/contact-sales">
+              <a className="w-full h-9.5 whitespace-nowrap border border-solid border-clr-1 flex max-w-70 py-1.5 px-[0.9375rem] rounded-lg justify-center items-center gap-3 text-clr-9 font-medium bg-clr-4 cursor-pointer hover:bg-clr-22 focus:bg-clr-25 focus:outline-clr-9 focus:[outline-style:none] focus:outline-0" data-ditto-id="style-div-15" data-component="button" href="/contact-sales">
                 Request a demo
               </a>
             </div>

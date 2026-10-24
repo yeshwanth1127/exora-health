@@ -11,16 +11,46 @@
         protocols h1 h2
     }
 }
-srv2086263.hstgr.cloud {
+www.paperwhale.health {
+    redir https://paperwhale.health{uri} permanent
+}
+paperwhale.health {
     encode zstd gzip
     header {
         -Server
         Strict-Transport-Security "max-age=86400"
     }
-    reverse_proxy web:8080 {
-        transport http {
-            dial_timeout 3s
-            response_header_timeout 10s
+    # The public site is deployed first. No workspace operation can report success
+    # until the real control API is installed and this scoped handler is replaced.
+    @control path /control /control/*
+    handle @control {
+        header Content-Type application/json
+        header Cache-Control no-store
+        respond `{ "message": "Paperwhale workspace setup is not available yet. Please contact hello@paperwhale.health." }` 503
+    }
+    @lookupStatus {
+        path /business-lookup
+        query mode=status
+        method GET HEAD
+    }
+    handle @lookupStatus {
+        header Content-Type application/json
+        header Cache-Control no-store
+        header X-Robots-Tag "noindex, nofollow"
+        respond `{ "configured": false }` 200
+    }
+    handle /business-lookup {
+        header Content-Type application/json
+        header Cache-Control no-store
+        header X-Robots-Tag "noindex, nofollow"
+        respond `{ "error": { "code": "NOT_CONFIGURED", "message": "Business reports are not configured yet." } }` 503
+    }
+    handle {
+        reverse_proxy web:3000 {
+            transport http {
+                dial_timeout 3s
+                response_header_timeout 10s
+            }
         }
     }
 }

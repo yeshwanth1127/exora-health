@@ -12,10 +12,10 @@
 .capture-account-panel h1:focus { outline: none; }
 .capture-account-intro { color: var(--muted-foreground); font-size: .85rem; line-height: 1.5; text-align: center; margin: .55rem 0 1.8rem; overflow-wrap: anywhere; }
 .capture-account-panel form { display: grid; gap: 1rem; }
-.capture-account-panel label { display: grid; gap: .45rem; min-width: 0; font-size: .75rem; }
-.capture-account-panel input { box-sizing: border-box; width: 100%; min-height: 3rem; border: 2px solid transparent; border-radius: .8rem; padding: .7rem .85rem; background: #f1f6fb; font: inherit; font-size: .85rem; color: var(--foreground); }
-.capture-account-panel input:focus { outline: none; border-color: var(--action); background: #f8fbff; box-shadow: 0 0 0 3px rgb(98 84 232 / 12%); }
-.capture-account-panel input[aria-invalid=true] { border-color: #a12b28; }
+.capture-account-panel:not(.workspace-setup) label { display: grid; gap: .45rem; min-width: 0; font-size: .75rem; }
+.capture-account-panel:not(.workspace-setup) input { box-sizing: border-box; width: 100%; min-height: 3rem; border: 2px solid transparent; border-radius: .8rem; padding: .7rem .85rem; background: #f1f6fb; font: inherit; font-size: .85rem; color: var(--foreground); }
+.capture-account-panel:not(.workspace-setup) input:focus { outline: none; border-color: var(--action); background: #f8fbff; box-shadow: 0 0 0 3px rgb(98 84 232 / 12%); }
+.capture-account-panel:not(.workspace-setup) input[aria-invalid=true] { border-color: #a12b28; }
 .capture-account-continue { width: 100%; justify-content: center; min-height: 3rem; display: flex; gap: .6rem; border-radius: .8rem; }
 .capture-account-continue:disabled { opacity: .5; cursor: wait; }
 .capture-account-note { text-align: center; color: var(--muted-foreground); font-size: .75rem; line-height: 1.6; margin: .5rem 0 0; }
@@ -64,3 +64,44 @@
 .workspace-status .welcome-actions{margin:24px 0}.workspace-credentials{padding:20px;background:#f1f7fe;border-radius:14px;margin:24px 0;display:grid;gap:12px;font-size:14px;overflow-wrap:anywhere}
 .workspace-credentials h2{font-size:19px;margin:0}.workspace-credentials p{font-size:13px;line-height:1.6;margin:0}.workspace-notice{font-size:14px;line-height:1.6;background:#eff7ff;border:1px solid #b8dafa;padding:16px;border-radius:10px}
 @media(max-width:600px){.workspace-steps{gap:.2rem;margin:0 0 1rem}.workspace-steps button{font-size:9px;padding:0 4px}.workspace-review>div{grid-template-columns:110px 1fr}.workspace-actions{gap:8px}.workspace-secondary{padding:10px}.workspace-setup .capture-account-heading .onboarding-mascot{width:9rem}}
+
+/* Arc controls retain their source geometry and motion; only the surrounding wizard is laid out here. */
+.workspace-setup{width:min(100% - 2rem,46rem);padding-top:1rem}
+.workspace-setup form,.workspace-setup .workspace-review,.workspace-setup>.capture-account-note{width:100%;max-width:38rem;margin-left:auto;margin-right:auto}
+.workspace-setup .capture-account-heading{margin-bottom:1.8rem}.workspace-setup .capture-account-heading h1{font-size:2rem;font-weight:600;line-height:1.15}
+.workspace-setup .capture-account-intro{font-size:.95rem;line-height:1.65;max-width:35rem;margin-left:auto;margin-right:auto}
+.workspace-setup fieldset{gap:1.35rem}.onboarding-stepper{width:100%;margin:0 0 2rem}
+.workspace-setup .workspace-actions{padding-top:.5rem}.workspace-setup .workspace-actions .workspace-secondary{display:inline-flex;gap:8px;align-items:center;min-height:44px}
+.workspace-setup .workspace-consent{margin:10px 0}.workspace-consent label{line-height:1.6;cursor:pointer}
+.onboarding-included{display:flex;align-items:center;gap:14px;background:#f1f7fc;border:1px solid #e1edf7;border-radius:14px;padding:20px;color:#386583}
+.onboarding-included>div{flex:1}.onboarding-included strong{font-size:15px;color:#263a4b}.onboarding-included p{font-size:13px;line-height:1.5;margin:5px 0 0;color:#64798b}
+.onboarding-module-count{display:flex;align-items:baseline;gap:10px}.onboarding-module-count strong{font-size:22px;letter-spacing:-.7px;font-weight:600}.onboarding-module-count span{font-size:13px;color:#71808b}
+.onboarding-module-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.onboarding-module-grid article{padding:20px;border:1px solid #e1e8ee;border-radius:14px;background:#fff;min-width:0;transition:background-color 160ms ease,border-color 160ms ease}
+.onboarding-module-grid article>svg{margin-bottom:16px;color:#6d8191}.onboarding-module-grid article[data-selected=true]{background:#f5f9fd;border-color:#97bfe1}
+.onboarding-module-grid article[data-selected=true]>svg{color:#0875de}.onboarding-module-grid label{cursor:pointer}
+.onboarding-provisioning{width:100%;max-width:42rem;margin:auto}.onboarding-provisioning h1{font-size:2rem;font-weight:600;line-height:1.2}
+.provisioning-track{margin:32px 0}.provisioning-destinations{display:grid;gap:12px;margin:24px 0}
+.provisioning-destinations article{display:flex;align-items:center;gap:16px;border:1px solid #e2eaf1;border-radius:16px;padding:22px;background:#fafcfe;color:#6c8294}
+.provisioning-destinations article>div{min-width:0;flex:1}.provisioning-destinations h2{font-size:16px;font-weight:600;color:#263b4c;margin:0 0 7px}
+.provisioning-destinations p{font-size:13px;color:#6c7f8d;margin:0 0 7px;line-height:1.5}.provisioning-destinations span{font-size:12px;line-height:1.5;overflow-wrap:anywhere}.provisioning-state-label{white-space:nowrap}
+.provisioning-recovery{display:flex;align-items:center;gap:16px;justify-content:space-between;border-top:1px solid #e5ebf0;padding-top:20px;margin-top:24px}
+.provisioning-recovery>div{min-width:0}.provisioning-recovery span{display:block;color:#7a8995;font-size:11px;margin-bottom:7px}.provisioning-recovery code{font-size:11px;overflow-wrap:anywhere;color:#5c6f7f}
+.provisioning-recovery button{display:inline-flex;align-items:center;gap:8px}.workspace-credentials label{display:grid;gap:8px}.workspace-credentials input{width:100%;padding:12px;border:1px solid #d6e4ee;border-radius:12px;background:#fff;font:inherit}
+@media(prefers-reduced-motion:no-preference){.provisioning-spin{animation:provisioning-spin 900ms linear infinite}@keyframes provisioning-spin{to{transform:rotate(360deg)}}}
+@media(max-width:600px){.workspace-setup{padding-top:.5rem}.workspace-setup .capture-account-heading h1,.onboarding-provisioning h1{font-size:1.7rem}.onboarding-stepper{margin-bottom:1.5rem}.onboarding-module-grid{grid-template-columns:1fr}.provisioning-recovery{align-items:flex-start;flex-direction:column}.provisioning-destinations article{padding:18px;gap:12px}.provisioning-destinations article>svg:first-child{width:18px}.provisioning-state-label{font-size:10px!important}}
+
+.workspace-setup .onboarding-section-title { font-size:1rem; margin:1.8rem 0 .8rem; font-weight:600; }
+.workspace-setup .onboarding-section-title:first-child { margin-top:0; }
+.workspace-setup .onboarding-selection-tile { display:flex; flex-direction:column; align-items:flex-start; gap:.55rem; padding:1.1rem; border:1px solid #dce5ef; border-radius:.85rem; background:#fff; color:#253b50; text-align:left; font:inherit; cursor:pointer; transition:background-color 160ms,border-color 160ms,box-shadow 160ms; }
+.workspace-setup .onboarding-selection-tile strong { font-size:.92rem; font-weight:600; }
+.workspace-setup .onboarding-selection-tile span { font-size:.8rem; line-height:1.5; color:#607184; }
+.workspace-setup .onboarding-selection-tile[aria-pressed="true"] { background:#edf5ff; border-color:#0878ed; box-shadow:inset 0 0 0 1px #0878ed; }
+.workspace-setup .onboarding-selection-tile:focus-visible { outline:2px solid #0878ed; outline-offset:3px; }
+.workspace-setup .onboarding-selection-tile:disabled { cursor:default; opacity:.5; }
+.workspace-setup .onboarding-website-chooser { --action:#0075eb; --foreground:#172018; --muted-foreground:#6d756d; }
+.workspace-setup .quote-template-preview { height:11rem; }
+.workspace-setup .quote-template-caption { min-height:4.4rem; }
+@media(hover:hover) { .workspace-setup .onboarding-selection-tile:not(:disabled):hover { border-color:#0878ed; background:#f3f8ff; } }
+@media(prefers-reduced-motion:reduce) { .workspace-setup .onboarding-selection-tile { transition:none; } }
+
+.workspace-setup .quote-template-select > input { width:100%; height:100%; min-height:0; }

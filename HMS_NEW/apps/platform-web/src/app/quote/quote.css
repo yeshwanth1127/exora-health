@@ -184,7 +184,7 @@
 .quote-template-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin: 1.75rem 0 .8rem; }
 .quote-template-heading h2 { margin: 0; font-size: .95rem; font-weight: 500; letter-spacing: -.01em; }
 .quote-template-heading p { margin: 0; font-size: .65rem; color: var(--muted-foreground); }
-.quote-template-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; min-width: 0; margin: 0; padding: 0; border: 0; }
+.quote-template-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; min-width: 0; margin: 0; padding: 0; border: 0; }
 .quote-template-loaded { animation: quote-template-enter 180ms cubic-bezier(.23, 1, .32, 1) both; }
 .quote-template-choice { position: relative; min-width: 0; cursor: pointer; }
 .quote-template-choice > input { position: absolute; inset: 0; margin: 0; opacity: 0; width: 100%; height: 100%; z-index: 1; cursor: pointer; }
@@ -240,7 +240,6 @@
 .quote-offer-main .quote-navigation { margin-top: 1.4rem; }
 .quote-offer-reveal { min-height: 21rem; }
 .quote-curation { padding: 2rem 0 1rem; }
-.quote-curation-icon { display: grid; place-items: center; width: 3rem; height: 3rem; border: 1px solid #dfd4f3; background: #f6f1fc; border-radius: 1rem; color: var(--action); margin-bottom: 1.2rem; }
 /* A narrow light band completes its sweep; text updates never remount it. */
 .quote-shimmer { display: inline-block; max-width: 100%; margin: 0; font-size: 1.45rem; line-height: 1.35; font-weight: 400; background: linear-gradient(110deg, #575161 38%, #575161 43%, #b99ce6 48%, #f3eaff 50%, #b99ce6 52%, #575161 57%, #575161 62%); background-size: 250% 100%; background-clip: text; -webkit-background-clip: text; color: transparent; animation: quote-shimmer 1.5s linear infinite; overflow-wrap: anywhere; }
 .quote-curation-context { margin: .65rem 0 0; font-size: .85rem; color: var(--muted-foreground); }
@@ -335,3 +334,10 @@
   .quote-place-dropdown, .quote-facility-card, .quote-facility-map-skeleton::after { animation: none; }
   .quote-amount-wrap, .quote-amount, .quote-amount::after, .quote-free, .quote-offer-details { transition: none; }
 }
+
+.quote-template-open { display:block; position:relative; text-decoration:none; color:var(--foreground); }
+.quote-template-open-label { position:absolute; inset:auto .6rem .6rem auto; background:white; padding:.3rem .5rem; border-radius:.35rem; font-size:.65rem; box-shadow:0 1px 4px #0001; }
+.quote-template-select { position:relative; display:block; cursor:pointer; }
+.quote-template-select > input { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+.quote-template-select:focus-within, .quote-template-open:focus-visible { outline:2px solid var(--action); outline-offset:-3px; border-radius:.4rem; }
+.quote-template-grid:disabled .quote-template-select { opacity:.65; cursor:default; }

@@ -15,7 +15,7 @@ beforeAll(async () => {
   origin = await new Promise<string>((resolve, reject) => {
     child = spawn(process.execPath, [path.join(root, 'node_modules/tsx/dist/cli.mjs'), 'apps/control-api/src/main.ts'], {
       cwd: root, stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, CONTROL_DATABASE_URL: config.testDatabaseUrl, HOST: '127.0.0.1', PORT: '0', AUTO_PROVISION: '0', AUTO_VOICE_PROVISION: '0', SERVE_PLATFORM_ASSETS: '0', PROVISIONER_TOKEN: provisionerToken },
+      env: { ...process.env, CONTROL_DATABASE_URL: config.testDatabaseUrl, HOST: '127.0.0.1', PORT: '0', AUTO_PROVISION: '0', AUTO_VOICE_PROVISION: '0', SERVE_PLATFORM_ASSETS: '0', PROVISIONER_TOKEN: provisionerToken, SUPERADMIN_TOKEN: provisionerToken },
     });
     const timer = setTimeout(() => reject(new Error('Local control API did not start')), 20000);
     child.stdout!.on('data', chunk => {
@@ -40,6 +40,13 @@ async function submit(extra: object = {}) {
   return { response, body };
 }
 describe('website choice through the real control API and provisioning queue', () => {
+  it('persists selected modules through claim, completion and customer entitlements', async () => {
+    const {body}=await submit({clinicModules:['inpatient','billing']});
+    const claim=await fetch(`${origin}/control/v1/internal/provisioning/claim`,{method:'POST',headers:{authorization:`Bearer ${provisionerToken}`}});expect((await claim.json() as {payload:{clinicModules:string[]}}).payload.clinicModules).toEqual(['inpatient','billing']);
+    const complete=await fetch(`${origin}/control/v1/internal/provisioning/${body.onboardingId}/complete`,{method:'POST',headers:{authorization:`Bearer ${provisionerToken}`,'content-type':'application/json'},body:JSON.stringify({tenantId:randomUUID(),composeProject:'test-selected',image:'test/image',publicUrl:'https://selected.example.test/',staffUrl:'https://selected.example.test/staff/',adminUsername:'owner@example.test',temporaryPassword:'test-one-time-password-very-long'})});
+    expect(complete.status).toBe(200);const customer=await pool.query('SELECT modules FROM control.customer WHERE onboarding_id=$1',[body.onboardingId]);expect(customer.rows[0].modules).toContain('billing');expect(customer.rows[0].modules).toContain('inpatient');expect(customer.rows[0].modules).not.toContain('hr');
+    const id=await pool.query('SELECT id FROM control.customer WHERE onboarding_id=$1',[body.onboardingId]);const changed=await fetch(`${origin}/control/v1/admin/customers/${id.rows[0].id}/plan`,{method:'PATCH',headers:{authorization:`Bearer ${provisionerToken}`,'content-type':'application/json'},body:JSON.stringify({plan:'scale'})});const result=await changed.json() as {modules:string[]};expect(changed.status).toBe(200);expect(result.modules).toContain('billing');expect(result.modules).not.toContain('hr');
+  });
   it('defaults existing onboarding callers to the standard website', async () => {
     const { response, body } = await submit();
     expect(response.status).toBe(202);

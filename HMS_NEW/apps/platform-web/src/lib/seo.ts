@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { BRAND_NAME } from './brand.ts';
+import { BRAND_NAME, BRAND_LOGO } from './brand.ts';
 import { SEARCH_ENABLED, SITE_ORIGIN } from './site.ts';
 export const publicPages = [
  {path:'/',title:`AI Receptionist & Clinic Management Software | ${BRAND_NAME}`,description:'Answer patient calls, coordinate appointments, follow up on WhatsApp and understand clinic growth in one connected healthcare workspace.'},
@@ -37,7 +37,7 @@ export function jsonLd(value:unknown) { return JSON.stringify(value).replace(/</
 export function organisationGraph() {
  if(!SITE_ORIGIN)return null;
  return {'@context':'https://schema.org','@graph':[
-  {'@type':'Organization','@id':SITE_ORIGIN+'/#organisation',name:BRAND_NAME,url:SITE_ORIGIN,logo:{'@type':'ImageObject',url:SITE_ORIGIN+'/assets/capture-brand/reception-bell.png'},description:'Healthcare software for reception, appointments, patient communication and clinic activity.'},
+  {'@type':'Organization','@id':SITE_ORIGIN+'/#organisation',name:BRAND_NAME,url:SITE_ORIGIN,logo:{'@type':'ImageObject',url:SITE_ORIGIN+BRAND_LOGO},description:'Healthcare software for reception, appointments, patient communication and clinic activity.'},
   {'@type':'WebSite','@id':SITE_ORIGIN+'/#website',name:BRAND_NAME,url:SITE_ORIGIN,publisher:{'@id':SITE_ORIGIN+'/#organisation'},inLanguage:'en-IN'}]};
 }
 export function breadcrumbs(items:{name:string;path:string}[]) { return {'@context':'https://schema.org','@type':'BreadcrumbList',itemListElement:items.map((item,index)=>({'@type':'ListItem',position:index+1,name:item.name,item:SITE_ORIGIN+item.path}))}; }

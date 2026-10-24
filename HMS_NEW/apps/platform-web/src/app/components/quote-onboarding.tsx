@@ -96,7 +96,6 @@ function OfferReveal({ draft, onReady }: { draft: WizardDraft; onReady: (ready: 
 
   return <div className="quote-offer-reveal" data-phase={phase}>
     {phase === "preparing" ? <div className="quote-curation" aria-busy="true">
-      <div className="quote-curation-icon"><Icon name="sparkles" /></div>
       <h1 id="quote-title" ref={title} tabIndex={-1} className="quote-shimmer" aria-live="polite" aria-atomic="true">{statuses[stage]}</h1>
       <p className="quote-curation-context">Bringing your choices together into a personalised Growth Suite.</p>
       <ol>{context.map((item, index) => <li key={item.title} className={index < stage ? "is-complete" : index === stage ? "is-current" : ""}><span>{index < stage ? <Icon name="check" /> : index + 1}</span><div><strong>{item.title}</strong><p>{item.detail}</p></div></li>)}</ol>

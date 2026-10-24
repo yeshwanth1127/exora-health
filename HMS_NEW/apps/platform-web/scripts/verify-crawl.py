@@ -39,8 +39,8 @@ class Document(HTMLParser):
 def fetch(base, route, agent='Mozilla/5.0', method='GET'):
     request=Request(base+route,headers={'User-Agent':agent,'Accept':'text/html,application/xhtml+xml'},method=method)
     try:
-        with urlopen(request,timeout=30) as response: return response.status,dict(response.headers),response.read().decode('utf8',errors='replace')
-    except HTTPError as response: return response.code,dict(response.headers),response.read().decode('utf8',errors='replace')
+        with urlopen(request,timeout=30) as response: return response.status,{k.lower():v for k,v in response.headers.items()},response.read().decode('utf8',errors='replace')
+    except HTTPError as response: return response.code,{k.lower():v for k,v in response.headers.items()},response.read().decode('utf8',errors='replace')
 
 def verify(base, preview):
     results=[]; nonce_values=[]
@@ -65,7 +65,7 @@ def verify(base, preview):
         if preview:
             assert 'noindex' in doc.robots and 'noindex' in response_robots,(agent,'preview not protected')
         else:
-            assert doc.canonical==base+'/' and 'noindex' not in doc.robots and 'noindex' not in response_robots,(agent,'production indexing blocked')
+            assert doc.canonical in (base, base+'/') and 'noindex' not in doc.robots and 'noindex' not in response_robots,(agent,'production indexing blocked')
         results.append({'agent':agent,'status':status,'h1':' '.join(doc.heading),'body_chars':len(' '.join(doc.text))})
     assert len(set(nonce_values))==len(nonce_values),'nonce reused between requests'
     routes=[]

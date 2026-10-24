@@ -1,6 +1,7 @@
 /** Public marketing pages are readable; personalized results and previews stay out of search. */
 export function privateSearchRoute(path: string) {
-  return /^\/(?:business-report|business-lookup|demo|quote|onboarding|api|admin|staff|control)(?:[/.]|$)/i.test(path);
+  return /^\/(?:business-report|business-lookup|demo|quote|onboarding|website-templates|api|admin|staff|control)(?:[/.]|$)/i.test(path)
+    || /^\/google[a-f0-9]+\.html$/i.test(path);
 }
 export function searchHeader(path: string, enabled: boolean) {
   return !enabled || privateSearchRoute(path) ? 'noindex, nofollow' : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';

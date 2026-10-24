@@ -1,7 +1,7 @@
 import SiteImage from "../../components/site-image";
-import { BRAND_NAME } from "../../../lib/brand";
+import { BRAND_NAME, BRAND_ICON } from "../../../lib/brand";
 const tools = [
-  { name: BRAND_NAME, tag: "Built around your clinic", description: "Reception, outreach and visibility. Together.", logo: "/capture-bell-icon-v3.png", featured: true },
+  { name: BRAND_NAME, tag: "Built around your clinic", description: "Reception, outreach and visibility. Together.", logo: BRAND_ICON, featured: true },
   { name: "Google Voice", tag: "Business phone system", description: "Calling, voicemail and call routing.", logo: "/assets/comparison/google-voice.svg", featured: false },
   { name: "WhatsApp Business", tag: "Business messaging app", description: "Customer conversations on WhatsApp.", logo: "/assets/comparison/whatsapp-business.png", featured: false },
   { name: "Google Business Profile", tag: "Local business presence", description: "Your business on Search and Maps.", logo: "/assets/comparison/google-business-profile.svg", featured: false },
