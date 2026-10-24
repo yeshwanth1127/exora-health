@@ -5,6 +5,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/platform-web/package.json apps/platform-web/package.json
 RUN pnpm install --frozen-lockfile --filter @hms/platform-web...
 COPY apps/platform-web apps/platform-web
+RUN apk add --no-cache fontconfig font-dejavu
 ENV NEXT_TELEMETRY_DISABLED=1 \
     NEXT_PUBLIC_SITE_ORIGIN=https://paperwhale.health \
     NEXT_PUBLIC_SEARCH_INDEXING=false \
