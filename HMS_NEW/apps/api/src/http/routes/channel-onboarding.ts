@@ -6,7 +6,7 @@ import { ChannelOnboardingSaveSchema, ChannelOnboardingSubmitSchema } from '@hms
 import { authorize } from '../../auth/principal.ts';
 import { callerOf, principalOf, parse, uuid, idempotencyKey } from '../support.ts';
 import { channelOnboarding, saveChannelOnboarding, submitChannelOnboarding } from '../../modules/comms/onboarding.ts';
-const Params = z.object({channel:z.enum(['voice','whatsapp'])});
+const Params = z.object({channel:z.enum(['voice','whatsapp','apple_messages'])});
 export function registerChannelOnboardingRoutes(app:FastifyInstance,db:Kysely<DB>) {
   app.get('/v1/channel-onboarding/:channel',async request => {
     const {channel}=parse(Params,request.params), {facilityId}=parse(z.object({facilityId:uuid}),request.query);
