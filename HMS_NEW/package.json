@@ -41,7 +41,11 @@
     "tenant:voice:prepare": "node scripts/prepare-tenant-voice.mjs",
     "tenant:voice": "node scripts/configure-tenant-voice.mjs",
     "website:build": "pnpm --filter @hms/sri-lakshmi-web build",
-    "website:test": "pnpm --filter @hms/sri-lakshmi-web test"
+    "website:test": "pnpm --filter @hms/sri-lakshmi-web test",
+    "apple:worker": "tsx --env-file-if-exists=.env apps/api/src/apple-worker.ts",
+    "apple:demo": "tsx scripts/apple-demo.ts",
+    "apple:cloud-template": "node infra/apple-connect/template.mjs",
+    "apple:dashboard": "tsx scripts/apple-demo-dashboard.ts"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

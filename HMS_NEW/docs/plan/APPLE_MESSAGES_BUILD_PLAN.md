@@ -1,10 +1,45 @@
 # Apple Messages for Business: implementation and provider decision
 
 24 October 2026. Branch `codex/apple-messages-foundation`, based on main `2c773da`.
-The company has neither an Amazon Connect nor Zendesk account. Provider selection
-is deferred until the cost/benefit comparison and commercial terms are reviewed.
+The user selected **Amazon Connect** after the comparison below. Neither an AWS
+account nor an Apple Business Register account exists yet. The local implementation
+and deployment package are available; cloud deployment, provider acceptance and a
+physical iPhone test remain pending.
 
-## Implemented in this increment
+## Current implementation
+
+- Clinic-scoped Apple conversation storage, durable inbound deduplication and reply
+  intents, with tenant RLS and permission checks on dashboard reads/replies.
+- Rules-based consent, doctor/mode/time choices, name and unverified contact entry,
+  explicit confirmation and the existing transactional HMS booking path. Appointment
+  origin is `apple_messages`; price-list currency survives the signed slot and receipt.
+- Reception handoff and dashboard replies; STOP cancels queued text even after a
+  human takes over. Actual chat-ended / AWS agent-join transcript events close the
+  session. Revoked staff permissions are checked again before outbound sending.
+- Amazon Connect custom-participant bootstrap, private SNS → SQS wakeups, transcript
+  reconciliation and SDK-based worker. Participant credentials remain server-side.
+  Lost send responses reuse the outbound idempotency token; acknowledgements are
+  called accepted, with no invented delivery/read state.
+- A dedicated local USD demo clinic and dashboard, separate from the test database.
+  The local smoke flow commits a real local appointment. It sends no Apple messages.
+- Reviewable CloudFormation generator and account/deployment/iPhone acceptance guide:
+  [infra/apple-connect/README.md](../../infra/apple-connect/README.md).
+
+Migrations: `20261024090000_apple_messages_onboarding.sql` and
+`20261024100000_apple_connect_booking.sql`. The dashboard lives at
+`/staff/apple_messages`. Provider identifiers, AWS configuration and credentials
+are not dashboard inputs or API response fields.
+
+This is a bounded English, plain-text pilot. Native Apple time/list pickers,
+Spanish automation, setup-hours/after-hours enforcement, automated rescheduling,
+cancellation and proactive reminders remain unimplemented. The setup-request API
+stores these preferences but does not activate a provider or enforce those rules.
+The Apple setup preferences do not yet have their own dashboard editor. Clinic
+staff can read conversations and queue replies through the dashboard; platform
+operators provision the company-managed provider binding outside the clinic UI.
+Full Arc appearance, keyboard and motion parity awaits the user's visual review.
+
+## Setup request foundation
 
 Apple setup preferences now use the existing company-managed onboarding API:
 
@@ -32,12 +67,15 @@ Migration: `db/migrations/20261024090000_apple_messages_onboarding.sql`.
 It extends the existing channel constraint without changing WhatsApp contact points.
 Rollback refuses to discard saved Apple requests.
 
-The existing voice/WhatsApp form is explicitly restricted to those two channels.
-There is no Apple dashboard page or active sidebar destination in this increment.
-This avoids presenting a setup form as an operational messaging service. UI work
-must retain the current main branch's Arc component bindings and fidelity rules.
+The existing voice/WhatsApp form remains explicitly restricted to those channels.
+The separate Apple inbox displays actual configuration/local-demo state rather
+than treating a submitted setup request as an operational connection.
 
-## Booking implementation after the provider decision
+## Architecture and original implementation requirements
+
+The numbered list below records the original design requirements. The implementation
+above now covers their core booking/transport/storage paths; it does not establish
+provider approval, every lifecycle event or the deferred experience features.
 
 ```mermaid
 flowchart LR
@@ -64,10 +102,9 @@ flowchart LR
    from `managed-booking-chat.ts`, retaining WhatsApp consent and sending rules in
    its adapter. Apple needs an explicit contact-details step. An LLM is optional.
 5. Reuse `publicCatalog`, `publicSlots` and the booking transaction in
-   `modules/booking/public-booking.ts`. That function currently accepts only web
-   and WhatsApp origins and contains WhatsApp-specific confirmation proof.
-   Add an Apple origin and verified conversation confirmation evidence before
-   enabling Apple commits; do not bypass proof or label Apple bookings as WhatsApp.
+   `modules/booking/public-booking.ts`. Apple origin and persisted conversation
+   confirmation proof are now implemented; do not bypass proof or label Apple
+   bookings as WhatsApp.
 6. Trace actual currency through the price list, signed slot, booking snapshot and
    receipt. Current chat copy hardcodes rupees; changing only the symbol to dollars
    would misrepresent a fee. Test +1 contact entry and US daylight saving boundaries.
@@ -125,9 +162,9 @@ optional AI, compliance-related commercial terms and any channel-specific charge
 Abandoned bookings still generate usage. Multiple sessions per patient change the
 comparison. Do not apply the 20-message assumption to a real forecast without a pilot.
 
-AWS is the first candidate to investigate for a small usage-based pilot. Zendesk may
+AWS was selected for the first usage-based pilot. Zendesk may
 be economical at sustained volume if its licensing permits our HMS inbox and clinic
-model. No provider has been selected, purchased, registered or contacted.
+model. No account has been purchased, registered or contacted in this implementation.
 
 ## Questions to settle before buying
 
@@ -141,7 +178,7 @@ model. No provider has been selected, purchased, registered or contacted.
   rules-based automation metered? For Zendesk, confirm the applicable API plan and
   MAU/channel add-ons in writing. No full cost has been verified yet.
 
-## Verification and remaining scope
+## Original setup-request verification
 
 Required application checks: Apple request permission/scope/isolation; invalid or
 secret-bearing payload rejection; retry/concurrency safety; one setup event; no
@@ -158,7 +195,9 @@ These tests exercise authenticated application routes with local test identities
 They do not prove external identity-provider onboarding, Apple/provider acceptance,
 network message delivery, a patient-facing Apple UI or physical-device behavior.
 
-Before claiming operational Apple booking: real provider transport, opaque identity
-storage, shared booking flow, Apple origin/proof, currency propagation, staff inbox,
-human takeover, durable receipts, race/duplicate/deletion tests, approved clinic brand
-and end-to-end patient booking on a physical iPhone are all still required.
+The current increment's additional verification is recorded in the deployment guide.
+Before claiming operational Apple booking: deploy and exercise the actual AWS
+transport, verify current Apple/provider experience requirements, link an approved
+test brand, test human takeover and lifecycle events on the real network, and complete
+an end-to-end patient booking on a physical iPhone. Local event fixtures are not
+evidence of Apple's real thread deletion behavior.

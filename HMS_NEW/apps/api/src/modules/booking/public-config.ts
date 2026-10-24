@@ -34,7 +34,7 @@ export const SlotClaimSchema = z.strictObject({
   siteSlug: slug, tenantId: z.uuid(), facilityId: z.uuid(), staffId: z.uuid(), doctorSlug: slug,
   serviceId: z.uuid(), visitMode: z.enum(['in_person','virtual']),
   startsAt: z.iso.datetime({offset:true}), endsAt: z.iso.datetime({offset:true}),
-  feeMinor: z.number().int().min(0), expiresAt: z.number().int().positive(),
+  feeMinor: z.number().int().min(0), currency: z.string().regex(/^[A-Z]{3}$/).optional(), expiresAt: z.number().int().positive(),
 });
 export type SlotClaim = z.infer<typeof SlotClaimSchema>;
 export function signSlot(claim: SlotClaim, secret: string): string {
