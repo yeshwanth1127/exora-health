@@ -10,10 +10,17 @@ Checked 24 October 2026. Local source branch: `codex/apple-messages-foundation`.
   page or independently verify the business/contact details.
 - Safari is signed into Apple Business Register. The owner accepted the service
   terms. Messages for Business was added to the organization's connections.
-- A new application was started and is at **Messages for Business Policies**.
-  Its five declarations remain unchecked and Next is disabled. There is no submitted
-  Messages account, Apple business ID, linked MSP or approved tester invitation.
-- A corporate contact email has not been supplied. No email address was invented.
+- The owner advanced past policy declarations and applicant details. The
+  **Paperwhale** brand was saved with its user-supplied website and business phone,
+  classified as **Software Companies**. This is a saved brand, not channel approval.
+- The current Safari step is **Messaging Response Hours**, displaying 33% progress.
+  Asia/Kolkata is selected. The owner advanced past the response-time page, but the
+  actual saved response-time value has not been independently read. The hours form
+  currently shows 9 AM–5 PM every day; those hours are awaiting owner confirmation.
+  No final Messages application submission, MSP link or tester invitation was
+  observed. The account type still needs verification before submission: brand-card
+  configuration alone does not prove an internal-test account was selected.
+- A corporate contact email has not been supplied in chat. No email address was invented.
   Apple’s [registration guide](https://register.apple.com/resources/messages/messaging-documentation/register-your-acct)
   calls for a corporate-email Apple Account and technical contact information.
 - No AWS CLI/profile/configured credentials were found on this Mac. No AWS resources
@@ -61,10 +68,9 @@ events; delivery/read receipts; physical iPhone booking and receptionist replies
 
 ## Exact remaining steps
 
-1. Supply the corporate contact email and confirm the business details used for
-   Paperwhale's application. Review the policy declarations against the actual
-   planned operation; the generic setup request is not acceptance of these specific
-   declarations.
+1. Finish and review the Apple application: confirm actual human-support hours,
+   verify the applicant/contact details and internal-test account type, then prepare
+   the remaining brand assets and tester fields. Do not infer approval from a saved brand.
 2. Obtain Apple/MSP eligibility guidance for the disclosed software-company internal
    clinic-booking test and any later production clinic rollout.
 3. Create/login to the company AWS account and complete billing/verification.
