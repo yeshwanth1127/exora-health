@@ -21,8 +21,8 @@ The marketing site is available first; control API calls and unconfigured
 business reports return explicit unavailable results. Lookup status reports
 configured=false. No backend credentials or provider keys are bundled.
 
-Search indexing remains disabled pending the connected-service launch review.
-The canonical URL and social metadata use paperwhale.health. Internal CSS,
+Public marketing pages enable search indexing; onboarding, account and demo
+pages and website examples retain noindex. The canonical URL and social metadata use paperwhale.health. Internal CSS,
 storage and asset identifiers intentionally retain their compatible names.
 
 The older nginx.conf remains a reference for the retired static preview; it is

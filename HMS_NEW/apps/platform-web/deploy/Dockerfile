@@ -9,7 +9,7 @@ COPY apps/platform-web apps/platform-web
 RUN apk add --no-cache fontconfig font-dejavu
 ENV NEXT_TELEMETRY_DISABLED=1 \
     NEXT_PUBLIC_SITE_ORIGIN=https://paperwhale.health \
-    NEXT_PUBLIC_SEARCH_INDEXING=false \
+    NEXT_PUBLIC_SEARCH_INDEXING=true \
     CAPTURE_DISABLE_BUILD_CACHE=1
 RUN pnpm --filter @hms/platform-web build:server
 

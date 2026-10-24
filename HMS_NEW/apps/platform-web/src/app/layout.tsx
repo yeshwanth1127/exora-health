@@ -1,4 +1,4 @@
-import { BRAND_NAME } from "../lib/brand";
+import { BRAND_NAME, BRAND_ICON } from "../lib/brand";
 import MarketingMotion from "./components/marketing-motion";
 import "./product-showcase-menu.css";
 import "./reference-fixes.css";
@@ -15,7 +15,7 @@ import { connection } from "next/server";
 
 export const metadata = { ...pageMetadata('/'), referrer: 'strict-origin-when-cross-origin' as const, metadataBase: SITE_ORIGIN ? new URL(SITE_ORIGIN) : undefined,
  verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined, other: process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION ? { 'msvalidate.01': process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION } : undefined },
- icons: { icon: [{ url: '/capture-bell-icon-v3.png', type: 'image/png' }], apple: '/capture-bell-icon-v3.png' } };
+ icons: { icon: [{ url: BRAND_ICON, type: 'image/png' }], apple: BRAND_ICON } };
 
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
