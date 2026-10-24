@@ -6,6 +6,12 @@ the policy declarations step, with no account submitted. AWS has not been provis
 Cloud deployment and a real iPhone test are pending.
 The local build does not simulate Apple approval or external message delivery.
 
+The owner identified the registering business as the HMS software company at
+`paperwhale.health`. Corporate contact details and eligibility for its disclosed
+clinic-booking test remain unresolved. See the
+[current setup status and verification](../../docs/plan/APPLE_MESSAGES_ACCOUNT_SETUP_STATUS.md)
+for exact completed steps, test evidence and remaining account dependencies.
+
 ## Eligibility blocker found during registration
 
 Apple's [current channel policies](https://register.apple.com/resources/messages/messaging-documentation/policies)
