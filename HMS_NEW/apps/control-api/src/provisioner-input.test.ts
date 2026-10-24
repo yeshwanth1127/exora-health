@@ -15,5 +15,7 @@ test('production input accepts Launch voice=false and rejects unknown website te
   const valid=run();expect(valid.status).toBe(2);expect(valid.stderr).toContain('wildcard certificate');
   await writeFile(request,JSON.stringify({...claim,payload:{...claim.payload,websiteTemplate:'unknown'}}));
   const invalid=run();expect(invalid.status).not.toBe(0);expect(invalid.stderr).not.toContain('wildcard certificate');
+  await writeFile(request,JSON.stringify({...claim,payload:{...claim.payload,clinicModules:['inpatient']}}));expect(run().stderr).toContain('Inpatient requires Billing');
+  await writeFile(request,JSON.stringify({...claim,payload:{...claim.payload,clinicModules:[]}}));expect(run().stderr).toContain('wildcard certificate');
  }finally{await rm(dir,{recursive:true,force:true});}
 });

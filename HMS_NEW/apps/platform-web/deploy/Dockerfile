@@ -4,6 +4,7 @@ RUN npm install --global pnpm@10.28.0
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/platform-web/package.json apps/platform-web/package.json
 RUN pnpm install --frozen-lockfile --filter @hms/platform-web...
+COPY packages/platform/onboarding-modules.mjs packages/platform/onboarding-modules.d.mts packages/platform/
 COPY apps/platform-web apps/platform-web
 RUN apk add --no-cache fontconfig font-dejavu
 ENV NEXT_TELEMETRY_DISABLED=1 \

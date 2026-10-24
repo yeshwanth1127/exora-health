@@ -35,4 +35,4 @@ jobs:
         run: |
           pnpm pg:start
           trap 'pnpm pg:stop' EXIT
-          pnpm exec vitest run apps/control-api/src/onboarding-flow.test.ts apps/control-api/src/platform-pages.test.ts apps/control-api/src/workspace-bootstrap.test.ts apps/control-api/src/provisioner-input.test.ts
+          pnpm exec vitest run apps/control-api/src/onboarding-flow.test.ts apps/control-api/src/onboarding-modules.test.ts apps/control-api/src/platform-pages.test.ts apps/control-api/src/workspace-bootstrap.test.ts apps/control-api/src/provisioner-input.test.ts

@@ -1,0 +1,71 @@
+{
+  "source": "/Users/deepakonda/Documents/exora-health/HMS_NEW/apps/staff-web/src/components/arc",
+  "referenceLibrary": "/Users/deepakonda/Downloads/test/arc-components/",
+  "files": [
+    {
+      "file": "motion-tokens.ts",
+      "sha256": "13af43b57ed38e5b72cfc06ff0ccc39b0593721f04840e73532893593cc61491",
+      "matchesLocalSource": true
+    },
+    {
+      "file": "foundation.css",
+      "sha256": "903258c74b107c8c981ef712eb9cbc4a56971fcd0c4421f462b3183c2b9c244d",
+      "matchesLocalSource": true
+    },
+    {
+      "file": "input/input.tsx",
+      "sha256": "16a4e761b51482e9c066f284a38171085e71ae390e4b26f9f0c18dd8af21c8f2",
+      "matchesLocalSource": true
+    },
+    {
+      "file": "input/input.module.css",
+      "sha256": "ef6716aa7b9f45898859735f416ac932517b94e66bed6b3d23d7aed180529bdf",
+      "matchesLocalSource": true
+    },
+    {
+      "file": "checkbox/checkbox.module.css",
+      "sha256": "6cc8ae35edbd99dac2ea3768a6db0932429ecb06febab06e048a4b94974251b6",
+      "matchesLocalSource": true
+    },
+    {
+      "file": "checkbox/checkbox.tsx",
+      "sha256": "4759251a0b2a83320cb4078e840f61481a23be0b38b9aa7c077c2e85e6dde00d",
+      "matchesLocalSource": true
+    },
+    {
+      "file": "stepper/stepper.module.css",
+      "sha256": "3762deb9d9cda692a33c81510c811cae11aebadcd82ce58d4ea3b84b3ed5c569",
+      "matchesLocalSource": true
+    },
+    {
+      "file": "stepper/stepper.tsx",
+      "sha256": "7b4034915b0902b16e6dd2e54dfae4ce40fd9b2d4fd09e736f9e196d97fc6c17",
+      "matchesLocalSource": true
+    },
+    {
+      "file": "lib/motion-tokens.ts",
+      "sha256": "bec65d2e1b180dd3c574edc60cf84e0fa336e7ff8640eba0c70bcf0ae765fb8a",
+      "matchesLocalSource": true
+    },
+    {
+      "file": "select/select.module.css",
+      "sha256": "f700250cfa39db22e974f417d6d776e70b037e031500ca85c3c94e0c558a2b04",
+      "matchesLocalSource": true
+    },
+    {
+      "file": "select/select.tsx",
+      "sha256": "0b5ba697410da9130517d902dd06387867f6239c4c0b45e02ca6811c6630df15",
+      "matchesLocalSource": true
+    },
+    {
+      "file": "radio-cards/radio-cards.tsx",
+      "sha256": "82084be52a5d5f9def1d517f3bcdbf8c26f046afc25b93d5dd8ff32543f8a8d4",
+      "matchesLocalSource": true
+    },
+    {
+      "file": "radio-cards/radio-cards.module.css",
+      "sha256": "5f6e5cd90a57fd7c31f301d6c1a9172b3386b2e4afdd0526573c4736836eca7a",
+      "matchesLocalSource": true
+    }
+  ]
+}

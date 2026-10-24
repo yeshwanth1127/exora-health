@@ -20,6 +20,18 @@ function Preview({ index, category }: { index: number; category: string }) {
   </span>;
 }
 
+export function WebsiteTemplateGrid({value,category,onValueChange,disabled=false}:{value:string;category:string;onValueChange:(value:'standard'|'sri-lakshmi')=>void;disabled?:boolean}) {
+  return <fieldset className="quote-template-grid quote-template-loaded" disabled={disabled}>
+    <legend className="quote-sr-only">Choose a website template</legend>
+    {websiteTemplates(category).map(template=><div className={`quote-template-choice ${value===template.id?'is-selected':''}`} key={template.id}>
+      <div className="quote-template-card">
+        <a className="quote-template-open" href={`/website-templates/${template.id}/`} target="_blank" rel="noopener noreferrer" aria-label={`Preview ${template.name} (opens in a new tab)`}><Preview index={template.index} category={category}/><span className="quote-template-open-label">Open example site ↗</span></a>
+        <label className="quote-template-select"><input type="radio" name="website-template" value={template.id} checked={value===template.id} onChange={()=>onValueChange(template.id as 'standard'|'sri-lakshmi')}/><span className="quote-template-caption"><span><strong>{template.name}</strong><span>{value===template.id?'Selected': 'Select this design'}</span></span><span className="quote-check" aria-hidden="true">{value===template.id&&<span className="quote-tiny-check">✓</span>}</span></span></label>
+      </div>
+    </div>)}
+  </fieldset>;
+}
+
 export default function QuoteWebsiteChooser({ draft, onChange }: {
   draft: WizardDraft; onChange: (values: Partial<WizardDraft>) => void;
 }) {
@@ -52,13 +64,7 @@ export default function QuoteWebsiteChooser({ draft, onChange }: {
         </fieldset>
         <div className="quote-template-heading"><h2>{websiteOptions.find(option => option.id === category)?.title} templates</h2><p>2 available website templates</p></div>
         <div className="quote-template-results" data-loading={loading} data-category={category} aria-busy={loading}>
-          {loading ? <><span className="quote-sr-only" role="status">Loading template previews…</span><div className="quote-template-grid" aria-hidden="true">{Array.from({ length: 2 }, (_, index) => <div className="quote-template-skeleton" key={index}><div className="quote-skeleton-preview"><span /><span /><span /></div><div className="quote-skeleton-caption"><span /><span /></div></div>)}</div></> : <fieldset className="quote-template-grid quote-template-loaded" key={loadKey}>
-            <legend className="quote-sr-only">Choose a website template</legend>
-            {websiteTemplates(category).map(template => <label className={`quote-template-choice ${draft.template === template.id ? "is-selected" : ""}`} key={template.id}>
-              <input type="radio" name="website-template" value={template.id} checked={draft.template === template.id} onChange={() => onChange({ template: template.id, websiteCategory: category })} />
-              <span className="quote-template-card"><Preview index={template.index} category={category} /><span className="quote-template-caption"><span><strong>{template.name}</strong><span>{template.id === "standard" ? "Clinic & appointment pages" : "Hospital & department pages"}</span></span><span className="quote-check">{draft.template === template.id && <span className="quote-tiny-check">✓</span>}</span></span></span>
-            </label>)}
-          </fieldset>}
+          {loading ? <><span className="quote-sr-only" role="status">Loading template previews…</span><div className="quote-template-grid" aria-hidden="true">{Array.from({ length: 2 }, (_, index) => <div className="quote-template-skeleton" key={index}><div className="quote-skeleton-preview"><span /><span /><span /></div><div className="quote-skeleton-caption"><span /><span /></div></div>)}</div></> : <WebsiteTemplateGrid value={draft.template} category={category} onValueChange={template=>onChange({template,websiteCategory:category})}/>}
         </div>
         <p className="quote-template-footnote">Choose a starting point. Confirm the template during workspace setup.</p>
       </>}</div>

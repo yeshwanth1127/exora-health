@@ -6,7 +6,7 @@ const source=readFileSync(new URL('../src/lib/crawl-policy.ts',import.meta.url),
 const {searchHeader,runtimeContentPolicy}=await import('data:text/javascript,'+encodeURIComponent(source));
 test('public crawling is enabled only for configured public marketing pages',()=>{
  for(const path of ['/','/blog/a-clearer-front-desk','/product/features','/llms.txt','/sitemap.xml']) assert.match(searchHeader(path,true),/^index, follow/);
- for(const path of ['/business-report','/business-report?place=abc','/business-lookup','/demo/reach-report','/admin','/onboarding']) assert.match(searchHeader(path.split('?')[0],true),/noindex/);
+ for(const path of ['/business-report','/business-report?place=abc','/business-lookup','/demo/reach-report','/admin','/onboarding','/website-templates/standard','/website-templates/sri-lakshmi']) assert.match(searchHeader(path.split('?')[0],true),/noindex/);
  assert.match(searchHeader('/',false),/noindex/);
 });
 test('SSR CSP trusts only its server nonce and keeps framing and form restrictions',()=>{

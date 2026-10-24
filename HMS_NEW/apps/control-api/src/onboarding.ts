@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import {parseClinicModules} from '../../../packages/platform/onboarding-modules.mjs';
 
 export const Onboarding = z.object({
   organisation: z.string().trim().min(2).max(120),
@@ -14,5 +15,6 @@ export const Onboarding = z.object({
   voice: z.boolean(),
   whatsapp: z.boolean(),
   websiteTemplate: z.enum(['standard', 'sri-lakshmi']).default('standard'),
+  clinicModules: z.array(z.enum(['inpatient','billing','inventory','pharmacy','hr'])).max(5).optional().superRefine((value,ctx)=>{try{parseClinicModules(value);}catch(error){ctx.addIssue({code:'custom',message:(error as Error).message});}}),
   termsAccepted: z.literal(true),
 }).refine((value) => !value.voice || value.plan !== 'launch', { path: ['voice'], message: 'Voice requires the Connect or Scale plan.' });

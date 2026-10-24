@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import {parseClinicModules} from '../packages/platform/onboarding-modules.mjs';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -27,6 +28,7 @@ const facility = args.get('facility')?.trim() || `${name} Main Clinic`;
 const city = args.get('city')?.trim() || 'Bengaluru';
 const plan = args.get('plan')?.trim() || 'connect';
 const voice = (args.get('voice')?.trim() || (plan === 'launch' ? 'false' : 'true')) === 'true';
+const clinicModules=parseClinicModules(args.has('clinic-modules') ? args.get('clinic-modules').split(',').filter(Boolean) : undefined);
 const port = Number(args.get('port') ?? '8081');
 const facilityType = args.get('facility-type') ?? 'clinic';
 const timezone = args.get('timezone') ?? 'Asia/Kolkata';
@@ -58,6 +60,7 @@ const values = {
   BOOTSTRAP_TIMEZONE: timezone,
   TENANT_PORT: String(port),
   TENANT_PLAN: plan,
+  TENANT_CLINIC_MODULES: clinicModules.join(','),
   VOICE_REQUESTED: voice ? '1' : '0',
   PUBLIC_TENANT_ID: tenantUuid,
   BOOTSTRAP_TENANT_ID: tenantUuid,

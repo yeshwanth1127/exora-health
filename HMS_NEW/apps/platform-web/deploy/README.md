@@ -7,7 +7,7 @@ private Docker network, using the sanitized standalone public assets.
 
 Build from the HMS_NEW directory with its frozen pnpm lockfile. The Dockerfile-specific ignore file restricts uploads to build inputs. The Docker
 context must contain package.json, pnpm-lock.yaml, pnpm-workspace.yaml and
-apps/platform-web (exclude node_modules, .next, out, dist, artifacts, Python
+apps/platform-web and packages/platform/onboarding-modules.{mjs,d.mts} (exclude node_modules, .next, out, dist, artifacts, Python
 caches, credentials and local environment files). Do not upload the whole checkout.
 
 ```sh

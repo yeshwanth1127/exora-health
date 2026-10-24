@@ -3,6 +3,10 @@
 !package.json
 !pnpm-lock.yaml
 !pnpm-workspace.yaml
+!packages/
+!packages/platform/
+!packages/platform/onboarding-modules.mjs
+!packages/platform/onboarding-modules.d.mts
 !apps/
 !apps/platform-web/
 !apps/platform-web/package.json

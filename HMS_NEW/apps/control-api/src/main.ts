@@ -1,4 +1,5 @@
 import { Onboarding } from './onboarding.ts';
+import {entitledModules,parseClinicModules,CLINIC_MODULES,type ClinicModule} from '../../../packages/platform/onboarding-modules.mjs';
 import { exportedPlatformPage } from './platform-pages.ts';
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { spawn } from 'node:child_process';
@@ -182,9 +183,7 @@ async function schema() {
   `);
 }
 
-const modulesFor = (plan: string) => plan === 'launch'
-  ? ['platform', 'patient', 'catalog', 'booking', 'clinical']
-  : ['platform', 'patient', 'catalog', 'booking', 'clinical', 'comms'];
+const modulesFor = (plan:string,selected?:ClinicModule[]) => entitledModules(plan,selected);
 
 function tenantUuid(slug: string) {
   const bytes = createHash('sha256').update(`exora-tenant:${slug}`).digest().subarray(0, 16);
@@ -211,7 +210,7 @@ async function markReady(id: string, payload: z.infer<typeof Onboarding>, port: 
     const customerId = randomUUID();
     await client.query(`INSERT INTO control.customer(id,onboarding_id,name,slug,owner_email,plan_code,modules,voice_status)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(onboarding_id) DO NOTHING`,
-      [customerId, id, payload.organisation, payload.slug, payload.email.toLowerCase(), payload.plan, JSON.stringify(modulesFor(payload.plan)), 'not_requested']);
+      [customerId, id, payload.organisation, payload.slug, payload.email.toLowerCase(), payload.plan, JSON.stringify(modulesFor(payload.plan,payload.clinicModules)), 'not_requested']);
     const { rows: [customer] } = await client.query('SELECT id FROM control.customer WHERE onboarding_id=$1', [id]);
     const tenantUrl = deployment.publicUrl?.replace(/\/$/, '') ?? (tenantUrlTemplate
       ? tenantUrlTemplate.replaceAll('{slug}', payload.slug).replace(/\/$/, '')
@@ -230,7 +229,7 @@ async function markReady(id: string, payload: z.infer<typeof Onboarding>, port: 
 }
 
 async function provision(id: string, payload: z.infer<typeof Onboarding>, port: number) {
-  const args = [path.join(root, 'scripts/provision-tenant.mjs'), '--slug', payload.slug, '--name', payload.organisation, '--email', payload.email, '--owner', payload.ownerName, '--facility', payload.facilityName, '--city', payload.city, '--plan', payload.plan, '--voice', String(payload.voice), '--website-template', payload.websiteTemplate, '--timezone', payload.timezone, '--facility-type', payload.facilityType, '--port', String(port)];
+  const args = [path.join(root, 'scripts/provision-tenant.mjs'), '--slug', payload.slug, '--name', payload.organisation, '--email', payload.email, '--owner', payload.ownerName, '--facility', payload.facilityName, '--city', payload.city, '--plan', payload.plan, '--voice', String(payload.voice), '--website-template', payload.websiteTemplate, '--timezone', payload.timezone, '--facility-type', payload.facilityType, '--port', String(port), '--clinic-modules', parseClinicModules(payload.clinicModules).join(',')];
   const child = spawn(process.execPath, args, { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
   let failure = '';
   child.stderr.on('data', (chunk) => { failure = `${failure}${String(chunk)}`.slice(-4000); });
@@ -332,14 +331,14 @@ app.post('/control/v1/onboarding', async (request, reply) => {
     VALUES($1,$2,$3,$4,$5,$6,'queued',$7)`, [id, idempotencyKey, parsed.data.slug, parsed.data.email.toLowerCase(), parsed.data, hash(token), allocation.port]);
   // The host provisioner claims this row from the same control database. The API process never
   // needs a Docker socket when it runs in the public control-plane container.
-  return reply.status(202).send({ onboardingId: id, accessToken: token, status: autoProvision ? 'provisioning' : 'queued' });
+  return reply.status(202).send({ onboardingId: id, accessToken: token, status: 'queued' });
 });
 
 app.get('/control/v1/onboarding/:id', async (request, reply) => {
   const id = z.uuid().safeParse((request.params as { id?: string }).id);
   const bearer = request.headers.authorization?.replace(/^Bearer\s+/i, '');
   if (!id.success || !bearer) return reply.status(401).send({ error: 'unauthorized' });
-  const { rows: [row] } = await pool.query(`SELECT r.id,r.status,r.slug,r.owner_email,r.error,r.admin_credential_ciphertext,r.credential_expires_at,
+  const { rows: [row] } = await pool.query(`SELECT r.id,r.status,r.slug,r.owner_email,r.error,r.created_at,r.updated_at,r.admin_credential_ciphertext,r.credential_expires_at,
       d.public_url,d.staff_url,d.health,c.voice_status
     FROM control.onboarding_request r LEFT JOIN control.customer c ON c.onboarding_id=r.id LEFT JOIN control.deployment d ON d.customer_id=c.id
     WHERE r.id=$1 AND r.access_token_hash=$2`, [id.data, hash(bearer)]);
@@ -351,6 +350,7 @@ app.get('/control/v1/onboarding/:id', async (request, reply) => {
       row.credential_expires_at = new Date(row.credential_expires_at).toISOString();
     }
   }
+  if (tenantUrlTemplate) row.target_url = tenantUrlTemplate.replaceAll('{slug}',row.slug).replace(/\/$/,'')+'/';
   delete row.owner_email;
   delete row.admin_credential_ciphertext;
   return row;
@@ -645,7 +645,9 @@ app.patch('/control/v1/admin/customers/:id/plan', async (request, reply) => {
   const id = z.uuid().safeParse((request.params as { id?: string }).id);
   const body = z.object({ plan: z.enum(['launch', 'connect', 'scale']) }).safeParse(request.body);
   if (!id.success || !body.success) return reply.status(400).send({ error: 'validation' });
-  const result = await pool.query('UPDATE control.customer SET plan_code=$2,modules=$3 WHERE id=$1 RETURNING id,plan_code,modules', [id.data, body.data.plan, JSON.stringify(modulesFor(body.data.plan))]);
+  const result = await pool.query(`UPDATE control.customer SET plan_code=$2,modules=$3::jsonb || COALESCE(
+    (SELECT jsonb_agg(code) FROM jsonb_array_elements_text(control.customer.modules) AS selected(code) WHERE code=ANY($4::text[])), '[]'::jsonb)
+    WHERE id=$1 RETURNING id,plan_code,modules`, [id.data, body.data.plan, JSON.stringify(modulesFor(body.data.plan,[])), CLINIC_MODULES]);
   if (!result.rowCount) return reply.status(404).send({ error: 'not_found' });
   return result.rows[0];
 });

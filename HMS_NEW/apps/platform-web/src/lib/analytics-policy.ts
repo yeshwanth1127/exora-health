@@ -7,7 +7,7 @@ export function analyticsPath(value:string):string|undefined {
 export const analyticsEvents=['$pageview','website_cta_clicked','quote_step_viewed','onboarding_step_viewed','workspace_request_submitted','workspace_request_failed','workspace_status_changed'] as const;
 export type AnalyticsEvent=typeof analyticsEvents[number];
 const allowedValues:Record<string,readonly string[]>={
- stage:['facility','volume','target','marketing','business','website','contact','offer','account','workspace','launch','review'],
+ stage:['facility','volume','target','marketing','business','website','contact','offer','account','workspace','modules','launch','review'],
  plan:['launch','connect','scale'],template:['standard','sri-lakshmi'],status:['queued','provisioning','ready','failed'],
  outcome:['accepted','unavailable'],referrer_type:['direct','google','bing','chatgpt','perplexity','claude','other'],
 };
