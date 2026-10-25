@@ -50,9 +50,9 @@ export default function QuoteWebsiteChooser({ draft, onChange }: {
             <input type="radio" name="website-category" value={option.id} checked={category === option.id} onChange={() => onChange({ websiteCategory: option.id, template: "" })} /><span>{option.title}</span>
           </label>)}
         </fieldset>
-        <div className="quote-template-heading"><h2>{websiteOptions.find(option => option.id === category)?.title} templates</h2><p>2 available website templates</p></div>
+        <div className="quote-template-heading"><h2>{websiteOptions.find(option => option.id === category)?.title} templates</h2><p>{websiteTemplates(category).length} available website templates</p></div>
         <div className="quote-template-results" data-loading={loading} data-category={category} aria-busy={loading}>
-          {loading ? <><span className="quote-sr-only" role="status">Loading template previews…</span><div className="quote-template-grid" aria-hidden="true">{Array.from({ length: 2 }, (_, index) => <div className="quote-template-skeleton" key={index}><div className="quote-skeleton-preview"><span /><span /><span /></div><div className="quote-skeleton-caption"><span /><span /></div></div>)}</div></> : <fieldset className="quote-template-grid quote-template-loaded" key={loadKey}>
+          {loading ? <><span className="quote-sr-only" role="status">Loading template previews…</span><div className="quote-template-grid" aria-hidden="true">{Array.from({ length: websiteTemplates(category).length }, (_, index) => <div className="quote-template-skeleton" key={index}><div className="quote-skeleton-preview"><span /><span /><span /></div><div className="quote-skeleton-caption"><span /><span /></div></div>)}</div></> : <fieldset className="quote-template-grid quote-template-loaded" key={loadKey}>
             <legend className="quote-sr-only">Choose a website template</legend>
             {websiteTemplates(category).map(template => <label className={`quote-template-choice ${draft.template === template.id ? "is-selected" : ""}`} key={template.id}>
               <input type="radio" name="website-template" value={template.id} checked={draft.template === template.id} onChange={() => onChange({ template: template.id, websiteCategory: category })} />

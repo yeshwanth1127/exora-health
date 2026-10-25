@@ -5,7 +5,7 @@ export type WorkspaceDraft = {
   city: string; timezone: string; facilityName: string;
   facilityType: 'clinic' | 'hospital' | 'diagnostic_centre' | 'virtual';
   plan: 'launch' | 'connect' | 'scale'; voice: boolean; whatsapp: boolean;
-  websiteTemplate: 'standard' | 'sri-lakshmi';
+  websiteTemplate: 'standard' | 'sri-lakshmi' | 'hospital-editorial';
 };
 export type WorkspaceRequest = WorkspaceDraft & { termsAccepted: true };
 export type ProvisioningState = {
@@ -26,7 +26,7 @@ export function fromIntake(intake: OnboardingIntake | null): WorkspaceDraft {
     facilityName: intake.facility.name, city: intake.facility.city, ownerName: intake.profile.name,
     email: intake.profile.email, phone: intake.profile.phone,
     facilityType: intake.facility.size === 'hospital' ? 'hospital' : 'clinic',
-    websiteTemplate: intake.preferences.template === 'sri-lakshmi' ? 'sri-lakshmi' : 'standard' };
+    websiteTemplate: ['standard','sri-lakshmi','hospital-editorial'].includes(intake.preferences.template) ? intake.preferences.template as WorkspaceDraft['websiteTemplate'] : 'standard' };
 }
 export function draftErrors(d: WorkspaceDraft): string[] {
   const errors: string[] = [];
@@ -38,7 +38,7 @@ export function draftErrors(d: WorkspaceDraft): string[] {
   try { new Intl.DateTimeFormat('en', { timeZone: d.timezone }); } catch { errors.push('Choose a valid timezone.'); }
   if (!['clinic','hospital','diagnostic_centre','virtual'].includes(d.facilityType)) errors.push('Choose a facility type.');
   if (!['launch','connect','scale'].includes(d.plan)) errors.push('Choose a launch plan.');
-  if (!['standard','sri-lakshmi'].includes(d.websiteTemplate)) errors.push('Choose a supported website template.');
+  if (!['standard','sri-lakshmi','hospital-editorial'].includes(d.websiteTemplate)) errors.push('Choose a supported website template.');
   if (typeof d.voice !== 'boolean' || typeof d.whatsapp !== 'boolean') errors.push('Choose your channels.');
   if (d.voice && d.plan === 'launch') errors.push('AI reception requires Connect or Scale.');
   return errors;
@@ -58,7 +58,7 @@ export function restoreDraft(value: unknown, fallback: WorkspaceDraft): Workspac
     if (typeof item === typeof emptyWorkspace[key] && (typeof item !== 'string' || item.length <= 254)) Object.assign(next, { [key]: item });
   }
   if (!['launch','connect','scale'].includes(next.plan)) next.plan = 'connect';
-  if (!['standard','sri-lakshmi'].includes(next.websiteTemplate)) next.websiteTemplate = 'standard';
+  if (!['standard','sri-lakshmi','hospital-editorial'].includes(next.websiteTemplate)) next.websiteTemplate = 'standard';
   if (next.plan === 'launch') next.voice = false;
   return next;
 }

@@ -41,7 +41,10 @@
     "tenant:voice:prepare": "node scripts/prepare-tenant-voice.mjs",
     "tenant:voice": "node scripts/configure-tenant-voice.mjs",
     "website:build": "pnpm --filter @hms/sri-lakshmi-web build",
-    "website:test": "pnpm --filter @hms/sri-lakshmi-web test"
+    "website:test": "pnpm --filter @hms/sri-lakshmi-web test",
+    "editorial:dev": "pnpm --filter @hms/hospital-editorial-web dev",
+    "editorial:build": "pnpm --filter @hms/hospital-editorial-web build",
+    "editorial:test": "pnpm --filter @hms/hospital-editorial-web test"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

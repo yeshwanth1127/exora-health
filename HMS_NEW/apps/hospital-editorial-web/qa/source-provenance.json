@@ -1,0 +1,121 @@
+{
+  "baseCommit": "2c773da",
+  "privateArcRuntime": true,
+  "notes": "Local reconstructed public-preview adapters, not original Arc TSX. The data parameterization leaves the original Sri app unchanged. Unused demo media excluded.",
+  "files": [
+    {
+      "file": "src/cloned/welbeck/sections/navbar2.tsx",
+      "source": "/Users/deepakonda/.codex/worktrees/hospital-arc-template/brave-mendel/hospital-one/src/cloned/welbeck/sections/navbar2.tsx",
+      "sourceSha256": "9ca2a52be8a1962c7345c59b28efd1087520e60e844a3c2984d496126a7b866f",
+      "adaptedSha256": "2d275314fc3ee641bf7a6f2226cbecf229cadb8ec39f288c851e30ee9aea1e36"
+    },
+    {
+      "file": "src/cloned/welbeck/sections/hero-section.tsx",
+      "source": "/Users/deepakonda/.codex/worktrees/hospital-arc-template/brave-mendel/hospital-one/src/cloned/welbeck/sections/hero-section.tsx",
+      "sourceSha256": "b9a923a4ec6b5f8a31e8ce6c046682c03358498705d7cb173f977b2518db767b",
+      "adaptedSha256": "635d48687f5b372387a9d8147d67667e7d22dd81fb4758c4bdcc17c5249d4aa0"
+    },
+    {
+      "file": "src/cloned/welbeck/sections/services-section.tsx",
+      "source": "/Users/deepakonda/.codex/worktrees/hospital-arc-template/brave-mendel/hospital-one/src/cloned/welbeck/sections/services-section.tsx",
+      "sourceSha256": "725855dd6a2aa4c6faa8d4735c500317179f25d176d385b9c3678dcf44202554",
+      "adaptedSha256": "a4eced77c6cc9f77a051de4d74ab64ea81f3788fbbe1f958a917fcf403857e57"
+    },
+    {
+      "file": "src/cloned/welbeck/sections/welbeck-way-welbeck-section.tsx",
+      "source": "/Users/deepakonda/.codex/worktrees/hospital-arc-template/brave-mendel/hospital-one/src/cloned/welbeck/sections/welbeck-way-welbeck-section.tsx",
+      "sourceSha256": "13f7af8acfa638be3e75da09fe2b8f8ec86056f998b0bd59ded9de4cfc902d8f",
+      "adaptedSha256": "acd37158966d06e7378e901fb87e29ca306d1caea349088dc7d068b69781ec91"
+    },
+    {
+      "file": "src/components/sections/DoctorsGridSection.tsx",
+      "source": "/Users/deepakonda/.codex/worktrees/hospital-arc-template/brave-mendel/hospital-one/src/components/sections/DoctorsGridSection.tsx",
+      "sourceSha256": "6290d6931deb067ee1a21a4296de79dfd0a230eaa23fd0f2efbca5f9429fc0be",
+      "adaptedSha256": "c79d6d5dc16fdb82e9448e0ef219e2f7acf03875d52d5c71bd112744175e789d"
+    },
+    {
+      "file": "src/components/sections/HospitalGallerySection.tsx",
+      "source": "/Users/deepakonda/.codex/worktrees/hospital-arc-template/brave-mendel/hospital-one/src/components/sections/HospitalGallerySection.tsx",
+      "sourceSha256": "4221d6dc976133c477430109fea4e91ff016d6b5d05210c3145ccd31f4dbafd7",
+      "adaptedSha256": "608b7103a49c3da9a91dc8fe985f116b862395dcf83c97c73d3cc9749ff75280"
+    },
+    {
+      "file": "src/components/variants/LightPricingRailSection.tsx",
+      "source": "/Users/deepakonda/.codex/worktrees/hospital-arc-template/brave-mendel/hospital-one/src/components/variants/LightPricingRailSection.tsx",
+      "sourceSha256": "d5757842fba15cb77be1c32838a4de4b93b182002eacdd9570d961026d84e3c1",
+      "adaptedSha256": "6f24793ba6e7c1f4ddad038b79933bec79c9cff29652d1079793aff2d2611c23"
+    },
+    {
+      "file": "src/arc-hospital.css",
+      "source": "/Users/deepakonda/.codex/worktrees/hospital-arc-template/brave-mendel/hospital-one/src/arc-hospital.css",
+      "sourceSha256": "f6dd2639c9c3ad533cae96a8c04dfe8b6aea3551423e40768fe8c8a3d421cafc",
+      "adaptedSha256": "f6dd2639c9c3ad533cae96a8c04dfe8b6aea3551423e40768fe8c8a3d421cafc"
+    },
+    {
+      "file": "src/arc-pro.tsx",
+      "source": "/Users/deepakonda/.codex/worktrees/hospital-arc-template/brave-mendel/hospital-one/src/arc-pro.tsx",
+      "sourceSha256": "d5866297f6b04873e5e09302fcb47352b4dd0b203688e04ee06ac776cb86801d",
+      "adaptedSha256": "d5866297f6b04873e5e09302fcb47352b4dd0b203688e04ee06ac776cb86801d"
+    },
+    {
+      "file": "src/components/doctor/HmsDoctorDirectory.tsx",
+      "source": "apps/sri-lakshmi-web/src/components/doctor/HmsDoctorDirectory.tsx",
+      "sourceSha256": "8682c807c78dc012b21b62919ea8a4d103611a1b73f294426b47101b7ce1e9fc",
+      "adaptedSha256": "4be47428ae5483072c5c63344060b9340e1a349d2280f077262e33d0ecc16b1b"
+    },
+    {
+      "file": "src/components/doctor/HmsDoctorProfile.tsx",
+      "source": "apps/sri-lakshmi-web/src/components/doctor/HmsDoctorProfile.tsx",
+      "sourceSha256": "a3b994b6819950f72467b77ef52e2d77493e42e1fed7e160f8f6bdd8f5612ea0",
+      "adaptedSha256": "a3b994b6819950f72467b77ef52e2d77493e42e1fed7e160f8f6bdd8f5612ea0"
+    },
+    {
+      "file": "src/components/booking/HmsBookingPage.tsx",
+      "source": "apps/sri-lakshmi-web/src/components/booking/HmsBookingPage.tsx",
+      "sourceSha256": "a5ec52816bd9d413c1176066e9c75839f366a927da557b9293877ac2f3124c4b",
+      "adaptedSha256": "57ddc64ac5c99cf4c9b62673b53ba04fa41edeaf7ce322235344d11a24fd9829"
+    },
+    {
+      "file": "src/lib/publicBookingApi.ts",
+      "source": "apps/sri-lakshmi-web/src/lib/publicBookingApi.ts",
+      "sourceSha256": "15e8cbf28926e06e1a5bda9ba020bf0847a412f63eb6988ba1e8ed3bc531bfdb",
+      "adaptedSha256": "29abca099279cb2e9006eb89a534c7239af4d6abe1485db47cbdbedd4ec403f3"
+    },
+    {
+      "file": "src/vendor/pro/team-showcase/dist/app.js",
+      "source": "/Users/deepakonda/.codex/worktrees/hospital-arc-template/brave-mendel/hospital-one/src/vendor/pro/team-showcase/dist/app.js",
+      "sourceSha256": "d937a514629ded2f052a8e7dc7a2813210238b2a007f5e729a6e236b3f12e292",
+      "adaptedSha256": "d937a514629ded2f052a8e7dc7a2813210238b2a007f5e729a6e236b3f12e292"
+    },
+    {
+      "file": "src/vendor/pro/team-showcase/dist/app.css",
+      "source": "/Users/deepakonda/.codex/worktrees/hospital-arc-template/brave-mendel/hospital-one/src/vendor/pro/team-showcase/dist/app.css",
+      "sourceSha256": "b301ed0cf911fe78a4c27c326967fa6187fafc4b9d8a792a9faa839098cb1b27",
+      "adaptedSha256": "b301ed0cf911fe78a4c27c326967fa6187fafc4b9d8a792a9faa839098cb1b27"
+    },
+    {
+      "file": "src/vendor/pro/lightbox-gallery/dist/app.js",
+      "source": "/Users/deepakonda/.codex/worktrees/hospital-arc-template/brave-mendel/hospital-one/src/vendor/pro/lightbox-gallery/dist/app.js",
+      "sourceSha256": "2fa77df307e3f907eaee8a49983e4c1ba1c07e40361b59cc9b0e75550722d235",
+      "adaptedSha256": "2fa77df307e3f907eaee8a49983e4c1ba1c07e40361b59cc9b0e75550722d235"
+    },
+    {
+      "file": "src/vendor/pro/lightbox-gallery/dist/app.css",
+      "source": "/Users/deepakonda/.codex/worktrees/hospital-arc-template/brave-mendel/hospital-one/src/vendor/pro/lightbox-gallery/dist/app.css",
+      "sourceSha256": "505b1584aa9bba78dd276e8cb0a12b8361f1f0f2c67dede1f3e8c20e43f9c33c",
+      "adaptedSha256": "505b1584aa9bba78dd276e8cb0a12b8361f1f0f2c67dede1f3e8c20e43f9c33c"
+    },
+    {
+      "file": "src/vendor/pro/date-reel/dist/app.js",
+      "source": "/Users/deepakonda/.codex/worktrees/hospital-arc-template/brave-mendel/hospital-one/src/vendor/pro/date-reel/dist/app.js",
+      "sourceSha256": "a082bd4e22c2bb2bd5e8b649e8e3130e5ee2547f904d6c3d10fdff638dee8c38",
+      "adaptedSha256": "a082bd4e22c2bb2bd5e8b649e8e3130e5ee2547f904d6c3d10fdff638dee8c38"
+    },
+    {
+      "file": "src/vendor/pro/date-reel/dist/app.css",
+      "source": "/Users/deepakonda/.codex/worktrees/hospital-arc-template/brave-mendel/hospital-one/src/vendor/pro/date-reel/dist/app.css",
+      "sourceSha256": "dd401d76c965a4dd909cd0dac5a9cad04d213a3a9939bbaee06a845beb462adb",
+      "adaptedSha256": "dd401d76c965a4dd909cd0dac5a9cad04d213a3a9939bbaee06a845beb462adb"
+    }
+  ]
+}

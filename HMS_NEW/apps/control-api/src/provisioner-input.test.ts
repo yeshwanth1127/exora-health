@@ -13,6 +13,8 @@ test('production input accepts Launch voice=false and rejects unknown website te
   await writeFile(request,JSON.stringify(claim));
   const run=()=>spawnSync('bash',['deploy/production/provision-tenant-production',request],{encoding:'utf8',env:{...process.env,EXORA_PROVISIONER_CONFIG:config}});
   const valid=run();expect(valid.status).toBe(2);expect(valid.stderr).toContain('wildcard certificate');
+  await writeFile(request,JSON.stringify({...claim,payload:{...claim.payload,websiteTemplate:'hospital-editorial'}}));
+  const editorial=run();expect(editorial.status).toBe(2);expect(editorial.stderr).toContain('wildcard certificate');
   await writeFile(request,JSON.stringify({...claim,payload:{...claim.payload,websiteTemplate:'unknown'}}));
   const invalid=run();expect(invalid.status).not.toBe(0);expect(invalid.stderr).not.toContain('wildcard certificate');
  }finally{await rm(dir,{recursive:true,force:true});}

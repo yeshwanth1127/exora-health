@@ -80,3 +80,8 @@ Build the updated tenant and platform images and install this release's `provisi
 host script before exposing the choice. Keep the provisioner's `IMAGE_TAG` pointed at that tenant
 image. Existing tenants keep their current website unless their private environment is explicitly
 changed and the app recreated. See `apps/sri-lakshmi-web/README.md` for the data/setup boundaries.
+
+
+### Editorial hospital template
+
+`hospital-editorial` is the third supported `websiteTemplate`. Both provisioners forward this ID unchanged; the tenant image bundles `apps/hospital-editorial-web/dist`. Select **Editorial hospital website** during launch setup and enter the desired facility name (for example, NDR Hospital). Rebuild both platform and tenant images, update the installed production provisioner from this release, then use the normal onboarding workflow. No existing tenant is reassigned by this source change. Optional tenant-scoped `WEBSITE_CONTENT_JSON` supplies approved imagery/editorial copy/gallery/packages; persisted facility records supply identity/contact data. See `apps/hospital-editorial-web/README.md`.

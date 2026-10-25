@@ -16,13 +16,13 @@ The control API resolves extensionless exported pages and returns genuine 404s f
 
 ## Setup contract
 
-The quote hands name, contact, facility, city and website preference into setup. Setup collects the required administrator email, organisation address, facility/timezone, real plan/channel entitlements, and a registered patient-site template (`standard` or `sri-lakshmi`). Explicit confirmation gates POST `/control/v1/onboarding`; no pretend OTP or authenticated browser-only account remains.
+The quote hands name, contact, facility, city and website preference into setup. Setup collects the required administrator email, organisation address, facility/timezone, real plan/channel entitlements, and a registered patient-site template (`standard`, `sri-lakshmi`, or `hospital-editorial`). Explicit confirmation gates POST `/control/v1/onboarding`; no pretend OTP or authenticated browser-only account remains.
 
 The exact payload, idempotency key and recovery access token are saved before POST. A timeout retries those same values. Validation/address conflicts unlock editing. Other errors retain the request for safe recovery. GET status requires the bearer access token; queued/provisioning requests poll every 2.5 seconds and stop at a terminal state. Reload re-fetches the server result before showing ready links.
 
 Temporary administrator passwords stay in React memory, never browser storage. Old persisted result objects are reduced to request ID/token/status during migration. Only server-confirmed HTTPS deployment links are enabled. Failed or unreachable provisioning remains visible with the request ID and refresh action. Provider-specific activation is not inferred from a ready website.
 
-The two registered templates replace the old nine placeholder layout choices. The live API now imports its existing shared `onboarding.ts` schema; the prior duplicate inline schema discarded `websiteTemplate`.
+The three registered templates replace the old nine placeholder layout choices. The live API now imports its existing shared `onboarding.ts` schema; the prior duplicate inline schema discarded `websiteTemplate`.
 
 The selected template, facility type and timezone are forwarded through local and production provisioning commands. Compose supplies the facility settings to the tenant database bootstrap. Defaults preserve existing callers.
 
@@ -39,3 +39,6 @@ The public website visual/features were synced from ClinicSheet `f7f683c`: day/n
 The existing `pnpm platform:build` still emits `out` and `dist` for the current control-API/static deployment. `pnpm --filter @hms/platform-web build:server` produces the optional request-time SSR runtime; `start:server` runs it. SSR rewrites `/control/*` to `CAPTURE_CONTROL_ORIGIN` (default loopback 3040) and `/business-lookup` to `CAPTURE_LOOKUP_ORIGIN` (default loopback 4500). Control-API POST requests remain owned by that API; marketing mutations stay blocked. The Python lookup service and credentials must be configured separately before live business searches are available. No Maps key is committed or quota changed.
 
 The imported `deploy/` files and `docs/PUBLIC_WEBSITE_SECURITY.md` describe the separate ClinicSheet preview. They are not replacements for Exora's current Docker/control-API deployment or signup contract. SSR deployment and live provider verification are separate from this source synchronization.
+
+
+The editorial hospital template (`hospital-editorial`) is a separate tenant app for NDR or another hospital. Quote selection and workspace setup retain its ID. Saved facility branding is loaded at runtime; selecting this design does not copy Sri Lakshmi clinical or marketing data. See `apps/hospital-editorial-web/README.md`.

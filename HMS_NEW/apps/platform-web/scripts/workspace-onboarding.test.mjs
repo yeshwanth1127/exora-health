@@ -27,3 +27,11 @@ test('lost responses retry the exact keys and payload; polling normalizes GET id
   const ready=await readWorkspace(active);assert.equal(ready.status,'ready');assert.equal(ready.temporary_password,'one-time');assert.equal(calls[2].init.headers.authorization,`Bearer ${pending.access}`);
  }finally{globalThis.fetch=original;}
 });
+
+test('editorial template survives quote handoff, validation, and draft recovery without fixing a hospital name',()=>{
+ const intake={profile:{name:'Owner',email:'a@example.test',phone:''},facility:{name:'NDR Hospital',city:'Chennai',size:'hospital'},preferences:{template:'hospital-editorial'}};
+ const draft=fromIntake(intake);
+ assert.equal(draft.websiteTemplate,'hospital-editorial');assert.equal(draft.facilityName,'NDR Hospital');
+ assert.equal(workspacePayload(draft,true).websiteTemplate,'hospital-editorial');
+ assert.equal(workspacePayload({...draft,facilityName:'Riverbend Hospital'},true).facilityName,'Riverbend Hospital');
+});

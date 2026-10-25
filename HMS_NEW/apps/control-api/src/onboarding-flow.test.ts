@@ -54,6 +54,12 @@ describe('website choice through the real control API and provisioning queue', (
     const claim = await fetch(`${origin}/control/v1/internal/provisioning/claim`, { method: 'POST', headers: { authorization: `Bearer ${provisionerToken}` } });
     expect(await claim.json()).toMatchObject({ id: body.onboardingId, payload: { websiteTemplate: 'sri-lakshmi' } });
   });
+  it('persists the editorial template and the exact NDR facility name in the provisioner claim', async () => {
+    const {response,body}=await submit({organisation:'NDR Hospitals',facilityName:'NDR Hospital',websiteTemplate:'hospital-editorial'});
+    expect(response.status).toBe(202);
+    const claim=await fetch(`${origin}/control/v1/internal/provisioning/claim`,{method:'POST',headers:{authorization:`Bearer ${provisionerToken}`}});
+    expect(await claim.json()).toMatchObject({id:body.onboardingId,payload:{websiteTemplate:'hospital-editorial',facilityName:'NDR Hospital',organisation:'NDR Hospitals'}});
+  });
   it('rejects an unregistered template before queuing a request', async () => {
     expect((await submit({ websiteTemplate: '../../private' })).response.status).toBe(400);
   });

@@ -10,7 +10,7 @@ afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) awai
 async function fixture(template?: string, bookingSite?: string) {
   const root = await mkdtemp(path.join(tmpdir(), 'hms-website-'));
   cleanups.push(() => rm(root, { recursive: true, force: true }));
-  for (const [app, content] of [['public-web', 'standard website'], ['sri-lakshmi-web', 'Sri Lakshmi website'], ['staff-web', 'staff dashboard']]) {
+  for (const [app, content] of [['public-web', 'standard website'], ['sri-lakshmi-web', 'Sri Lakshmi website'], ['hospital-editorial-web','editorial hospital website'], ['staff-web', 'staff dashboard']]) {
     const dir = path.join(root, 'apps', app!, 'dist');
     await mkdir(dir, { recursive: true });
     await writeFile(path.join(dir, 'index.html'), content!);
@@ -45,4 +45,13 @@ describe('tenant website deployment', () => {
     await expect(fixture('../../private', 'clinic-one')).rejects.toThrow('Unknown website template');
     await expect(fixture('sri-lakshmi')).rejects.toThrow('requires a tenant booking site');
   });
+});
+
+it('serves the editorial hospital template without changing Sri Lakshmi, staff or API paths',async()=>{
+ const app=await fixture('hospital-editorial','ndr-hospital');
+ for(const url of ['/','/doctors','/doctors/dr-one','/book/dr-one','/contact'])expect((await app.inject(url)).body).toBe('editorial hospital website');
+ expect((await app.inject('/website-config.js')).body).toBe('window.HMS_WEBSITE={"bookingSite":"ndr-hospital"};');
+ expect((await app.inject('/staff/appointments')).body).toBe('staff dashboard');
+ expect((await app.inject('/assets/missing.js')).statusCode).toBe(404);
+ await expect(fixture('hospital-editorial')).rejects.toThrow('requires a tenant booking site');
 });

@@ -1,0 +1,468 @@
+@font-face {
+  font-family: Family;
+  src: url("/assets/cloned/fonts/d2b94904a300.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 400;
+}
+@font-face {
+  font-family: Family;
+  src: url("/assets/cloned/fonts/a029ecdd638c.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 600 900;
+}
+:root {
+  --site-header-offset: 140px;
+}
+body {
+  background: #fefbf6;
+  color: #0a1438;
+  font-family: avenir, "Avenir Next", Arial, sans-serif;
+}
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid #0f5682;
+  outline-offset: 5px;
+}
+main {
+  min-height: 50vh;
+}
+.welbeck-shell {
+  font-family: avenir, "Avenir Next", Arial, sans-serif;
+  color: #0a1438;
+}
+.sl-brand-logo {
+  width: 230px !important;
+  max-width: none;
+  max-height: 88px;
+  object-fit: contain;
+}
+.focused-header {
+  position: relative;
+  z-index: 50;
+}
+.welbeck-shell .box-24[hidden] {
+  display: block;
+}
+.focused-header .box-28 {
+  display: none;
+}
+.welbeck-shell .section-3 h1 {
+  white-space: pre-line;
+}
+.sri-module {
+  font-family: Family, Arial, sans-serif;
+}
+.sri-module h1,
+.sri-module h2 {
+  font-family: Newsreader, Georgia, serif !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.025em !important;
+}
+.focused-page-heading {
+  max-width: 1400px;
+  margin: auto;
+  padding: 72px 64px;
+}
+.focused-page-heading > p:first-child {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 22px;
+}
+.focused-page-heading h1 {
+  font-family: Newsreader, Georgia, serif;
+  font-size: clamp(42px, 5vw, 70px);
+  line-height: 1.08;
+  max-width: 900px;
+}
+.focused-page-heading > p {
+  font-size: 18px;
+  line-height: 1.65;
+  max-width: 760px;
+  margin-top: 24px;
+}
+.privacy-copy {
+  min-height: 60vh;
+}
+.privacy-copy a {
+  display: inline-block;
+  margin-top: 24px;
+  text-decoration: underline;
+}
+.focused-footer {
+  padding: 76px max(32px, calc((100vw - 1280px) / 2)) 28px;
+  background: #08404f;
+  color: #fff;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.3fr;
+  gap: 48px;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.focused-footer img {
+  width: 215px;
+  background: #fff;
+  padding: 10px 14px;
+  border-radius: 3px;
+  margin-bottom: 24px;
+}
+.focused-footer h2 {
+  font-family: Newsreader, Georgia, serif;
+  font-size: 32px;
+  line-height: 1.1;
+  margin-bottom: 20px;
+}
+.focused-footer h3 {
+  font-weight: 600;
+  margin-bottom: 22px;
+  font-size: 14px;
+}
+.focused-footer a {
+  display: block;
+  margin: 10px 0;
+}
+.focused-footer a:hover {
+  text-decoration: underline;
+}
+.focused-footer address {
+  font-style: normal;
+  opacity: 0.85;
+}
+.footer-bottom {
+  grid-column: 1/-1;
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  border-top: 1px solid #ffffff30;
+  margin-top: 26px;
+  padding-top: 24px;
+  font-size: 12px;
+  color: #d9e3e7;
+}
+.footer-bottom span {
+  margin-right: auto;
+}
+.footer-bottom a {
+  margin: 0;
+}
+.focused-mobile-contact {
+  display: none;
+}
+.focused-skip {
+  position: absolute;
+  left: 24px;
+  top: -100px;
+  background: white;
+  padding: 12px;
+  z-index: 100;
+}
+.focused-skip:focus {
+  top: 10px;
+}
+@media (max-width: 1280px) {
+  .focused-header .sl-brand-logo {
+    width: 200px !important;
+    max-height: 68px;
+  }
+  .focused-header [data-menu-open="false"] .box-24 {
+    display: none !important;
+  }
+  .focused-header [data-menu-open="true"] .box-24 {
+    display: block !important;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #08404f;
+    color: white;
+    padding: 28px;
+    z-index: 60;
+    box-shadow: 0 18px 28px #0002;
+  }
+  .focused-header .box-26 {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .focused-header .list-2 {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .focused-header .text-9 {
+    font-size: 22px;
+  }
+  .focused-header .box-23.flow-8 {
+    display: flex !important;
+  }
+  .focused-header .box-22 {
+    padding: 16px 24px;
+    justify-content: space-between;
+  }
+  .focused-footer {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  :root {
+    --site-header-offset: 95px;
+  }
+  .focused-header .sl-brand-logo {
+    width: 158px !important;
+    max-height: 56px;
+  }
+  .focused-header .box-22 {
+    padding: 8px 16px;
+  }
+  .focused-footer {
+    padding: 48px 24px 90px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 36px 20px;
+  }
+  .footer-identity {
+    grid-column: 1/-1;
+  }
+  .focused-footer > div:nth-child(4) {
+    grid-column: 1/-1;
+  }
+  .footer-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 11px;
+    gap: 18px;
+    margin-top: 0;
+  }
+  .footer-bottom span {
+    flex-basis: 100%;
+  }
+  .focused-page-heading {
+    padding: 44px 24px;
+  }
+  .focused-mobile-contact {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fefbf6;
+    border-top: 1px solid #dedbd3;
+    z-index: 55;
+    padding: 12px 20px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    font-size: 13px;
+  }
+  .focused-mobile-contact a:last-child {
+    background: #08404f;
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 3px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *:before,
+  *:after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+/* Repairs for captured responsive visibility and definite image widths. */
+.sl-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+  color: #0a1438;
+}
+.sl-brand .sl-brand-logo {
+  width: 62px !important;
+  height: 62px;
+  object-fit: contain;
+}
+.sl-brand > span {
+  font-family: Newsreader, Georgia, serif;
+  font-size: 27px;
+  letter-spacing: -0.6px;
+  line-height: 1;
+}
+.sl-brand small {
+  display: block;
+  font-family: avenir, Arial, sans-serif;
+  letter-spacing: 0.9px;
+  font-size: 9px;
+  text-transform: uppercase;
+  margin-top: 7px;
+}
+.focused-header .link-6 {
+  width: auto;
+  min-width: 240px;
+}
+.welbeck-shell .image-3 {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.welbeck-shell .image-4 {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.welbeck-shell .flow-10 {
+  height: 100%;
+  min-width: 0;
+}
+.welbeck-shell .box-29 h1 {
+  max-width: 600px;
+}
+.focused-header .box-24 {
+  display: block !important;
+}
+.focused-header .nav-2 {
+  justify-content: flex-end;
+}
+.focused-header .row-15 {
+  gap: 20px;
+}
+.focused-header .box-26 {
+  gap: 24px;
+}
+.focused-header .box-27 {
+  width: auto;
+  flex-shrink: 0;
+}
+.focused-header .text-9 {
+  white-space: nowrap;
+}
+.focused-header .box-22 {
+  min-height: 92px;
+}
+.welbeck-shell .box-36 {
+  padding-top: 80px;
+  padding-bottom: 80px;
+}
+@media (max-width: 1280px) {
+  .focused-header .link-6 {
+    min-width: 0;
+  }
+  .focused-header [data-menu-open="false"] .box-24 {
+    display: none !important;
+  }
+  .focused-header [data-menu-open="true"] .box-24 {
+    display: block !important;
+  }
+  .focused-header .box-22 {
+    min-height: 78px;
+  }
+  .focused-header .sl-brand .sl-brand-logo {
+    width: 52px !important;
+    height: 52px;
+  }
+  .sl-brand > span {
+    font-size: 24px;
+  }
+  .sl-brand small {
+    font-size: 8px;
+  }
+  .focused-header .row-15 {
+    gap: 12px;
+  }
+}
+@media (max-width: 640px) {
+  .sl-brand {
+    gap: 7px;
+  }
+  .focused-header .sl-brand .sl-brand-logo {
+    width: 44px !important;
+    height: 44px;
+  }
+  .sl-brand > span {
+    font-size: 21px;
+  }
+  .sl-brand small {
+    font-size: 7px;
+    letter-spacing: 0.5px;
+  }
+  .focused-header .box-22 {
+    min-height: 64px;
+    padding: 8px 16px;
+  }
+  .focused-header .box-23.flow-8 {
+    gap: 12px;
+  }
+  .focused-header .link-7 {
+    height: 30px;
+    padding: 0 11px;
+  }
+  .welbeck-shell .box-36 {
+    padding-top: 48px;
+    padding-bottom: 48px;
+  }
+  .welbeck-shell .section-3 .flow-10 {
+    display: none;
+  }
+  .welbeck-shell .section-3 h1 {
+    font-size: 42px;
+  }
+  .welbeck-shell .section-3 .box-29 {
+    height: auto;
+    min-height: 450px;
+    padding-top: 32px;
+    padding-bottom: 28px;
+  }
+  .welbeck-shell .section-3 {
+    height: auto;
+    min-height: 450px;
+  }
+  .welbeck-shell .section-3 .grid {
+    height: auto;
+  }
+  .welbeck-shell .btn-6 {
+    margin-top: 24px;
+  }
+}
+@media (max-width: 1280px) {
+  .focused-header [data-menu-open="true"] .box-25 {
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: none !important;
+    position: static !important;
+    inset: auto !important;
+    height: auto !important;
+    max-height: 75vh;
+    overflow-y: auto;
+    width: 100%;
+  }
+  .focused-header [data-menu-open="true"] .box-26 {
+    width: 100%;
+    height: auto;
+  }
+  .focused-header [data-menu-open="true"] .list-2 {
+    height: auto;
+    margin: 0;
+    width: 100%;
+  }
+  .focused-header [data-menu-open="true"] .box-27 {
+    margin-top: 20px;
+  }
+  .focused-header [data-menu-open="true"] .box-25 * {
+    visibility: visible;
+  }
+}
+@media (max-width: 640px) {
+  aside[aria-label="Privacy and product analytics preferences"] {
+    bottom: 72px !important;
+  }
+}
+.package-enquiry-context{max-width:1280px;margin:32px auto 0;padding:22px 28px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;border:1px solid #d5e0e5;border-radius:5px;background:#edf3f7;font-size:14px}.package-enquiry-context>span{color:#506675}.package-enquiry-context strong{font-weight:600}.package-enquiry-context a{margin-left:auto;text-decoration:underline}@media(max-width:640px){.package-enquiry-context{margin:20px 20px 0;gap:10px;padding:18px}.package-enquiry-context a{margin-left:0}}
