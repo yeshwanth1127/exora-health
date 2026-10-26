@@ -96,6 +96,7 @@ export function Teleconsultations() {
           {result.data?.items.length === 0 && (
             <WorkspaceEmpty
               title={`No video visits for ${date}`}
+              description="Booked video visits appear here."
               action={
                 can("appointments.book")
                   ? {

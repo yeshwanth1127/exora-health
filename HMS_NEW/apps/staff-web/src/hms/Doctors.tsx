@@ -209,6 +209,11 @@ export function Doctors() {
                   ? "Add your first doctor"
                   : "This clinic has no doctors set up"
               }
+              description={
+                can("catalog.manage")
+                  ? "Patients can book a doctor once their hours are set."
+                  : "Ask an administrator to add doctors."
+              }
               action={
                 can("catalog.manage")
                   ? { label: "Add doctor", onClick: () => setAdding(true) }

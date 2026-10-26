@@ -468,6 +468,7 @@ export function Booking({
                 ) : (
                   <WorkspaceEmpty
                     title={`No open ${appointmentModeLabel(visitMode).toLowerCase()} times in the 30 days from ${range.from}`}
+                    description="Pick a later start date or check this doctor's schedule."
                   />
                 )}
               </LoadingState>

@@ -4,9 +4,16 @@ import {
   AppleThreadSchema,
   type AppleThread,
 } from '@hms/contracts';
-import { PageTitle } from '@/components/workspace';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/arc/tabs/tabs';
+import { AppleSetup } from './AppleSetup';
+import { WorkspaceEmpty } from './WorkspaceEmpty';
+import { useWorkspaceTab } from './use-workspace-tab';
 import {
   SupportConversation,
   ConversationComposer,
@@ -40,6 +47,7 @@ export function AppleMessages() {
 }
 function AppleMessagesClinic() {
   const { facility } = useWorkspace();
+  const [tab, open] = useWorkspaceTab("apple_messages");
   const inbox = useQuery(
     `/v1/apple-messages?facilityId=${facility.facilityId}`,
     5000,
@@ -47,58 +55,69 @@ function AppleMessagesClinic() {
   );
   const [picked, setPicked] = useState<string | null>(null);
   const selected = picked ?? inbox.data?.items[0]?.id ?? null;
+  const live = !!inbox.data?.configured && !inbox.data.localDemo;
   return (
-    <div className="space-y-6">
-      <PageTitle title="Apple Messages" />
-      <Card className="p-4">
-        <p className="font-medium">
-          {inbox.data?.localDemo
-            ? 'Local demo · no Apple delivery'
-            : inbox.data?.configured
-              ? 'Connection configured · live test pending'
-              : 'Company setup required'}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {inbox.data?.localDemo
-            ? 'These are synthetic local conversations. An iPhone test requires your Apple test account and a connected messaging service.'
-            : 'Your clinic’s account must be linked and tested before accepting Apple Messages bookings.'}
-        </p>
-      </Card>
-      {inbox.error && <p role="alert">{inbox.error}</p>}
-      {inbox.loading && <p>Loading conversations…</p>}
-      <div className="grid gap-6 xl:grid-cols-[260px_minmax(0,1fr)]">
-        <div className="space-y-2" aria-label="Apple conversations">
-          <Button variant="outline" onClick={() => void inbox.refresh()}>
-            Refresh
-          </Button>
-          {inbox.data?.items.map((item, index) => (
-            <Button
-              key={item.id}
-              variant={selected === item.id ? 'secondary' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => {
-                if (selected !== item.id)
-                  requestLeave(() => setPicked(item.id));
-              }}
-            >
-              Conversation {index + 1} · {labels[item.status]}
-            </Button>
-          ))}
-          {inbox.data && !inbox.data.items.length && (
+    <Tabs
+      value={tab}
+      onValueChange={(value) => open(value as "conversations" | "setup")}
+      className="arc-workflow-root"
+    >
+      <div className="arc-demo-scope mb-6">
+        <TabsList aria-label="Apple Messages workspace">
+          <TabsTrigger value="conversations">Conversations</TabsTrigger>
+          <TabsTrigger value="setup">Setup</TabsTrigger>
+        </TabsList>
+      </div>
+      <TabsContent value="setup" className="arc-workflow-panel">
+        <AppleSetup live={live} onOpenConversations={() => open("conversations")} />
+      </TabsContent>
+      <TabsContent value="conversations" className="arc-workflow-panel">
+        <div className="space-y-6">
+          {inbox.error && <p role="alert">{inbox.error}</p>}
+          {inbox.loading && !inbox.data && <p className="text-sm text-muted-foreground">Loading conversations…</p>}
+          {inbox.data?.localDemo && (
             <p className="text-sm text-muted-foreground">
-              No Apple conversations yet.
+              Local demo · synthetic conversations, nothing is sent to Apple.
             </p>
           )}
+          {inbox.data && !inbox.data.items.length ? (
+            <WorkspaceEmpty
+              title="No conversations yet"
+              description={live ? "New Apple Messages appear here." : "They appear here once Apple Messages is live."}
+              action={live ? undefined : { label: "Open setup", onClick: () => open("setup") }}
+            />
+          ) : (
+            <div className="grid gap-6 xl:grid-cols-[260px_minmax(0,1fr)]">
+              <div className="space-y-2" aria-label="Apple conversations">
+                <Button variant="outline" onClick={() => void inbox.refresh()}>
+                  Refresh
+                </Button>
+                {inbox.data?.items.map((item, index) => (
+                  <Button
+                    key={item.id}
+                    variant={selected === item.id ? 'secondary' : 'ghost'}
+                    className="w-full justify-start"
+                    onClick={() => {
+                      if (selected !== item.id)
+                        requestLeave(() => setPicked(item.id));
+                    }}
+                  >
+                    Conversation {index + 1} · {labels[item.status]}
+                  </Button>
+                ))}
+              </div>
+              {selected && (
+                <AppleConversation
+                  key={selected}
+                  id={selected}
+                  onUpdated={() => void inbox.refresh()}
+                />
+              )}
+            </div>
+          )}
         </div>
-        {selected && (
-          <AppleConversation
-            key={selected}
-            id={selected}
-            onUpdated={() => void inbox.refresh()}
-          />
-        )}
-      </div>
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 }
 function AppleConversation({

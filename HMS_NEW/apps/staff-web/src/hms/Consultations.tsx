@@ -239,6 +239,11 @@ export function Consultations() {
                   ? "No visits match this patient, status and date"
                   : "No visits to work on"
               }
+              description={
+                patientId || status !== "all"
+                  ? "Try another patient, status or date."
+                  : "Checked-in patients appear here."
+              }
               action={
                 can("appointments.read")
                   ? {

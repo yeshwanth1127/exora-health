@@ -120,6 +120,7 @@ export function PatientLookup({
         result.data?.items.length === 0 && (
           <WorkspaceEmpty
             title="No patient found"
+            description="Try another name or phone number."
             action={
               onRegister
                 ? { label: "Register patient", onClick: onRegister }

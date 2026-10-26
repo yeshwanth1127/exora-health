@@ -64,7 +64,7 @@ export function GrowthBar({
   showAverage?: boolean;
 }) {
   if (!data.length)
-    return <WorkspaceEmpty title={`No ${label.toLowerCase()} available`} />;
+    return <WorkspaceEmpty title={`No ${label.toLowerCase()} available`} description="Data appears once activity is recorded." />;
   return (
     <div className="space-y-4 min-w-0">
       <div className="arc-demo-scope">
@@ -106,7 +106,7 @@ export function GrowthSplit({
           />
         </div>
       ) : (
-        <WorkspaceEmpty title={`No ${label.toLowerCase()} available`} />
+        <WorkspaceEmpty title={`No ${label.toLowerCase()} available`} description="Data appears once activity is recorded." />
       )}
       <Values rows={segments} category="Category" measure="Count" />
     </div>

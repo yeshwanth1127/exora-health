@@ -1,3 +1,4 @@
+import { WorkspaceEmpty } from "@/hms/WorkspaceEmpty";
 import { GrowthMetric } from "@/hms/GrowthMetric";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -432,14 +433,25 @@ function RecordingAudit() {
 export function VoiceModule({
   demo = false,
   recordingLoader,
+  onSetup,
 }: {
   demo?: boolean;
   recordingLoader?: (id: string) => Promise<Blob>;
+  /** Opens Call setup from the empty state. */
+  onSetup?: () => void;
 }) {
   const [offset, setOffset] = useState(0),
     [selected, setSelected] = useState<Call | null>(null),
     [tab, setTab] = useState("calls");
   const r = useResource<History>(`/api/v1/staff/voice?offset=${offset}`);
+  if (onSetup && r.data && !r.data.configuration.calls_ready && !r.data.total)
+    return (
+      <WorkspaceEmpty
+        title="No calls yet"
+        description="Calls appear here once your voice agent is live."
+        action={{ label: "Finish call setup", onClick: onSetup }}
+      />
+    );
   return (
     <div className="space-y-6">
       <PageTitle
@@ -601,8 +613,8 @@ export function VoiceModule({
                               className="py-12 text-center text-muted-foreground"
                             >
                               {r.data.configuration.calls_ready
-                                ? "No calls recorded for this clinic. New call records will appear after the connected assistant handles a call."
-                                : "No call records are available. Ask the integration owner to complete the connection requirements above."}
+                                ? "No calls yet. Place a test call from the booking website."
+                                : "No calls yet."}
                             </TableCell>
                           </TableRow>
                         )}

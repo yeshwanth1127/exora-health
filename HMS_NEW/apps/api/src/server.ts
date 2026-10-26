@@ -307,6 +307,8 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   registerChannelOnboardingRoutes(app, deps.db);
   registerManagedIntegrationRoutes(app, deps.db, managed);
   registerAppleMessagesRoutes(app, deps.db, deps.apple ?? loadAppleSettings());
+  // Registered everywhere so an unconfigured clinic gets an explicit 412 rather than a missing route.
+  registerVoiceAgentSettingsRoutes(app, deps.voiceControl);
   if (deps.publicTenantId) {
     const voice = deps.voice ?? loadVoiceRuntimeSettings();
     registerTenantPublicBookingRoutes(app, deps.db, deps.publicTenantId, managed);
@@ -315,7 +317,6 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
       ? environmentVoiceSource(voice.agent, voice.sarvamApiKey, voice.assignedPhoneNumber ?? null)
       : deps.voiceControl ? controlVoiceSource(deps.voiceControl, app.log) : async () => undefined;
     registerPublicVoiceRoutes(app, deps.db, voice, channels, agentSource);
-    registerVoiceAgentSettingsRoutes(app, deps.voiceControl);
     if (voice.integration) registerVoiceIntegrationRoutes(app, deps.db, deps.publicTenantId, voice.integration);
   }
   registerCommsSummaryRoutes(app, deps.db);

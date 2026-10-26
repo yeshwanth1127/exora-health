@@ -330,6 +330,11 @@ export function Appointments() {
                     ? "No appointments match these filters"
                     : `No appointments for ${date}`
               }
+              description={
+                mode !== "all" || staffId !== "all" || status !== "all" || search
+                  ? "Clear filters to see every appointment."
+                  : "Booked appointments for this day appear here."
+              }
               action={
                 staffId !== "all" ||
                 status !== "all" ||

@@ -265,6 +265,11 @@ export function Queue() {
                         ? "No queue arrivals for this day"
                         : "No doctors in this clinic"
                     }
+                    description={
+                      doctors.length
+                        ? "Patients appear here when they check in."
+                        : "Add a doctor to start a queue."
+                    }
                     action={
                       doctors.length
                         ? selected &&

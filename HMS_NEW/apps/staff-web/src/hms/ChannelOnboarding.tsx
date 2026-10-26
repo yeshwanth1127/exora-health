@@ -71,22 +71,26 @@ function defaults(channel: Channel): ChannelOnboardingDraft {
         humanHandoff: "on_request",
       };
 }
-export function ChannelOnboarding({ channel }: { channel: Channel }) {
-  const { facility, can } = useWorkspace();
-  const q = useQuery(
+export function useChannelSetup(channel: Channel) {
+  const { facility } = useWorkspace();
+  return useQuery(
     `/v1/channel-onboarding/${channel}?facilityId=${facility.facilityId}`,
     0,
     parseSetup,
   );
+}
+/** Takes the caller's query so the page can follow the same saved state. */
+export function ChannelOnboarding({ q }: { q: ReturnType<typeof useChannelSetup> }) {
+  const { facility, can } = useWorkspace();
   return (
     <div className="space-y-4">
       {q.error && <p role="alert">{q.error}</p>}
       {q.loading && <p>Loading setup…</p>}
       {q.data && (
         <OnboardingForm
-          key={`${facility.facilityId}:${channel}:${q.data.version}`}
+          key={`${facility.facilityId}:${q.data.channel}:${q.data.version}`}
           setup={q.data}
-          canManage={can(channel === "voice" ? "voice.manage" : "comms.manage")}
+          canManage={can(q.data.channel === "voice" ? "voice.manage" : "comms.manage")}
           refresh={q.refresh}
         />
       )}
@@ -143,7 +147,7 @@ function OnboardingForm({
       <CardHeader className="space-y-3">
         <div className="flex items-center justify-between gap-4">
           <CardTitle>
-            {setup.channel === "voice" ? "Voice call setup" : "WhatsApp setup"}
+            {setup.channel === "voice" ? "Phone line" : "WhatsApp setup"}
           </CardTitle>
           <Badge variant="outline">
             {setup.state === "requested"
@@ -155,9 +159,6 @@ function OnboardingForm({
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="rounded-md border bg-muted/40 p-4">
-          <p className="font-medium">Managed by Exora</p>
-        </div>
         <fieldset
           disabled={!canManage || cmd.busy || cmd.unknown}
           className="space-y-6"
