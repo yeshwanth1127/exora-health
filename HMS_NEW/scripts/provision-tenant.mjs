@@ -33,7 +33,7 @@ const timezone = args.get('timezone') ?? 'Asia/Kolkata';
 if (!['clinic','hospital','diagnostic_centre','virtual'].includes(facilityType)) throw new Error('Unknown facility type');
 new Intl.DateTimeFormat('en', { timeZone: timezone });
 const websiteTemplate = args.get('website-template') ?? 'standard';
-if (!['standard', 'sri-lakshmi', 'hospital-editorial'].includes(websiteTemplate)) throw new Error('Unknown website template');
+if (!['standard', 'sri-lakshmi', 'hospital-editorial', 'swastikaa'].includes(websiteTemplate)) throw new Error('Unknown website template');
 if (!/^[a-z0-9][a-z0-9-]{1,62}$/.test(slug)) throw new Error('--slug must be lower-case letters, numbers and hyphens');
 if (!/.+@.+\..+/.test(email)) throw new Error('--email must be a valid email');
 if (!['launch', 'connect', 'scale'].includes(plan)) throw new Error('--plan must be launch, connect or scale');

@@ -16,7 +16,7 @@ The control API resolves extensionless exported pages and returns genuine 404s f
 
 ## Setup contract
 
-The quote hands name, contact, facility, city and website preference into setup. Setup collects the required administrator email, organisation address, facility/timezone, real plan/channel entitlements, and a registered patient-site template (`standard`, `sri-lakshmi`, or `hospital-editorial`). Explicit confirmation gates POST `/control/v1/onboarding`; no pretend OTP or authenticated browser-only account remains.
+The quote hands name, contact, facility, city and website preference into setup. Setup collects the required administrator email, organisation address, facility/timezone, real plan/channel entitlements, and a registered patient-site template (`standard`, `sri-lakshmi`, `hospital-editorial`, or `swastikaa`). Explicit confirmation gates POST `/control/v1/onboarding`; no pretend OTP or authenticated browser-only account remains.
 
 The exact payload, idempotency key and recovery access token are saved before POST. A timeout retries those same values. Validation/address conflicts unlock editing. Other errors retain the request for safe recovery. GET status requires the bearer access token; queued/provisioning requests poll every 2.5 seconds and stop at a terminal state. Reload re-fetches the server result before showing ready links.
 
@@ -42,3 +42,5 @@ The imported `deploy/` files and `docs/PUBLIC_WEBSITE_SECURITY.md` describe the 
 
 
 The editorial hospital template (`hospital-editorial`) is a separate tenant app for NDR or another hospital. Quote selection and workspace setup retain its ID. Saved facility branding is loaded at runtime; selecting this design does not copy Sri Lakshmi clinical or marketing data. See `apps/hospital-editorial-web/README.md`.
+
+The Swastikaa template (`swastikaa`) follows the same provisioned tenant runtime. Its public profile carries saved demo/live mode and content; default demo data remains frontend-only. Workspace settings → Website manages content and general enquiries. Live availability and automated appointment handling reuse the HMS booking and managed voice services. See `apps/hospital-community-web/README.md`.

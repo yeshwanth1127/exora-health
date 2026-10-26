@@ -1,0 +1,20 @@
+/* Arc foundation geometry; HJE's white-and-blue page structure remains. */
+:root{--font-body:Arial,Helvetica,sans-serif;--font-display:Arial,Helvetica,sans-serif}
+.btn{border-radius:var(--radius-control);min-height:var(--control-height-md);font-size:var(--text-sm);font-weight:500;transition:background var(--duration-fast) var(--ease-standard),box-shadow var(--duration-fast) var(--ease-standard)}
+.btn:active{opacity:.84}.btn:hover{box-shadow:var(--shadow-resting)}.hero-panel{border-radius:var(--radius-surface)}
+.doctor-card,.plan-card,.info-panel,.contact-form,.booking-panel,.booking-summary,.filter-row,.specialty-grid article,.empty{border-radius:var(--radius-panel);border-color:var(--border);box-shadow:var(--shadow-resting)}
+.field input,.field select,.field textarea,.filter-row input,.filter-row select,.booking-panel>label>select{border-radius:var(--radius-control);min-height:var(--control-height-md);border-color:var(--border-strong);padding-inline:var(--space-3)}
+.contact-form>div,.booking-panel form>div:not(.form-actions){margin-top:20px}.contact-form>button{margin-top:24px}.booking-panel>button{margin-top:28px}.booking-panel form h2{margin-bottom:16px}
+.sl-services .section-title p{max-width:60ch}.sl-bento{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
+.sl-service{position:relative;padding:0;border:0;border-radius:22px;overflow:hidden;aspect-ratio:1.2/1;cursor:pointer;box-shadow:var(--shadow-resting);background:#e5e7ea;text-align:left;color:white;isolation:isolate;transition:box-shadow .3s}
+.sl-service:hover{box-shadow:var(--shadow-raised)}.sl-service>img{width:100%;height:100%;object-fit:cover;transition:transform .7s ease-out}.sl-service:hover>img{transform:scale(1.05)}
+.sl-service-scrim{position:absolute;inset:0;background:linear-gradient(to top,rgb(0 0 0/.85),rgb(0 0 0/.35),transparent);pointer-events:none}
+.sl-service-label{position:absolute;bottom:0;left:0;right:0;padding:28px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}.sl-service-title{font-size:23px;line-height:25px;font-weight:500;letter-spacing:-.44px}.sl-service-action{display:inline-flex;gap:6px;font-size:15px;line-height:22px;color:rgb(255 255 255/.9)}.sl-service-action>span{transition:transform .3s}.sl-service:hover .sl-service-action>span{transform:translateX(4px)}
+.sl-insurance{background:var(--pale);border-block:1px solid var(--border);text-align:center}.sl-insurance h2{max-width:720px;margin:auto}.sl-insurance>.container>p{margin:20px auto 0;max-width:65ch}.sl-insurance .btn{margin-top:26px}.sl-logo-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;gap:48px;margin:56px 0 40px}
+.sl-logo-row button{display:flex;align-items:center;justify-content:center;height:112px;width:100%;padding:0;border:0;background:transparent;cursor:pointer}.sl-logo-row img{width:auto;max-width:100%;max-height:80px;object-fit:contain;filter:grayscale(1);opacity:.9;transition:opacity .2s,transform .2s}.sl-logo-row button:hover img{opacity:1;transform:scale(1.05)}
+.insurer-grid img{width:auto;max-width:140px;height:40px;object-fit:contain}.insurer-grid button{min-height:100px;flex-wrap:wrap}
+@media(max-width:950px){.sl-bento{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}.sl-logo-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:32px}}
+@media(max-width:600px){.sl-bento{grid-template-columns:1fr;gap:24px}.sl-service-label{padding:24px}.sl-logo-row{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:25px;row-gap:28px;margin:36px 0}.sl-logo-row button{height:80px}.sl-logo-row img{max-height:56px}.sl-insurance h2{font-size:28px}.sl-insurance>.container>p{font-size:13px}}
+@media(prefers-reduced-motion:reduce){.sl-service>img,.sl-service-action>span,.sl-logo-row img{transition:none}.sl-service:hover>img,.sl-logo-row button:hover img{transform:none}}
+
+.filter-row>div{flex:1;min-width:0}.booking-panel>div:first-of-type{margin-top:24px}

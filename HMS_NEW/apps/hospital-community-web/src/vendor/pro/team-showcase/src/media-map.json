@@ -1,0 +1,286 @@
+{
+  "literals": [
+    "/media/people/andre-williams.jpg",
+    "/media/people/ava-mitchell.jpg",
+    "/media/people/chloe-nguyen.jpg",
+    "/media/people/daniel-kim.jpg",
+    "/media/people/diane-foster.jpg",
+    "/media/people/emma-collins.jpg",
+    "/media/people/hannah-walsh.jpg",
+    "/media/people/jasmine-brooks.jpg",
+    "/media/people/jordan-reyes.jpg",
+    "/media/people/marcus-johnson.jpg",
+    "/media/people/mateo-alvarez.jpg",
+    "/media/people/nathan-cole.jpg",
+    "/media/people/olivia-bennett.jpg",
+    "/media/people/ryan-sullivan.jpg",
+    "/media/people/sofia-ramirez.jpg",
+    "/media/people/tyler-hayes.jpg",
+    "/media/photos/alpine-lake.jpg",
+    "/media/photos/bedroom.jpg",
+    "/media/photos/ceramic-lamp.jpg",
+    "/media/photos/chef-plating.jpg",
+    "/media/photos/coastline.jpg",
+    "/media/photos/concert-hall.jpg",
+    "/media/photos/curved-facade.jpg",
+    "/media/photos/glass-carafe.jpg",
+    "/media/photos/home-office.jpg",
+    "/media/photos/linen-throw.jpg",
+    "/media/photos/lisbon-bridge.jpg",
+    "/media/photos/lisbon-rooftops.jpg",
+    "/media/photos/lisbon-tram.jpg",
+    "/media/photos/living-room.jpg",
+    "/media/photos/lounge-chair.jpg",
+    "/media/photos/mountain-ridges.jpg",
+    "/media/photos/pool-house.jpg",
+    "/media/photos/reading-chair.jpg",
+    "/media/photos/restaurant.jpg",
+    "/media/photos/salmon-dinner.jpg",
+    "/media/photos/sea-at-dusk.jpg",
+    "/media/photos/stacked-bowls.jpg",
+    "/media/photos/stoneware-cups.jpg",
+    "/media/photos/sunroom.jpg",
+    "/media/photos/table-lamp.jpg",
+    "/media/photos/terracotta-waves.jpg",
+    "/media/photos/wine-bar.jpg"
+  ],
+  "dynamicTemplates": [
+    {
+      "prefix": "/media/people/portrait/",
+      "expression": "e",
+      "suffix": ".jpg"
+    }
+  ],
+  "assets": [
+    {
+      "path": "/media/people/andre-williams.jpg",
+      "sha256": "01bf0c09ef58a1a028919775c4991d5eb2d23e71d6a2da63480a0b51237869fb",
+      "capturedFrom": "action-morph/public/media/people/andre-williams.jpg"
+    },
+    {
+      "path": "/media/people/ava-mitchell.jpg",
+      "sha256": "9b6f6c5b231fd9567349209e0ce48b60453ff9e8ba8bebacc4ee0857896be47d",
+      "capturedFrom": "action-morph/public/media/people/ava-mitchell.jpg"
+    },
+    {
+      "path": "/media/people/chloe-nguyen.jpg",
+      "sha256": "8974562ec042ab2f893af5744f5e28d7d46baabfe1b612529bd13642db45b5e8",
+      "capturedFrom": "action-morph/public/media/people/chloe-nguyen.jpg"
+    },
+    {
+      "path": "/media/people/daniel-kim.jpg",
+      "sha256": "0ec3bde6f3ffa3ba145f4bbf388986ed5c3b984c84dbafb2b0d2328987c6cf96",
+      "capturedFrom": "action-morph/public/media/people/daniel-kim.jpg"
+    },
+    {
+      "path": "/media/people/diane-foster.jpg",
+      "sha256": "fec84b2de54166a54841fe9178e5cf88a77a4e4d431615aacf291be9f8b1d46e",
+      "capturedFrom": "action-morph/public/media/people/diane-foster.jpg"
+    },
+    {
+      "path": "/media/people/emma-collins.jpg",
+      "sha256": "1fcae860bc93af6cd25cf0a3e511e6618840c7c2800c25c26e18000abf9ccafb",
+      "capturedFrom": "action-morph/public/media/people/emma-collins.jpg"
+    },
+    {
+      "path": "/media/people/hannah-walsh.jpg",
+      "sha256": "7ed60c72825b3736a9df54fce7d947c9b5dc0e9e96fdaad590426e7c05e2dbca",
+      "capturedFrom": "action-morph/public/media/people/hannah-walsh.jpg"
+    },
+    {
+      "path": "/media/people/jasmine-brooks.jpg",
+      "sha256": "b34636f34c96ac5c2a161d7091325c33d92c73f9dced23c8ab2dc58305d36303",
+      "capturedFrom": "action-morph/public/media/people/jasmine-brooks.jpg"
+    },
+    {
+      "path": "/media/people/jordan-reyes.jpg",
+      "sha256": "7289c768f7f02b3dbe2183cc5e21dd9258af48d250750b0f327c867c0b793611",
+      "capturedFrom": "action-morph/public/media/people/jordan-reyes.jpg"
+    },
+    {
+      "path": "/media/people/marcus-johnson.jpg",
+      "sha256": "a204a7c8ade17edb268b95e21acd21485c56ce781a692f794eeb5307c336956e",
+      "capturedFrom": "action-morph/public/media/people/marcus-johnson.jpg"
+    },
+    {
+      "path": "/media/people/mateo-alvarez.jpg",
+      "sha256": "4022134885abcc1ad2ff7cc9750a0924004ff7a9241464e5f07cfc5f4c37a71e",
+      "capturedFrom": "action-morph/public/media/people/mateo-alvarez.jpg"
+    },
+    {
+      "path": "/media/people/nathan-cole.jpg",
+      "sha256": "45de9f8a0c9b2a4f00ad4a39682bc5cdff7ef54dae9d174739f7ae71eaa22162",
+      "capturedFrom": "action-morph/public/media/people/nathan-cole.jpg"
+    },
+    {
+      "path": "/media/people/olivia-bennett.jpg",
+      "sha256": "d541b5fc8af7f58defdeef9875a233d8e30c4bc3884798e05a8b70b6df3b0520",
+      "capturedFrom": "action-morph/public/media/people/olivia-bennett.jpg"
+    },
+    {
+      "path": "/media/people/portrait/emma-collins.jpg",
+      "sha256": "f270272ee39647bf4f012252d58f29dfc62d749903cfd82b2d76042f37a44da5",
+      "capturedFrom": "testimonial-stage/public/media/people/portrait/emma-collins.jpg"
+    },
+    {
+      "path": "/media/people/portrait/marcus-johnson.jpg",
+      "sha256": "bab596ebc44b88f70a3964ac69eb2f0c81adcf1a4c208487910c0ac2f53770f3",
+      "capturedFrom": "testimonial-stage/public/media/people/portrait/marcus-johnson.jpg"
+    },
+    {
+      "path": "/media/people/portrait/sofia-ramirez.jpg",
+      "sha256": "3710e49b9b02b21261b17e102873c7ee2481ea09a588bf7ebd65bc2a93a8d81b",
+      "capturedFrom": "testimonial-stage/public/media/people/portrait/sofia-ramirez.jpg"
+    },
+    {
+      "path": "/media/people/ryan-sullivan.jpg",
+      "sha256": "be012d673a76466db185a06be7b4eba1aa1fbb36d28c80f2dc61c5ed5d5c9d65",
+      "capturedFrom": "action-morph/public/media/people/ryan-sullivan.jpg"
+    },
+    {
+      "path": "/media/people/sofia-ramirez.jpg",
+      "sha256": "12c866905f224b1f6d461941425723773bb9b21b082eb29f037a7fa40a5c8c39",
+      "capturedFrom": "action-morph/public/media/people/sofia-ramirez.jpg"
+    },
+    {
+      "path": "/media/people/tyler-hayes.jpg",
+      "sha256": "b05bd3902aa99c41b0bf442ae9f497513c5a41f3b5e5d4cd88c4b1dd7a3d00ac",
+      "capturedFrom": "action-morph/public/media/people/tyler-hayes.jpg"
+    },
+    {
+      "path": "/media/photos/alpine-lake.jpg",
+      "sha256": "accd526749b888cc6bcf006794bd499cd554beba57237e58884e7592252b7edb",
+      "capturedFrom": "booking-pill/public/media/photos/alpine-lake.jpg"
+    },
+    {
+      "path": "/media/photos/bedroom.jpg",
+      "sha256": "8fda82b3bf7e83f609beadba3db708225dda6b8ea21345ddb0f140e0eded1c73",
+      "capturedFrom": "booking-pill/public/media/photos/bedroom.jpg"
+    },
+    {
+      "path": "/media/photos/ceramic-lamp.jpg",
+      "sha256": "8426aa692c5e75d6f3e573b0465babe98e4e5aa3cb0a8a5526b677224e5338aa",
+      "capturedFrom": "booking-pill/public/media/photos/ceramic-lamp.jpg"
+    },
+    {
+      "path": "/media/photos/chef-plating.jpg",
+      "sha256": "7df42fa0bd481903cb7289d341d521e8a4d8a25729a6d6bd6e38b9b7f0f84bec",
+      "capturedFrom": "booking-pill/public/media/photos/chef-plating.jpg"
+    },
+    {
+      "path": "/media/photos/coastline.jpg",
+      "sha256": "7247fc4562c38adf570ae49978d26c91d4700a482bc6208a7c89bdd66129cdd1",
+      "capturedFrom": "booking-pill/public/media/photos/coastline.jpg"
+    },
+    {
+      "path": "/media/photos/concert-hall.jpg",
+      "sha256": "c36634098ffd0022c71bf79f854ce4d4f7cba08407dad6507707f9424aefcc1e",
+      "capturedFrom": "booking-pill/public/media/photos/concert-hall.jpg"
+    },
+    {
+      "path": "/media/photos/curved-facade.jpg",
+      "sha256": "9bac99c95380b5a9164129b57603f63c7af299a466786b98e80f19c2404b56a3",
+      "capturedFrom": "booking-pill/public/media/photos/curved-facade.jpg"
+    },
+    {
+      "path": "/media/photos/glass-carafe.jpg",
+      "sha256": "dd6fa65cbbac8bb077bbdbe69cc584d8450e05d55f64954952c2ea3408533711",
+      "capturedFrom": "booking-pill/public/media/photos/glass-carafe.jpg"
+    },
+    {
+      "path": "/media/photos/home-office.jpg",
+      "sha256": "fdba562912cf431295247bf9e96538dece40e23e8a2b238af05a95d55a112d06",
+      "capturedFrom": "booking-pill/public/media/photos/home-office.jpg"
+    },
+    {
+      "path": "/media/photos/linen-throw.jpg",
+      "sha256": "459335e510c0128bf065e7da55bf10d96656fdc6625eac1c18e49bc84fb2a5fe",
+      "capturedFrom": "booking-pill/public/media/photos/linen-throw.jpg"
+    },
+    {
+      "path": "/media/photos/lisbon-bridge.jpg",
+      "sha256": "c433c2472ee01a90c949c11c5a7a73df91f143a99851e405a3b0a29bdd9406e4",
+      "capturedFrom": "booking-pill/public/media/photos/lisbon-bridge.jpg"
+    },
+    {
+      "path": "/media/photos/lisbon-rooftops.jpg",
+      "sha256": "642f91fd41dd16ba1639bd83c8d68eaa19cc294820997ed989650bfa8eeb8630",
+      "capturedFrom": "booking-pill/public/media/photos/lisbon-rooftops.jpg"
+    },
+    {
+      "path": "/media/photos/lisbon-tram.jpg",
+      "sha256": "c7b82c9de4a2c40be0968d1f22d63f7793d9373ac0d581997b7657cd4f9b36e5",
+      "capturedFrom": "booking-pill/public/media/photos/lisbon-tram.jpg"
+    },
+    {
+      "path": "/media/photos/living-room.jpg",
+      "sha256": "416837e3ffc9de1b4a9661f2e235db15015080964cd4d8e235cc6981e97d7b6a",
+      "capturedFrom": "booking-pill/public/media/photos/living-room.jpg"
+    },
+    {
+      "path": "/media/photos/lounge-chair.jpg",
+      "sha256": "1b527cb3b34f1521cd9987846292ae70ef7a93be535ec757ea04aab32ab74ee8",
+      "capturedFrom": "booking-pill/public/media/photos/lounge-chair.jpg"
+    },
+    {
+      "path": "/media/photos/mountain-ridges.jpg",
+      "sha256": "32c9fa37a4ffb7a4797794c39076c8a2f6cbdf6194dfd10807ff450cb8b5842d",
+      "capturedFrom": "booking-pill/public/media/photos/mountain-ridges.jpg"
+    },
+    {
+      "path": "/media/photos/pool-house.jpg",
+      "sha256": "da7adc31546fa1cfc9d4a49ec457d649b652e01630a728b81c37bc90f060f396",
+      "capturedFrom": "booking-pill/public/media/photos/pool-house.jpg"
+    },
+    {
+      "path": "/media/photos/reading-chair.jpg",
+      "sha256": "1fe1ff95380514df9bf39d9002c0259e97a0a48ede1a99e9be351bebff5ed14c",
+      "capturedFrom": "booking-pill/public/media/photos/reading-chair.jpg"
+    },
+    {
+      "path": "/media/photos/restaurant.jpg",
+      "sha256": "fd58c9f75c8e5044ace065e7255603bde0be5282f39cca8792bf6aeeb7f093a2",
+      "capturedFrom": "booking-pill/public/media/photos/restaurant.jpg"
+    },
+    {
+      "path": "/media/photos/salmon-dinner.jpg",
+      "sha256": "c035d367b832946ec949149fc7323b7b277569d58c694f3dc0ca978f62728914",
+      "capturedFrom": "booking-pill/public/media/photos/salmon-dinner.jpg"
+    },
+    {
+      "path": "/media/photos/sea-at-dusk.jpg",
+      "sha256": "fd863c7dee588f3a3e0793c6432cf9d3ed9940f193ea672a57bda41043f0a512",
+      "capturedFrom": "booking-pill/public/media/photos/sea-at-dusk.jpg"
+    },
+    {
+      "path": "/media/photos/stacked-bowls.jpg",
+      "sha256": "f3619c6251e8dd4f758d907eb499cc1bb33dac56569edab1a6dec232376a8d51",
+      "capturedFrom": "booking-pill/public/media/photos/stacked-bowls.jpg"
+    },
+    {
+      "path": "/media/photos/stoneware-cups.jpg",
+      "sha256": "5db79a4f0273870ccf0e58ea51e2874a2e48762ff69f878b125a967686c6189d",
+      "capturedFrom": "booking-pill/public/media/photos/stoneware-cups.jpg"
+    },
+    {
+      "path": "/media/photos/sunroom.jpg",
+      "sha256": "67a0f07e812f4824823c9eaab003b5c621bd29c5e70b560502fec43783e078d7",
+      "capturedFrom": "booking-pill/public/media/photos/sunroom.jpg"
+    },
+    {
+      "path": "/media/photos/table-lamp.jpg",
+      "sha256": "2a5c820d9a1deded65a58812c808362801a6375df583eb1e5beb650356efffd7",
+      "capturedFrom": "booking-pill/public/media/photos/table-lamp.jpg"
+    },
+    {
+      "path": "/media/photos/terracotta-waves.jpg",
+      "sha256": "e56af50ba95634c83e96669583cad8a1c2b2dc8b359b0e703ef8b009b7b93adb",
+      "capturedFrom": "booking-pill/public/media/photos/terracotta-waves.jpg"
+    },
+    {
+      "path": "/media/photos/wine-bar.jpg",
+      "sha256": "0d0583d3928476df2f3ff7cf77bbd6e9e26bbd3064062251fbfd90b92ccc93fe",
+      "capturedFrom": "booking-pill/public/media/photos/wine-bar.jpg"
+    }
+  ]
+}

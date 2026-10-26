@@ -1,0 +1,47 @@
+import TextLink from "../components/text-link";
+import { TextLink_meta } from "../ditto-meta";
+import { textLinkData as textLinkDataContent } from "../content";
+/** Hero section — the page's lead block. */
+export default function HeroSection({ textLinkData = textLinkDataContent } = {}) {
+  return (
+    <section className="section flow-6">
+      <video className="video flow-6" muted poster="/assets/cloned/images/e9a581218540.jpg" preload="none">
+        {" "}
+      </video>
+      {" "}
+      <div className="box-34 flow-2">
+        <div className="box-35 grid">
+          <div className="box-36 flow-3">
+            <div className="box-37 flow-3">
+              <h1 className="heading flow-3 type-25" data-component="heading">
+                We are a leading private hospital at the heart of the London community
+              </h1>
+              {" "}
+              <p className="box-37 flow-3">
+                {"St John & St Elizabeth Hospital is a leading private hospital in London, delivering expert treatment with exceptional nursing care."}
+              </p>
+              {" "}
+              <p className="box-37 flow-3">
+                We offer a comprehensive range of treatments and diagnostics for both children and adults. As a charity, every patient treated helps support our on-site hospice.
+              </p>
+              {" "}
+              <p className="flow-3">
+                I am looking for…
+              </p>
+              {" "}
+            </div>
+            {" "}
+            <div className="grid-2">
+              {textLinkData.map((d, i) => <TextLink key={i} d={d} meta={TextLink_meta[i]} />)}
+              {" "}
+            </div>
+            {" "}
+          </div>
+          {" "}
+        </div>
+        {" "}
+      </div>
+      {" "}
+    </section>
+  );
+}

@@ -21,7 +21,9 @@ export function registerTenantPublicBookingRoutes(app: FastifyInstance, db: Kyse
   const content = websiteContent(process.env.WEBSITE_CONTENT_JSON);
   app.get('/public/v1/website', async (_request, reply) => {
     reply.header('cache-control','no-store');
-    return tenantWebsiteProfile(db, tenantId, content, process.env.BOOTSTRAP_FACILITY_ID);
+    const template=process.env.WEBSITE_TEMPLATE||'standard';
+    const binding=managed.booking?.sites.find(s=>s.tenantId===tenantId&&(!process.env.BOOTSTRAP_FACILITY_ID||s.facilityId===process.env.BOOTSTRAP_FACILITY_ID));
+    return tenantWebsiteProfile(db, tenantId, content, process.env.BOOTSTRAP_FACILITY_ID||(template==='swastikaa'?binding?.facilityId:undefined), {template,bookingSite:binding?.siteSlug??null});
   });
 
   const caller = (correlationId: string): Caller => ({ tenantId, actor: { kind: 'system' }, correlationId });

@@ -30,6 +30,7 @@
     "apps/staff-web",
     "apps/sri-lakshmi-web",
     "apps/hospital-editorial-web",
-    "apps/platform-web"
+    "apps/platform-web",
+    "apps/hospital-community-web"
   ]
 }

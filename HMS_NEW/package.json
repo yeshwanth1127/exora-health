@@ -44,7 +44,10 @@
     "website:test": "pnpm --filter @hms/sri-lakshmi-web test",
     "editorial:dev": "pnpm --filter @hms/hospital-editorial-web dev",
     "editorial:build": "pnpm --filter @hms/hospital-editorial-web build",
-    "editorial:test": "pnpm --filter @hms/hospital-editorial-web test"
+    "editorial:test": "pnpm --filter @hms/hospital-editorial-web test",
+    "swastikaa:dev": "pnpm --filter @hms/hospital-community-web dev",
+    "swastikaa:build": "pnpm --filter @hms/hospital-community-web build",
+    "swastikaa:test": "pnpm --filter @hms/hospital-community-web test"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

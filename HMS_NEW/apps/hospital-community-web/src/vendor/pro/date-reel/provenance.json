@@ -1,0 +1,242 @@
+{
+  "source": "https://uiarc.dev/components/date-reel/frame",
+  "capturedAt": "2026-10-15T08:52:13.268Z",
+  "entryModule": 39385,
+  "export": "DateReelDemo",
+  "method": "Binding-aware conversion of captured factories; host React external; captured asset URLs rebased to package-relative assets.",
+  "modules": [
+    {
+      "id": "25620",
+      "file": "src/dependencies/25620.cjs",
+      "capturedFactorySha256": "5e1c7697f4b9ed8d93d981b468cba4af71b3a18575f5e57eb53d0458b41e0113"
+    },
+    {
+      "id": "10887",
+      "file": "src/dependencies/10887.cjs",
+      "capturedFactorySha256": "91649ddf44f3378d6755a36fe7160124c71771a9bfee49f93c8e207b9813e420"
+    },
+    {
+      "id": "18310",
+      "file": "src/dependencies/18310.cjs",
+      "capturedFactorySha256": "dd7255477f2918e5e007f0c38c3c1ced11961ca1ac80a5ca5eb205fee01e04f5"
+    },
+    {
+      "id": "90209",
+      "file": "src/dependencies/90209.cjs",
+      "capturedFactorySha256": "efbb2f895aee3b753815795b2293dbd84f1f1bb238e617bf9f8ab3e9fd144901"
+    },
+    {
+      "id": "51811",
+      "file": "src/dependencies/51811.cjs",
+      "capturedFactorySha256": "294b9b3e1107d07296f8561f7f3ea52b59231462e7f9d240bba131da709705bf"
+    },
+    {
+      "id": "92571",
+      "file": "src/dependencies/92571.cjs",
+      "capturedFactorySha256": "529ef7e04f1c37073fb4d58f6d56c1268ffa4333fb8abdd76edc366f9fbe750d"
+    },
+    {
+      "id": "64577",
+      "file": "src/dependencies/64577.cjs",
+      "capturedFactorySha256": "fac62cc38fcbf4a4502bc930559063c5b6fbe7e0a68ec70e2cec8b778179eee1"
+    },
+    {
+      "id": "40426",
+      "file": "src/dependencies/40426.cjs",
+      "capturedFactorySha256": "a15cc39b2157be214240c281f851a795cbed97e173e6240c70d75eca7610c3bf"
+    },
+    {
+      "id": "72575",
+      "file": "src/dependencies/72575.cjs",
+      "capturedFactorySha256": "e1cdc4803380802463c3bdbcc0488f56c5addce4cafa015158411ca0d3063daa"
+    },
+    {
+      "id": "39385",
+      "file": "src/Component.cjs",
+      "capturedFactorySha256": "68a94873e96edf8a5fb93051cc59f4316a7e1326a73848840cdccbf23b4021e6"
+    }
+  ],
+  "assets": [
+    {
+      "file": "_next/static/media/6c596dfcddeca1e9-s.p.woff2",
+      "sha256": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62"
+    },
+    {
+      "file": "_next/static/media/9ff55a8a9670220d-s.p.woff2",
+      "sha256": "19f9c92546aa300c312235e3125af1b81394d8db9a4bc4a425cd5b641d2d54e1"
+    },
+    {
+      "file": "media/people/emma-collins.jpg",
+      "sha256": "1fcae860bc93af6cd25cf0a3e511e6618840c7c2800c25c26e18000abf9ccafb"
+    },
+    {
+      "file": "media/people/marcus-johnson.jpg",
+      "sha256": "a204a7c8ade17edb268b95e21acd21485c56ce781a692f794eeb5307c336956e"
+    },
+    {
+      "file": "media/people/jasmine-brooks.jpg",
+      "sha256": "b34636f34c96ac5c2a161d7091325c33d92c73f9dced23c8ab2dc58305d36303"
+    },
+    {
+      "file": "media/people/olivia-bennett.jpg",
+      "sha256": "d541b5fc8af7f58defdeef9875a233d8e30c4bc3884798e05a8b70b6df3b0520"
+    },
+    {
+      "file": "media/people/sofia-ramirez.jpg",
+      "sha256": "12c866905f224b1f6d461941425723773bb9b21b082eb29f037a7fa40a5c8c39"
+    },
+    {
+      "file": "media/people/ryan-sullivan.jpg",
+      "sha256": "be012d673a76466db185a06be7b4eba1aa1fbb36d28c80f2dc61c5ed5d5c9d65"
+    },
+    {
+      "file": "media/people/hannah-walsh.jpg",
+      "sha256": "7ed60c72825b3736a9df54fce7d947c9b5dc0e9e96fdaad590426e7c05e2dbca"
+    },
+    {
+      "file": "media/people/chloe-nguyen.jpg",
+      "sha256": "8974562ec042ab2f893af5744f5e28d7d46baabfe1b612529bd13642db45b5e8"
+    },
+    {
+      "file": "media/people/ava-mitchell.jpg",
+      "sha256": "9b6f6c5b231fd9567349209e0ce48b60453ff9e8ba8bebacc4ee0857896be47d"
+    },
+    {
+      "file": "media/people/daniel-kim.jpg",
+      "sha256": "0ec3bde6f3ffa3ba145f4bbf388986ed5c3b984c84dbafb2b0d2328987c6cf96"
+    },
+    {
+      "file": "media/people/jordan-reyes.jpg",
+      "sha256": "7289c768f7f02b3dbe2183cc5e21dd9258af48d250750b0f327c867c0b793611"
+    },
+    {
+      "file": "media/people/mateo-alvarez.jpg",
+      "sha256": "4022134885abcc1ad2ff7cc9750a0924004ff7a9241464e5f07cfc5f4c37a71e"
+    },
+    {
+      "file": "media/people/tyler-hayes.jpg",
+      "sha256": "b05bd3902aa99c41b0bf442ae9f497513c5a41f3b5e5d4cd88c4b1dd7a3d00ac"
+    },
+    {
+      "file": "media/people/andre-williams.jpg",
+      "sha256": "01bf0c09ef58a1a028919775c4991d5eb2d23e71d6a2da63480a0b51237869fb"
+    },
+    {
+      "file": "media/people/nathan-cole.jpg",
+      "sha256": "45de9f8a0c9b2a4f00ad4a39682bc5cdff7ef54dae9d174739f7ae71eaa22162"
+    },
+    {
+      "file": "media/people/diane-foster.jpg",
+      "sha256": "fec84b2de54166a54841fe9178e5cf88a77a4e4d431615aacf291be9f8b1d46e"
+    },
+    {
+      "file": "media/photos/lounge-chair.jpg",
+      "sha256": "1b527cb3b34f1521cd9987846292ae70ef7a93be535ec757ea04aab32ab74ee8"
+    },
+    {
+      "file": "media/photos/table-lamp.jpg",
+      "sha256": "2a5c820d9a1deded65a58812c808362801a6375df583eb1e5beb650356efffd7"
+    },
+    {
+      "file": "media/photos/linen-throw.jpg",
+      "sha256": "459335e510c0128bf065e7da55bf10d96656fdc6625eac1c18e49bc84fb2a5fe"
+    },
+    {
+      "file": "media/photos/glass-carafe.jpg",
+      "sha256": "dd6fa65cbbac8bb077bbdbe69cc584d8450e05d55f64954952c2ea3408533711"
+    },
+    {
+      "file": "media/photos/stoneware-cups.jpg",
+      "sha256": "5db79a4f0273870ccf0e58ea51e2874a2e48762ff69f878b125a967686c6189d"
+    },
+    {
+      "file": "media/photos/stacked-bowls.jpg",
+      "sha256": "f3619c6251e8dd4f758d907eb499cc1bb33dac56569edab1a6dec232376a8d51"
+    },
+    {
+      "file": "media/photos/ceramic-lamp.jpg",
+      "sha256": "8426aa692c5e75d6f3e573b0465babe98e4e5aa3cb0a8a5526b677224e5338aa"
+    },
+    {
+      "file": "media/photos/living-room.jpg",
+      "sha256": "416837e3ffc9de1b4a9661f2e235db15015080964cd4d8e235cc6981e97d7b6a"
+    },
+    {
+      "file": "media/photos/sunroom.jpg",
+      "sha256": "67a0f07e812f4824823c9eaab003b5c621bd29c5e70b560502fec43783e078d7"
+    },
+    {
+      "file": "media/photos/home-office.jpg",
+      "sha256": "fdba562912cf431295247bf9e96538dece40e23e8a2b238af05a95d55a112d06"
+    },
+    {
+      "file": "media/photos/reading-chair.jpg",
+      "sha256": "1fe1ff95380514df9bf39d9002c0259e97a0a48ede1a99e9be351bebff5ed14c"
+    },
+    {
+      "file": "media/photos/bedroom.jpg",
+      "sha256": "8fda82b3bf7e83f609beadba3db708225dda6b8ea21345ddb0f140e0eded1c73"
+    },
+    {
+      "file": "media/photos/restaurant.jpg",
+      "sha256": "fd58c9f75c8e5044ace065e7255603bde0be5282f39cca8792bf6aeeb7f093a2"
+    },
+    {
+      "file": "media/photos/wine-bar.jpg",
+      "sha256": "0d0583d3928476df2f3ff7cf77bbd6e9e26bbd3064062251fbfd90b92ccc93fe"
+    },
+    {
+      "file": "media/photos/concert-hall.jpg",
+      "sha256": "c36634098ffd0022c71bf79f854ce4d4f7cba08407dad6507707f9424aefcc1e"
+    },
+    {
+      "file": "media/photos/curved-facade.jpg",
+      "sha256": "9bac99c95380b5a9164129b57603f63c7af299a466786b98e80f19c2404b56a3"
+    },
+    {
+      "file": "media/photos/pool-house.jpg",
+      "sha256": "da7adc31546fa1cfc9d4a49ec457d649b652e01630a728b81c37bc90f060f396"
+    },
+    {
+      "file": "media/photos/terracotta-waves.jpg",
+      "sha256": "e56af50ba95634c83e96669583cad8a1c2b2dc8b359b0e703ef8b009b7b93adb"
+    },
+    {
+      "file": "media/photos/mountain-ridges.jpg",
+      "sha256": "32c9fa37a4ffb7a4797794c39076c8a2f6cbdf6194dfd10807ff450cb8b5842d"
+    },
+    {
+      "file": "media/photos/alpine-lake.jpg",
+      "sha256": "accd526749b888cc6bcf006794bd499cd554beba57237e58884e7592252b7edb"
+    },
+    {
+      "file": "media/photos/coastline.jpg",
+      "sha256": "7247fc4562c38adf570ae49978d26c91d4700a482bc6208a7c89bdd66129cdd1"
+    },
+    {
+      "file": "media/photos/sea-at-dusk.jpg",
+      "sha256": "fd863c7dee588f3a3e0793c6432cf9d3ed9940f193ea672a57bda41043f0a512"
+    },
+    {
+      "file": "media/photos/lisbon-tram.jpg",
+      "sha256": "c7b82c9de4a2c40be0968d1f22d63f7793d9373ac0d581997b7657cd4f9b36e5"
+    },
+    {
+      "file": "media/photos/lisbon-bridge.jpg",
+      "sha256": "c433c2472ee01a90c949c11c5a7a73df91f143a99851e405a3b0a29bdd9406e4"
+    },
+    {
+      "file": "media/photos/lisbon-rooftops.jpg",
+      "sha256": "642f91fd41dd16ba1639bd83c8d68eaa19cc294820997ed989650bfa8eeb8630"
+    },
+    {
+      "file": "media/photos/salmon-dinner.jpg",
+      "sha256": "c035d367b832946ec949149fc7323b7b277569d58c694f3dc0ca978f62728914"
+    },
+    {
+      "file": "media/photos/chef-plating.jpg",
+      "sha256": "7df42fa0bd481903cb7289d341d521e8a4d8a25729a6d6bd6e38b9b7f0f84bec"
+    }
+  ],
+  "assetRebase": "Captured static asset literals in reconstructed factories use __assetUrl; JSX runtime bridges also rebase rendered img src/srcSet and inline background URLs to dist/assets. No remote runtime asset requests."
+}

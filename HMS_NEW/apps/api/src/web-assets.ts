@@ -7,10 +7,11 @@ export async function registerTenantWebAssets(app: FastifyInstance, options: {
   root: string; template?: string; bookingSite?: string;
 }) {
   const template = options.template || 'standard';
-  if (template !== 'standard' && template !== 'sri-lakshmi' && template !== 'hospital-editorial') throw new Error('Unknown website template');
+  if (template !== 'standard' && template !== 'sri-lakshmi' && template !== 'hospital-editorial' && template !== 'swastikaa') throw new Error('Unknown website template');
   if (template === 'sri-lakshmi' && !options.bookingSite) throw new Error('Sri Lakshmi website requires a tenant booking site');
   if (template === 'hospital-editorial' && !options.bookingSite) throw new Error('Editorial website requires a tenant booking site');
-  const publicRoot = path.join(options.root, template === 'sri-lakshmi' ? 'apps/sri-lakshmi-web/dist' : template === 'hospital-editorial' ? 'apps/hospital-editorial-web/dist' : 'apps/public-web/dist');
+  if (template === 'swastikaa' && !options.bookingSite) throw new Error('Swastikaa template requires a tenant booking site');
+  const publicRoot = path.join(options.root, template === 'sri-lakshmi' ? 'apps/sri-lakshmi-web/dist' : template === 'swastikaa' ? 'apps/hospital-community-web/dist' : template === 'hospital-editorial' ? 'apps/hospital-editorial-web/dist' : 'apps/public-web/dist');
   const staffRoot = path.join(options.root, 'apps/staff-web/dist');
   await app.register(fastifyStatic, { root: publicRoot, prefix: '/', wildcard: false, maxAge: '1h' });
   await app.register(fastifyStatic, { root: staffRoot, prefix: '/staff/', wildcard: false, decorateReply: false, maxAge: '1h' });
