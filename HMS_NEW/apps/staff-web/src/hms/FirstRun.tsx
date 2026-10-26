@@ -1,7 +1,9 @@
+import colourStyles from "./overview-colours.module.css";
+import { GoogleIcon, WhatsAppIcon } from "@/components/brand-icons";
 // First-run guide (docs/prd/first-run-onboarding.md): setup home, ready home, welcome slides, coach marks.
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import * as Popover from "@radix-ui/react-popover";
-import { ArrowRight, CircleCheck, Lock, X } from "lucide-react";
+import { ArrowRight, CalendarPlus, CircleCheck, Headphones, Lock, MessageCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageTitle } from "@/components/workspace";
@@ -21,6 +23,14 @@ const CHANNELS = [
   { key: "voice", title: "Voice agent", next: "Set up your voice agent", hint: "Answer calls and book appointments." },
   { key: "apple_messages", title: "Apple Messages", next: "Set up Apple Messages", hint: "Let patients message you from iPhone." },
 ];
+
+const channelIcons: Record<string, ReactNode> = {
+  book: <CalendarPlus aria-hidden="true" />,
+  whatsapp: <WhatsAppIcon />,
+  google_business: <GoogleIcon />,
+  voice: <Headphones aria-hidden="true" />,
+  apple_messages: <MessageCircle aria-hidden="true" />,
+};
 
 /** Overview while booking setup is unfinished: the four steps and nothing else. */
 export function SetupHome() {
@@ -86,14 +96,15 @@ export function SetupHome() {
             }}
           />
         </div>
-        <Card className="gap-0 p-0 shadow-none">
-          <div className="border-b p-5">
+        <Card className={`gap-0 p-0 shadow-none ${colourStyles.reachCard}`}>
+          <div className={`border-b p-5 ${colourStyles.reachHeader}`}>
             <p className="text-sm font-medium text-phase-reach">Up next: reach patients</p>
             <p className="text-sm text-muted-foreground">Opens once setup is done.</p>
           </div>
           <ul className="divide-y">
             {CHANNELS.map((c) => (
               <li key={c.key} className="flex items-center gap-3 p-4">
+                <span className={`${colourStyles.iconChip} ${colourStyles[c.key]}`}>{channelIcons[c.key]}</span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-muted-foreground">{c.title}</p>
                   <p className="text-xs text-muted-foreground">{c.hint}</p>
@@ -127,23 +138,25 @@ export function ReadyHome() {
       </>
     );
   return (
-    <>
+    <div className={colourStyles.overview}>
+      <div className={colourStyles.readyBanner}>
       <PageTitle
         title={`${facility.name} is ready for bookings`}
         icon={<CircleCheck className="size-6 text-guide-done" aria-hidden="true" />}
       />
       <p className="-mt-4 mb-6 text-sm text-muted-foreground">Get your first patients.</p>
+      </div>
       <ol className="max-w-3xl space-y-3">
         {[
           ...(book ? [{ key: "book", title: "Book your first appointment", hint: "Try it with a test patient.", action: "Book appointment", to: "appointments?book=1", done: false }] : []),
           ...channels.map((c) => ({ key: c.key, title: c.next, hint: c.hint, action: "Set up", to: c.key, done: ready.has(c.key) })),
         ].map((s, n) => (
           <li key={s.key}>
-            <Card className="flex-row items-center gap-4 p-5 shadow-none">
+            <Card className={`flex-row items-center gap-4 p-5 shadow-none ${s.key === "book" ? colourStyles.bookingCard : ""}`}>
               <span
-                className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-medium ${s.done ? "bg-guide-done text-white" : n === 0 ? "bg-guide-now text-white" : "border text-muted-foreground"}`}
+                className={`${colourStyles.iconChip} ${colourStyles[s.key]} ${s.done ? colourStyles.connected : ""}`}
               >
-                {s.done ? <CircleCheck className="size-4" aria-label="Done" /> : n + 1}
+                {s.done ? <CircleCheck className="size-4" aria-label="Done" /> : channelIcons[s.key]}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="font-medium">{s.title}</p>
@@ -160,7 +173,7 @@ export function ReadyHome() {
           </li>
         ))}
       </ol>
-    </>
+    </div>
   );
 }
 
