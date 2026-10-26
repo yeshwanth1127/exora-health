@@ -1,0 +1,33 @@
+/* Approved Overview colour placement. No shared Arc styles or state contracts change. */
+.overview { --preview-blue: #315dd8; --preview-green: #22754b; }
+.readyBanner {
+  max-width: 48rem;
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 1.25rem .1rem;
+  border: 1px solid #d7ecdf;
+  border-radius: 1rem;
+  background: #f0faf4;
+}
+.readyBanner h1 { color: #194f35; }
+.overview .bookingCard { background: #f0f5ff; border-color: #cfddfa; }
+.iconChip { display: grid; width: 2.25rem; height: 2.25rem; flex-shrink: 0; place-items: center; border-radius: .75rem; }
+.iconChip svg { width: 1.125rem; height: 1.125rem; }
+.book { color: var(--preview-blue); background: #dce7ff; }
+.whatsapp { color: #187744; background: #e8f7ed; }
+.whatsapp svg { fill: currentColor; }
+.google_business { background: #eef3fe; }
+.voice { color: #7144b5; background: #f1eafb; }
+.apple_messages { color: #464b55; background: #edf0f4; }
+.iconChip.connected { color: var(--preview-green); background: #e3f3e9; }
+:global(.dark) .readyBanner { background: #152b21; border-color: #284837; }
+:global(.dark) .readyBanner h1 { color: #b7e3c6; }
+:global(.dark) .overview .bookingCard { background: #17243e; border-color: #2b426b; }
+:global(.dark) .book { color: #a8c2ff; background: #253a61; }
+:global(.dark) .whatsapp, :global(.dark) .iconChip.connected { color: #9bd7b0; background: #213b2b; }
+:global(.dark) .google_business { background: #293343; }
+:global(.dark) .voice { color: #d3b8f3; background: #382948; }
+:global(.dark) .apple_messages { color: #d3d8e0; background: #30343d; }
+
+.reachCard { overflow: hidden; }
+.reachHeader { background: #f7f2ff; border-bottom-color: #e8def6; }
+:global(.dark) .reachHeader { background: #2b2138; border-bottom-color: #443454; }
