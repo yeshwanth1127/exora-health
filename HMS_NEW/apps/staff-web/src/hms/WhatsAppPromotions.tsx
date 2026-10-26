@@ -28,7 +28,7 @@ import { FileSlot, Pick, TemplatePreview, type Change, type Clinic } from "./wha
 
 const STOP = "Stop promotions";
 const statusText: Record<CampaignStatus, string> = {
-  in_review: "In review at Meta",
+  in_review: "In review",
   scheduled: "Scheduled",
   sending: "Sending",
   sent: "Sent",
@@ -59,7 +59,7 @@ export function Promotions({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Promotions go only to the {data.optedIn.toLocaleString()} patients who opted in. Every message has a {STOP} button. Meta bills marketing messages per delivery.
+          Promotions go only to the {data.optedIn.toLocaleString()} patients who opted in. Every message has a {STOP} button.
         </p>
         <Button disabled={!canManage} onClick={() => setComposing(true)}>
           <Plus /> New promotion
@@ -128,7 +128,7 @@ export function Promotions({
         <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
           <SheetHeader>
             <SheetTitle>New promotion</SheetTitle>
-            <SheetDescription>Meta reviews every promotion before it sends, usually within minutes.</SheetDescription>
+            <SheetDescription>Each promotion is approved before it sends.</SheetDescription>
           </SheetHeader>
           {composing && (
             <Composer
@@ -138,7 +138,7 @@ export function Promotions({
               onSubmit={(c) => {
                 change((d) => ({ ...d, campaigns: [c, ...d.campaigns] }));
                 setComposing(false);
-                toast.success("Submitted to Meta. It sends once approved.");
+                toast.success("Submitted. It sends once approved.");
               }}
             />
           )}
@@ -233,7 +233,7 @@ function Composer({
         <div className="space-y-2">
           <Label htmlFor="promo-when">When</Label>
           <div className="flex flex-wrap gap-2">
-            <Pick id="promo-when" className="w-56" value={when} options={[["now", "As soon as Meta approves"], ["later", "At a set time"]]} onChange={setWhen} />
+            <Pick id="promo-when" className="w-56" value={when} options={[["now", "As soon as approved"], ["later", "At a set time"]]} onChange={setWhen} />
             {when === "later" && <GrowthDateTime label="Send at" value={sendAt} onValueChange={setSendAt} />}
           </div>
         </div>
@@ -262,7 +262,7 @@ function Composer({
             })
           }
         >
-          <Send /> Submit to Meta
+          <Send /> Submit for approval
         </Button>
       </div>
       <div>

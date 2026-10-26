@@ -32,6 +32,8 @@ export function SupportConversation({
   composer,
   notice,
   className = "",
+  channelName = "WhatsApp",
+  variant = "whatsapp",
 }: {
   title: string;
   subtitle: string;
@@ -42,6 +44,8 @@ export function SupportConversation({
   composer: ReactNode;
   notice?: string;
   className?: string;
+  channelName?: string;
+  variant?: "whatsapp" | "reference";
 }) {
   const reduced = useReducedMotion() ?? false,
     thread = useRef<HTMLDivElement>(null),
@@ -58,8 +62,8 @@ export function SupportConversation({
   }, [last, reduced]);
   return (
     <section
-      className={`arc-demo-scope ${styles.surface} ${styles.whatsapp} ${className}`}
-      aria-label={`WhatsApp conversation with ${title}`}
+      className={`arc-demo-scope ${styles.surface} ${variant === "whatsapp" ? styles.whatsapp : ""} ${className}`}
+      aria-label={`${channelName} conversation with ${title}`}
     >
       <header className={styles.header}>
         <Avatar name={title} size="sm" />
@@ -187,6 +191,7 @@ export function ConversationComposer({
   suggestions,
   placeholder,
   disabled,
+  sendLabel = "Queue message in preview",
 }: {
   value: string;
   onChange: (text: string) => void;
@@ -194,6 +199,7 @@ export function ConversationComposer({
   suggestions: string[];
   placeholder: string;
   disabled?: boolean;
+  sendLabel?: string;
 }) {
   const id = useId(),
     field = useRef<HTMLTextAreaElement>(null);
@@ -252,7 +258,7 @@ export function ConversationComposer({
           type="submit"
           className={styles.send}
           disabled={disabled || !value.trim()}
-          aria-label="Queue message in preview"
+          aria-label={sendLabel}
         >
           <Send size={16} strokeWidth={2} aria-hidden="true" />
         </button>

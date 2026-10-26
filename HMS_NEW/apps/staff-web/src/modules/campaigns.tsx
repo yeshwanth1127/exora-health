@@ -1114,7 +1114,7 @@ function Composer({
               <span className="size-7 rounded-full bg-white flex items-center justify-center text-primary font-semibold">
                 A
               </span>
-              Exora Health
+              Paperwhale
             </div>
             <div className="message-bubble">
               {media && media.mime_type.startsWith("image/") ? (

@@ -2,6 +2,7 @@ node_modules/
 dist/
 *.tsbuildinfo
 .pgdata/
+.apple-demo/
 .pg-initpw
 .env
 *.log

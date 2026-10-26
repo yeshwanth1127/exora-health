@@ -27,7 +27,7 @@ export const regions: Record<Region, { name: string; app: string }> = {
   eu: { name: "EU Cloud", app: "https://eu.posthog.com" },
 };
 
-/** One clinic, one day. The backend fills the same shape from Exora's counters or from PostHog. */
+/** One clinic, one day. The backend fills the same shape from Paperwhale's counters or from PostHog. */
 export type Day = {
   date: string;
   visitors: number;

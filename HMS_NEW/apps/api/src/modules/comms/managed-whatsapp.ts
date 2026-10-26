@@ -500,7 +500,7 @@ export async function finishWhatsApp(
         );
         if (old && old.phone_number_id !== input.phoneNumberId)
           throw conflict(
-            "A different number already belongs to this clinic. Contact Exora to move it safely.",
+            "A different number already belongs to this clinic. Contact Paperwhale to move it safely.",
           );
         await sql`INSERT INTO comms.channel_account(tenant_id,facility_id,phone_number_id,created_by) VALUES(${caller.tenantId},${facilityId},${input.phoneNumberId},${caller.actor.staffId!}) ON CONFLICT(tenant_id,facility_id) DO NOTHING`.execute(
           ctx.tx,

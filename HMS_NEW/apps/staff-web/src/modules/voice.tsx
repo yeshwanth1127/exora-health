@@ -1,3 +1,4 @@
+import { WorkspaceEmpty } from "@/hms/WorkspaceEmpty";
 import { GrowthMetric } from "@/hms/GrowthMetric";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -88,7 +89,7 @@ const recordingLabels: Record<string, string> = {
   pending: "Awaiting call details",
   no_consent: "No recording consent",
   expired: "Access expired",
-  not_configured: "Playback needs setup",
+  not_configured: "Playback unavailable",
 };
 type Transcript = {
   source: "demo" | "sarvam" | "runtime";
@@ -258,8 +259,7 @@ const transcriptLabels: Record<string, string> = {
   no_consent: "There is no recorded consent to review this call.",
   expired: "Transcript access for this call has expired.",
   pending: "The call has not finished or its transcript is still processing.",
-  not_configured:
-    "Transcript review has not been connected yet. Contact your clinic administrator.",
+  not_configured: "Transcript isn't available yet.",
 };
 function RecordingReview({
   call,
@@ -432,14 +432,25 @@ function RecordingAudit() {
 export function VoiceModule({
   demo = false,
   recordingLoader,
+  onSetup,
 }: {
   demo?: boolean;
   recordingLoader?: (id: string) => Promise<Blob>;
+  /** Opens Call setup from the empty state. */
+  onSetup?: () => void;
 }) {
   const [offset, setOffset] = useState(0),
     [selected, setSelected] = useState<Call | null>(null),
     [tab, setTab] = useState("calls");
   const r = useResource<History>(`/api/v1/staff/voice?offset=${offset}`);
+  if (onSetup && r.data && !r.data.configuration.calls_ready && !r.data.total)
+    return (
+      <WorkspaceEmpty
+        title="No calls yet"
+        description="Calls appear here once your voice agent is live."
+        action={{ label: "Finish call setup", onClick: onSetup }}
+      />
+    );
   return (
     <div className="space-y-6">
       <PageTitle
@@ -456,29 +467,15 @@ export function VoiceModule({
           <>
             {!demo && !r.data.configuration.calls_ready && (
               <Notice
-                title="Call history isn’t connected"
-                text="Ask the integration owner to complete this clinic’s authenticated voice connection. Existing history remains available."
-                action={
-                  <details>
-                    <summary className="cursor-pointer font-medium">
-                      View connection requirements
-                    </summary>
-                    <p className="mt-2">
-                      The integration owner must connect an authenticated
-                      runtime, pin the approved agent version and verify
-                      call-history ingestion. Recording and transcript access
-                      require their own readiness and consent checks. This
-                      screen cannot enable provider credentials.
-                    </p>
-                  </details>
-                }
+                title="Call history isn’t available yet"
+                text="New calls appear here once your agent is live."
               />
             )}
             {r.data.can_review_recordings &&
               !r.data.configuration.recordings_ready && (
                 <Notice
-                  title="Recording playback needs setup"
-                  text="Verify the provider’s recording response and download host. Call history remains available."
+                  title="Recordings aren’t available yet"
+                  text="Call history still works."
                 />
               )}
             <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
@@ -528,7 +525,7 @@ export function VoiceModule({
                                 {call.channel === "phone"
                                   ? "Phone"
                                   : call.channel === "runtime"
-                                    ? "External runtime"
+                                    ? "Phone"
                                     : "Website"}{" "}
                                 · {call.turn_count} turns ·{" "}
                                 {call.tool_call_count} tools
@@ -601,8 +598,8 @@ export function VoiceModule({
                               className="py-12 text-center text-muted-foreground"
                             >
                               {r.data.configuration.calls_ready
-                                ? "No calls recorded for this clinic. New call records will appear after the connected assistant handles a call."
-                                : "No call records are available. Ask the integration owner to complete the connection requirements above."}
+                                ? "No calls yet. Place a test call from the booking website."
+                                : "No calls yet."}
                             </TableCell>
                           </TableRow>
                         )}

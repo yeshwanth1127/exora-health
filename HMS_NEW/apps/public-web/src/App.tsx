@@ -200,7 +200,7 @@ export function App() {
           <strong>{brand}</strong>
         </a>
         <div className="powered">
-          Powered by <b>Exora Health</b>
+          Powered by <b>Paperwhale</b>
         </div>
       </header>
       <main>

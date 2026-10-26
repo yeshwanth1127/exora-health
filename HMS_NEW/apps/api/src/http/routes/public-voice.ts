@@ -40,7 +40,7 @@ function browserBinding(settings: ChannelSettings) {
 
 /**
  * Public browser calling surface. The Sarvam API key stays server-side: either in this container (an
- * environment-pinned agent) or in the control plane (an agent bound by Exora), resolved per request.
+ * environment-pinned agent) or in the control plane (an agent bound by Paperwhale), resolved per request.
  */
 export function registerPublicVoiceRoutes(
   app: FastifyInstance,

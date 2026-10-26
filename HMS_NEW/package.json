@@ -45,6 +45,10 @@
     "editorial:dev": "pnpm --filter @hms/hospital-editorial-web dev",
     "editorial:build": "pnpm --filter @hms/hospital-editorial-web build",
     "editorial:test": "pnpm --filter @hms/hospital-editorial-web test",
+    "apple:worker": "tsx --env-file-if-exists=.env apps/api/src/apple-worker.ts",
+    "apple:demo": "tsx scripts/apple-demo.ts",
+    "apple:cloud-template": "node infra/apple-connect/template.mjs",
+    "apple:dashboard": "tsx scripts/apple-demo-dashboard.ts",
     "swastikaa:dev": "pnpm --filter @hms/hospital-community-web dev",
     "swastikaa:build": "pnpm --filter @hms/hospital-community-web build",
     "swastikaa:test": "pnpm --filter @hms/hospital-community-web test"

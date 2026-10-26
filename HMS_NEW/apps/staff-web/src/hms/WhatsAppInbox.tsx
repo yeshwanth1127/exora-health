@@ -547,7 +547,7 @@ function Composer({
         ) : (
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <span className="text-muted-foreground">
-              This template isn't approved by Meta yet.
+              This template isn't approved yet.
             </span>
             <Button size="sm" variant="outline" onClick={openAutomations}>
               Submit it

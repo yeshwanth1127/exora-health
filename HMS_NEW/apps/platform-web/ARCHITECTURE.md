@@ -34,11 +34,11 @@ The selected template, facility type and timezone are forwarded through local an
 
 ## Capture website sync — 23 October 2026
 
-The public website visual/features were synced from ClinicSheet `f7f683c`: day/night story, business search, reach-report backend and evidence UI, category donuts, score-help popover and city-rank concept. Exora's real quote/onboarding routes, control API client, request recovery, provider states, consented analytics events and explicit indexing opt-in remain intact. The patient, staff, admin and provisioner applications were not replaced.
+The public website visual/features were synced from ClinicSheet `f7f683c`: day/night story, business search, reach-report backend and evidence UI, category donuts, score-help popover and city-rank concept. Paperwhale's real quote/onboarding routes, control API client, request recovery, provider states, consented analytics events and explicit indexing opt-in remain intact. The patient, staff, admin and provisioner applications were not replaced.
 
 The existing `pnpm platform:build` still emits `out` and `dist` for the current control-API/static deployment. `pnpm --filter @hms/platform-web build:server` produces the optional request-time SSR runtime; `start:server` runs it. SSR rewrites `/control/*` to `CAPTURE_CONTROL_ORIGIN` (default loopback 3040) and `/business-lookup` to `CAPTURE_LOOKUP_ORIGIN` (default loopback 4500). Control-API POST requests remain owned by that API; marketing mutations stay blocked. The Python lookup service and credentials must be configured separately before live business searches are available. No Maps key is committed or quota changed.
 
-The imported `deploy/` files and `docs/PUBLIC_WEBSITE_SECURITY.md` describe the separate ClinicSheet preview. They are not replacements for Exora's current Docker/control-API deployment or signup contract. SSR deployment and live provider verification are separate from this source synchronization.
+The imported `deploy/` files and `docs/PUBLIC_WEBSITE_SECURITY.md` describe the separate ClinicSheet preview. They are not replacements for Paperwhale's current Docker/control-API deployment or signup contract. SSR deployment and live provider verification are separate from this source synchronization.
 
 
 The editorial hospital template (`hospital-editorial`) is a separate tenant app for NDR or another hospital. Quote selection and workspace setup retain its ID. Saved facility branding is loaded at runtime; selecting this design does not copy Sri Lakshmi clinical or marketing data. See `apps/hospital-editorial-web/README.md`.

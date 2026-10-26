@@ -1,18 +1,18 @@
-# Exora Health SaaS platform plan
+# Paperwhale SaaS platform plan
 
 ## Product boundary
 
-Exora Health is the SaaS control plane. A customer organisation onboards once and receives an
+Paperwhale is the SaaS control plane. A customer organisation onboards once and receives an
 isolated HMS tenant deployment containing:
 
 - a public clinic website and appointment-booking flow;
-- the shared Exora staff workspace, branded and configured for that customer;
+- the shared Paperwhale staff workspace, branded and configured for that customer;
 - the HMS API and worker;
 - a dedicated PostgreSQL database and private persistent volume;
 - a dedicated Sarvam voice agent and deployment binding;
 - customer-specific modules, plan limits, domains and subscription state.
 
-The Exora control plane owns customer onboarding, subscription state, deployment orchestration,
+The Paperwhale control plane owns customer onboarding, subscription state, deployment orchestration,
 domains, module entitlements, operator access, audit, health and links. A tenant deployment owns
 patient, staff, appointment, clinical and communications data. Tenant clinical data is never copied
 into the control plane.
@@ -22,7 +22,7 @@ into the control plane.
 The first production topology is one Compose project per customer:
 
 ```text
-Exora control plane
+Paperwhale control plane
   -> deployment registry
   -> provisioner
        -> tenant app container (public site + staff UI + API + worker)
@@ -43,7 +43,7 @@ references. It must not store charts, patient lists, transcripts or appointment 
 
 | Application | Responsibility |
 |---|---|
-| `apps/platform-web` | Exora marketing site, product explanation, sign-in and onboarding journey |
+| `apps/platform-web` | Paperwhale marketing site, product explanation, sign-in and onboarding journey |
 | `apps/control-api` | Operator/customer control plane API; onboarding, plans, subscriptions, deployments and links |
 | `apps/staff-web` | Shared tenant staff workspace, themed from tenant configuration |
 | `apps/public-web` | Shared tenant public site and appointment flow, themed from tenant configuration |

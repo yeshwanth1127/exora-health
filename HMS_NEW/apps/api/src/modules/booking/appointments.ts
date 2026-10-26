@@ -1,3 +1,4 @@
+import { createPatient } from '../patient/register.ts';
 import { lockAccess } from '../access/staff.ts';
 // The booking flow: hold a slot → book it → (reschedule | cancel | no-show) → check in → queue token.
 // Walk-ins skip the hold and go straight to the queue. Double-booking is impossible regardless of
@@ -9,7 +10,7 @@ import { clock, type Caller } from '../../caller.ts';
 import { practitionerResourceId } from './calendar.ts';
 
 type Priority = 'normal' | 'senior_citizen' | 'emergency' | 'vip';
-type Channel = 'web' | 'portal' | 'whatsapp' | 'voice' | 'front_desk' | 'walk_in' | 'referral';
+type Channel = 'web' | 'portal' | 'whatsapp' | 'voice' | 'front_desk' | 'walk_in' | 'referral' | 'apple_messages';
 type VisitType = 'new' | 'follow_up' | 'review' | 'procedure';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O, 1/I
@@ -161,13 +162,14 @@ export interface AppointmentResult {
 interface ResolvedFee {
   priceListItemId: string;
   unitPriceMinor: number;
+  currency: string;
 }
 
 /** Consultation fee from the active default price list: doctor-specific price first, then the generic one. */
 export async function consultationFee(tx: Transaction<DB>, healthcareServiceId: string | null, staffId: string, on: string, visitMode: string): Promise<ResolvedFee | null> {
   if (!healthcareServiceId) return null;
-  const { rows: [fee] } = await sql<{ id: string; unit_price_minor: number }>`
-    SELECT pli.id, pli.unit_price_minor
+  const { rows: [fee] } = await sql<{ id: string; unit_price_minor: number; currency: string }>`
+    SELECT pli.id, pli.unit_price_minor, btrim(pl.currency) AS currency
     FROM catalog.healthcare_service hs
     JOIN catalog.price_list_item pli ON pli.service_item_id = hs.consultation_service_item_id
     JOIN catalog.price_list pl ON pl.id = pli.price_list_id
@@ -180,7 +182,7 @@ export async function consultationFee(tx: Transaction<DB>, healthcareServiceId: 
       AND (pli.encounter_class IS NULL OR pli.encounter_class = ${visitMode === 'virtual' ? 'virtual' : 'outpatient'})
     ORDER BY (pli.staff_id IS NOT NULL) DESC, (pli.encounter_class IS NOT NULL) DESC
     LIMIT 1`.execute(tx);
-  return fee ? { priceListItemId: fee.id, unitPriceMinor: fee.unit_price_minor } : null;
+  return fee ? { priceListItemId: fee.id, unitPriceMinor: fee.unit_price_minor, currency: fee.currency } : null;
 }
 
 export async function activePatient(tx: Transaction<DB>, patientId: string): Promise<void> {
@@ -293,6 +295,7 @@ async function createAppointment(
       origin_channel: details.originChannel,
       priority: details.priority,
       fee_snapshot_minor: fee?.unitPriceMinor ?? null,
+      currency: fee?.currency ?? 'INR',
       price_list_item_id: fee?.priceListItemId ?? null,
       reason_text: details.reason,
       rescheduled_from_id: details.rescheduledFromId,
@@ -656,11 +659,13 @@ async function checkInLocked(
 }
 
 /** Patient arrives for a booked appointment: links the patient if needed and issues a queue token. */
-export async function checkIn(db: Kysely<DB>, caller: Caller, input: { appointmentId: string; patientId?: string }, idempotencyKey?: string): Promise<CheckInResult> {
+export async function checkIn(db: Kysely<DB>, caller: Caller, input: { appointmentId: string; patientId?: string; newPatient?: ArrivalPatient }, idempotencyKey?: string): Promise<CheckInResult> {
   const now = clock(caller);
   return runCommand(db, { ...caller, module: 'booking', name: 'booking.check_in', idempotencyKey, request: input }, async (ctx) => {
     const appt = await lockAppointment(ctx.tx, input.appointmentId);
-    return checkInLocked(ctx, now, appt, input.patientId);
+    if (input.newPatient && (input.patientId || appt.patient_id)) throw invalid('choose an existing patient or enter a new arrival, not both');
+    const patientId = input.newPatient ? await createArrivalPatient(ctx, appt.facility_id, input.newPatient) : input.patientId;
+    return checkInLocked(ctx, now, appt, patientId);
   });
 }
 
@@ -689,10 +694,21 @@ export async function checkInVirtualArrival(tx: Transaction<DB>, tenantId: strin
   return true;
 }
 
+export interface ArrivalPatient { name: string; phone?: string | undefined }
+
+async function createArrivalPatient(ctx: CommandContext, facilityId: string, patient: ArrivalPatient) {
+  // Keep module write roles narrow while composing one atomic, auditable command.
+  await sql`SET LOCAL ROLE mod_patient`.execute(ctx.tx);
+  const created = await createPatient(ctx, { givenName: patient.name, ...(patient.phone ? { phone: patient.phone } : {}), sex: 'unknown', registeredFacilityId: facilityId, source: 'front_desk' });
+  await sql`SET LOCAL ROLE mod_booking`.execute(ctx.tx);
+  return created.patientId;
+}
+
 export interface WalkInInput {
   staffId: string;
   facilityId: string;
-  patientId: string;
+  patientId?: string;
+  newPatient?: ArrivalPatient;
   priority?: Priority;
   visitType?: VisitType;
   reason?: string;
@@ -703,10 +719,11 @@ export interface WalkInInput {
  * today that hasn't ended and that takes walk-ins, with tokens left.
  */
 export async function bookWalkIn(db: Kysely<DB>, caller: Caller, input: WalkInInput, idempotencyKey?: string): Promise<AppointmentResult & CheckInResult> {
+  if (!!input.patientId === !!input.newPatient) throw invalid('choose an existing patient or enter a new arrival');
   const now = clock(caller);
   return runCommand(db, { ...caller, module: 'booking', name: 'booking.book_walk_in', idempotencyKey, request: input }, async (ctx) => {
     const resourceId = await practitionerResourceId(ctx.tx, input.staffId);
-    await activePatient(ctx.tx, input.patientId);
+    if (input.patientId) await activePatient(ctx.tx, input.patientId);
     const today = await facilityToday(ctx.tx, input.facilityId, now);
     // Serialise walk-ins per doctor so the capacity check can't be raced.
     await ctx.tx.selectFrom('booking.schedulable_resource').select('id').where('id', '=', resourceId).forUpdate().execute();
@@ -731,6 +748,7 @@ export async function bookWalkIn(db: Kysely<DB>, caller: Caller, input: WalkInIn
       .executeTakeFirstOrThrow();
     if (Number(used) >= capacity) throw conflict('walk-in tokens for today are full', { reason: 'walk_ins_full', capacity });
 
+    const patientId = input.newPatient ? await createArrivalPatient(ctx, input.facilityId, input.newPatient) : input.patientId!;
     const session = open[0]!;
     const fee = await consultationFee(ctx.tx, session.healthcare_service_id, input.staffId, today, session.visit_mode);
     const code = confirmationCode();
@@ -739,7 +757,7 @@ export async function bookWalkIn(db: Kysely<DB>, caller: Caller, input: WalkInIn
       .values({
         tenant_id: ctx.tenantId,
         confirmation_code: code,
-        patient_id: input.patientId,
+        patient_id: patientId,
         practitioner_staff_id: input.staffId,
         resource_id: resourceId,
         facility_id: input.facilityId,
@@ -756,15 +774,15 @@ export async function bookWalkIn(db: Kysely<DB>, caller: Caller, input: WalkInIn
       })
       .returning('id')
       .executeTakeFirstOrThrow();
-    ctx.audit({ action: 'create', subjectType: 'booking.appointment', subjectId: appt.id, patientId: input.patientId });
+    ctx.audit({ action: 'create', subjectType: 'booking.appointment', subjectId: appt.id, patientId });
     ctx.emit({
       eventType: 'appointment.confirmed',
       aggregateType: 'booking.appointment',
       aggregateId: appt.id,
-      payload: { appointmentId: appt.id, bookingKind: 'walk_in', patientId: input.patientId, practitionerStaffId: input.staffId },
+      payload: { appointmentId: appt.id, bookingKind: 'walk_in', patientId, practitionerStaffId: input.staffId },
     });
     const locked = await lockAppointment(ctx.tx, appt.id);
-    const checkedIn = await checkInLocked(ctx, now, locked, input.patientId);
+    const checkedIn = await checkInLocked(ctx, now, locked, patientId);
     return {
       appointmentId: appt.id,
       confirmationCode: code,

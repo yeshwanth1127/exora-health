@@ -37,7 +37,7 @@ Transport uses memory-only bearer identity, tenant headers, scoped caches, calle
 - Frontend: `http://127.0.0.1:5188/staff/appointments`.
 - API: local port 3038, development authentication only.
 - Worker and API share isolated database `hms_staff_integration`, PostgreSQL port 54339, data folder `.pgdata-staff-integration`.
-- Branch: `codex/staff-frontend-integration` in the outer Exora checkout. Changes are local; no PR, push or deployment.
+- Branch: `codex/staff-frontend-integration` in the outer Paperwhale checkout. Changes are local; no PR, push or deployment.
 - Start/configuration notes: [staff app README](../../apps/staff-web/README.md).
 
 ![Integrated appointments preview](staff-integration-audit/integrated-staff-preview.png)

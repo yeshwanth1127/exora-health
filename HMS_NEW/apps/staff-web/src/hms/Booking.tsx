@@ -156,7 +156,11 @@ export function Booking({
   );
   const nextDays = pickerDays(availability, facility.timezone);
   async function placeHold(slotStart: string) {
-    const value = await cmd.run<Hold>("/v1/holds", { staffId, slotStart }, true);
+    const value = await cmd.run<Hold>(
+      "/v1/holds",
+      { staffId, slotStart },
+      true,
+    );
     if (value) {
       setHold(value);
       activeHold.current = value;
@@ -187,7 +191,15 @@ export function Booking({
         <Badge variant="secondary">
           {move ? "Appointment moved" : "Appointment confirmed"}
         </Badge>
-        <div className="arc-demo-scope flex items-center gap-3"><h3 className="text-xl font-semibold">{result.confirmationCode}</h3><CopyButton value={result.confirmationCode} label="Copy confirmation code" iconOnly variant="plain" /></div>
+        <div className="arc-demo-scope flex items-center gap-3">
+          <h3 className="text-xl font-semibold">{result.confirmationCode}</h3>
+          <CopyButton
+            value={result.confirmationCode}
+            label="Copy confirmation code"
+            iconOnly
+            variant="plain"
+          />
+        </div>
         <p className="text-sm">Booked fee: {money(result.feeMinor)}</p>
         <Hint>
           Contact the patient to confirm the change. Automatic notifications are
@@ -201,23 +213,56 @@ export function Booking({
   return (
     <div className="space-y-5">
       <div className="arc-demo-scope border-b pb-5">
-        <Stepper label="Booking progress" current={step - 1} steps={[
-          { id: "patient", label: "Patient", description: "Choose or register the patient." },
-          { id: "time", label: "Doctor & time", description: "Choose a doctor and hold a time." },
-          { id: "review", label: "Review & confirm", description: "Check the details before booking." },
-        ]} />
+        <Stepper
+          label="Booking progress"
+          current={step - 1}
+          steps={[
+            {
+              id: "patient",
+              label: "Patient",
+              description: "Find a patient or add a booking contact.",
+            },
+            {
+              id: "time",
+              label: "Doctor & time",
+              description: "Choose a doctor and hold a time.",
+            },
+            {
+              id: "review",
+              label: "Review & confirm",
+              description: "Check the details before booking.",
+            },
+          ]}
+        />
       </div>
       <div className={`${step === 2 ? "max-w-6xl" : "max-w-3xl"} space-y-6`}>
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Appointment type</h2>
           <div className="arc-demo-scope">
-            <RadioCards aria-label="Appointment type" value={visitMode}
+            <RadioCards
+              aria-label="Appointment type"
+              value={visitMode}
+              minColumnWidth={280}
               disabled={!!hold || cmd.busy || cmd.unknown || releasing}
-              onValueChange={(mode) => { if (mode === "in_person" || mode === "virtual") setVisitMode(mode); }}
+              onValueChange={(mode) => {
+                if (mode === "in_person" || mode === "virtual")
+                  setVisitMode(mode);
+              }}
               options={[
-                { value: "in_person", label: "In person", description: "The patient visits the clinic.", icon: <Stethoscope size={20} /> },
-                { value: "virtual", label: "Video consultation", description: "The patient joins the doctor by video.", icon: <Video size={20} /> },
-              ]} />
+                {
+                  value: "in_person",
+                  label: "In person",
+                  description: "The patient visits the clinic.",
+                  icon: <Stethoscope size={20} />,
+                },
+                {
+                  value: "virtual",
+                  label: "Video consultation",
+                  description: "The patient joins the doctor by video.",
+                  icon: <Video size={20} />,
+                },
+              ]}
+            />
           </div>
           {hold && (
             <p className="text-sm text-muted-foreground">
@@ -242,17 +287,30 @@ export function Booking({
         <ErrorMessage text={initialPatient.error} />
         {step === 1 && (
           <section className="space-y-5">
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="shrink-0 text-lg font-semibold">{register ? "Register a new patient" : "Choose the patient"}</h2>
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold">
+                {register ? "Register a new patient" : "Choose the patient"}
+              </h2>
               {!move && !patient && !caller && (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {can("patients.register") && (
-                    <Button variant="outline" onClick={() => requestLeave(() => setRegister((v) => !v))}>
+                    <Button
+                      variant="outline"
+                      onClick={() => requestLeave(() => setRegister((v) => !v))}
+                    >
                       {register ? "Back to search" : "Register a new patient"}
                     </Button>
                   )}
-                  <Button variant="outline" onClick={() => requestLeave(() => { setRegister(false); setCaller(true); })}>
-                    Book for a caller who isn't registered
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      requestLeave(() => {
+                        setRegister(false);
+                        setCaller(true);
+                      })
+                    }
+                  >
+                    Book without registration
                   </Button>
                 </div>
               )}
@@ -263,7 +321,7 @@ export function Booking({
                 original in history.
               </Hint>
             ) : patient ? (
-              <div className="flex items-center justify-between gap-6">
+              <div className="flex flex-wrap items-center justify-between gap-6">
                 <div>
                   <p className="font-medium">
                     {patientDisplayName(patient.patientId, patient.name)}
@@ -283,7 +341,7 @@ export function Booking({
             ) : caller ? (
               <div className="space-y-3 border rounded-lg p-4">
                 <p className="text-sm font-medium">
-                  Booking contact (patient not registered yet)
+                  Booking contact — no registration needed
                 </p>
                 <Field title="Name" id="caller-name">
                   <Input
@@ -316,11 +374,16 @@ export function Booking({
                 </Button>
               </div>
             ) : register ? (
-              <RegisterPatient onCreated={(p) => { setPatient(p); setRegister(false); }} />
+              <RegisterPatient
+                onCreated={(p) => {
+                  setPatient(p);
+                  setRegister(false);
+                }}
+              />
             ) : (
               <PatientLookup onSelect={setPatient} />
             )}
-            <div className="flex items-center justify-between gap-4 border-t pt-5">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-5">
               <p className="font-medium">
                 {who
                   ? "Patient selected. Choose a doctor and time next."
@@ -375,14 +438,22 @@ export function Booking({
               />
               <LoadingState {...slots}>
                 {nextDays.length ? (
-                  <div className="arc-demo-scope arc-section-frame" key={`${staffId}:${visitMode}:${range.from}`}>
+                  <div
+                    className="arc-demo-scope arc-section-frame"
+                    key={`${staffId}:${visitMode}:${range.from}`}
+                  >
                     <BookingPicker
-                      doctor={bookable.find((p) => p.staffId === staffId)?.name ?? "this doctor"}
+                      doctor={
+                        bookable.find((p) => p.staffId === staffId)?.name ??
+                        "this doctor"
+                      }
                       mode={visitMode}
                       timezone={facility.timezone}
                       days={nextDays}
                       held={!!hold && seconds > 0}
-                      disabled={!who || !staffId || cmd.busy || cmd.unknown || releasing}
+                      disabled={
+                        !who || !staffId || cmd.busy || cmd.unknown || releasing
+                      }
                       onSelect={(day) => {
                         setDate(day);
                         void release();
@@ -395,7 +466,10 @@ export function Booking({
                     />
                   </div>
                 ) : (
-                  <WorkspaceEmpty title={`No open ${appointmentModeLabel(visitMode).toLowerCase()} times in the 30 days from ${range.from}`} />
+                  <WorkspaceEmpty
+                    title={`No open ${appointmentModeLabel(visitMode).toLowerCase()} times in the 30 days from ${range.from}`}
+                    description="Pick a later start date or check this doctor's schedule."
+                  />
                 )}
               </LoadingState>
               {hold && (
@@ -405,7 +479,11 @@ export function Booking({
                     : "Hold expired. Hold the time again."}
                 </p>
               )}
-              {!who && <p className="text-sm text-muted-foreground">Choose the patient or caller first.</p>}
+              {!who && (
+                <p className="text-sm text-muted-foreground">
+                  Choose the patient or caller first.
+                </p>
+              )}
               {slots.error && (
                 <Button variant="outline" onClick={() => void slots.refresh()}>
                   Retry availability
@@ -414,8 +492,7 @@ export function Booking({
               {visitMode === "virtual" && !hold && (
                 <div className="space-y-3 border-t pt-4">
                   <p className="text-sm text-muted-foreground">
-                    {bookable.find((p) => p.staffId === staffId)
-                      ?.acceptsVirtual
+                    {bookable.find((p) => p.staffId === staffId)?.acceptsVirtual
                       ? "Teleconsultation availability comes from this doctor’s published weekly hours."
                       : "Teleconsultations are not enabled on this doctor’s booking profile. Enable them and publish weekly hours before booking."}
                   </p>
@@ -438,7 +515,7 @@ export function Booking({
                 </div>
               )}
             </div>
-            <div className="flex items-center justify-between gap-4 border-t pt-5">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-5">
               <div className="flex items-center gap-3">
                 {!move && (
                   <Button
@@ -546,7 +623,7 @@ export function Booking({
               </label>
             )}
             <ErrorMessage text={cmd.error} />
-            <div className="flex items-center justify-between gap-4 border-t pt-5">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-5">
               <p className="font-medium">
                 Confirm these details to save the appointment.
               </p>

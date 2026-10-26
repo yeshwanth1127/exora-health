@@ -634,6 +634,7 @@ export function ActivityLog() {
           {log.data?.items.length === 0 && (
             <WorkspaceEmpty
               title="No matching activity"
+              description={Object.values(filters).some(Boolean) ? "Try different filters." : "Staff actions appear here."}
               action={
                 Object.values(filters).some(Boolean)
                   ? {

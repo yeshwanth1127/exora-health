@@ -7,7 +7,7 @@ const workspaceDir = "/Users/ysw/EXORA/exora-health/HMS_NEW";
 const buildDir = path.join(workspaceDir, ".codex-ppt-build");
 const renderDir = path.join(buildDir, "renders");
 const outputDir = path.join(workspaceDir, "deliverables");
-const finalPath = path.join(outputDir, "Exora_Health_Hospital_Director_Pitch.pptx");
+const finalPath = path.join(outputDir, "Paperwhale_Hospital_Director_Pitch.pptx");
 const skillDir = "/Users/ysw/.codex/plugins/cache/openai-primary-runtime/presentations/26.1015.12040/skills/presentations";
 const runtimePython = "/Users/ysw/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3";
 
@@ -39,7 +39,7 @@ function title(slide, text, sub="") {
   if (sub) txt(slide, sub, 70, 110, 1090, 42, 17, C.muted, false);
 }
 function footer(slide, n, dark=false) {
-  txt(slide, "EXORA HEALTH", 70, 680, 180, 18, 10, dark?"#AEC2BA":C.muted, true);
+  txt(slide, "PAPERWHALE", 70, 680, 180, 18, 10, dark?"#AEC2BA":C.muted, true);
   txt(slide, String(n).padStart(2,"0"), 1170, 680, 40, 18, 10, dark?"#AEC2BA":C.muted, true, "right");
 }
 function addNotes(slide, lines) { slide.speakerNotes.text = lines; slide.speakerNotes.setVisible(true); }
@@ -56,7 +56,7 @@ function line(slide,x,y,w,color=C.line,width=2) { return slide.shapes.add({geome
   const s=ppt.slides.add(); s.background.fill=C.cream;
   rect(s, 0,0,420,H,C.dark); rect(s,420,0,860,H,C.cream);
   rect(s,70,65,54,54,C.lime,14); txt(s,"+",70,61,54,54,34,C.dark,true,"center");
-  txt(s,"EXORA HEALTH",145,70,220,38,17,C.white,true);
+  txt(s,"PAPERWHALE",145,70,220,38,17,C.white,true);
   label(s,"Hospital growth proposal",485,90,300,C.green);
   txt(s,"Turn every patient enquiry\ninto a booked appointment",485,150,690,190,48,C.ink,true);
   txt(s,"AI voice receptionist, WhatsApp booking, web booking and one staff workspace",488,365,660,88,23,C.muted,false);
@@ -126,9 +126,9 @@ function line(slide,x,y,w,color=C.line,width=2) { return slide.shapes.add({geome
   txt(s,"WhatsApp",105,200,190,32,21,C.ink,true); dot(s,445,216,C.whatsapp,11);
   const bubbles=[
     ["Patient","I need a skin specialist tomorrow",105,265,310,C.soft,C.ink],
-    ["Exora","Dr Meera has 10:30 AM and 12:00 PM available.",150,345,310,C.aqua,C.ink],
+    ["Paperwhale","Dr Meera has 10:30 AM and 12:00 PM available.",150,345,310,C.aqua,C.ink],
     ["Patient","10:30 AM",105,438,180,C.soft,C.ink],
-    ["Exora","Please confirm the patient name and booking consent.",150,500,310,C.aqua,C.ink],
+    ["Paperwhale","Please confirm the patient name and booking consent.",150,500,310,C.aqua,C.ink],
   ];
   bubbles.forEach(b=>{txt(s,b[0],b[2],b[3]-20,120,18,11,C.muted,true); rect(s,b[2],b[3],b[4],54,b[5],14); txt(s,b[1],b[2]+14,b[3]+7,b[4]-28,40,14,b[6],false);});
   const items=[["Live availability","Uses the same doctor schedules as voice and web"],["Explicit confirmation","Collects the details required before booking"],["Human handoff","Stops automation when the patient asks for staff"],["Controlled launch","Meta account, number and templates require approval"]];
@@ -139,7 +139,7 @@ function line(slide,x,y,w,color=C.line,width=2) { return slide.shapes.add({geome
 // 7 — workspace with screenshot
 {
   const s=ppt.slides.add(); s.background.fill=C.white; title(s,"One workspace for reception and management","Bookings from every channel arrive in the same operational view.");
-  await addImage(s,path.join(workspaceDir,"docs/plan/staff-integration-audit/integrated-staff-preview.png"),{left:70,top:175,width:720,height:405},"Exora Health staff workspace preview","contain");
+  await addImage(s,path.join(workspaceDir,"docs/plan/staff-integration-audit/integrated-staff-preview.png"),{left:70,top:175,width:720,height:405},"Paperwhale staff workspace preview","contain");
   const points=[["Appointments","Book, reschedule, cancel and check in"],["Patients","Search and register patient details"],["Queues","Track walk-ins and consultation flow"],["Channel oversight","Review voice and WhatsApp activity"]];
   points.forEach((a,i)=>{const y=185+i*94; dot(s,855,y+17,C.green,8); txt(s,a[0],880,y,300,28,20,C.ink,true); txt(s,a[1],880,y+34,300,40,15,C.muted,false);});
   rect(s,850,575,330,58,C.lime,14); txt(s,"Designed for hospital roles and permissions",870,582,290,42,14,C.dark,true,"center"); footer(s,7);

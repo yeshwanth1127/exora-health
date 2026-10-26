@@ -151,12 +151,8 @@ function Analytics({ clinic }: { clinic: Clinic }) {
         {data && !data.available && (
           <Card className="p-6 shadow-none">
             <h2 className="font-semibold">
-              Website analytics is being prepared
+              Website analytics isn&apos;t switched on yet
             </h2>
-            <p className="text-sm text-muted-foreground">
-              Exora will make it available here. You do not need to create an
-              analytics account.
-            </p>
           </Card>
         )}
         {data?.available && (
@@ -275,7 +271,7 @@ function Overview({
             <ShieldCheck className="size-4" />
           )}
           Counted by{" "}
-          {data.provider === "posthog" ? "PostHog" : "Exora analytics"}
+          {data.provider === "posthog" ? "PostHog" : "Paperwhale analytics"}
         </p>
         <div className="flex items-center gap-2">
           {ph?.status === "connected" && (

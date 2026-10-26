@@ -20,7 +20,7 @@ export function SetupGuide() {
     <div className="arc-demo-scope arc-section-frame mb-6">
       <ReleaseReadiness
         title={`Booking setup · ${facility.name}`}
-        subtitle={`Configuration checks for ${doctor?.name ?? "this clinic"}. ${mode === "virtual" ? "Teleconsultations" : "In-person visits"} · ${day} through ${until}.`}
+        subtitle={`Setup checks for ${doctor?.name ?? "this clinic"}. ${mode === "virtual" ? "Teleconsultations" : "In-person visits"} · ${day} through ${until}.`}
         tasksLabel="Booking setup checks"
         readyLabel="Ready for bookings"
         tasks={readinessTasks(items).map((t, n) => {

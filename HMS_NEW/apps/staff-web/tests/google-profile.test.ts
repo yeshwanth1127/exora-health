@@ -11,11 +11,11 @@ import {
   seed,
   suggestCategories,
   tasks,
-  type Exora,
+  type Paperwhale,
 } from "../src/hms/google-profile.ts";
 
 const weekday = (open: string, close: string) => [0, 1, 2, 3, 4, 5].map((day) => ({ day, open, close }));
-const exora: Exora = {
+const exora: Paperwhale = {
   name: "Sri Lakshmi Hospital",
   phone: "+91 40 4000 1000",
   address: "Road 1, Hyderabad",

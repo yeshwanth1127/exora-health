@@ -1,4 +1,4 @@
-# PRD: Google Business Profile, managed from Exora
+# PRD: Google Business Profile, managed from Paperwhale
 
 Status: approved 14 October 2026 · UI built (browser-only preview) · backend next
 
@@ -10,9 +10,9 @@ Clinics end up in Google's own tool. It's built for every kind of business, uses
 
 ## Goal
 
-A clinic admin connects Google once. Exora then:
+A clinic admin connects Google once. Paperwhale then:
 
-- fills in the profile from what the clinic has already set up in Exora;
+- fills in the profile from what the clinic has already set up in Paperwhale;
 - adds a **Book appointment** button and a **WhatsApp** button in one tap each;
 - shows a simple **profile score** with a short to-do list, where every item can be done on the same screen.
 
@@ -22,7 +22,7 @@ The admin never needs to understand Google's terms.
 
 The Google Business Profile APIs can do almost everything this page needs.
 
-| What patients see | Can Exora manage it? | Google API (for engineers) |
+| What patients see | Can Paperwhale manage it? | Google API (for engineers) |
 | --- | --- | --- |
 | **Book** button | Yes | Place Actions v1 (`APPOINTMENT`), plus the `url_appointment` attribute |
 | **WhatsApp chat** button | Yes | Business Information v1 attribute `url_whatsapp` (a `wa.me` link). If a text-message number is also set, Google shows only that one. |
@@ -40,14 +40,14 @@ The Google Business Profile APIs can do almost everything this page needs.
 | Views, calls, directions, website clicks, bookings, search terms | Yes, read only | Performance v1 |
 | Questions & answers | **No.** Google shut the Q&A API down on 3 November 2025. | — |
 
-**Access is gated.** Exora's Google Cloud project has to apply for Business Profile API access. To qualify, the applicant must have managed a verified profile for 60+ days, and the profile needs a website. Until approval, the quota is 0. Clinics sign in with Google (scope `business.manage`) and pick their listing.
+**Access is gated.** Paperwhale's Google Cloud project has to apply for Business Profile API access. To qualify, the applicant must have managed a verified profile for 60+ days, and the profile needs a website. Until approval, the quota is 0. Clinics sign in with Google (scope `business.manage`) and pick their listing.
 
 ## Decisions
 
-- **Exora is the source of truth** for hours, phone, doctors, departments and services. Clinics edit them once in Exora and Exora keeps Google in step. If Google or the public change something, we show "Google changed this" with *Keep Google's* / *Use ours*.
+- **Paperwhale is the source of truth** for hours, phone, doctors, departments and services. Clinics edit them once in Paperwhale and Paperwhale keeps Google in step. If Google or the public change something, we show "Google changed this" with *Keep Google's* / *Use ours*.
 - **Plain words only.** Never "attribute", "place action", "location" or "verification state". Say "Book button", "WhatsApp button", "your listing", "Google is checking this change".
-- **One listing per clinic.** Each Exora clinic is matched to one Google listing.
-- **Book button** opens Exora's public booking page for that clinic (`book.html`), or the clinic's approved booking link if one is set (it's already stored).
+- **One listing per clinic.** Each Paperwhale clinic is matched to one Google listing.
+- **Book button** opens Paperwhale's public booking page for that clinic (`book.html`), or the clinic's approved booking link if one is set (it's already stored).
 - **WhatsApp button** uses the number connected in the WhatsApp module. If WhatsApp isn't set up, offer to set it up or type a number.
 - **No review gating.** Google forbids asking only happy patients for reviews. The review request after a visit goes to every patient, not only those who rated "Very good".
 - **Patient privacy in replies.** Suggested replies never confirm that the reviewer is a patient and never mention health details. If a reply mentions a diagnosis or treatment, the screen warns before posting.
@@ -59,13 +59,13 @@ The Google Business Profile APIs can do almost everything this page needs.
 - Profile score and to-do list.
 - Book and WhatsApp buttons.
 - Profile editor with a live "how it looks on Google" preview.
-- Sync from Exora data, with a list of what's different.
+- Sync from Paperwhale data, with a list of what's different.
 - Photos, posts and reviews (reply, alerts, review link, QR code, review request on WhatsApp).
 - Insights.
 - An empty state when the clinic hasn't registered doctors, hours or fees yet. This is the same gate as WhatsApp.
 
 **Out:**
-- Creating a brand-new listing and posting the verification postcard from Exora. We link to Google's flow and pick the clinic up once it's verified.
+- Creating a brand-new listing and posting the verification postcard from Paperwhale. We link to Google's flow and pick the clinic up once it's verified.
 - Separate listings for each doctor (later).
 - Google Ads.
 - Q&A (shut down by Google).
@@ -103,7 +103,7 @@ Google Business
 
 ### Profile
 - Sections: **Basics** (name, phone, website), **Buttons** (Book, WhatsApp), **Hours**, **Specialities**, **About** (description), **Services**, **Facilities and payments**, **Social links**.
-- Each section shows where the value comes from ("From your schedule", "From Catalogue") and a **Use Exora data** button.
+- Each section shows where the value comes from ("From your schedule", "From Catalogue") and a **Use Paperwhale data** button.
 - A Google-style listing card preview on the right updates as you type, the same pattern as the WhatsApp phone preview.
 - Name, address and main category changes show a warning first: "Google may check this change before it shows, usually a few days."
 - Every change shows as *Live*, *Google is checking*, or *Not accepted* with Google's reason.
@@ -122,7 +122,7 @@ Google Business
 
 ### Photos
 - Slots: logo, cover, clinic outside, clinic inside, team.
-- Doctor photos already uploaded in Exora can be added with one tap, if the clinic confirms consent.
+- Doctor photos already uploaded in Paperwhale can be added with one tap, if the clinic confirms consent.
 - Size and quality checks before upload. Show photos Google rejected, with the reason.
 
 ### Insights
@@ -135,7 +135,7 @@ Google Business
 2. Not connected: the page shows a preview of the clinic's listing with Book and WhatsApp buttons, and a single "Connect Google" action.
 3. The Book button and WhatsApp button can each be added in one tap from the to-do list. They point to the clinic's booking page and its WhatsApp `wa.me` link.
 4. The profile score updates as items are done. Every to-do item can be finished without leaving the page.
-5. When Exora data and Google differ (hours, phone, services), the page shows the differences and can fix them in one action.
+5. When Paperwhale data and Google differ (hours, phone, services), the page shows the differences and can fix them in one action.
 6. Name, address or main category edits warn about Google re-checking first. Each change shows its review state.
 7. A review reply that mentions a health condition, treatment or "your visit" warns before posting. The review request is never limited to happy patients.
 8. No text on the page uses Google's internal terms.
@@ -147,12 +147,12 @@ Google Business
 - Store per clinic: Google account and location ID, and the token reference in the secret store. Never send tokens to the browser.
 - Push changes: hours from schedules and closures, services from the catalogue, the buttons, attributes and photos. Retry failed pushes and record every push in the audit log.
 - Pull from Google: `getGoogleUpdated` for edits Google made, Performance API every day, reviews through Pub/Sub alerts and a daily backfill.
-- Category mapping: Exora departments to Google category IDs, via `categories.list` filtered to region IN.
+- Category mapping: Paperwhale departments to Google category IDs, via `categories.list` filtered to region IN.
 
 ## Open questions
 
-1. Is Exora's Google Cloud project already applied for Business Profile API access? Sri Lakshmi's profile (60+ days, with a website) could be the qualifying one.
-2. Should the clinic's **website** field point to its own site (Sri Lakshmi has one) or to the Exora booking page? Recommendation: keep their website and use the booking page only for the Book button.
+1. Is Paperwhale's Google Cloud project already applied for Business Profile API access? Sri Lakshmi's profile (60+ days, with a website) could be the qualifying one.
+2. Should the clinic's **website** field point to its own site (Sri Lakshmi has one) or to the Paperwhale booking page? Recommendation: keep their website and use the booking page only for the Book button.
 3. Draft the description with AI? Recommendation: yes, written from clinic data, shown as an editable draft, never published automatically.
 4. Separate listings for each doctor: later phase, or needed now?
 

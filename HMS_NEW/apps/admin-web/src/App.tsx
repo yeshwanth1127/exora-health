@@ -36,7 +36,7 @@ export function App(){
   const shown=useMemo(()=>items.filter(item=>`${item.name} ${item.slug} ${item.owner_email}`.toLowerCase().includes(query.toLowerCase())),[items,query]);
   if(!token)return <Login entry={entry} setEntry={setEntry} login={login} error={error}/>;
   const healthy=items.filter(item=>item.health==="healthy").length, voice=items.filter(item=>item.voice_status!=="not_requested").length;
-  return <div className="shell"><aside><div className="side-brand"><span><HeartPulse/></span><strong>Exora</strong></div><nav>
+  return <div className="shell"><aside><div className="side-brand"><span><HeartPulse/></span><strong>Paperwhale</strong></div><nav>
     <button className={view==="customers"?"active":""} onClick={()=>{setView("customers");setSelected(null)}}><Building2/>Customers</button>
     <button className={view==="requests"?"active":""} onClick={()=>{setView("requests");setOpenedRequest(null)}}><Inbox/>Voice requests{requests.length>0&&<b className="nav-count" aria-label={`${requests.length} open`}>{requests.length}</b>}</button>
     <button><Activity/>Deployments</button><button><Boxes/>Modules</button>
@@ -46,11 +46,11 @@ export function App(){
 }
 
 function Login({entry,setEntry,login,error}:{entry:string;setEntry:(v:string)=>void;login:()=>void;error:string}){
-  return <main className="login"><div className="login-brand"><span><HeartPulse/></span><strong>Exora Health</strong></div><div className="login-card"><span className="login-icon"><LockKeyhole/></span><p className="eyebrow">Platform operators</p><h1>Superadmin control.</h1><p>Manage customer deployments, plans, modules and channels. Clinical data remains inside each tenant.</p><label><span>Operator access token</span><input type="password" value={entry} onChange={e=>setEntry(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()} autoFocus/></label><button onClick={login}>Open control plane <ArrowUpRight/></button>{error&&<small className="error">{error}</small>}<div className="boundary"><ShieldCheck/>Control metadata only · no patient records</div></div></main>;
+  return <main className="login"><div className="login-brand"><span><HeartPulse/></span><strong>Paperwhale</strong></div><div className="login-card"><span className="login-icon"><LockKeyhole/></span><p className="eyebrow">Platform operators</p><h1>Superadmin control.</h1><p>Manage customer deployments, plans, modules and channels. Clinical data remains inside each tenant.</p><label><span>Operator access token</span><input type="password" value={entry} onChange={e=>setEntry(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()} autoFocus/></label><button onClick={login}>Open control plane <ArrowUpRight/></button>{error&&<small className="error">{error}</small>}<div className="boundary"><ShieldCheck/>Control metadata only · no patient records</div></div></main>;
 }
 
 function Header({title,description,loading,refresh}:{title:string;description:string;loading:boolean;refresh:()=>void}){
-  return <header><div><p className="eyebrow">Exora operations</p><h1>{title}</h1><p>{description}</p></div><button className="refresh" onClick={refresh}><RefreshCw className={loading?"spin":""}/>Refresh</button></header>;
+  return <header><div><p className="eyebrow">Paperwhale operations</p><h1>{title}</h1><p>{description}</p></div><button className="refresh" onClick={refresh}><RefreshCw className={loading?"spin":""}/>Refresh</button></header>;
 }
 
 function Customers({items,shown,query,setQuery,loading,error,healthy,voice,refresh,update}:{items:Customer[];shown:Customer[];query:string;setQuery:(v:string)=>void;loading:boolean;error:string;healthy:number;voice:number;refresh:()=>void;update:(c:Customer,f:"plan"|"status",v:string)=>void}){

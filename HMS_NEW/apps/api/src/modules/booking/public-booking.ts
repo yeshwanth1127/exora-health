@@ -92,8 +92,8 @@ export async function publicSlots(db:Kysely<DB>,caller:Caller,site:PublicBooking
       const fee=cache.get(key);if(!fee){unpricedSlots.push({startsAt:row.slot_start.toISOString(),endsAt:row.slot_end.toISOString(),serviceName:row.service_name});continue;}
       const claim:SlotClaim={siteSlug:site.siteSlug,tenantId:site.tenantId,facilityId:site.facilityId,staffId:doctor.staffId,doctorSlug:doctor.slug,
         serviceId:row.healthcare_service_id,visitMode:input.mode,startsAt:row.slot_start.toISOString(),endsAt:row.slot_end.toISOString(),
-        feeMinor:fee.unitPriceMinor,expiresAt:now.getTime()+15*60000};
-      slots.push({startsAt:claim.startsAt,endsAt:claim.endsAt,feeMinor:claim.feeMinor,slotToken:signSlot(claim,secret)});
+        feeMinor:fee.unitPriceMinor,currency:fee.currency,expiresAt:now.getTime()+15*60000};
+      slots.push({startsAt:claim.startsAt,endsAt:claim.endsAt,feeMinor:claim.feeMinor,currency:claim.currency??'INR',slotToken:signSlot(claim,secret)});
     }
     return {timezone:c.timezone,slots,unpricedSlots};
   });
@@ -110,9 +110,9 @@ async function assertLiveBookingActor(ctx:CommandContext,site:PublicBookingSite)
       AND (p.facility_id IS NULL OR p.facility_id=${site.facilityId})) AS ok`.execute(ctx.tx);
   if(!r?.ok) throw forbidden('Online booking access has been withdrawn.');
 }
-export async function publicBook(db:Kysely<DB>,caller:Caller,site:PublicBookingSite,secret:string,input:PublicBookingInput,claim:SlotClaim,key:string,channel: 'web' | 'whatsapp' = 'web',whatsappContactId?:string) {
+export async function publicBook(db:Kysely<DB>,caller:Caller,site:PublicBookingSite,secret:string,input:PublicBookingInput,claim:SlotClaim,key:string,channel: 'web' | 'whatsapp' | 'apple_messages' = 'web',whatsappContactId?:string) {
   if(claim.siteSlug!==site.siteSlug || claim.tenantId!==site.tenantId || claim.facilityId!==site.facilityId) throw forbidden('This time selection belongs to another clinic.');
-  return runCommand(db,{...caller,module:'booking',name:`booking.public_book.${site.siteSlug}${channel==='web'?'':'.whatsapp'}`,idempotencyKey:key,request:input},async ctx=>{
+  return runCommand(db,{...caller,module:'booking',name:`booking.public_book.${site.siteSlug}${channel==='web'?'':'.'+channel}`,idempotencyKey:key,request:input},async ctx=>{
     const now=clock(caller);
     await assertLiveBookingActor(ctx,site);
     await lockCalendar(ctx.tx,site.tenantId);
@@ -154,7 +154,7 @@ export async function publicBook(db:Kysely<DB>,caller:Caller,site:PublicBookingS
       AND (valid_to IS NULL OR valid_to>${day}::date)`.execute(ctx.tx);
     if(!affiliation.length)throw conflict('This doctor is no longer seeing patients at this clinic.');
     const fee=await consultationFee(ctx.tx,claim.serviceId,claim.staffId,day,claim.visitMode);
-    if(!fee || fee.unitPriceMinor!==claim.feeMinor)throw conflict('The consultation fee changed. Review the available time again.');
+    if(!fee || fee.unitPriceMinor!==claim.feeMinor || fee.currency!==(claim.currency??'INR'))throw conflict('The consultation fee changed. Review the available time again.');
     if(!await consumeBudgetIn(ctx.tx,site,secret,`phone:${input.phone}`,86400,3,now))
       throw preconditionFailed('This phone has reached the daily online booking limit. Please contact reception.');
     const hold=await placeHold(ctx,now,{staffId:claim.staffId,facilityId:site.facilityId,slotStart:claim.startsAt},1);
@@ -173,6 +173,16 @@ export async function publicBook(db:Kysely<DB>,caller:Caller,site:PublicBookingS
         AND i.received_at>now()-interval '24 hours' AND comms.has_consent(p.id,'care')) AS ok`.execute(ctx.tx);
       if(!proof?.ok)throw forbidden('WhatsApp booking requires a verified, consented confirmation.');verifiedWhatsApp=true;
     }
+    if(channel==='apple_messages') {
+      const {rows:[proof]}=await sql<{ok:boolean}>`SELECT EXISTS(SELECT 1 FROM comms.apple_message m
+        JOIN comms.apple_conversation c ON c.id=m.conversation_id AND c.tenant_id=m.tenant_id
+        WHERE m.id=${key}::uuid AND c.id=${whatsappContactId??null}::uuid AND c.facility_id=${site.facilityId}
+        AND c.status='automation' AND m.direction='inbound' AND upper(btrim(m.text_content))='CONFIRM'
+        AND m.occurred_at>now()-interval '15 minutes' AND c.state_expires_at>now()
+        AND c.state->>'consented'='true' AND c.state->>'phone'=${input.phone}
+        AND c.state->>'name'=${input.name} AND c.state->'selected'->>'slotToken'=${input.slotToken}) AS ok`.execute(ctx.tx);
+      if(!proof?.ok) throw forbidden('Apple booking requires confirmation in the active clinic conversation.');
+    }
     const partyId=await createBookingParty(ctx,{name:input.name,phone:input.phone,...(input.email?{email:input.email}:{}),...(verifiedWhatsApp?{verifiedChannel:'whatsapp' as const}:{})},null,now);
     if(verifiedWhatsApp) {
       await sql`SET LOCAL ROLE mod_comms`.execute(ctx.tx);
@@ -184,10 +194,10 @@ export async function publicBook(db:Kysely<DB>,caller:Caller,site:PublicBookingS
     }
     const result=await confirmHeldReservation(ctx,now,hold.reservationId,{patientId:null,bookingPartyId:partyId,visitType:'new',originChannel:channel,priority:'normal',reason:input.reason??null,rescheduledFromId:null});
     // Defend against a price/session change between the quote check and core confirmation.
-    const saved=await ctx.tx.selectFrom('booking.appointment').select(['practitioner_staff_id','facility_id','healthcare_service_id','visit_mode','starts_at','ends_at','fee_snapshot_minor']).where('id','=',result.appointmentId).executeTakeFirstOrThrow();
-    if(saved.practitioner_staff_id!==claim.staffId || saved.facility_id!==claim.facilityId || saved.healthcare_service_id!==claim.serviceId || saved.visit_mode!==claim.visitMode || saved.starts_at?.toISOString()!==claim.startsAt || saved.ends_at?.toISOString()!==claim.endsAt || saved.fee_snapshot_minor!==claim.feeMinor)
+    const saved=await ctx.tx.selectFrom('booking.appointment').select(['practitioner_staff_id','facility_id','healthcare_service_id','visit_mode','starts_at','ends_at','fee_snapshot_minor','currency']).where('id','=',result.appointmentId).executeTakeFirstOrThrow();
+    if(saved.practitioner_staff_id!==claim.staffId || saved.facility_id!==claim.facilityId || saved.healthcare_service_id!==claim.serviceId || saved.visit_mode!==claim.visitMode || saved.starts_at?.toISOString()!==claim.startsAt || saved.ends_at?.toISOString()!==claim.endsAt || saved.fee_snapshot_minor!==claim.feeMinor || saved.currency.trim()!==(claim.currency??'INR'))
       throw conflict('The consultation changed. Review the available time again.');
     return {appointmentId:result.appointmentId,confirmationCode:result.confirmationCode,status:'confirmed' as const,
-      startsAt:claim.startsAt,endsAt:claim.endsAt,feeMinor:claim.feeMinor,clinicName:c.clinicName,doctorName:doctor.name,visitMode:claim.visitMode,timezone:c.timezone};
+      startsAt:claim.startsAt,endsAt:claim.endsAt,feeMinor:claim.feeMinor,currency:claim.currency??'INR',clinicName:c.clinicName,doctorName:doctor.name,visitMode:claim.visitMode,timezone:c.timezone};
   });
 }

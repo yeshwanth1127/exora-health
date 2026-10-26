@@ -3,7 +3,7 @@ import { useConfirmationReview } from "./use-confirmation-review";
 import { sameReviewedValue } from "./growth-confirmation";
 import { Stepper } from "@/components/arc/stepper/stepper";
 import { useEffect, useState } from "react";
-import { ArrowRight, Check, Copy, ExternalLink, Lock } from "lucide-react";
+import { ArrowRight, Check, Copy, ExternalLink } from "lucide-react";
 import { toast } from "@/components/toast-events";
 
 import { PageTitle } from "@/components/workspace";
@@ -48,6 +48,7 @@ import {
   type Clinic,
 } from "./whatsapp-ui";
 import { Live } from "./WhatsAppLive";
+import { StepList } from "./StepList";
 import { useClinicBasics } from "./clinic-basics";
 
 export type Patch =
@@ -216,8 +217,7 @@ function Setup({ clinic }: { clinic: Clinic }) {
       )}
       {!remote.query.data?.available && (
         <p className="mb-4 text-sm text-muted-foreground">
-          Exora is preparing WhatsApp connections. No technical setup is needed
-          from your team.
+          WhatsApp connections aren&apos;t available yet.
         </p>
       )}
       <p className="mb-4 text-sm text-muted-foreground">
@@ -252,53 +252,19 @@ function Setup({ clinic }: { clinic: Clinic }) {
         </p>
       )}
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <ol className="space-y-3">
-          {(Object.keys(titles) as Exclude<Stage, "live">[]).map((s, i) => {
-            const done = i < reached,
-              locked = i > reached,
-              active = open === s && !locked;
-            return (
-              <li key={s}>
-                <Card
-                  className={`gap-0 p-0 shadow-none ${active ? "ring-1 ring-foreground/15" : ""}`}
-                >
-                  <button
-                    type="button"
-                    disabled={locked}
-                    onClick={() => setOpen(s)}
-                    className="flex w-full items-center gap-4 p-5 text-left disabled:cursor-not-allowed"
-                  >
-                    <StepDot n={i + 1} done={done} active={active} />
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className={`font-medium ${locked ? "text-muted-foreground" : ""}`}
-                      >
-                        {titles[s][0]}
-                      </p>
-                      <p className="truncate text-sm text-muted-foreground">
-                        {done && !active
-                          ? summary(s, setup, clinic)
-                          : titles[s][1]}
-                      </p>
-                    </div>
-                    {locked ? (
-                      <Lock className="size-4 text-muted-foreground" />
-                    ) : done && !active ? (
-                      <span className="text-xs text-muted-foreground">
-                        Edit
-                      </span>
-                    ) : null}
-                  </button>
-                  {active && (
-                    <fieldset disabled={!canManage} className="border-t p-5">
-                      {body(s)}
-                    </fieldset>
-                  )}
-                </Card>
-              </li>
-            );
-          })}
-        </ol>
+        <StepList
+          steps={(Object.keys(titles) as Exclude<Stage, "live">[]).map((id) => ({
+            id,
+            title: titles[id][0],
+            hint: titles[id][1],
+            summary: summary(id, setup, clinic),
+          }))}
+          reached={reached}
+          open={open}
+          onOpen={(id) => setOpen(id as Stage)}
+          body={(id) => body(id as Stage)}
+          canManage={canManage}
+        />
         {preview}
       </div>
     </>
@@ -330,8 +296,8 @@ const eligibility = [
   "You can log in to Facebook as an admin of the clinic's business",
 ];
 const coexistenceChanges = [
-  "Your team keeps using the Business app. New incoming messages appear in Exora.",
-  "Past chats and phone contacts are not imported into Exora. App replies stay in the Business app.",
+  "Your team keeps using the Business app. New incoming messages appear in Paperwhale.",
+  "Past chats and phone contacts are not imported into Paperwhale. App replies stay in the Business app.",
   "Groups and disappearing messages are not supported in the dashboard.",
   "Linked devices (WhatsApp Web) sign out once and need re-linking.",
 ];
@@ -470,7 +436,7 @@ function ConnectStep({
               co
                 ? "Open the Business app on that phone and scan the QR code shown"
                 : "Enter the code Meta sends by SMS or call",
-              "Allow Exora Health to manage messages for this number",
+              "Allow Paperwhale to manage messages for this number",
             ].map((t, i) => (
               <li key={t} className="flex gap-3">
                 <StepDot n={i + 1} done={false} active={false} />

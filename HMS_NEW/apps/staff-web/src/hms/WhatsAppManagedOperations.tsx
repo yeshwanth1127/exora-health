@@ -319,8 +319,7 @@ export function ManagedPromotions() {
             {new Date(preview.dueAt).toLocaleString()}
           </p>
           <p className="text-xs text-muted-foreground">
-            Provider charges can differ from the estimate. Delivery is recorded
-            only when confirmed.
+            Final charges can differ from the estimate.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button

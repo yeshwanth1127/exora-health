@@ -127,7 +127,7 @@ export function QueueBoard({
               {move ? (
                 <p className="text-sm">
                   {move.action === "complete"
-                    ? "This completes the token and its linked appointment. An open consultation must be finished in Consultations first; the server will refuse this change while it is open."
+                    ? "This completes the token and its linked appointment. Finish any open consultation first."
                     : move.action === "skip"
                       ? "This skips the patient’s current queue token."
                       : "This marks the called patient as being served by the doctor."}

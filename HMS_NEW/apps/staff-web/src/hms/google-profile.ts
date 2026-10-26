@@ -1,4 +1,4 @@
-/** Google Business Profile in plain words: the listing, its score and to-do list, and how it differs from what the clinic set up in Exora. Pure. */
+/** Google Business Profile in plain words: the listing, its score and to-do list, and how it differs from what the clinic set up in Paperwhale. Pure. */
 import type { Attachment } from "./whatsapp-setup";
 
 export const days = [
@@ -153,8 +153,8 @@ export type GbpData = {
   };
 };
 
-/** What the clinic already set up in Exora; Google is kept in step with this. */
-export type Exora = {
+/** What the clinic already set up in Paperwhale; Google is kept in step with this. */
+export type Paperwhale = {
   name: string;
   phone: string;
   address: string;
@@ -198,7 +198,7 @@ export function suggestCategories(specialities: string[]) {
   return [...new Set(out)].slice(0, 9);
 }
 export const primaryFor = (
-  e: Pick<Exora, "facilityType" | "doctors" | "specialities">,
+  e: Pick<Paperwhale, "facilityType" | "doctors" | "specialities">,
 ) =>
   /hospital/i.test(e.facilityType)
     ? "Hospital"
@@ -262,7 +262,7 @@ export function hoursFromSessions(
   return sortHours([...byDay.values()]);
 }
 
-export function draftDescription(e: Exora) {
+export function draftDescription(e: Paperwhale) {
   const kind = /hospital/i.test(e.facilityType)
     ? "multi-speciality hospital"
     : e.doctors > 1
@@ -320,7 +320,7 @@ export type Task = {
   section?: string;
 };
 /** The profile score's to-do list, highest impact first. */
-export function tasks(d: GbpData, e: Exora, now: number): Task[] {
+export function tasks(d: GbpData, e: Paperwhale, now: number): Task[] {
   const l = d.listing;
   const p = l.photos;
   const unreplied = d.reviews.filter((r) => !r.reply).length;
@@ -539,7 +539,7 @@ const reviewers: [string, number, string, number][] = [
 ];
 
 /** A half-finished listing like most clinics have, built from the clinic's real details. */
-export function seed(e: Exora, now: number): GbpData {
+export function seed(e: Paperwhale, now: number): GbpData {
   const metrics = (k: number): Metrics => ({
     search: Math.round(2100 * k),
     maps: Math.round(1300 * k),

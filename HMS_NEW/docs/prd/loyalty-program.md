@@ -11,19 +11,19 @@ Clinics want patients to come back to them, not to the hospital down the road. M
 
 None of it is tracked. Reception keeps a register, patients lose the card, and nobody knows who is due back.
 
-What Exora has today:
+What Paperwhale has today:
 - A static concept page (`feature-concepts.tsx`, "Avocado Care") that doesn't save anything.
 - A placeholder in the live sidebar.
 - `STAFF_MODULE_DEVELOPMENT_DECISIONS.md` kept loyalty as a labelled concept. This PRD reverses that for the UI.
 
 ## Goal
 
-A clinic picks one or more proven loyalty formats and runs them from Exora on its own:
+A clinic picks one or more proven loyalty formats and runs them from Paperwhale on its own:
 - **Admins:** set up a program in about 2 minutes, with a live preview of what patients see.
 - **Reception:** enrols a patient in under 30 seconds. At the desk, sees what the patient has earned and records a visit, a stamp, a reward or a perk in one tap.
 - **Patients:** get their card on WhatsApp and always know where they stand.
 
-**Exora never handles money.** Fees, discounts and bills stay with the clinic's own billing. Exora records what was earned and used.
+**Paperwhale never handles money.** Fees, discounts and bills stay with the clinic's own billing. Paperwhale records what was earned and used.
 
 ## Program types
 

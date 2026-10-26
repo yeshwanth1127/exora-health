@@ -1,10 +1,10 @@
-> Imported ClinicSheet preview evidence. Exora keeps its real signup/control-API integration and existing static deployment. This historical preview document is not Exora deployment verification; see `ARCHITECTURE.md`.
+> Imported ClinicSheet preview evidence. Paperwhale keeps its real signup/control-API integration and existing static deployment. This historical preview document is not Paperwhale deployment verification; see `ARCHITECTURE.md`.
 
 # Website-only public preview — 22 October 2026
 
 ## Deployment boundary
 
-This branch deploys the standalone ClinicSheet marketing website. The Exora workspace/backend repository is excluded. No signup, OTP, tenant creation, staff/admin service, contact submission or database is deployed. The hero dashboard is frontend-only synthetic showcase data. All previous account-entry calls to action now open product information. The contact page explicitly states that online requests and account creation are closed.
+This branch deploys the standalone ClinicSheet marketing website. The Paperwhale workspace/backend repository is excluded. No signup, OTP, tenant creation, staff/admin service, contact submission or database is deployed. The hero dashboard is frontend-only synthetic showcase data. All previous account-entry calls to action now open product information. The contact page explicitly states that online requests and account creation are closed.
 
 ## Changes
 
@@ -45,7 +45,7 @@ From `web`: `npm ci --ignore-scripts`, `npm test`, `npm run typecheck`, `npm run
 
 Public URL: https://srv2086263.hstgr.cloud/
 
-Deployed to the existing KVM 2 VPS (ID 2086263), using Hostinger Connector project `capture-website`. No plan/domain was purchased, and no Exora workspace/backend services were deployed. This is VPS hosting; the shared-hosting `.htaccess` is not used. Active configurations are in `deploy/nginx.conf`, `deploy/Caddyfile` and `deploy/compose.yaml`.
+Deployed to the existing KVM 2 VPS (ID 2086263), using Hostinger Connector project `capture-website`. No plan/domain was purchased, and no Paperwhale workspace/backend services were deployed. This is VPS hosting; the shared-hosting `.htaccess` is not used. Active configurations are in `deploy/nginx.conf`, `deploy/Caddyfile` and `deploy/compose.yaml`.
 
 - Deployed static release: `/opt/capture-site/releases/20261022T1600`, with `/opt/capture-site/current` pointing to it. All 702 uploaded files (including the unused `.htaccess`) matched local SHA-256 checksums.
 - Source/configuration files on the VPS are outside the public document root. The site mount and Nginx root filesystem are read-only. Nginx runs as UID/GID 101. Both services have CPU, memory, process and log-size limits. No Docker socket is mounted. Images are pinned by digest.
@@ -63,4 +63,4 @@ Deployed to the existing KVM 2 VPS (ID 2086263), using Hostinger Connector proje
 
 No CDN/WAF service or independent upstream DDoS mitigation was configured or certified. These application/firewall controls reduce abuse but cannot guarantee availability during a sufficiently large distributed traffic flood. Add a final domain and suitable edge protection before a broader production launch. Preview noindex remains intentional until that domain is selected.
 
-Manage the VPS/project through https://hpanel.hostinger.com. For an update, build `dist`, upload to a new versioned release outside the config directory, verify file hashes, change the `current` link, then restart/recreate the web service to refresh the read-only bind mount. Do not replace the original Exora repository or expose its APIs.
+Manage the VPS/project through https://hpanel.hostinger.com. For an update, build `dist`, upload to a new versioned release outside the config directory, verify file hashes, change the `current` link, then restart/recreate the web service to refresh the read-only bind mount. Do not replace the original Paperwhale repository or expose its APIs.

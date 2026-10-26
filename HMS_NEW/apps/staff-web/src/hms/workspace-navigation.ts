@@ -30,6 +30,10 @@ export const workspaceTabs = {
     ["history", "Call history"],
     ["setup", "Call setup"],
   ],
+  apple_messages: [
+    ["conversations", "Conversations"],
+    ["setup", "Setup"],
+  ],
 } as const;
 export type RoutedWorkspace = keyof typeof workspaceTabs;
 export type WorkspaceTab<W extends RoutedWorkspace> =

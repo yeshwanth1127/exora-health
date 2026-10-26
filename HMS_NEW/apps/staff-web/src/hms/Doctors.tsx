@@ -209,6 +209,11 @@ export function Doctors() {
                   ? "Add your first doctor"
                   : "This clinic has no doctors set up"
               }
+              description={
+                can("catalog.manage")
+                  ? "Patients can book a doctor once their hours are set."
+                  : "Ask an administrator to add doctors."
+              }
               action={
                 can("catalog.manage")
                   ? { label: "Add doctor", onClick: () => setAdding(true) }
@@ -1530,7 +1535,7 @@ function DoctorPrerequisite({
         if (typeof id !== "string" || !id) {
           setUnidentified(true);
           setReadError(
-            "The server did not identify the saved record. Keep this form open and review the request with the administrator.",
+            "We couldn't confirm the save. Keep this form open and check with your administrator.",
           );
           return;
         }

@@ -1,5 +1,5 @@
 // Clinic side of manually provisioned voice agents: staff requests relay to this clinic's control-plane
-// record with its own token, and the website uses the agent Exora bound there, without a restart.
+// record with its own token, and the website uses the agent Paperwhale bound there, without a restart.
 import { createServer, type Server } from 'node:http';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startKit, type Kit, type Person } from './test-kit.ts';
@@ -58,7 +58,7 @@ describe('clinic voice agent requests', () => {
   it('turns control refusals into clinic-readable conflicts', async () => {
     const response = await kit.call(owner, 'POST', '/v1/voice/agent-settings/request-changes', { facilityId: kit.tenant.facilityId, revision: 2 });
     expect(response.status).toBe(409);
-    expect(JSON.stringify(response.body)).toContain('A voice request is already with Exora.');
+    expect(JSON.stringify(response.body)).toContain('A voice request is already with Paperwhale.');
   });
 
   it('serves website calls from the agent bound in the control plane', async () => {

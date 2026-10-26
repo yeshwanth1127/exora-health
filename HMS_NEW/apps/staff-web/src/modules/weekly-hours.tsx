@@ -582,7 +582,7 @@ function WeeklyEditor({
               error={slotError}
               hint={
                 draft
-                  ? "The original exact-time booking workflow is retained as a draft; saving needs backend support."
+                  ? "Saving slot length isn't available yet."
                   : "Staff can still book any exact start and end time within these hours."
               }
             >

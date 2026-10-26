@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Gift,
   Search,
-  Sparkles,
   Undo2,
   UserPlus,
 } from "lucide-react";
@@ -58,7 +57,6 @@ import {
   mobile,
   renewUntil,
   sameDay,
-  seed,
   standing,
   status,
   summary,
@@ -135,18 +133,12 @@ function LoyaltyPage() {
   ).length;
   const enrolledIn = (id: string) =>
     data.enrollments.filter((e) => e.programId === id && !e.cancelled).length;
-  const badge = preview && (
-    <Badge variant="outline" className="font-normal">
-      UI preview · sample data
-    </Badge>
-  );
 
   return (
     <>
       <PageTitle
         title="Loyalty programs"
         icon={<Gift className="size-6" />}
-        action={badge}
       />
       <div className="space-y-6">
         <Tabs
@@ -198,7 +190,6 @@ function LoyaltyPage() {
                     : "Program is live",
                 );
               }}
-              onSample={() => change(() => seed(clinic, Date.now()))}
             />
           </TabsContent>
           <TabsContent value="members" className="arc-workflow-panel">
@@ -299,7 +290,6 @@ function Programs({
   onEdit,
   onStart,
   onStatus,
-  onSample,
 }: {
   data: LoyaltyData;
   canEdit: boolean;
@@ -307,7 +297,6 @@ function Programs({
   onEdit: (p: Program) => void;
   onStart: (k: Kind) => void;
   onStatus: (id: string, s: Program["status"]) => void;
-  onSample: () => void;
 }) {
   const now = Date.now();
   const recent = data.entries.filter((e) => e.at > now - 30 * DAY);
@@ -427,14 +416,9 @@ function Programs({
           </h2>
           <p className="text-muted-foreground">
             Pick a format that already works for hospitals, clinics and big
-            brands. Run one, or mix a few. Exora keeps track of who earned what;
+            brands. Run one, or mix a few. Paperwhale keeps track of who earned what;
             you keep billing as it is.
           </p>
-          {preview && canEdit && (
-            <Button variant="outline" size="sm" onClick={onSample}>
-              <Sparkles /> Load sample programs
-            </Button>
-          )}
         </div>
       )}
       {unused.length > 0 && (
@@ -1511,7 +1495,7 @@ function PatientView({ data, clinic }: { data: LoyaltyData; clinic: string }) {
           disabled={!preview}
           onClick={() =>
             toast.info(
-              "Preview only. Nothing was sent; cards go out on WhatsApp once the backend is connected.",
+              "Preview only. Nothing was sent.",
             )
           }
         >

@@ -1,6 +1,6 @@
 # Sri Lakshmi website -> HMS appointments
 
-13 October 2026. Website: `hospital-webpage` in the Exora Health repository. Current booking API and staff dashboard: `HMS_NEW`. Voice/Sarvam and real WhatsApp delivery remain outside this change.
+13 October 2026. Website: `hospital-webpage` in the Paperwhale repository. Current booking API and staff dashboard: `HMS_NEW`. Voice/Sarvam and real WhatsApp delivery remain outside this change.
 
 ## Implemented behavior
 

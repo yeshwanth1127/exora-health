@@ -6,18 +6,18 @@ import {
   TabsTrigger,
 } from "@/components/arc/tabs/tabs";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChannelOnboarding } from "./ChannelOnboarding";
+import { ChannelOnboarding, strategies, useChannelSetup } from "./ChannelOnboarding";
+import { StepList } from "./StepList";
+import { PageTitle } from "@/components/workspace";
+import { Stepper } from "@/components/arc/stepper/stepper";
+import { VOICE_STEPS, voiceStep } from "./voice-setup";
 import {
   ArrowUpRight,
   Bot,
-  CheckCircle2,
-  CircleDashed,
-  Database,
-  Globe2,
+  Headphones,
   LoaderCircle,
   PhoneCall,
   RefreshCw,
-  ShieldCheck,
 } from "lucide-react";
 import { VoiceModule } from "@/modules/voice";
 import { OriginalResourceContext } from "@/components/resource-source";
@@ -46,10 +46,6 @@ type VoiceRuntime = {
   session_seconds?: number;
 };
 
-type BookingBootstrap = {
-  facilities: { facilityId: string; name: string }[];
-  practitioners: { staffId: string; name: string }[];
-};
 
 type VoiceLanguage = "en" | "hi" | "kn" | "ta" | "te" | "ml" | "mr" | "bn" | "gu" | "pa" | "od";
 type SpokenSettings = {
@@ -99,24 +95,28 @@ const BOOKING_ACTIONS: [keyof SpokenSettings["actions"], string][] = [
   ["book", "Book"], ["lookup", "Look up"], ["cancel", "Cancel"], ["reschedule", "Reschedule"],
 ];
 
-function AssignedVoiceNumber() {
-  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetch("/public/v1/voice/config", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((runtime: VoiceRuntime | null) => {
-        if (!cancelled) setPhoneNumber(runtime?.phone_number ?? null);
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
+function useVoiceRuntime() {
+  const [runtime, setRuntime] = useState<VoiceRuntime | null>(null);
+  const [busy, setBusy] = useState(true);
+  const refresh = useCallback(async () => {
+    setBusy(true);
+    try {
+      const response = await fetch("/public/v1/voice/config", { cache: "no-store" });
+      setRuntime(response.ok ? ((await response.json()) as VoiceRuntime) : null);
+    } catch {
+      setRuntime(null);
+    } finally {
+      setBusy(false);
+    }
   }, []);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+  return { runtime, busy, refresh };
+}
 
+function AssignedVoiceNumber({ phoneNumber }: { phoneNumber: string | null | undefined }) {
   if (!phoneNumber) return null;
-
   return (
     <Card className="mb-6 border-emerald-200 bg-emerald-50/40">
       <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
@@ -126,7 +126,7 @@ function AssignedVoiceNumber() {
           </span>
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Your hospital&apos;s voice agent number
+              Your voice agent number
             </p>
             <a
               className="text-xl font-semibold hover:underline"
@@ -135,8 +135,7 @@ function AssignedVoiceNumber() {
               {phoneNumber}
             </a>
             <p className="text-xs text-muted-foreground">
-              Patient calls to this number are answered by your dedicated voice
-              agent.
+              Your agent answers calls to this number.
             </p>
           </div>
         </div>
@@ -144,7 +143,7 @@ function AssignedVoiceNumber() {
           variant="outline"
           className="border-emerald-300 text-emerald-700"
         >
-          Active · Dedicated to this tenant
+          Active
         </Badge>
       </CardContent>
     </Card>
@@ -155,7 +154,7 @@ function useAgentSettings() {
   const { facility } = useWorkspace();
   const [poll, setPoll] = useState(0);
   const query = useQuery<AgentSettings>(`/v1/voice/agent-settings?facilityId=${facility.facilityId}`, poll);
-  // While Exora works on a request, refresh now and then so the page turns live without a reload.
+  // While a request waits for approval, refresh now and then so the page turns live without a reload.
   const waiting = !!openRequest(query.data?.request ?? null);
   useEffect(() => {
     setPoll(waiting ? 15000 : 0);
@@ -163,295 +162,204 @@ function useAgentSettings() {
   return query;
 }
 
-function VoiceControl() {
+/** Before the agent is live: one guided page, no tabs (WhatsApp's pattern). */
+function VoiceGuide({ runtime }: { runtime: ReturnType<typeof useVoiceRuntime> }) {
+  const { facility, practitioners, go, can } = useWorkspace();
   const agent = useAgentSettings();
-  const [runtime, setRuntime] = useState<VoiceRuntime | null>(null);
-  const [booking, setBooking] = useState<BookingBootstrap | null>(null);
-  const [busy, setBusy] = useState(true);
-  const [error, setError] = useState("");
-
-  const refresh = useCallback(async () => {
-    setBusy(true);
-    setError("");
-    try {
-      const [voiceResponse, bookingResponse] = await Promise.all([
-        fetch("/public/v1/voice/config", { cache: "no-store" }),
-        fetch("/public/v1/bootstrap", { cache: "no-store" }),
-      ]);
-      if (!voiceResponse.ok || !bookingResponse.ok)
-        throw new Error("The tenant runtime did not pass its readiness check.");
-      setRuntime((await voiceResponse.json()) as VoiceRuntime);
-      setBooking((await bookingResponse.json()) as BookingBootstrap);
-    } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "The voice status could not be checked.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }, []);
-
+  const line = useChannelSetup("voice");
+  const [picked, setPicked] = useState<string | null>(null);
+  const doctors = practitioners.filter((p) => p.facilityId === facility.facilityId);
+  const pending = openRequest(agent.data?.request ?? null);
+  const reached = voiceStep({
+    doctors: doctors.length,
+    line: line.data?.state ?? null,
+    agent: agent.data ? { exists: !!agent.data.agent, request: agent.data.request?.state ?? null } : null,
+    live: false,
+  });
+  const index = (id: string) => VOICE_STEPS.findIndex((s) => s.id === id);
+  const open = picked && index(picked) <= reached ? picked : VOICE_STEPS[Math.min(reached, VOICE_STEPS.length - 1)]!.id;
+  // The control plane answers 412 until voice is switched on for this clinic.
+  const notEnabled = !!agent.error && /not configured/i.test(agent.error);
+  const draft = line.data?.draft?.channel === "voice" ? line.data.draft : null;
+  const { refresh } = runtime;
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  const active = runtime?.enabled === true;
-  const local = ["localhost", "127.0.0.1"].includes(location.hostname);
-  const hostedSecurely = location.protocol === "https:" && !local;
-  const steps = [
-    {
-      label: "Tenant booking connection",
-      detail: runtime?.integration_ready
-        ? "The isolated voice service identity is installed."
-        : "Voice has not been enabled for this tenant.",
-      ready: runtime?.integration_ready === true,
-    },
-    {
-      label: "Public HTTPS address",
-      detail: hostedSecurely
-        ? "This workspace is running behind public HTTPS."
-        : local
-          ? "Local preview only. Host this tenant before provider activation."
-          : "HTTPS is required for provider tools and microphone access.",
-      ready: hostedSecurely,
-    },
-    {
-      label: "Tenant-specific Sarvam agent",
-      detail: agent.data?.agent
-        ? `${agent.data.agent.displayName} · version ${agent.data.agent.appVersion}`
-        : openRequest(agent.data?.request ?? null)
-          ? "Requested. Exora is setting up this clinic's agent."
-          : "Not created yet. Use Create voice agent below.",
-      ready: !!agent.data?.agent,
-    },
-    {
-      label: "Patient website calling",
-      detail: active
-        ? "The consent-gated browser call is available to patients."
-        : "The call control stays hidden until the approved agent is active.",
-      ready: active,
-    },
-  ];
-
+    if (!pending && !agent.data?.agent) return;
+    const id = setInterval(() => void refresh(), 15000);
+    return () => clearInterval(id);
+  }, [pending, agent.data?.agent, refresh]);
+  const summaries: Record<string, string> = {
+    doctors: `${doctors.length} doctor${doctors.length === 1 ? "" : "s"} can be booked`,
+    line: draft ? (strategies.voice.find(([v]) => v === draft.numberStrategy)?.[1] ?? "") : "",
+    request: pending ? `Submitted ${new Date(pending.requestedAt).toLocaleDateString()}` : "Submitted",
+  };
+  const body = (id: string) =>
+    id === "doctors" ? (
+      <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
+        <p>
+          {doctors.length
+            ? `${doctors.length} doctor${doctors.length === 1 ? "" : "s"} at ${facility.name} can be booked by the agent.`
+            : "Add a doctor with working hours. The agent only offers real open times."}
+        </p>
+        <Button variant={doctors.length ? "outline" : "default"} onClick={() => go("doctors")}>
+          {doctors.length ? "Open Doctors" : "Add a doctor"}
+        </Button>
+      </div>
+    ) : id === "line" ? (
+      <ChannelOnboarding q={line} />
+    ) : id === "request" ? (
+      agent.data ? (
+        <AgentRequest setup={agent.data} refresh={agent.refresh} />
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          {agent.loading
+            ? "Checking status…"
+            : notEnabled
+              ? "Voice isn't available for your clinic yet."
+              : "Couldn't load the status. Try Check status."}
+        </p>
+      )
+    ) : (
+      <p className="text-sm">
+        {agent.data?.agent
+          ? "Approved. Your agent goes live soon."
+          : pending
+            ? `Application submitted to Paperwhale on ${new Date(pending.requestedAt).toLocaleDateString()}. Wait for approval.`
+            : "Submit your application first."}
+      </p>
+    );
   return (
-    <section className="space-y-4" aria-label="Voice setup and testing">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold">Voice agent control</h2>
-            <Badge variant={active ? "default" : "secondary"}>
-              {active
-                ? "Active"
-                : runtime?.state === "awaiting_sarvam_agent"
-                  ? "Awaiting Sarvam agent"
-                  : "Not enabled"}
-            </Badge>
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Setup, live readiness and safe tenant-level testing in one place.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            disabled={busy}
-            onClick={() => void refresh()}
-          >
-            {busy ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
+    <>
+      <PageTitle
+        title="Voice agent"
+        icon={<Headphones className="size-7" />}
+        action={
+          <Button variant="outline" disabled={runtime.busy} onClick={() => { void refresh(); void agent.refresh(); void line.refresh(); }}>
+            {runtime.busy ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
             Check status
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => window.open("/", "_blank", "noopener,noreferrer")}
-          >
-            <Globe2 /> Booking website <ArrowUpRight />
-          </Button>
-          {active && (
-            <Button
-              onClick={() =>
-                window.open("/#voice", "_blank", "noopener,noreferrer")
-              }
-            >
-              <Bot /> Test voice call <ArrowUpRight />
-            </Button>
-          )}
+        }
+      />
+      <div className="mb-6 max-w-3xl">
+        <h2 className="text-xl font-semibold tracking-tight">Set up your voice agent</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Answers patient calls and books appointments.</p>
+        <div className="arc-demo-scope mt-4">
+          <Stepper
+            label="Voice agent setup"
+            current={reached}
+            completeLabel="Approved"
+            steps={VOICE_STEPS.map((s) => ({
+              id: s.id,
+              label: s.label,
+              error: s.id === "request" && reached === 2 && agent.error ? (notEnabled ? "Not available yet" : "Status unavailable") : undefined,
+            }))}
+          />
         </div>
       </div>
-
-      {(error || agent.error) && (
-        <p className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-          {error || agent.error}
+      {!can("voice.manage") && (
+        <p className="mb-4 rounded-md border bg-muted/40 p-3 text-sm">
+          Your administrator needs to finish voice setup. You can follow progress here.
         </p>
       )}
-
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        {steps.map((step) => (
-          <Card key={step.label}>
-            <CardContent className="pt-5">
-              <div className="flex items-start gap-3">
-                {step.ready ? (
-                  <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" />
-                ) : (
-                  <CircleDashed className="mt-0.5 size-5 shrink-0 text-amber-600" />
-                )}
-                <div>
-                  <p className="text-sm font-medium">{step.label}</p>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    {step.detail}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {agent.data && !agent.data.agent && (
-        <AgentRequestCard setup={agent.data} refresh={agent.refresh} />
-      )}
-      {agent.data?.agent && (
-        <SpokenAgentForm
-          key={agent.data.desiredRevision}
-          setup={agent.data}
-          refresh={agent.refresh}
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <StepList
+          steps={VOICE_STEPS.map((s) => ({ id: s.id, title: s.label, hint: s.description, summary: summaries[s.id] }))}
+          reached={reached}
+          open={open}
+          onOpen={setPicked}
+          body={body}
+          canManage={can("voice.manage")}
         />
-      )}
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Database className="size-4" /> Booking data test
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            {busy && !booking ? (
-              <p className="flex items-center gap-2 text-muted-foreground">
-                <LoaderCircle className="size-4 animate-spin" /> Checking tenant
-                data…
-              </p>
-            ) : booking ? (
-              <>
-                <p>
-                  <strong>{booking.facilities.length}</strong> branch
-                  {booking.facilities.length === 1 ? "" : "es"} and{" "}
-                  <strong>{booking.practitioners.length}</strong> doctor
-                  {booking.practitioners.length === 1 ? "" : "s"} are visible to
-                  the booking system.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  This confirms the website data path. Voice tools use the same
-                  tenant database through a separate server-only credential.
-                </p>
-              </>
-            ) : (
-              <p className="text-muted-foreground">
-                Run the status check again.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ShieldCheck className="size-4" /> How to test safely
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {active ? (
-              <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
-                <li>
-                  Open the patient website and scroll to Voice front desk.
-                </li>
-                <li>
-                  Accept the displayed consent notice and allow microphone
-                  access.
-                </li>
-                <li>
-                  Ask for a doctor and a live slot, then book a test
-                  appointment.
-                </li>
-                <li>
-                  Return here to confirm the call and booking in Call history.
-                </li>
-              </ol>
-            ) : (
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                Local booking data can be tested now. A real browser call cannot
-                be tested until the tenant has a public HTTPS address and its
-                dedicated Sarvam agent has been tested, committed and bound by
-                the Exora platform administrator.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+        <div className="xl:sticky xl:top-6">
+          <p className="mb-3 text-xs font-medium text-muted-foreground">What patients hear</p>
+          <CallPreview
+            clinic={facility.name}
+            doctor={doctors[0]?.name ?? null}
+            greeting={agent.data?.settings.greeting || draft?.greeting || `Hello, you've reached ${facility.name}. How can I help?`}
+          />
+        </div>
       </div>
-    </section>
+    </>
   );
 }
 
-function AgentRequestCard({ setup, refresh }: { setup: AgentSettings; refresh: () => Promise<boolean> }) {
+/** An example call using this clinic's name, greeting and first doctor; the times are illustrative. */
+function CallPreview({ clinic, doctor, greeting }: { clinic: string; doctor: string | null; greeting: string }) {
+  const line = (text: string, patient = false) => (
+    <div className={`flex ${patient ? "justify-end" : "justify-start"}`}>
+      <p className={`max-w-[85%] rounded-2xl px-3 py-2 ${patient ? "bg-primary text-primary-foreground" : "bg-muted"}`}>{text}</p>
+    </div>
+  );
+  return (
+    <div className="mx-auto w-full max-w-[340px] overflow-hidden rounded-[28px] border-[6px] border-foreground/85 bg-background shadow-sm">
+      <div className="flex flex-col items-center gap-1.5 bg-foreground px-4 pb-5 pt-7 text-background">
+        <div className="grid size-14 place-items-center rounded-full bg-background/15 text-lg font-semibold">
+          {clinic.slice(0, 1)}
+        </div>
+        <p className="font-medium">{clinic}</p>
+        <p className="flex items-center gap-1.5 text-xs opacity-70">
+          <PhoneCall className="size-3" /> Voice agent
+        </p>
+      </div>
+      <div className="space-y-2 p-3 text-[13px] leading-snug">
+        {line(greeting)}
+        {line("I'd like to see a doctor tomorrow.", true)}
+        {line(doctor ? `${doctor} is free at 10:30 or 11:00. Which suits you?` : "Which doctor would you like to see?")}
+        {line("10:30, please.", true)}
+        {line(`You're booked${doctor ? ` with ${doctor}` : ""} for tomorrow at 10:30.`)}
+      </div>
+    </div>
+  );
+}
+
+function AgentRequest({ setup, refresh }: { setup: AgentSettings; refresh: () => Promise<boolean> }) {
   const { facility, can } = useWorkspace();
   const canManage = can("voice.manage");
   const cmd = useCommand();
-  const pending = openRequest(setup.request);
   const declined = setup.request?.kind === "create" && setup.request.state === "declined" ? setup.request : null;
   async function create() {
     const result = await cmd.run(`/v1/voice/agent-request`, { facilityId: facility.facilityId }, true);
     if (result) await refresh();
   }
+  if (!setup.entitled)
+    return <p className="text-sm text-muted-foreground">Voice agent isn&apos;t in your plan. Contact Paperwhale to add it.</p>;
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Bot className="size-4" /> Voice agent
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 text-sm">
-        {!setup.entitled ? (
-          <p className="text-muted-foreground">
-            A voice agent is not included in this clinic&apos;s plan. Contact Exora to add it.
-          </p>
-        ) : pending ? (
-          <>
-            <Badge variant="secondary">
-              {pending.state === "in_setup" ? "Being set up" : "Requested"}
-            </Badge>
-            <p>
-              Requested by {pending.requestedBy} on {when(pending.requestedAt)}.{" "}
-              {pending.state === "in_setup"
-                ? "Exora is setting up your agent now."
-                : "Exora will set up your agent using this clinic's details."}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              This page updates on its own when the agent is ready. You can then change how it speaks here.
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="text-muted-foreground">
-              Exora creates a dedicated voice agent for this clinic. It answers patients using your live
-              doctors, schedules and booking rules.
-            </p>
-            {declined?.reason && (
-              <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900">
-                Your last request was declined: {declined.reason}
-              </p>
-            )}
-            {cmd.error && <p className="text-destructive">{cmd.error}</p>}
-            <Button type="button" disabled={!canManage || cmd.busy} onClick={() => void create()}>
-              {cmd.busy ? <LoaderCircle className="animate-spin" /> : <Bot />} Create voice agent
-            </Button>
-            {!canManage && (
-              <p className="text-xs text-muted-foreground">Only a clinic administrator can request the agent.</p>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+    <div className="space-y-3 text-sm">
+      <p className="text-muted-foreground">Your agent books from your doctors and their open times.</p>
+      {declined?.reason && (
+        <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900">
+          Your last application was declined: {declined.reason}
+        </p>
+      )}
+      {cmd.error && <p className="text-destructive">{cmd.error}</p>}
+      <Button type="button" disabled={!canManage || cmd.busy} onClick={() => void create()}>
+        {cmd.busy ? <LoaderCircle className="animate-spin" /> : <Bot />} Submit application
+      </Button>
+      {!canManage && <p className="text-xs text-muted-foreground">Only a clinic administrator can submit this.</p>}
+    </div>
+  );
+}
+
+/** After the agent is live: test it and change how it speaks. */
+function VoiceSettings() {
+  const agent = useAgentSettings();
+  return (
+    <section className="space-y-6" aria-label="Voice settings">
+      <Card>
+        <CardContent className="space-y-3 pt-5 text-sm">
+          <p>Test it before patients call:</p>
+          <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
+            <li>Open the booking website and start a voice call.</li>
+            <li>Accept the consent notice and allow the microphone.</li>
+            <li>Book a test appointment, then check Call history.</li>
+          </ol>
+          <Button onClick={() => window.open("/#voice", "_blank", "noopener,noreferrer")}>
+            <Bot /> Test voice call <ArrowUpRight />
+          </Button>
+        </CardContent>
+      </Card>
+      {agent.error && <p role="alert" className="text-sm text-destructive">Couldn&apos;t load the agent settings.</p>}
+      {agent.data && <SpokenAgentForm key={agent.data.desiredRevision} setup={agent.data} refresh={agent.refresh} />}
+    </section>
   );
 }
 
@@ -495,7 +403,7 @@ function SpokenAgentForm({ setup, refresh }: { setup: AgentSettings; refresh: ()
       settings: payload(),
     }, false, "PUT");
     if (result) {
-      setNotice("Draft saved. Request the changes when you are ready for Exora to apply them.");
+      setNotice("Draft saved.");
       await refresh();
     }
   }
@@ -517,9 +425,7 @@ function SpokenAgentForm({ setup, refresh }: { setup: AgentSettings; refresh: ()
       <CardContent className="space-y-5">
         {pending && (
           <p className="rounded-md border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
-            Changes requested by {pending.requestedBy} on {when(pending.requestedAt)}.{" "}
-            {pending.state === "in_setup" ? "Exora is applying them now." : "Exora will apply them to your agent."}{" "}
-            Editing is paused until then.
+            Changes submitted on {when(pending.requestedAt)}. Wait for approval.
           </p>
         )}
         {declined?.reason && (
@@ -592,10 +498,14 @@ function SpokenAgentForm({ setup, refresh }: { setup: AgentSettings; refresh: ()
   );
 }
 
+
 export function Voice() {
   const [tab, open] = useWorkspaceTab("voice");
   const { me, facility } = useWorkspace();
   const source = useMemo(() => voiceSource(me, facility), [me, facility]);
+  const runtime = useVoiceRuntime();
+  if (runtime.busy && !runtime.runtime) return <p className="text-sm text-muted-foreground">Loading voice…</p>;
+  if (runtime.runtime?.enabled !== true) return <VoiceGuide runtime={runtime} />;
   return (
     <OriginalResourceContext.Provider value={source}>
       <Tabs
@@ -609,15 +519,13 @@ export function Voice() {
             <TabsTrigger value="setup">Call setup</TabsTrigger>
           </TabsList>
         </div>
-        <AssignedVoiceNumber />
+        <AssignedVoiceNumber phoneNumber={runtime.runtime.phone_number} />
         <TabsContent value="setup" className="arc-workflow-panel">
-          <div className="space-y-8">
-            <VoiceControl />
-            <ChannelOnboarding channel="voice" />
-          </div>
+          <VoiceSettings />
         </TabsContent>
         <TabsContent value="history" className="arc-workflow-panel">
           <VoiceModule
+            onSetup={() => open("setup")}
             recordingLoader={(id) =>
               requestBytes(`/v1/voice-calls/${id}/recording`)
             }

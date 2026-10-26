@@ -1,9 +1,9 @@
 import { sql, type DB, type Kysely } from '@hms/db';
 import { runQuery, runCommand, notFound, conflict } from '@hms/platform';
-import { ChannelOnboardingSchema, type ChannelOnboardingDraft } from '@hms/contracts';
+import { ChannelOnboardingSchema, type ChannelOnboardingDraft, type OnboardingChannel } from '@hms/contracts';
 import { clock, type Caller } from '../../caller.ts';
 import { assertWhatsAppActive } from './whatsapp.ts';
-type Channel = 'voice' | 'whatsapp';
+type Channel = OnboardingChannel;
 type Row = { id:string; state:'draft'|'requested'; draft:unknown; version:number; requested_at:Date|null; updated_at:Date; updated_by:string|null };
 const iso = (v:Date|null|undefined) => v ? new Date(v).toISOString() : null;
 function dto(facilityId:string, channel:Channel, row?:Row) {

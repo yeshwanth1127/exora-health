@@ -24,7 +24,7 @@ import {
   sameHours,
   sortHours,
   suggestCategories,
-  type Exora,
+  type Paperwhale,
   type FactId,
   type GbpData,
   type Listing,
@@ -57,7 +57,7 @@ export function Profile({
 }: {
   data: GbpData;
   change: GChange;
-  exora: Exora;
+  exora: Paperwhale;
   section: string | null;
   canManage: boolean;
 }) {
@@ -254,7 +254,7 @@ export function Profile({
             text={
               draft.bookUrl
                 ? `Opens ${draft.bookUrl}`
-                : "Opens your Exora booking page with live times and fees."
+                : "Opens your Paperwhale booking page with live times and fees."
             }
             on={!!draft.bookUrl}
             set={(on) => set({ bookUrl: on ? exora.bookUrl : null })}

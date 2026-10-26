@@ -12,7 +12,7 @@ A clinic admin opens WhatsApp and is walked, one step at a time, to "patients ca
 
 ## Decisions
 
-- **Number:** default to **coexistence**, which keeps the WhatsApp Business app on the clinic's existing number. This requires Meta Embedded Signup, so Exora must be a Meta Tech Provider. A new number is the fallback path.
+- **Number:** default to **coexistence**, which keeps the WhatsApp Business app on the clinic's existing number. This requires Meta Embedded Signup, so Paperwhale must be a Meta Tech Provider. A new number is the fallback path.
 - **Booking flow from a clinic-shape template**, then fully editable:
 
   | Template | Steps |
@@ -65,7 +65,7 @@ WhatsApp
 
 ## Phase 2: running WhatsApp after go-live
 
-Exora is applying to become a Meta Tech Provider, so **Connect** uses Embedded Signup. The coexistence feature type is `whatsapp_business_app_onboarding`. Until the partner app is approved, the dialog simulates the result in dev builds only.
+Paperwhale is applying to become a Meta Tech Provider, so **Connect** uses Embedded Signup. The coexistence feature type is `whatsapp_business_app_onboarding`. Until the partner app is approved, the dialog simulates the result in dev builds only.
 
 Once live, the page has six tabs: **Overview · Inbox · Automations · Promotions · Message log · Settings**. Each tab is deep-linkable as `whatsapp?tab=<id>`.
 

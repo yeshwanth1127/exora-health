@@ -53,7 +53,7 @@ export function Automations({
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Every message here is a Meta-approved template, so it can reach patients any time.{" "}
+        Every message here is an approved template, so it can reach patients any time.{" "}
         {q.on ? `Automated sends wait during quiet hours (${q.from}–${q.to}).` : "Quiet hours are off."}
       </p>
       <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
@@ -72,7 +72,7 @@ export function Automations({
                           <p className="truncate text-sm font-medium">{info.title}</p>
                           <p className="truncate text-xs text-muted-foreground">
                             {x.on && !x.approved ? (
-                              <span className="text-amber-700">Waiting for Meta approval</span>
+                              <span className="text-amber-700">Waiting for approval</span>
                             ) : (
                               info.timings.find(([k]) => k === x.timing)?.[1]
                             )}
@@ -141,11 +141,11 @@ function Editor({
       <div className="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_280px]">
         <fieldset disabled={!editable} className="space-y-5">
           {a.on && !a.approved && (
-            <Note>Turned on, but nothing sends until Meta approves this template. Approval usually takes a few minutes.</Note>
+            <Note>Turned on, but nothing sends until this template is approved.</Note>
           )}
-          {state === "edited" && <Note>Patients keep getting the approved version until Meta approves your edit.</Note>}
-          {state === "rejected" && <Note tone="error">Meta rejected this template: {a.rejection ?? "no reason given"}. Edit it and submit again.</Note>}
-          {state === "in_review" && <Note>Meta is reviewing this template. You can edit it again once the review finishes.</Note>}
+          {state === "edited" && <Note>Patients keep getting the approved version until your edit is approved.</Note>}
+          {state === "rejected" && <Note tone="error">This template was rejected: {a.rejection ?? "no reason given"}. Edit it and submit again.</Note>}
+          {state === "in_review" && <Note>This template is in review. You can edit it again once it&apos;s approved or rejected.</Note>}
           {info.timings.length > 1 && (
             <div className="max-w-xs space-y-2">
               <Label htmlFor="wa-timing">When it sends</Label>
@@ -208,10 +208,10 @@ function Editor({
               disabled={issues.length > 0 || state === "approved"}
               onClick={() => {
                 set({ review: "in_review", submittedAt: Date.now(), rejection: null });
-                toast.success("Submitted to Meta for review");
+                toast.success("Submitted for approval");
               }}
             >
-              <Send /> {state === "approved" ? "Approved" : "Submit to Meta"}
+              <Send /> {state === "approved" ? "Approved" : "Submit for approval"}
             </Button>
             {state === "edited" && a.approved && (
               <Button variant="ghost" onClick={() => set({ body: a.approved!.body, buttons: a.approved!.buttons })}>

@@ -282,6 +282,7 @@ export function Catalogue() {
           {!departments.length && (
             <WorkspaceEmpty
               title="Add a department"
+              description="Departments group your doctors and services."
               action={
                 manageClinic
                   ? {
@@ -406,6 +407,7 @@ export function Catalogue() {
           {!directory.data?.services.length && (
             <WorkspaceEmpty
               title="Create a consultation patients can book"
+              description={departments.length ? "Set its price and duration." : "Add a department first."}
               action={
                 departments.length && manageServices
                   ? {

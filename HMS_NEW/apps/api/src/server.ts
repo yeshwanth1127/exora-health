@@ -20,6 +20,8 @@ import {
 import { registerBookingRoutes } from "./http/routes/booking.ts";
 import { registerCalendarRoutes } from "./http/routes/calendar.ts";
 import { registerManagedIntegrationRoutes } from "./http/routes/managed-integrations.ts";
+import { registerAppleMessagesRoutes } from './http/routes/apple-messages.ts';
+import { loadAppleSettings, type AppleSettings } from './modules/comms/apple-config.ts';
 import {
   loadManagedSettings,
   type ManagedSettings,
@@ -76,6 +78,7 @@ export interface ServerDeps {
   telehealth?: TelehealthSettings;
   channels?: ChannelSettings;
   managed?: ManagedSettings;
+  apple?: AppleSettings;
   /** Server-only HTTP transport injection; production defaults to native fetch. */
   whatsappTemplateFetcher?: typeof fetch;
   /** Server-owned website bindings; absence loads disabled-by-default environment configuration. */
@@ -200,7 +203,7 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   app.addHook("onSend", async (request, reply) => {
     reply.header("x-request-id", request.id);
     if (
-      /^\/v1\/(website-analytics|google-business|whatsapp-workspace|managed-connections)([/?]|$)/.test(
+      /^\/v1\/(website-analytics|google-business|whatsapp-workspace|managed-connections|apple-messages)([/?]|$)/.test(
         request.url,
       )
     )
@@ -304,15 +307,17 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   });
   registerChannelOnboardingRoutes(app, deps.db);
   registerManagedIntegrationRoutes(app, deps.db, managed);
+  registerAppleMessagesRoutes(app, deps.db, deps.apple ?? loadAppleSettings());
+  // Registered everywhere so an unconfigured clinic gets an explicit 412 rather than a missing route.
+  registerVoiceAgentSettingsRoutes(app, deps.voiceControl);
   if (deps.publicTenantId) {
     const voice = deps.voice ?? loadVoiceRuntimeSettings();
     registerTenantPublicBookingRoutes(app, deps.db, deps.publicTenantId, managed);
-    // An agent pinned in this container's environment wins; otherwise use the one Exora bound in the control plane.
+    // An agent pinned in this container's environment wins; otherwise use the one Paperwhale bound in the control plane.
     const agentSource: VoiceAgentSource = voice.agent && voice.sarvamApiKey
       ? environmentVoiceSource(voice.agent, voice.sarvamApiKey, voice.assignedPhoneNumber ?? null)
       : deps.voiceControl ? controlVoiceSource(deps.voiceControl, app.log) : async () => undefined;
     registerPublicVoiceRoutes(app, deps.db, voice, channels, agentSource, publicBooking);
-    registerVoiceAgentSettingsRoutes(app, deps.voiceControl);
     if (voice.integration) registerVoiceIntegrationRoutes(app, deps.db, deps.publicTenantId, voice.integration);
   }
   registerCommsSummaryRoutes(app, deps.db);
