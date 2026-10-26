@@ -20,7 +20,7 @@ export const publicPages = [
  {path:'/specialties/dental',title:`Dental Practice Reception & Appointment Workflows | ${BRAND_NAME}`,description:'Coordinate dental enquiries, consultation and treatment appointments, patient reminders and recall conversations in one reception workflow.'},
  {path:'/specialties/physiotherapy',title:`Physiotherapy Appointment & Patient Follow-up Workflows | ${BRAND_NAME}`,description:'Keep initial assessment bookings, ongoing sessions, attendance and administrative follow-ups connected for your physiotherapy practice.'},
  {path:'/solutions/teleconsultations',title:`Teleconsultation Appointment Workflows for Healthcare Teams | ${BRAND_NAME}`,description:'Connect remote appointment coordination, joining information and administrative follow-ups to your configured teleconsultation service.'},
- {path:'/privacy',title:`Website Analytics & Privacy | ${BRAND_NAME}`,description:'How optional website analytics works, which information is excluded and how to change your analytics preference.'},
+ {path:'/privacy',title:`Privacy Policy | ${BRAND_NAME}`,description:'How we handle website, workspace setup and connected Google Business Profile data, including permissions, storage, sharing and deletion requests.'},
 ] as const;
 export const privateRobots = {index:false,follow:true};
 export function pageMetadata(path:string,title?:string,description?:string): Metadata {
