@@ -1,0 +1,8 @@
+services:
+  platform:
+    build:
+      context: /srv/apps/exora-health/HMS_NEW
+      dockerfile: Dockerfile.platform.incremental
+      args:
+        BASE_IMAGE: exora/health-platform:credential-ui-20261021
+    image: exora/health-platform:sarvam-20261021

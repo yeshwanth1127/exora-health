@@ -1,0 +1,26 @@
+{
+    admin off
+    servers {
+        timeouts {
+            read_header 10s
+            read_body 10s
+            write 30s
+            idle 30s
+        }
+        max_header_size 16KB
+        protocols h1 h2
+    }
+}
+srv2086263.hstgr.cloud {
+    encode zstd gzip
+    header {
+        -Server
+        Strict-Transport-Security "max-age=86400"
+    }
+    reverse_proxy web:8080 {
+        transport http {
+            dial_timeout 3s
+            response_header_timeout 10s
+        }
+    }
+}

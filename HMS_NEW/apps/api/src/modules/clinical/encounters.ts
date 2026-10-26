@@ -20,6 +20,7 @@ interface NewEncounter {
   departmentId: string | null;
   attendingStaffId: string;
   appointmentId: string | null;
+  admissionId?: string | null;
   encounterClass: EncounterClass;
   chiefComplaint: string | null;
   arrivedAt: Date;
@@ -37,6 +38,7 @@ async function insertEncounter(tx: Transaction<DB>, e: NewEncounter): Promise<{ 
       department_id: e.departmentId,
       attending_staff_id: e.attendingStaffId,
       appointment_id: e.appointmentId,
+      admission_id: e.admissionId ?? null,
       encounter_class: e.encounterClass,
       chief_complaint: e.chiefComplaint,
       arrived_at: e.arrivedAt,
@@ -54,7 +56,7 @@ async function insertEncounter(tx: Transaction<DB>, e: NewEncounter): Promise<{ 
       eventType: 'encounter.opened',
       aggregateType: 'clinical.encounter',
       aggregateId: id,
-      payload: { encounterId: id, encounterNo, patientId: e.patientId, appointmentId: e.appointmentId, attendingStaffId: e.attendingStaffId },
+      payload: { encounterId: id, encounterNo, patientId: e.patientId, appointmentId: e.appointmentId, admissionId: e.admissionId ?? null, attendingStaffId: e.attendingStaffId },
     },
   };
 }
@@ -88,6 +90,67 @@ export async function openEncounterForAppointment(tx: Transaction<DB>, tenantId:
   });
   await writeOutbox(tx, tenantId, correlationId, [created.event]);
   return { encounterId: created.encounterId, encounterNo: created.encounterNo, created: true };
+}
+
+/**
+ * Event consumer step: opens the inpatient (or day-care) encounter of an admission. Idempotent — an
+ * admission has at most one encounter.
+ */
+export async function openEncounterForAdmission(tx: Transaction<DB>, tenantId: string, admissionId: string, correlationId: string | null) {
+  const existing = await tx.selectFrom('clinical.encounter').select(['id', 'encounter_no']).where('admission_id', '=', admissionId).executeTakeFirst();
+  if (existing) return { encounterId: existing.id, encounterNo: existing.encounter_no, created: false };
+  const a = await tx.selectFrom('inpatient.admission')
+    .select(['id', 'status', 'patient_id', 'facility_id', 'department_id', 'admitting_staff_id', 'admission_type', 'admission_reason', 'admitted_at'])
+    .where('id', '=', admissionId).executeTakeFirst();
+  if (!a) throw notFound('admission', { admissionId });
+  if (a.status === 'cancelled' || a.status === 'discharged') return { encounterId: null, encounterNo: null, created: false };
+  const created = await insertEncounter(tx, {
+    tenantId,
+    patientId: a.patient_id,
+    facilityId: a.facility_id,
+    departmentId: a.department_id,
+    attendingStaffId: a.admitting_staff_id,
+    appointmentId: null,
+    admissionId: a.id,
+    encounterClass: a.admission_type === 'day_care' ? 'day_care' : 'inpatient',
+    chiefComplaint: a.admission_reason,
+    arrivedAt: a.admitted_at,
+  });
+  await writeOutbox(tx, tenantId, correlationId, [created.event]);
+  return { encounterId: created.encounterId, encounterNo: created.encounterNo, created: true };
+}
+
+const DISPOSITION: Record<string, FinishEncounterInput['disposition']> = {
+  routine: 'discharged_home', lama: 'lama', dama: 'lama', absconded: 'absconded', transfer_out: 'referred_out', referred: 'referred_out', death: 'died',
+};
+
+/** Event consumer step: a departed admission finishes its encounter; a cancelled one cancels it. */
+export async function closeEncounterForAdmission(
+  tx: Transaction<DB>, tenantId: string, admissionId: string, outcome: { departedAt: string; dischargeType: string } | { cancelled: string }, correlationId: string | null,
+) {
+  const enc = await tx.selectFrom('clinical.encounter').select(['id', 'status', 'patient_id', 'arrived_at', 'started_at']).where('admission_id', '=', admissionId).forUpdate().executeTakeFirst();
+  if (!enc || !['planned', 'arrived', 'in_progress'].includes(enc.status)) return false;
+  if ('cancelled' in outcome) {
+    // An admission made in error: a started encounter can only be marked entered in error.
+    await tx.updateTable('clinical.encounter')
+      .set(enc.status === 'in_progress' ? { status: 'entered_in_error' } : { status: 'cancelled', cancel_reason: `Admission cancelled: ${outcome.cancelled}` })
+      .where('id', '=', enc.id).execute();
+    await writeOutbox(tx, tenantId, correlationId, [{ eventType: 'encounter.cancelled', aggregateType: 'clinical.encounter', aggregateId: enc.id, payload: { encounterId: enc.id, appointmentId: null, admissionId } }]);
+    return true;
+  }
+  const endedAt = new Date(outcome.departedAt);
+  const disposition = DISPOSITION[outcome.dischargeType] ?? 'discharged_home';
+  // Encounters move arrived → in_progress → finished (status trigger); a stay nobody "started" starts at arrival.
+  if (enc.status !== 'in_progress') {
+    await tx.updateTable('clinical.encounter').set({ status: 'in_progress', started_at: enc.started_at ?? enc.arrived_at }).where('id', '=', enc.id).execute();
+  }
+  await tx.updateTable('clinical.encounter').set({ status: 'finished', ended_at: endedAt, disposition }).where('id', '=', enc.id).execute();
+  await tx.updateTable('clinical.encounter_participant').set({ period_end: endedAt }).where('encounter_id', '=', enc.id).where('period_end', 'is', null).execute();
+  await writeOutbox(tx, tenantId, correlationId, [{
+    eventType: 'encounter.finished', aggregateType: 'clinical.encounter', aggregateId: enc.id,
+    payload: { encounterId: enc.id, appointmentId: null, admissionId, patientId: enc.patient_id, disposition, followUpAdvisedOn: null },
+  }]);
+  return true;
 }
 
 export interface OpenEncounterInput {
@@ -148,6 +211,7 @@ export async function finishEncounter(db: Kysely<DB>, caller: Caller, input: Fin
   const now = clock(caller);
   return runCommand(db, { ...caller, module: 'clinical', name: 'clinical.finish_encounter', request: input }, async (ctx) => {
     const enc = await lockEncounter(ctx.tx, input.encounterId);
+    if (enc.admission_id) throw preconditionFailed('an inpatient stay ends with its discharge, not here', { reason: 'discharge_admission', admissionId: enc.admission_id });
     await ensureEncounterAccess(ctx, enc, now);
     if (enc.status !== 'in_progress') throw preconditionFailed(`a ${enc.status} encounter cannot be finished; start it first`);
     const drafts = await ctx.tx
@@ -181,6 +245,7 @@ export async function cancelEncounter(db: Kysely<DB>, caller: Caller, input: { e
     // A booked visit is cancelled through its appointment, which then cancels the encounter, so the
     // appointment and queue token never outlive it (G38).
     if (enc.appointment_id) throw preconditionFailed('this encounter belongs to an appointment; cancel the appointment or mark it no-show instead', { reason: 'cancel_appointment', appointmentId: enc.appointment_id });
+    if (enc.admission_id) throw preconditionFailed('this encounter belongs to an admission; cancel the admission instead', { reason: 'cancel_admission', admissionId: enc.admission_id });
     await ensureEncounterAccess(ctx, enc, clock(caller));
     if (enc.status !== 'arrived' && enc.status !== 'planned') throw preconditionFailed(`a ${enc.status} encounter cannot be cancelled`);
     await ctx.tx.updateTable('clinical.encounter').set({ status: 'cancelled', cancel_reason: input.reason }).where('id', '=', enc.id).execute();

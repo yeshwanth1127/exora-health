@@ -28,6 +28,12 @@ const city = args.get('city')?.trim() || 'Bengaluru';
 const plan = args.get('plan')?.trim() || 'connect';
 const voice = (args.get('voice')?.trim() || (plan === 'launch' ? 'false' : 'true')) === 'true';
 const port = Number(args.get('port') ?? '8081');
+const facilityType = args.get('facility-type') ?? 'clinic';
+const timezone = args.get('timezone') ?? 'Asia/Kolkata';
+if (!['clinic','hospital','diagnostic_centre','virtual'].includes(facilityType)) throw new Error('Unknown facility type');
+new Intl.DateTimeFormat('en', { timeZone: timezone });
+const websiteTemplate = args.get('website-template') ?? 'standard';
+if (!['standard', 'sri-lakshmi', 'hospital-editorial'].includes(websiteTemplate)) throw new Error('Unknown website template');
 if (!/^[a-z0-9][a-z0-9-]{1,62}$/.test(slug)) throw new Error('--slug must be lower-case letters, numbers and hyphens');
 if (!/.+@.+\..+/.test(email)) throw new Error('--email must be a valid email');
 if (!['launch', 'connect', 'scale'].includes(plan)) throw new Error('--plan must be launch, connect or scale');
@@ -47,6 +53,9 @@ const tenantUuid = (() => {
 })();
 const values = {
   TENANT_SLUG: slug,
+  WEBSITE_TEMPLATE: websiteTemplate,
+  BOOTSTRAP_FACILITY_TYPE: facilityType,
+  BOOTSTRAP_TIMEZONE: timezone,
   TENANT_PORT: String(port),
   TENANT_PLAN: plan,
   VOICE_REQUESTED: voice ? '1' : '0',

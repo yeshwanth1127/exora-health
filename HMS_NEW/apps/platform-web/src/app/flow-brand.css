@@ -1,0 +1,26 @@
+.quote-page,.capture-account-page,.capture-welcome{--action:#0875de;--background:#fff;--foreground:#161a1f;--muted-foreground:#70766d;--surface:#f2f4f6;--font-body:Inter,system-ui,sans-serif}
+.quote-page .brand-button-primary,.capture-account-page .brand-button-primary,.capture-welcome .brand-button-primary{display:inline-flex;justify-content:center;align-items:center;gap:12px;min-height:44px;padding:10px 20px;border:1px solid transparent;border-radius:9px;background:var(--action);color:white;font-size:15px;font-weight:500;text-decoration:none;cursor:pointer}
+.quote-page .brand-button-primary:disabled,.capture-account-page .brand-button-primary:disabled{opacity:.45;cursor:not-allowed}.quote-page button:focus-visible,.capture-account-page button:focus-visible,.capture-welcome a:focus-visible{outline:2px solid #0875de;outline-offset:4px}.flow-preview-banner{margin:0;padding:8px 16px;text-align:center;font-size:11px;line-height:1.5;color:#747a70;background:#f3f5f7}.quote-local-map{position:relative;overflow:hidden}.quote-local-map svg{width:100%;height:100%;min-height:230px}.quote-local-map>span{position:absolute;bottom:12px;left:16px;background:white;padding:6px 10px;border-radius:8px;font-size:11px}.capture-account-emblem img{width:48px;height:48px;object-fit:contain}.capture-welcome{max-width:800px;margin:0 auto;padding:28px 24px 72px;color:#161a1f}.capture-welcome header{display:flex;justify-content:space-between;align-items:center;margin-bottom:64px}.capture-welcome h1{font-size:48px;line-height:1.1;letter-spacing:-1.6px;margin:18px 0}.capture-welcome .welcome-intro{font-size:20px;color:#697064;line-height:1.5}.welcome-profile{padding:28px;background:#f2f5f8;border:1px solid #dfe5eb;border-radius:16px;margin:32px 0}.welcome-profile h2{font-size:26px;margin:0 0 10px}.welcome-profile p{margin:8px 0;color:#626b5c}.welcome-actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.welcome-note{font-size:13px;color:#7b8274;line-height:1.6;margin:24px 0}.welcome-tasks{display:grid;gap:12px;list-style:none;padding:0;margin:24px 0}.welcome-tasks li{padding:16px;border:1px solid #e0e5ea;border-radius:10px}.welcome-tasks strong{display:block;margin-bottom:6px}.welcome-tasks span{font-size:14px;color:#777}.capture-welcome details{font-size:14px;line-height:1.7;margin:24px 0}.capture-welcome summary{cursor:pointer}@media(max-width:600px){.capture-welcome h1{font-size:36px}.capture-welcome header{margin-bottom:40px}}
+.capture-welcome h1{font-weight:650}.welcome-avatar{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;color:#303a45;font-weight:600;margin-bottom:16px}
+
+/* Decorative doctor beside the current question; no extra guide copy. */
+.quote-page .quote-main{position:relative;width:min(100% - 4rem,52rem);display:block}
+.quote-content{min-width:0}
+.onboarding-mascot{position:absolute;right:0;top:2.6rem;width:9rem;pointer-events:none}
+.onboarding-mascot-art{width:100%;aspect-ratio:1}
+.onboarding-mascot-art img{display:block;width:100%;height:100%;object-fit:contain}
+.quote-page .quote-question h1,.quote-page .quote-intro{max-width:calc(100% - 10rem)}
+.quote-page .quote-intro{min-height:4.5rem}
+.onboarding-mascot.is-compact{position:static;width:7rem;margin:0 0 .5rem auto}
+.quote-page svg,.capture-account-page svg{flex-shrink:0;overflow:visible}
+.quote-page .quote-choice-icon{width:24px;height:24px;stroke-width:1.8}
+@media(prefers-reduced-motion:no-preference){.onboarding-mascot-art img{animation:mascot-arrive 220ms ease-out both}@keyframes mascot-arrive{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}}
+@media(max-width:650px){.quote-page .quote-main{width:calc(100% - 2rem);margin-top:1.5rem}.onboarding-mascot{width:6rem;top:3.5rem}.quote-page .quote-question h1{max-width:calc(100% - 6.5rem)}.quote-page .quote-intro{max-width:100%;min-height:0}.quote-page .quote-question h1{min-height:6rem}.onboarding-mascot.is-compact{width:6rem}}
+/* Account setup starts near the top, with the doctor above the question. */
+.capture-account-page .capture-account-panel{justify-content:flex-start;min-height:0;padding:1rem 0 3rem}
+.capture-account-heading{display:flex;flex-direction:column;align-items:center;gap:.7rem;margin-bottom:1.5rem}
+.capture-account-heading>div{width:100%;min-width:0}
+.capture-account-heading .onboarding-mascot.is-compact{position:static;width:13rem;margin:0;flex:none}
+.capture-account-panel .capture-account-heading h1,.capture-account-panel .capture-account-heading .capture-account-intro,.capture-account-panel .capture-account-heading .capture-account-step{text-align:center}
+.capture-account-heading .capture-account-intro{margin-bottom:0}
+@media(max-width:650px){.capture-account-page .capture-account-panel{padding-top:.25rem}.capture-account-heading .onboarding-mascot.is-compact{width:11rem}.capture-account-heading{gap:.5rem}}

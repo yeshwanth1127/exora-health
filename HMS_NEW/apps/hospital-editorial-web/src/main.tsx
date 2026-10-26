@@ -1,0 +1,12 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './styles/index.css';
+import './cloned/welbeck/scoped.css';
+import './focused.css';
+import './vendor/pro/team-showcase/dist/app.css';
+import './vendor/pro/lightbox-gallery/dist/app.css';
+import './vendor/pro/date-reel/dist/app.css';
+import './arc-hospital.css';
+import './template.css';
+ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);

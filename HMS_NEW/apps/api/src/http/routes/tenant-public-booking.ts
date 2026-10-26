@@ -1,3 +1,4 @@
+import { tenantWebsiteProfile, websiteContent } from '../../modules/booking/website-profile.ts';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { DB, Kysely } from '@hms/db';
@@ -17,6 +18,12 @@ const PublicRange = z.object({
 
 /** Public booking surface for a dedicated single-tenant Exora runtime. */
 export function registerTenantPublicBookingRoutes(app: FastifyInstance, db: Kysely<DB>, tenantId: string, managed: ManagedSettings) {
+  const content = websiteContent(process.env.WEBSITE_CONTENT_JSON);
+  app.get('/public/v1/website', async (_request, reply) => {
+    reply.header('cache-control','no-store');
+    return tenantWebsiteProfile(db, tenantId, content, process.env.BOOTSTRAP_FACILITY_ID);
+  });
+
   const caller = (correlationId: string): Caller => ({ tenantId, actor: { kind: 'system' }, correlationId });
 
   app.get('/public/v1/bootstrap', async (request, reply) => {

@@ -1,0 +1,264 @@
+{
+  "version": "reach-readiness-1.0",
+  "example": true,
+  "checkedAt": "2026-10-23T12:48:45.938736+00:00",
+  "profile": {
+    "id": "example-clinic",
+    "name": "Example Clinic",
+    "category": "Medical clinic",
+    "address": "A fictional clinic in an example neighbourhood",
+    "phone": "080 0000 0000",
+    "hours": [],
+    "businessStatus": "OPERATIONAL",
+    "website": "https://example.invalid/",
+    "mapsUrl": "",
+    "rating": null,
+    "reviewCount": null,
+    "attributions": []
+  },
+  "website": {
+    "state": "blocked",
+    "url": "https://example.invalid/",
+    "finalUrl": "https://example.invalid/",
+    "message": "Example: the website blocked automated inspection. Its checks are unassessed and excluded from the score."
+  },
+  "score": 80,
+  "scoreLabel": "Google profile score",
+  "partial": true,
+  "coverage": 40,
+  "websiteIssue": null,
+  "assessedChecks": 6,
+  "totalChecks": 17,
+  "counts": {
+    "pass": 5,
+    "review": 1,
+    "unknown": 11
+  },
+  "categories": [
+    {
+      "key": "google",
+      "label": "Google profile",
+      "score": 80,
+      "weight": 40,
+      "assessedWeight": 40,
+      "earnedWeight": 32,
+      "assessedChecks": 6,
+      "totalChecks": 6
+    },
+    {
+      "key": "website",
+      "label": "Website basics",
+      "score": null,
+      "weight": 20,
+      "assessedWeight": 0,
+      "earnedWeight": 0,
+      "assessedChecks": 0,
+      "totalChecks": 4
+    },
+    {
+      "key": "search",
+      "label": "Search signals",
+      "score": null,
+      "weight": 20,
+      "assessedWeight": 0,
+      "earnedWeight": 0,
+      "assessedChecks": 0,
+      "totalChecks": 4
+    },
+    {
+      "key": "contact",
+      "label": "Contact paths",
+      "score": null,
+      "weight": 20,
+      "assessedWeight": 0,
+      "earnedWeight": 0,
+      "assessedChecks": 0,
+      "totalChecks": 3
+    }
+  ],
+  "checks": [
+    {
+      "id": "google_name",
+      "category": "google",
+      "label": "Business name returned",
+      "weight": 4,
+      "status": "pass",
+      "evidence": "Business name was returned by Google.",
+      "fix": "",
+      "sourceUrl": ""
+    },
+    {
+      "id": "google_category",
+      "category": "google",
+      "label": "Business category returned",
+      "weight": 4,
+      "status": "pass",
+      "evidence": "Primary category was returned by Google.",
+      "fix": "",
+      "sourceUrl": ""
+    },
+    {
+      "id": "google_address",
+      "category": "google",
+      "label": "Public address returned",
+      "weight": 8,
+      "status": "pass",
+      "evidence": "Public address was returned by Google.",
+      "fix": "",
+      "sourceUrl": ""
+    },
+    {
+      "id": "google_phone",
+      "category": "google",
+      "label": "Public phone returned",
+      "weight": 8,
+      "status": "pass",
+      "evidence": "Phone number was returned by Google.",
+      "fix": "",
+      "sourceUrl": ""
+    },
+    {
+      "id": "google_hours",
+      "category": "google",
+      "label": "Opening hours returned",
+      "weight": 8,
+      "status": "review",
+      "evidence": "Regular opening hours was not returned. It may be missing, hidden or unsupported; verify it with the listing owner.",
+      "fix": "Review the regular opening hours in Google Business Profile.",
+      "sourceUrl": ""
+    },
+    {
+      "id": "google_status",
+      "category": "google",
+      "label": "Listing marked operational",
+      "weight": 8,
+      "status": "pass",
+      "evidence": "Google marks the business operational.",
+      "fix": "",
+      "sourceUrl": ""
+    },
+    {
+      "id": "https",
+      "category": "website",
+      "label": "HTTPS connection",
+      "weight": 5,
+      "status": "unknown",
+      "evidence": "Example: the website blocked automated inspection. Its checks are unassessed and excluded from the score.",
+      "fix": "Serve the website over HTTPS with a valid certificate.",
+      "sourceUrl": ""
+    },
+    {
+      "id": "available",
+      "category": "website",
+      "label": "Homepage available",
+      "weight": 5,
+      "status": "unknown",
+      "evidence": "Example: the website blocked automated inspection. Its checks are unassessed and excluded from the score.",
+      "fix": "Check the homepage response and remove access errors for visitors.",
+      "sourceUrl": ""
+    },
+    {
+      "id": "viewport",
+      "category": "website",
+      "label": "Mobile viewport declared",
+      "weight": 5,
+      "status": "unknown",
+      "evidence": "Example: the website blocked automated inspection. Its checks are unassessed and excluded from the score.",
+      "fix": "Add a viewport meta tag with width=device-width.",
+      "sourceUrl": ""
+    },
+    {
+      "id": "content",
+      "category": "website",
+      "label": "Page text in HTML",
+      "weight": 5,
+      "status": "unknown",
+      "evidence": "Example: the website blocked automated inspection. Its checks are unassessed and excluded from the score.",
+      "fix": "Make key clinic information available in the page HTML and verify that visitors can read it.",
+      "sourceUrl": ""
+    },
+    {
+      "id": "title",
+      "category": "search",
+      "label": "Page title",
+      "weight": 5,
+      "status": "unknown",
+      "evidence": "Example: the website blocked automated inspection. Its checks are unassessed and excluded from the score.",
+      "fix": "Add a descriptive title with the clinic name and location.",
+      "sourceUrl": ""
+    },
+    {
+      "id": "description",
+      "category": "search",
+      "label": "Search description",
+      "weight": 5,
+      "status": "unknown",
+      "evidence": "Example: the website blocked automated inspection. Its checks are unassessed and excluded from the score.",
+      "fix": "Add a concise meta description that explains the clinic and its services.",
+      "sourceUrl": ""
+    },
+    {
+      "id": "heading",
+      "category": "search",
+      "label": "Main page heading",
+      "weight": 5,
+      "status": "unknown",
+      "evidence": "Example: the website blocked automated inspection. Its checks are unassessed and excluded from the score.",
+      "fix": "Add a clear H1 describing this clinic or its main service.",
+      "sourceUrl": ""
+    },
+    {
+      "id": "indexing",
+      "category": "search",
+      "label": "No explicit indexing block",
+      "weight": 5,
+      "status": "unknown",
+      "evidence": "Example: the website blocked automated inspection. Its checks are unassessed and excluded from the score.",
+      "fix": "Review robots rules, noindex meta tags and X-Robots-Tag headers.",
+      "sourceUrl": ""
+    },
+    {
+      "id": "phone_link",
+      "category": "contact",
+      "label": "Direct call or WhatsApp link",
+      "weight": 8,
+      "status": "unknown",
+      "evidence": "Example: the website blocked automated inspection. Its checks are unassessed and excluded from the score.",
+      "fix": "Add a visible tap-to-call or WhatsApp link.",
+      "sourceUrl": ""
+    },
+    {
+      "id": "booking",
+      "category": "contact",
+      "label": "Booking or enquiry link",
+      "weight": 6,
+      "status": "unknown",
+      "evidence": "Example: the website blocked automated inspection. Its checks are unassessed and excluded from the score.",
+      "fix": "Add a clearly labelled booking, appointment or reservation link.",
+      "sourceUrl": ""
+    },
+    {
+      "id": "contact",
+      "category": "contact",
+      "label": "Contact route",
+      "weight": 6,
+      "status": "unknown",
+      "evidence": "Example: the website blocked automated inspection. Its checks are unassessed and excluded from the score.",
+      "fix": "Add a clearly labelled contact page or email link.",
+      "sourceUrl": ""
+    }
+  ],
+  "priorities": [
+    {
+      "id": "google_hours",
+      "category": "google",
+      "label": "Opening hours returned",
+      "weight": 8,
+      "status": "review",
+      "evidence": "Regular opening hours was not returned. It may be missing, hidden or unsupported; verify it with the listing owner.",
+      "fix": "Review the regular opening hours in Google Business Profile.",
+      "sourceUrl": ""
+    }
+  ],
+  "methodology": "A weighted checklist of public profile fields (40%), website basics (20%), search signals (20%) and contact paths (20%). Unassessed checks are excluded; missing public fields lower the observed-profile score, but do not prove those details are absent from the business. This does not measure traffic, Google rank, revenue, accessibility compliance or completed bookings."
+}

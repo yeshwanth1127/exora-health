@@ -1,0 +1,91 @@
+{
+  "date": "2026-10-23",
+  "scope": "Local Capture report visual revision only; no deployment or paid API requests.",
+  "changes": [
+    "Opt-in half-circle gauge with red below 50, amber 50\u201379, green 80\u2013100 and animated marker/readout",
+    "Four MetricCard tiles replaced with inline category scores",
+    "One default issues-only list sorted by check weight; native disclosure for evidence and points",
+    "Original Arc DonutChart at size 160 / thickness 18 with selectable result filters"
+  ],
+  "verification": {
+    "typecheck": "PASS",
+    "public_build": "PASS: 33 routes, sanitized export 739 files",
+    "web_tests": "PASS: 12/12",
+    "report_example": "76, four issues, amber",
+    "partial_example": "80, green, 40% coverage, three category scores unassessed",
+    "isolated_gauge": "30 red, zero and 100 visible digits/ARIA endpoints verified",
+    "interactions": [
+      "Enter opens/closes native issue evidence",
+      "Donut Passed selection shows 13 rows",
+      "ArrowUp / Enter selects Needs attention and restores four issues",
+      "All checks exposes all 17; Issues only restores four",
+      "Unassessed selection on partial report shows 11 unassessed rows"
+    ],
+    "responsive": "No document horizontal overflow at CSS widths 1536 and 354; mobile issue keyboard disclosure verified",
+    "console": "No browser errors observed in final report"
+  },
+  "fidelity": "Gauge scale is an explicit user-requested adaptation. Default ring retained; DonutChart source/CSS unchanged.",
+  "unverified": [
+    "OS reduced-motion preference switching in-browser",
+    "No fresh live Google report requested; existing cost quotas preserved"
+  ],
+  "screenshots": [
+    "reach-report-color-scale.png",
+    "reach-report-mobile-overview.png",
+    "reach-report-mobile-issues.png",
+    "reach-gauge-red-state.png",
+    "reach-report-green-partial.png"
+  ],
+  "palette_revision": {
+    "bands": {
+      "red": "#ff4d57",
+      "amber": "#ffb020",
+      "green": "#10b981"
+    },
+    "behavior": "Scale marker and state use the count MotionValue; threshold follows rounded visible count. Original ring preserved.",
+    "verification": "Build/type checking and 12 web tests passed; isolated scale checked 30 \u2192 100 \u2192 50 \u2192 80. Report palette and no horizontal overflow checked. No API requests.",
+    "screenshots": [
+      "reach-bright-gauge.png",
+      "reach-bright-report.png"
+    ],
+    "unverified": "OS reduced-motion switching remains unverified."
+  },
+  "reorganization": {
+    "layout": [
+      "Main score",
+      "Four small category donut meters",
+      "Issue filters and concise evidence list beside clinic/location widget",
+      "Methodology disclosure"
+    ],
+    "removed": [
+      "Public listing details table",
+      "Preview banner and state controls",
+      "Redundant result breakdown donut"
+    ],
+    "backend": "Added location, currentOpeningHours, accessibilityOptions to the existing single Place Details request; no additional request or quota change. Live provider fields not fetched in this revision.",
+    "verification": {
+      "build": "PASS",
+      "web_tests": "12/12 PASS",
+      "backend_tests": "28/28 PASS",
+      "browser": [
+        "Desktop CSS1163 and mobile CSS354 no horizontal overflow",
+        "Category progress settled at 80/100/50/70, matching arc fractions .8/1/.5/.7",
+        "Passed filter shows 13 checks; review restores four",
+        "Keyboard Enter expands evidence",
+        "Copy address reports Copied after real clipboard success",
+        "Partial report shows three neutral unknown donuts and 11 unavailable checks; See why opens their explanation",
+        "No console errors observed"
+      ]
+    },
+    "limits": [
+      "Optional real Google widget fields not exercised live",
+      "OS reduced motion preference switching not exercised"
+    ],
+    "screenshots": [
+      "reach-reorganized-final.png",
+      "reach-reorganized-mobile.png",
+      "reach-clinic-mobile.png"
+    ],
+    "research": "google-data-and-analytics.md"
+  }
+}

@@ -1,0 +1,30 @@
+# syntax=docker/dockerfile:1.7
+ARG BASE_IMAGE=exora/health-platform:credential-ui-20261021
+FROM ${BASE_IMAGE}
+
+USER root
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
+
+WORKDIR /app
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json vitest.config.ts ./
+COPY --chown=node:node apps/control-api ./apps/control-api
+COPY --chown=node:node apps/platform-web ./apps/platform-web
+COPY --chown=node:node apps/admin-web ./apps/admin-web
+COPY --chown=node:node packages ./packages
+
+ARG NEXT_PUBLIC_SITE_ORIGIN=https://health.exora.solutions
+ARG NEXT_PUBLIC_SEARCH_INDEXING=true
+ARG NEXT_PUBLIC_POSTHOG_KEY=
+ARG NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+ARG NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=
+ARG NEXT_PUBLIC_BING_SITE_VERIFICATION=
+ENV NEXT_PUBLIC_SITE_ORIGIN=$NEXT_PUBLIC_SITE_ORIGIN NEXT_PUBLIC_SEARCH_INDEXING=$NEXT_PUBLIC_SEARCH_INDEXING \
+    NEXT_PUBLIC_POSTHOG_KEY=$NEXT_PUBLIC_POSTHOG_KEY NEXT_PUBLIC_POSTHOG_HOST=$NEXT_PUBLIC_POSTHOG_HOST \
+    NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=$NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION NEXT_PUBLIC_BING_SITE_VERIFICATION=$NEXT_PUBLIC_BING_SITE_VERIFICATION
+RUN pnpm install --frozen-lockfile \
+  && pnpm platform:build \
+  && pnpm admin:build
+
+USER node

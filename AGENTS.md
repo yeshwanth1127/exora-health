@@ -120,3 +120,9 @@
 - Booking uses the RadioCards existing minColumnWidth option so labels fit, and wraps actions/headers rather than clipping content. No new Arc folder or general restyling is introduced.
 - Quick arrival belongs on a full page from Appointments and Queue. Capture name and optional phone, choose doctor, then check in. Keep existing-patient search and full registration available. Never auto-match or merge identities or copy a caller's phone as a patient contact.
 - A new identity and visit/token are saved atomically with original idempotency, audit/events and capacity/day/permission checks. Quick identity creation additionally requires patients.register at that clinic. DOB/sex stay unknown until actually recorded; no shared anonymous charts or fake saved states.
+
+## Clinic operation modules (backend)
+
+- The product owner approved (2026-10-21) inpatient, billing, pharmacy + inventory and HR/payroll as tenant-switchable backend modules. This supersedes the "out of scope / do not restore" notes for M07, M09, M10 and M11. Read `HMS_NEW/docs/plan/CLINIC_OPERATIONS_MODULES.md` before working on them; mark phases done there.
+- These modules are off until `platform.module_state` says `active` (`SWITCHED_MODULES` in `@hms/platform`): `runCommand` refuses their writes and the worker skips their consumers. Pharmacy switches inventory with it; inpatient needs billing.
+- No frontend for them yet. Future menu items must be gated by permission **and** module state (`GET /v1/session-context` → `modules`).

@@ -4,7 +4,7 @@
 // delivered only when all its handlers succeed; otherwise it is retried with backoff and eventually
 // dead-lettered.
 import { sql, type DB, type Kysely, type Transaction } from '@hms/db';
-import { setTransactionContext, type ModuleName } from '@hms/platform';
+import { moduleIsActive, setTransactionContext, type ModuleName } from '@hms/platform';
 
 export interface OutboxEvent {
   id: string;
@@ -77,6 +77,8 @@ export async function dispatchOnce(db: Kysely<DB>, handlers: readonly EventHandl
       for (const handler of handlers.filter((h) => handles(h, event.eventType))) {
         await db.transaction().execute(async (tx) => {
           await setTransactionContext(tx, event.tenantId);
+          // A switched-off module ignores the event (recorded in the inbox, so it isn't retried).
+          const active = await moduleIsActive(tx, handler.module);
           await sql`SET LOCAL ROLE ${sql.id(`mod_${handler.module}`)}`.execute(tx);
           const fresh = await tx
             .insertInto('platform.inbox_record')
@@ -84,7 +86,7 @@ export async function dispatchOnce(db: Kysely<DB>, handlers: readonly EventHandl
             .onConflict((oc) => oc.columns(['tenant_id', 'consumer', 'event_id']).doNothing())
             .returning('id')
             .executeTakeFirst();
-          if (fresh) await handler.handle(tx, event);
+          if (fresh && active) await handler.handle(tx, event);
         });
       }
       await sql`SELECT platform.complete_outbox_event(${event.id})`.execute(db);

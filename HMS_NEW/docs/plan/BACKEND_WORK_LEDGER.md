@@ -73,9 +73,11 @@ Continue the provider/production work for G19/G20 in the [completion guide](BACK
 - Original WhatsApp, Voice, Google Business and Growth forms still need typed adapters and their scoped routes. Their navigation remains pending; Loyalty stays labelled concept.
 - Provider credentials, signed callbacks, unknown-send handling and real delivery acceptance remain unverified.
 - Production OIDC, deployment, approved clinical consent and real video calls remain unverified.
-- Billing, pharmacy, diagnostics, inpatient and general documents are outside this release.
+- Diagnostics and general documents are outside this release. Billing, pharmacy, inpatient and HR are being built as switchable clinic modules (2026-10-21, [CLINIC_OPERATIONS_MODULES.md](CLINIC_OPERATIONS_MODULES.md)).
 
 ## Change log
+
+- 2026-10-21: product owner reversed the out-of-scope decision for G28 prescriptions, G30 billing and G32 inpatient (M07/M09/M10/M11) and added an HR module; all are tenant-switchable (`platform.module_state`, off by default). Plan and progress: [CLINIC_OPERATIONS_MODULES.md](CLINIC_OPERATIONS_MODULES.md).
 
 - 2026-10-12 (phase 3): all seven WhatsApp tabs, staff Voice, Google/growth, feedback/no-show and immediate controls integrated; 252 backend / 54 frontend tests PASS, lint 16 warnings / 0 errors, six migrations rollback/reapply PASS. 29 active requirements DONE, two PARTIAL. No live provider activity.
 

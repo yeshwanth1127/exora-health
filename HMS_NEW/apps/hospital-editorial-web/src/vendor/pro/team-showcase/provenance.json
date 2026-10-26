@@ -1,0 +1,1081 @@
+{
+  "source": "https://uiarc.dev/components/blocks/team-showcase/frame",
+  "capturedAt": "2026-10-14T19:26:38.472Z",
+  "entryModule": 67436,
+  "method": "Binding-aware conversion of captured factories into CommonJS, bundled to ESM with host React external. No behavior/data substitutions.",
+  "modules": [
+    {
+      "id": "73623",
+      "file": "src/dependencies/73623.cjs",
+      "capturedFactorySha256": "194c7a5cfe438cbe6e4c952dbb391644be6fff74457ba4a3236ab1270dc6255a"
+    },
+    {
+      "id": "53887",
+      "file": "src/dependencies/53887.cjs",
+      "capturedFactorySha256": "2cade5b1e5af4a09a31e0d2ca036791e0924cf345dd25b851f24b0fa63980435"
+    },
+    {
+      "id": "12590",
+      "file": "src/dependencies/12590.cjs",
+      "capturedFactorySha256": "786b21385f4f4ec8eb04cebd5dd06e9af6ed78fb6ff4ac654cdc42c1f5598303"
+    },
+    {
+      "id": "55762",
+      "file": "src/dependencies/55762.cjs",
+      "capturedFactorySha256": "2bbea7dd4f245964bfc5dc8064fa7a3a0f8f2fc11980226181a098b9c7105e68"
+    },
+    {
+      "id": "95413",
+      "file": "src/dependencies/95413.cjs",
+      "capturedFactorySha256": "3e80515f47b1ce203adb15b12f54f237f38e9c41ad1142ad8fcfc8b9285907c1"
+    },
+    {
+      "id": "66388",
+      "file": "src/dependencies/66388.cjs",
+      "capturedFactorySha256": "d4e1b9bb03a4520d5d67e3f4a36aa1b5e4c65e4616130693fad62a51f08f427f"
+    },
+    {
+      "id": "58730",
+      "file": "src/dependencies/58730.cjs",
+      "capturedFactorySha256": "b7a8ea0650b8505b23fe40e5b7c171e058a08060952337d3f89f83767c7fd66a"
+    },
+    {
+      "id": "47650",
+      "file": "src/dependencies/47650.cjs",
+      "capturedFactorySha256": "acd8b9638229a6137cb7afa74b6d9bc670ceb4ffc652292965e707afd8bad780"
+    },
+    {
+      "id": "76899",
+      "file": "src/dependencies/76899.cjs",
+      "capturedFactorySha256": "cf983f04f9ca5c4963b6abb6f04a9c1467baab62792dfa036087f796682f609c"
+    },
+    {
+      "id": "75368",
+      "file": "src/dependencies/75368.cjs",
+      "capturedFactorySha256": "3ce8801b0a86c233c3ef60d1324256a8b4cc3a47d0e7df6f61d0a3ea3c70c03f"
+    },
+    {
+      "id": "46686",
+      "file": "src/dependencies/46686.cjs",
+      "capturedFactorySha256": "8fdacd2bf4a97dc3ea50c97a0e226f5bea20d86006f3abefab90b5a336dda53c"
+    },
+    {
+      "id": "17150",
+      "file": "src/dependencies/17150.cjs",
+      "capturedFactorySha256": "3400aef1d5d9fe283102194df7d30c0038afd14a2078a9663a25433eeb12ec69"
+    },
+    {
+      "id": "60751",
+      "file": "src/dependencies/60751.cjs",
+      "capturedFactorySha256": "5f0966dc7dad98c0eaf368d95997d1823e953e06ffe14dad613e189aa347ec4a"
+    },
+    {
+      "id": "18857",
+      "file": "src/dependencies/18857.cjs",
+      "capturedFactorySha256": "713d1a94caebb16df2534f32fcc8483758695ca06d7cde2af7c644740f01f475"
+    },
+    {
+      "id": "36095",
+      "file": "src/dependencies/36095.cjs",
+      "capturedFactorySha256": "b10e80c283b807a88d591bf67123277f6949005cb62146b5526e749c99f62c10"
+    },
+    {
+      "id": "21172",
+      "file": "src/dependencies/21172.cjs",
+      "capturedFactorySha256": "13b13fd1d4bb598ff36c315a21b9284d77420bb5566d73f839aaba2fa455a59d"
+    },
+    {
+      "id": "38437",
+      "file": "src/dependencies/38437.cjs",
+      "capturedFactorySha256": "1f06c38c17b19d32ff3972c31cdb5236d6ebfec489793a03a971483e9b561a4a"
+    },
+    {
+      "id": "97651",
+      "file": "src/dependencies/97651.cjs",
+      "capturedFactorySha256": "d401d163a450921ebc09740251e6fd5a24fdeb8975d3c2cdd99b56d03ef51b56"
+    },
+    {
+      "id": "5772",
+      "file": "src/dependencies/5772.cjs",
+      "capturedFactorySha256": "43ae3a8655ce849eedc08f64cbf473cd05e35abe850b13ca2ad75921dc680454"
+    },
+    {
+      "id": "25952",
+      "file": "src/dependencies/25952.cjs",
+      "capturedFactorySha256": "bc4ccb61e6516553177c92ee842622b6f699cb427e79b962aa635f22dc04bbf7"
+    },
+    {
+      "id": "94712",
+      "file": "src/dependencies/94712.cjs",
+      "capturedFactorySha256": "e4e5f556cfea8a07f80faf39debc64269c54a1f1e6b2a4e05d8c731247eb75fa"
+    },
+    {
+      "id": "49637",
+      "file": "src/dependencies/49637.cjs",
+      "capturedFactorySha256": "930d1a3aa2e39284366201e4afe907cd2aadfdb64db3ffcf14ed6b6136d228d0"
+    },
+    {
+      "id": "71939",
+      "file": "src/dependencies/71939.cjs",
+      "capturedFactorySha256": "fb5ede6b8c914afacb7f5090748631102672191854afd9e9979fa37c2c4f7ef6"
+    },
+    {
+      "id": "21620",
+      "file": "src/dependencies/21620.cjs",
+      "capturedFactorySha256": "282747b553cdba3b98266317b22167119c0d55ef6cc477c0cfd0c9dc81f0eaa5"
+    },
+    {
+      "id": "82163",
+      "file": "src/dependencies/82163.cjs",
+      "capturedFactorySha256": "dfb83901328b48674be4ac56de7f5f5dc3ea0739b8e0f9c7141dbde0858f454f"
+    },
+    {
+      "id": "27994",
+      "file": "src/dependencies/27994.cjs",
+      "capturedFactorySha256": "c91435f7ab191a315f61268d1e4a36a64909d924bfd752c73d501025f1ae02ce"
+    },
+    {
+      "id": "30281",
+      "file": "src/dependencies/30281.cjs",
+      "capturedFactorySha256": "727a8ec4ed84ed9a33df85447c09407aa5d604c0c82ddcb6b8a218fa280e961f"
+    },
+    {
+      "id": "11048",
+      "file": "src/dependencies/11048.cjs",
+      "capturedFactorySha256": "7eb681cf7960a717d6b88de477e3a770a23acf0a6143807c44fc657836abf4fb"
+    },
+    {
+      "id": "88158",
+      "file": "src/dependencies/88158.cjs",
+      "capturedFactorySha256": "bb65ba231c810e4025dd8149a75bf208669fed6dd8ac308d807daed670c52649"
+    },
+    {
+      "id": "77054",
+      "file": "src/dependencies/77054.cjs",
+      "capturedFactorySha256": "393ee6867ccf1c7c7cfe938680162c48ce98d3f4dddaa36c882c671c55af84c1"
+    },
+    {
+      "id": "83399",
+      "file": "src/dependencies/83399.cjs",
+      "capturedFactorySha256": "370d9f709f0c8fe44a97806432b46ff543798b6e4affa93ea2b622359af71dc4"
+    },
+    {
+      "id": "48545",
+      "file": "src/dependencies/48545.cjs",
+      "capturedFactorySha256": "7804f9ef23f75315883bc054a75c552d0a0dd8b482665c0dc6ec4f52146b6904"
+    },
+    {
+      "id": "92255",
+      "file": "src/dependencies/92255.cjs",
+      "capturedFactorySha256": "80eebc85e4fe35c3630d8e557915e5924742712ac058bfa7fb3ebf2019fe8ef8"
+    },
+    {
+      "id": "11136",
+      "file": "src/dependencies/11136.cjs",
+      "capturedFactorySha256": "04e75e3aedcf9a8e862c5dcfdd8a549aabde4e1692b811795c4e9aadcbef03f6"
+    },
+    {
+      "id": "29543",
+      "file": "src/dependencies/29543.cjs",
+      "capturedFactorySha256": "188b8a9855ffbff2ff0e66ef57ac7bea1fd1dac609737e396a23081e3b78f009"
+    },
+    {
+      "id": "47888",
+      "file": "src/dependencies/47888.cjs",
+      "capturedFactorySha256": "c09ac1066d4c2463f6253a86e0e0bb9c37735d63b9be1937a8e4b4017d7c1f87"
+    },
+    {
+      "id": "4287",
+      "file": "src/dependencies/4287.cjs",
+      "capturedFactorySha256": "73e9835f9e213140816c8102b59f077971fd36b5b499b0eaabf69bc7f25a1839"
+    },
+    {
+      "id": "51469",
+      "file": "src/dependencies/51469.cjs",
+      "capturedFactorySha256": "f3a9a0b8cb3f9a1ea3253999dae1d66572a062c4723d1a7fa10a756c9150e341"
+    },
+    {
+      "id": "9247",
+      "file": "src/dependencies/9247.cjs",
+      "capturedFactorySha256": "3655af62ad78f4ba6fd7d043b05b7f192316eadb77e9213a13f94bd825c28269"
+    },
+    {
+      "id": "55208",
+      "file": "src/dependencies/55208.cjs",
+      "capturedFactorySha256": "50d87f13819ff28c1ef1b091a9441e2991015b110ebe8989d5ec8693b260464c"
+    },
+    {
+      "id": "41463",
+      "file": "src/dependencies/41463.cjs",
+      "capturedFactorySha256": "666dec22d48fdd363073e361594ec57e305d7510e5293c7addce040ce63676b8"
+    },
+    {
+      "id": "5556",
+      "file": "src/dependencies/5556.cjs",
+      "capturedFactorySha256": "df3e65dfe609a19f448f6d04552ff426c747d422a4186dfbbf5741509bd8c721"
+    },
+    {
+      "id": "74212",
+      "file": "src/dependencies/74212.cjs",
+      "capturedFactorySha256": "b53e46a384e29a0dd594adb153cb5dec77ca026bf039392f434eba367e671ace"
+    },
+    {
+      "id": "39896",
+      "file": "src/dependencies/39896.cjs",
+      "capturedFactorySha256": "95d93f64bb8276eb2afe139bf560832a8e0065600210249b227338cbc5315db9"
+    },
+    {
+      "id": "58974",
+      "file": "src/dependencies/58974.cjs",
+      "capturedFactorySha256": "63670659c08b4efa6b565d67301c97c2435b3986bfd0fe4623909ac0420c3ecc"
+    },
+    {
+      "id": "21023",
+      "file": "src/dependencies/21023.cjs",
+      "capturedFactorySha256": "bc399f7f4e7a95dd15bb8359404a9cc153e5b16d05a1e9e1d2a8054f3ed6fe5d"
+    },
+    {
+      "id": "11698",
+      "file": "src/dependencies/11698.cjs",
+      "capturedFactorySha256": "d8bcaba9f1d8e2612c4a4cc100e21b97c740c6edd69e2ea84d13460583c7a687"
+    },
+    {
+      "id": "32766",
+      "file": "src/dependencies/32766.cjs",
+      "capturedFactorySha256": "2d40754d4170e0dd14e514a3ad15ac69c13fdff6cf1631c1f9a77e782797d70a"
+    },
+    {
+      "id": "72025",
+      "file": "src/dependencies/72025.cjs",
+      "capturedFactorySha256": "7e022ca5cea9cc1ad5002f26bf2ec08b983bed494e9154d83f148ce59dbbfb2c"
+    },
+    {
+      "id": "28153",
+      "file": "src/dependencies/28153.cjs",
+      "capturedFactorySha256": "eb349e90f113a4cf3b9cc89535be900bb44574c457f7e39eae08ac1846f6cf80"
+    },
+    {
+      "id": "57835",
+      "file": "src/dependencies/57835.cjs",
+      "capturedFactorySha256": "611944ef091ff651480783bea47712f7cfe8962afc4b2c9f845cbb6014969b92"
+    },
+    {
+      "id": "27933",
+      "file": "src/dependencies/27933.cjs",
+      "capturedFactorySha256": "1424935b57fd22d9a916c904cd16ee381463a8ef4a0c2f147f8dbdddb74d1ebf"
+    },
+    {
+      "id": "4132",
+      "file": "src/dependencies/4132.cjs",
+      "capturedFactorySha256": "78e60ab8720a2f2bf851ec96c48b92064898a3e74734459d4a0e93894a0f99bf"
+    },
+    {
+      "id": "96653",
+      "file": "src/dependencies/96653.cjs",
+      "capturedFactorySha256": "7ab2e97a86470ad123642928885dba1d46b72c8ce7de579765db2847e55f69d6"
+    },
+    {
+      "id": "38621",
+      "file": "src/dependencies/38621.cjs",
+      "capturedFactorySha256": "658555c6103518e8183b4773d8b680af1524bb4556077ce3725423b272100507"
+    },
+    {
+      "id": "78170",
+      "file": "src/dependencies/78170.cjs",
+      "capturedFactorySha256": "8b87925bbf2ce02f284d9bfdb8f5f8e8dea3f2a1a12c8d89c30606c7a2b69f1e"
+    },
+    {
+      "id": "73852",
+      "file": "src/dependencies/73852.cjs",
+      "capturedFactorySha256": "2cd3f1d85dfc3d3e27d8790057935508e2afb079b0594031a8270c2abaeb56bf"
+    },
+    {
+      "id": "73516",
+      "file": "src/dependencies/73516.cjs",
+      "capturedFactorySha256": "b8aafd8c159d543f828084c7ede700f930fd3858bd1081710b45c550f0f0f116"
+    },
+    {
+      "id": "94980",
+      "file": "src/dependencies/94980.cjs",
+      "capturedFactorySha256": "caee459c65facd4df94af624c46c2c0c68ea9c4df8ac7bed555ad60c4ffcfc37"
+    },
+    {
+      "id": "96291",
+      "file": "src/dependencies/96291.cjs",
+      "capturedFactorySha256": "092e55d6f75e36a00114dbc4f9a90c43e0a6ab3da96e15b32f080e12c0940b0d"
+    },
+    {
+      "id": "7145",
+      "file": "src/dependencies/7145.cjs",
+      "capturedFactorySha256": "ea5d9efb063ed30dc7b5fbd32b7b545a6903f39589a81f4b8d04f6cbb97b921b"
+    },
+    {
+      "id": "69166",
+      "file": "src/dependencies/69166.cjs",
+      "capturedFactorySha256": "9a8aa3f4e5246c15be220b44c4e473a7e11099cc78dc09b3201142a27e85ed19"
+    },
+    {
+      "id": "47736",
+      "file": "src/dependencies/47736.cjs",
+      "capturedFactorySha256": "8e9ebd5630c4820744361ebbb71a41409d4b8d480ba6dbbb851cc4220a9e1eef"
+    },
+    {
+      "id": "40660",
+      "file": "src/dependencies/40660.cjs",
+      "capturedFactorySha256": "0d0248e72d9ff0b91f80f7dc166eba1ac95abdc5bfb3f2c8b334d4c70107f6e3"
+    },
+    {
+      "id": "37035",
+      "file": "src/dependencies/37035.cjs",
+      "capturedFactorySha256": "c2e7f8d7e248c38c1247b3f6608af74779564114b6a5607e5959e0472cdc8c9f"
+    },
+    {
+      "id": "14432",
+      "file": "src/dependencies/14432.cjs",
+      "capturedFactorySha256": "b6207d9ae61dd318a3f98e89a8cbfe47fb8998d4c3342403e678f59c887f21e5"
+    },
+    {
+      "id": "9331",
+      "file": "src/dependencies/9331.cjs",
+      "capturedFactorySha256": "2d4f606bf41bff2843bd55f9068c640d202a3a05be162b844065dc8876481301"
+    },
+    {
+      "id": "78987",
+      "file": "src/dependencies/78987.cjs",
+      "capturedFactorySha256": "ea2101966834025e470ddeabeac6741c0aa6f0483f020a747d01a33f7ec9442b"
+    },
+    {
+      "id": "70954",
+      "file": "src/dependencies/70954.cjs",
+      "capturedFactorySha256": "75e07a736bdf6957d8754349d881419817f2b3c4150f921ef456f1ec9d69443b"
+    },
+    {
+      "id": "3486",
+      "file": "src/dependencies/3486.cjs",
+      "capturedFactorySha256": "f6cfdc4b631839efddd41cf624e5837e3248b7b5b3d692e5f72cc26d0a7be10f"
+    },
+    {
+      "id": "58584",
+      "file": "src/dependencies/58584.cjs",
+      "capturedFactorySha256": "061c383245a08250eadec913da34f48aebd17f4193294e8b70c13c3497aa4d66"
+    },
+    {
+      "id": "38873",
+      "file": "src/dependencies/38873.cjs",
+      "capturedFactorySha256": "75e07c98fe86c4df771aa2ab10be18816a51a33c27ed00118f0ac83efc338768"
+    },
+    {
+      "id": "79537",
+      "file": "src/dependencies/79537.cjs",
+      "capturedFactorySha256": "b0444f1db521154d0dd831aedfa47e2ae22a918fe4ec59fd5fdbd23075036277"
+    },
+    {
+      "id": "6900",
+      "file": "src/dependencies/6900.cjs",
+      "capturedFactorySha256": "1e6d8f224afaa7494de6aac400460fc589d7c93ff6fd14f9f52e50e2ad6716e1"
+    },
+    {
+      "id": "51654",
+      "file": "src/dependencies/51654.cjs",
+      "capturedFactorySha256": "f045d3563249c5f2e4a6a1fb47877c44b4a7b68070159eeaa8914197798a6a21"
+    },
+    {
+      "id": "26087",
+      "file": "src/dependencies/26087.cjs",
+      "capturedFactorySha256": "f7c29d0810276fe399490cc770d15bc0dbebf3f08716cb586f3354dc90b7351b"
+    },
+    {
+      "id": "63290",
+      "file": "src/dependencies/63290.cjs",
+      "capturedFactorySha256": "9743cb554cb13170add749e7d0cbde9537664596d92abcb2f272525efa40253c"
+    },
+    {
+      "id": "51129",
+      "file": "src/dependencies/51129.cjs",
+      "capturedFactorySha256": "4db4218b51d111e39cbfa5b273633a35fb71fc394cbdd7644d83a2fb1cb2fbb5"
+    },
+    {
+      "id": "44616",
+      "file": "src/dependencies/44616.cjs",
+      "capturedFactorySha256": "94b2f9b3542b5530fb19918465111a1f58a0235c3f65ca4dbc43e41ff33920ca"
+    },
+    {
+      "id": "25620",
+      "file": "src/dependencies/25620.cjs",
+      "capturedFactorySha256": "5e1c7697f4b9ed8d93d981b468cba4af71b3a18575f5e57eb53d0458b41e0113"
+    },
+    {
+      "id": "10887",
+      "file": "src/dependencies/10887.cjs",
+      "capturedFactorySha256": "91649ddf44f3378d6755a36fe7160124c71771a9bfee49f93c8e207b9813e420"
+    },
+    {
+      "id": "76792",
+      "file": "src/dependencies/76792.cjs",
+      "capturedFactorySha256": "4966f9d2f9ad1a9ec302371ab51d10588e1f3793a35b03e5478a6e901529ba94"
+    },
+    {
+      "id": "80171",
+      "file": "src/dependencies/80171.cjs",
+      "capturedFactorySha256": "b5c162aaa029821008da6d209aedbaac0bc721ef450ce9f7d5539e7196248e5e"
+    },
+    {
+      "id": "15043",
+      "file": "src/dependencies/15043.cjs",
+      "capturedFactorySha256": "72242e3458f393b3816f81b13a81dbd10a129f474e41cd6253e8b8f8bed7edd2"
+    },
+    {
+      "id": "87546",
+      "file": "src/dependencies/87546.cjs",
+      "capturedFactorySha256": "b0f8410313a9e3656c33df93311516c6479e8490f766eabfa2f9abeea58e5b87"
+    },
+    {
+      "id": "54714",
+      "file": "src/dependencies/54714.cjs",
+      "capturedFactorySha256": "0b9ccb522d79a80b9e78d5c2fb62bb67bf4790e1f02763c1c5482a0248144d18"
+    },
+    {
+      "id": "44425",
+      "file": "src/dependencies/44425.cjs",
+      "capturedFactorySha256": "05b3627435125376dcb9955545320a9a860b0fb1f713eb6cac3cc103e05f85a5"
+    },
+    {
+      "id": "73148",
+      "file": "src/dependencies/73148.cjs",
+      "capturedFactorySha256": "b0f004b145292c09ab6488fc2f0aa3a92e8c1b1d9ea2da8dfe0d26e540e3c232"
+    },
+    {
+      "id": "33177",
+      "file": "src/dependencies/33177.cjs",
+      "capturedFactorySha256": "c2dd87c8851a2c0925bfed5163379aabe5fce1b5449829467376b95b80d4b3b1"
+    },
+    {
+      "id": "56260",
+      "file": "src/dependencies/56260.cjs",
+      "capturedFactorySha256": "dc10175f462ddb23c857766deb626f5b451921d5117c015c6291c171d7f51878"
+    },
+    {
+      "id": "21872",
+      "file": "src/dependencies/21872.cjs",
+      "capturedFactorySha256": "ded2578fee23282bdeae325b257e76c0ce60e220767ee5cdd44f48a71721a6b6"
+    },
+    {
+      "id": "19274",
+      "file": "src/dependencies/19274.cjs",
+      "capturedFactorySha256": "577b15bea43e67d368f25b1315373f148d390078cade115d7e58e16c207abefb"
+    },
+    {
+      "id": "43891",
+      "file": "src/dependencies/43891.cjs",
+      "capturedFactorySha256": "b886336521884ef4727e79c30bcb87dc86fe177c0adfb7a5677d33592ca80a6f"
+    },
+    {
+      "id": "85068",
+      "file": "src/dependencies/85068.cjs",
+      "capturedFactorySha256": "efe172461f24835dfdafc66959f93978d9af7c3c36046ef0eb453e50012afbfe"
+    },
+    {
+      "id": "27669",
+      "file": "src/dependencies/27669.cjs",
+      "capturedFactorySha256": "934a9c76581335c29155559ee7938c8181d041c26ea674faa43b5b58ca50a5bd"
+    },
+    {
+      "id": "33411",
+      "file": "src/dependencies/33411.cjs",
+      "capturedFactorySha256": "bde00d4b21bedb5a8b904ae972cee60f2d9c93e878753b06512a1ee4c00919aa"
+    },
+    {
+      "id": "2988",
+      "file": "src/dependencies/2988.cjs",
+      "capturedFactorySha256": "a84bfda736c47c6acfbc9420c3682d05cde80b4d6d59a3e9cefe7dac815b4c00"
+    },
+    {
+      "id": "93560",
+      "file": "src/dependencies/93560.cjs",
+      "capturedFactorySha256": "61f1874ea088796f54a9d72b352f797c19a7f0a12b49e269ed214034ad3653a1"
+    },
+    {
+      "id": "95391",
+      "file": "src/dependencies/95391.cjs",
+      "capturedFactorySha256": "c3ba044b61449605ae3d512266c8dd045e409bb093f920be252e6bfdd86d71f4"
+    },
+    {
+      "id": "39551",
+      "file": "src/dependencies/39551.cjs",
+      "capturedFactorySha256": "9f88b68c20e2218dcacb64b23f1f33b3aa3b431ddc8720952ae638f2280a9252"
+    },
+    {
+      "id": "24866",
+      "file": "src/dependencies/24866.cjs",
+      "capturedFactorySha256": "c80e112bc8c5bc54f0142ee840168192a4d6fa281e909a42fb22db4d1e96296f"
+    },
+    {
+      "id": "10583",
+      "file": "src/dependencies/10583.cjs",
+      "capturedFactorySha256": "773ddd69f139e393cde9b0d5d975bdad7cc9866c6f1db7faa8616f68f8bdd0aa"
+    },
+    {
+      "id": "15131",
+      "file": "src/dependencies/15131.cjs",
+      "capturedFactorySha256": "10de901603ca1cf4d9469346d0ac887ffe77d93a5b7a01d0c5fead744e6f796a"
+    },
+    {
+      "id": "28819",
+      "file": "src/dependencies/28819.cjs",
+      "capturedFactorySha256": "62760d60b1a2108d4413f581186907da856eadc08cef7be72e795c029cf467cf"
+    },
+    {
+      "id": "43261",
+      "file": "src/dependencies/43261.cjs",
+      "capturedFactorySha256": "e3eed21065293b4b4256016abc5cfbd546e865ad8ddfe555965225d4c55340d2"
+    },
+    {
+      "id": "59299",
+      "file": "src/dependencies/59299.cjs",
+      "capturedFactorySha256": "c26c92d0555b821a79e086d0fb91647c99ab7d360600de241bf9b96fa615b779"
+    },
+    {
+      "id": "11493",
+      "file": "src/dependencies/11493.cjs",
+      "capturedFactorySha256": "ca86e2ea3661cac8644c49061785a49cc0cabc4fe519456964cd615debeb29bf"
+    },
+    {
+      "id": "65239",
+      "file": "src/dependencies/65239.cjs",
+      "capturedFactorySha256": "7583ade75bd6e2d6015246874025794b6d8baaab4c0c482bd9754cd4e8be8c87"
+    },
+    {
+      "id": "32642",
+      "file": "src/dependencies/32642.cjs",
+      "capturedFactorySha256": "87d53b7002ef9c61cb6291aff3d10e9cc230cb81d393d8cf3093bcf46605c99f"
+    },
+    {
+      "id": "33140",
+      "file": "src/dependencies/33140.cjs",
+      "capturedFactorySha256": "3b73e5ed7accc3a0c8b2a0e0d1127b11beb0cb626284288ef66f8406d879c91b"
+    },
+    {
+      "id": "30123",
+      "file": "src/dependencies/30123.cjs",
+      "capturedFactorySha256": "2cd0bb0a67d45c87c6a915961a3304c095800cde780f8ed3b91da4b8a16ef5b9"
+    },
+    {
+      "id": "75319",
+      "file": "src/dependencies/75319.cjs",
+      "capturedFactorySha256": "ff679c682e29d2cf9785ef91d76a27bb94cefc9c8ed6a3f6c97e597d1a877275"
+    },
+    {
+      "id": "91909",
+      "file": "src/dependencies/91909.cjs",
+      "capturedFactorySha256": "7b0d266e76f1863f04f925593df6760743ce52b46752b8ceee353b3487f447f6"
+    },
+    {
+      "id": "67119",
+      "file": "src/dependencies/67119.cjs",
+      "capturedFactorySha256": "7141d434c8cef31d363826511a5329bd41cddff43c482f6007a5a35c8003c01b"
+    },
+    {
+      "id": "61638",
+      "file": "src/dependencies/61638.cjs",
+      "capturedFactorySha256": "15b857f50d4873be777e3fe98df904526736e7fa8c3e4119d63081b3746aee27"
+    },
+    {
+      "id": "61151",
+      "file": "src/dependencies/61151.cjs",
+      "capturedFactorySha256": "359b3ecbd4e0a918755cd50e7238aa8da5c4350916a8154d3629e79b2b373593"
+    },
+    {
+      "id": "34017",
+      "file": "src/dependencies/34017.cjs",
+      "capturedFactorySha256": "5acaabb4b44c98b3e78fd84141d8740dbb483293a84b74a8e7720accdf836f70"
+    },
+    {
+      "id": "86075",
+      "file": "src/dependencies/86075.cjs",
+      "capturedFactorySha256": "f9920165f98da0604e007bb0b8a423aafb343a6b7235689cc733739c04308e1a"
+    },
+    {
+      "id": "17964",
+      "file": "src/dependencies/17964.cjs",
+      "capturedFactorySha256": "78df022d592060ca86a94786ae2fe91b060076a9ba78717d1b3944f2679e0d1d"
+    },
+    {
+      "id": "26262",
+      "file": "src/dependencies/26262.cjs",
+      "capturedFactorySha256": "607ac08b36cbf82b7e49f176b24515c15b042385bf8fffebc397db2a56a8e5a9"
+    },
+    {
+      "id": "13031",
+      "file": "src/dependencies/13031.cjs",
+      "capturedFactorySha256": "bfec306b4c572c7e2e4e1d304af1c770325027638992d35a151a70a52b830e66"
+    },
+    {
+      "id": "41720",
+      "file": "src/dependencies/41720.cjs",
+      "capturedFactorySha256": "b7819059380c1e30965a6c347c01d743230cf8531ed2494f4c2aa8c78ac768c1"
+    },
+    {
+      "id": "25505",
+      "file": "src/dependencies/25505.cjs",
+      "capturedFactorySha256": "55e80994b78c58e1605a2c04e4103a543dca9423cba103ca13a71c4fead1a2dd"
+    },
+    {
+      "id": "8441",
+      "file": "src/dependencies/8441.cjs",
+      "capturedFactorySha256": "f62b1a4d8a3c3557a79b5acdc8e35c18ffcd37b197539e05630735203aa9bdcb"
+    },
+    {
+      "id": "85843",
+      "file": "src/dependencies/85843.cjs",
+      "capturedFactorySha256": "e91fc2c09080256692053a4ec9582694375af667ed77fb93fa206eb2a1b8b3fd"
+    },
+    {
+      "id": "75887",
+      "file": "src/dependencies/75887.cjs",
+      "capturedFactorySha256": "42d363de0bf146ddf00c4972fc0bb33250d8de48956356d0e3cfe005fc972641"
+    },
+    {
+      "id": "12266",
+      "file": "src/dependencies/12266.cjs",
+      "capturedFactorySha256": "1d44b518a9d682cfa698c23751ed8ba06698b015972c11fc2aa1016d84f56fbf"
+    },
+    {
+      "id": "1406",
+      "file": "src/dependencies/1406.cjs",
+      "capturedFactorySha256": "6b8b678686fcc0abea87c13e1ae5c0b5253a873c6a6f9fb0b9b0c153566f6296"
+    },
+    {
+      "id": "25903",
+      "file": "src/dependencies/25903.cjs",
+      "capturedFactorySha256": "3afdf3b88fe2768c703ee3b4de2233d56d6a36eed8e1e7e496521a143b927b49"
+    },
+    {
+      "id": "89722",
+      "file": "src/dependencies/89722.cjs",
+      "capturedFactorySha256": "39217202118cb5811d07c534d250965878501fd56672a950801734b941395df8"
+    },
+    {
+      "id": "72975",
+      "file": "src/dependencies/72975.cjs",
+      "capturedFactorySha256": "ad7d6bf5fa2f0752abe395a21e4943e394f18cbe21ff340eb89072ae47007890"
+    },
+    {
+      "id": "18844",
+      "file": "src/dependencies/18844.cjs",
+      "capturedFactorySha256": "e755c54e267b80bdc82514a019bd2c5278b08ed63b4b69fc7ce693c59f663d68"
+    },
+    {
+      "id": "21649",
+      "file": "src/dependencies/21649.cjs",
+      "capturedFactorySha256": "92a0901a89d800349a1e4badcb763693d4073e8863599ae82c2bc6ace5163f4e"
+    },
+    {
+      "id": "17611",
+      "file": "src/dependencies/17611.cjs",
+      "capturedFactorySha256": "261488dbbe557028676fb85f7f2fca5f2512a5299ad9b8900454134ab556777c"
+    },
+    {
+      "id": "59337",
+      "file": "src/dependencies/59337.cjs",
+      "capturedFactorySha256": "d2796afae2272fd582a4830affe844f999e0d77f55223e3265800c1dc93a0674"
+    },
+    {
+      "id": "16660",
+      "file": "src/dependencies/16660.cjs",
+      "capturedFactorySha256": "3270fb80797cb1b28eca2e6beecc7f551d49911b08011a6fed19d2f3f927753d"
+    },
+    {
+      "id": "45343",
+      "file": "src/dependencies/45343.cjs",
+      "capturedFactorySha256": "518cfad130a77934db35d3f7f9cf7afb6acc08a36a31812c01040f29ab250ef4"
+    },
+    {
+      "id": "20754",
+      "file": "src/dependencies/20754.cjs",
+      "capturedFactorySha256": "3e3e858eea52d2e0bf0649d45c06550a442eaae8fd99d75098aba3060987a346"
+    },
+    {
+      "id": "36381",
+      "file": "src/dependencies/36381.cjs",
+      "capturedFactorySha256": "2bdee7db618f0ff970a89b677daff9a46690c4db82a01569935791d94c53fad9"
+    },
+    {
+      "id": "12663",
+      "file": "src/dependencies/12663.cjs",
+      "capturedFactorySha256": "04c50c95ffa4081ddf6c546c6ff831b3bc1d2e155f50be02594bf368d7473cf9"
+    },
+    {
+      "id": "38294",
+      "file": "src/dependencies/38294.cjs",
+      "capturedFactorySha256": "49098f95cd9f3589882687708511d5b9010cbe388cf5032e38b97fd2d62e4855"
+    },
+    {
+      "id": "94601",
+      "file": "src/dependencies/94601.cjs",
+      "capturedFactorySha256": "e4b2838df7c2ac305692f75e37237ecada8c0232335551d1fa742b0989cbc365"
+    },
+    {
+      "id": "69028",
+      "file": "src/dependencies/69028.cjs",
+      "capturedFactorySha256": "ba8174471db4191e5ca61d219f7f9444b9dc6da5d92bfb45adb6396abb1b9c15"
+    },
+    {
+      "id": "58392",
+      "file": "src/dependencies/58392.cjs",
+      "capturedFactorySha256": "aafd8df945fe7b7e54c3bad490f50977e87599247ef5cf4aa19870ea1f6e8ca8"
+    },
+    {
+      "id": "51275",
+      "file": "src/dependencies/51275.cjs",
+      "capturedFactorySha256": "f2d013de898e9fdc0dac3d9e868ffb46d18232487f4e4db3e63c5fadeb37b60b"
+    },
+    {
+      "id": "79196",
+      "file": "src/dependencies/79196.cjs",
+      "capturedFactorySha256": "00bc22df767a820a6e64413908402c5bf25c39cb2fc3a8c50488d0472952e9ba"
+    },
+    {
+      "id": "72721",
+      "file": "src/dependencies/72721.cjs",
+      "capturedFactorySha256": "6863e6abd46a8147bd4522575396b667fabc99c3feaa8a0ed0ab12dc805554ac"
+    },
+    {
+      "id": "78757",
+      "file": "src/dependencies/78757.cjs",
+      "capturedFactorySha256": "1d206712ed851983a10c1e846f341afbb6864d7f8accb7a1fd8c79f176940416"
+    },
+    {
+      "id": "24857",
+      "file": "src/dependencies/24857.cjs",
+      "capturedFactorySha256": "763cc829fe5f44ac3a779d7a60606c856717125055a41d8c42d5e42645421ffc"
+    },
+    {
+      "id": "25354",
+      "file": "src/dependencies/25354.cjs",
+      "capturedFactorySha256": "ca8bcdf17e012523d58715ba5ff5f3ec6cc366bc19a547e62888e36d04e2da64"
+    },
+    {
+      "id": "18310",
+      "file": "src/dependencies/18310.cjs",
+      "capturedFactorySha256": "dd7255477f2918e5e007f0c38c3c1ced11961ca1ac80a5ca5eb205fee01e04f5"
+    },
+    {
+      "id": "80642",
+      "file": "src/dependencies/80642.cjs",
+      "capturedFactorySha256": "def2ac27a6b36d470fb86eeac7070945baad91a48850181385889f5d125944e7"
+    },
+    {
+      "id": "90209",
+      "file": "src/dependencies/90209.cjs",
+      "capturedFactorySha256": "efbb2f895aee3b753815795b2293dbd84f1f1bb238e617bf9f8ab3e9fd144901"
+    },
+    {
+      "id": "51811",
+      "file": "src/dependencies/51811.cjs",
+      "capturedFactorySha256": "294b9b3e1107d07296f8561f7f3ea52b59231462e7f9d240bba131da709705bf"
+    },
+    {
+      "id": "31966",
+      "file": "src/dependencies/31966.cjs",
+      "capturedFactorySha256": "ee6d522ab8e5710d1e5d6369f97b3a193cc256b2309af81c898f7dc8671abd8c"
+    },
+    {
+      "id": "90467",
+      "file": "src/dependencies/90467.cjs",
+      "capturedFactorySha256": "cc56bb16069afe5751db6bbf17a405c6446181905292cd1600d441cebefe2b72"
+    },
+    {
+      "id": "57700",
+      "file": "src/dependencies/57700.cjs",
+      "capturedFactorySha256": "68b30888d153a52cc0cd7cbf9af9eef3769a9c3d051ae1c0720e97bb76a353a0"
+    },
+    {
+      "id": "7770",
+      "file": "src/dependencies/7770.cjs",
+      "capturedFactorySha256": "ee91db1abc3b1f8bac4ce5800ddaf9442cd05c59848b60c25472b4e40d3832b7"
+    },
+    {
+      "id": "42686",
+      "file": "src/dependencies/42686.cjs",
+      "capturedFactorySha256": "248c6ab89b10ff672f3d38a186e7db3dcf2dfa406f621b3052bd8f8e8353d47c"
+    },
+    {
+      "id": "66558",
+      "file": "src/dependencies/66558.cjs",
+      "capturedFactorySha256": "e2f93346b13b816bd15efa07e2d44eb37a87db1eb4588102f5aacf28ea45ddc1"
+    },
+    {
+      "id": "35484",
+      "file": "src/dependencies/35484.cjs",
+      "capturedFactorySha256": "bcf49010c8617bab925a4a64976a8103124283e47d7a0b81f52ff719334dab4b"
+    },
+    {
+      "id": "99314",
+      "file": "src/dependencies/99314.cjs",
+      "capturedFactorySha256": "6aeba869fa617617b96067379e73939afac6c552839b58d8536c5824f6c4cb12"
+    },
+    {
+      "id": "55665",
+      "file": "src/dependencies/55665.cjs",
+      "capturedFactorySha256": "4dfec4c309009ebd687d599028361d002e7d67e47cb4bdf4bd872e7406b5aaad"
+    },
+    {
+      "id": "13858",
+      "file": "src/dependencies/13858.cjs",
+      "capturedFactorySha256": "5d80e49e9ff0e21ac7ef7e8f6fd6f0e9ddf1f324706edba76c1173a3aae8c8b0"
+    },
+    {
+      "id": "73474",
+      "file": "src/dependencies/73474.cjs",
+      "capturedFactorySha256": "a2ff1db2b43b3ad3d8ad122d8d9349eea6f6ad1cc02cdbfa5e854a3990a6b064"
+    },
+    {
+      "id": "67752",
+      "file": "src/dependencies/67752.cjs",
+      "capturedFactorySha256": "3991c5ab522832f776e7b178c7a2d7d4311bf1d288fcc77ece2ba1e63b2182e1"
+    },
+    {
+      "id": "37380",
+      "file": "src/dependencies/37380.cjs",
+      "capturedFactorySha256": "b08c7efb4635d279a8ac07839cfe716db8d30915ce1158bee4e8c69044565f3a"
+    },
+    {
+      "id": "67436",
+      "file": "src/TeamShowcase.cjs",
+      "capturedFactorySha256": "b959079dda66dc6d09519c91ab53a6226c709d87112fe0d9bb2ec516819681de"
+    }
+  ],
+  "localMediaAssets": [
+    {
+      "path": "/media/people/andre-williams.jpg",
+      "sha256": "01bf0c09ef58a1a028919775c4991d5eb2d23e71d6a2da63480a0b51237869fb",
+      "capturedFrom": "action-morph/public/media/people/andre-williams.jpg"
+    },
+    {
+      "path": "/media/people/ava-mitchell.jpg",
+      "sha256": "9b6f6c5b231fd9567349209e0ce48b60453ff9e8ba8bebacc4ee0857896be47d",
+      "capturedFrom": "action-morph/public/media/people/ava-mitchell.jpg"
+    },
+    {
+      "path": "/media/people/chloe-nguyen.jpg",
+      "sha256": "8974562ec042ab2f893af5744f5e28d7d46baabfe1b612529bd13642db45b5e8",
+      "capturedFrom": "action-morph/public/media/people/chloe-nguyen.jpg"
+    },
+    {
+      "path": "/media/people/daniel-kim.jpg",
+      "sha256": "0ec3bde6f3ffa3ba145f4bbf388986ed5c3b984c84dbafb2b0d2328987c6cf96",
+      "capturedFrom": "action-morph/public/media/people/daniel-kim.jpg"
+    },
+    {
+      "path": "/media/people/diane-foster.jpg",
+      "sha256": "fec84b2de54166a54841fe9178e5cf88a77a4e4d431615aacf291be9f8b1d46e",
+      "capturedFrom": "action-morph/public/media/people/diane-foster.jpg"
+    },
+    {
+      "path": "/media/people/emma-collins.jpg",
+      "sha256": "1fcae860bc93af6cd25cf0a3e511e6618840c7c2800c25c26e18000abf9ccafb",
+      "capturedFrom": "action-morph/public/media/people/emma-collins.jpg"
+    },
+    {
+      "path": "/media/people/hannah-walsh.jpg",
+      "sha256": "7ed60c72825b3736a9df54fce7d947c9b5dc0e9e96fdaad590426e7c05e2dbca",
+      "capturedFrom": "action-morph/public/media/people/hannah-walsh.jpg"
+    },
+    {
+      "path": "/media/people/jasmine-brooks.jpg",
+      "sha256": "b34636f34c96ac5c2a161d7091325c33d92c73f9dced23c8ab2dc58305d36303",
+      "capturedFrom": "action-morph/public/media/people/jasmine-brooks.jpg"
+    },
+    {
+      "path": "/media/people/jordan-reyes.jpg",
+      "sha256": "7289c768f7f02b3dbe2183cc5e21dd9258af48d250750b0f327c867c0b793611",
+      "capturedFrom": "action-morph/public/media/people/jordan-reyes.jpg"
+    },
+    {
+      "path": "/media/people/marcus-johnson.jpg",
+      "sha256": "a204a7c8ade17edb268b95e21acd21485c56ce781a692f794eeb5307c336956e",
+      "capturedFrom": "action-morph/public/media/people/marcus-johnson.jpg"
+    },
+    {
+      "path": "/media/people/mateo-alvarez.jpg",
+      "sha256": "4022134885abcc1ad2ff7cc9750a0924004ff7a9241464e5f07cfc5f4c37a71e",
+      "capturedFrom": "action-morph/public/media/people/mateo-alvarez.jpg"
+    },
+    {
+      "path": "/media/people/nathan-cole.jpg",
+      "sha256": "45de9f8a0c9b2a4f00ad4a39682bc5cdff7ef54dae9d174739f7ae71eaa22162",
+      "capturedFrom": "action-morph/public/media/people/nathan-cole.jpg"
+    },
+    {
+      "path": "/media/people/olivia-bennett.jpg",
+      "sha256": "d541b5fc8af7f58defdeef9875a233d8e30c4bc3884798e05a8b70b6df3b0520",
+      "capturedFrom": "action-morph/public/media/people/olivia-bennett.jpg"
+    },
+    {
+      "path": "/media/people/portrait/emma-collins.jpg",
+      "sha256": "f270272ee39647bf4f012252d58f29dfc62d749903cfd82b2d76042f37a44da5",
+      "capturedFrom": "testimonial-stage/public/media/people/portrait/emma-collins.jpg"
+    },
+    {
+      "path": "/media/people/portrait/marcus-johnson.jpg",
+      "sha256": "bab596ebc44b88f70a3964ac69eb2f0c81adcf1a4c208487910c0ac2f53770f3",
+      "capturedFrom": "testimonial-stage/public/media/people/portrait/marcus-johnson.jpg"
+    },
+    {
+      "path": "/media/people/portrait/sofia-ramirez.jpg",
+      "sha256": "3710e49b9b02b21261b17e102873c7ee2481ea09a588bf7ebd65bc2a93a8d81b",
+      "capturedFrom": "testimonial-stage/public/media/people/portrait/sofia-ramirez.jpg"
+    },
+    {
+      "path": "/media/people/ryan-sullivan.jpg",
+      "sha256": "be012d673a76466db185a06be7b4eba1aa1fbb36d28c80f2dc61c5ed5d5c9d65",
+      "capturedFrom": "action-morph/public/media/people/ryan-sullivan.jpg"
+    },
+    {
+      "path": "/media/people/sofia-ramirez.jpg",
+      "sha256": "12c866905f224b1f6d461941425723773bb9b21b082eb29f037a7fa40a5c8c39",
+      "capturedFrom": "action-morph/public/media/people/sofia-ramirez.jpg"
+    },
+    {
+      "path": "/media/people/tyler-hayes.jpg",
+      "sha256": "b05bd3902aa99c41b0bf442ae9f497513c5a41f3b5e5d4cd88c4b1dd7a3d00ac",
+      "capturedFrom": "action-morph/public/media/people/tyler-hayes.jpg"
+    },
+    {
+      "path": "/media/photos/alpine-lake.jpg",
+      "sha256": "accd526749b888cc6bcf006794bd499cd554beba57237e58884e7592252b7edb",
+      "capturedFrom": "booking-pill/public/media/photos/alpine-lake.jpg"
+    },
+    {
+      "path": "/media/photos/bedroom.jpg",
+      "sha256": "8fda82b3bf7e83f609beadba3db708225dda6b8ea21345ddb0f140e0eded1c73",
+      "capturedFrom": "booking-pill/public/media/photos/bedroom.jpg"
+    },
+    {
+      "path": "/media/photos/ceramic-lamp.jpg",
+      "sha256": "8426aa692c5e75d6f3e573b0465babe98e4e5aa3cb0a8a5526b677224e5338aa",
+      "capturedFrom": "booking-pill/public/media/photos/ceramic-lamp.jpg"
+    },
+    {
+      "path": "/media/photos/chef-plating.jpg",
+      "sha256": "7df42fa0bd481903cb7289d341d521e8a4d8a25729a6d6bd6e38b9b7f0f84bec",
+      "capturedFrom": "booking-pill/public/media/photos/chef-plating.jpg"
+    },
+    {
+      "path": "/media/photos/coastline.jpg",
+      "sha256": "7247fc4562c38adf570ae49978d26c91d4700a482bc6208a7c89bdd66129cdd1",
+      "capturedFrom": "booking-pill/public/media/photos/coastline.jpg"
+    },
+    {
+      "path": "/media/photos/concert-hall.jpg",
+      "sha256": "c36634098ffd0022c71bf79f854ce4d4f7cba08407dad6507707f9424aefcc1e",
+      "capturedFrom": "booking-pill/public/media/photos/concert-hall.jpg"
+    },
+    {
+      "path": "/media/photos/curved-facade.jpg",
+      "sha256": "9bac99c95380b5a9164129b57603f63c7af299a466786b98e80f19c2404b56a3",
+      "capturedFrom": "booking-pill/public/media/photos/curved-facade.jpg"
+    },
+    {
+      "path": "/media/photos/glass-carafe.jpg",
+      "sha256": "dd6fa65cbbac8bb077bbdbe69cc584d8450e05d55f64954952c2ea3408533711",
+      "capturedFrom": "booking-pill/public/media/photos/glass-carafe.jpg"
+    },
+    {
+      "path": "/media/photos/home-office.jpg",
+      "sha256": "fdba562912cf431295247bf9e96538dece40e23e8a2b238af05a95d55a112d06",
+      "capturedFrom": "booking-pill/public/media/photos/home-office.jpg"
+    },
+    {
+      "path": "/media/photos/linen-throw.jpg",
+      "sha256": "459335e510c0128bf065e7da55bf10d96656fdc6625eac1c18e49bc84fb2a5fe",
+      "capturedFrom": "booking-pill/public/media/photos/linen-throw.jpg"
+    },
+    {
+      "path": "/media/photos/lisbon-bridge.jpg",
+      "sha256": "c433c2472ee01a90c949c11c5a7a73df91f143a99851e405a3b0a29bdd9406e4",
+      "capturedFrom": "booking-pill/public/media/photos/lisbon-bridge.jpg"
+    },
+    {
+      "path": "/media/photos/lisbon-rooftops.jpg",
+      "sha256": "642f91fd41dd16ba1639bd83c8d68eaa19cc294820997ed989650bfa8eeb8630",
+      "capturedFrom": "booking-pill/public/media/photos/lisbon-rooftops.jpg"
+    },
+    {
+      "path": "/media/photos/lisbon-tram.jpg",
+      "sha256": "c7b82c9de4a2c40be0968d1f22d63f7793d9373ac0d581997b7657cd4f9b36e5",
+      "capturedFrom": "booking-pill/public/media/photos/lisbon-tram.jpg"
+    },
+    {
+      "path": "/media/photos/living-room.jpg",
+      "sha256": "416837e3ffc9de1b4a9661f2e235db15015080964cd4d8e235cc6981e97d7b6a",
+      "capturedFrom": "booking-pill/public/media/photos/living-room.jpg"
+    },
+    {
+      "path": "/media/photos/lounge-chair.jpg",
+      "sha256": "1b527cb3b34f1521cd9987846292ae70ef7a93be535ec757ea04aab32ab74ee8",
+      "capturedFrom": "booking-pill/public/media/photos/lounge-chair.jpg"
+    },
+    {
+      "path": "/media/photos/mountain-ridges.jpg",
+      "sha256": "32c9fa37a4ffb7a4797794c39076c8a2f6cbdf6194dfd10807ff450cb8b5842d",
+      "capturedFrom": "booking-pill/public/media/photos/mountain-ridges.jpg"
+    },
+    {
+      "path": "/media/photos/pool-house.jpg",
+      "sha256": "da7adc31546fa1cfc9d4a49ec457d649b652e01630a728b81c37bc90f060f396",
+      "capturedFrom": "booking-pill/public/media/photos/pool-house.jpg"
+    },
+    {
+      "path": "/media/photos/reading-chair.jpg",
+      "sha256": "1fe1ff95380514df9bf39d9002c0259e97a0a48ede1a99e9be351bebff5ed14c",
+      "capturedFrom": "booking-pill/public/media/photos/reading-chair.jpg"
+    },
+    {
+      "path": "/media/photos/restaurant.jpg",
+      "sha256": "fd58c9f75c8e5044ace065e7255603bde0be5282f39cca8792bf6aeeb7f093a2",
+      "capturedFrom": "booking-pill/public/media/photos/restaurant.jpg"
+    },
+    {
+      "path": "/media/photos/salmon-dinner.jpg",
+      "sha256": "c035d367b832946ec949149fc7323b7b277569d58c694f3dc0ca978f62728914",
+      "capturedFrom": "booking-pill/public/media/photos/salmon-dinner.jpg"
+    },
+    {
+      "path": "/media/photos/sea-at-dusk.jpg",
+      "sha256": "fd863c7dee588f3a3e0793c6432cf9d3ed9940f193ea672a57bda41043f0a512",
+      "capturedFrom": "booking-pill/public/media/photos/sea-at-dusk.jpg"
+    },
+    {
+      "path": "/media/photos/stacked-bowls.jpg",
+      "sha256": "f3619c6251e8dd4f758d907eb499cc1bb33dac56569edab1a6dec232376a8d51",
+      "capturedFrom": "booking-pill/public/media/photos/stacked-bowls.jpg"
+    },
+    {
+      "path": "/media/photos/stoneware-cups.jpg",
+      "sha256": "5db79a4f0273870ccf0e58ea51e2874a2e48762ff69f878b125a967686c6189d",
+      "capturedFrom": "booking-pill/public/media/photos/stoneware-cups.jpg"
+    },
+    {
+      "path": "/media/photos/sunroom.jpg",
+      "sha256": "67a0f07e812f4824823c9eaab003b5c621bd29c5e70b560502fec43783e078d7",
+      "capturedFrom": "booking-pill/public/media/photos/sunroom.jpg"
+    },
+    {
+      "path": "/media/photos/table-lamp.jpg",
+      "sha256": "2a5c820d9a1deded65a58812c808362801a6375df583eb1e5beb650356efffd7",
+      "capturedFrom": "booking-pill/public/media/photos/table-lamp.jpg"
+    },
+    {
+      "path": "/media/photos/terracotta-waves.jpg",
+      "sha256": "e56af50ba95634c83e96669583cad8a1c2b2dc8b359b0e703ef8b009b7b93adb",
+      "capturedFrom": "booking-pill/public/media/photos/terracotta-waves.jpg"
+    },
+    {
+      "path": "/media/photos/wine-bar.jpg",
+      "sha256": "0d0583d3928476df2f3ff7cf77bbd6e9e26bbd3064062251fbfd90b92ccc93fe",
+      "capturedFrom": "booking-pill/public/media/photos/wine-bar.jpg"
+    }
+  ],
+  "mediaRebase": "Copied captured public assets into src/media; package build emits URL expressions relative to dist/index.js; Next optimizer disabled."
+}

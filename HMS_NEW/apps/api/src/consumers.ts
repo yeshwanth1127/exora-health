@@ -9,8 +9,15 @@ import {
   handleWaitlistNotification,
 } from "./modules/comms/notifications.ts";
 import { checkInVirtualArrival } from "./modules/booking/appointments.ts";
+import { chargeConsultation, chargeDispense, rechargeAfterReturn, reverseConsultation } from "./modules/billing/charges.ts";
+import { closeStayAccount, openStayAccount, settleStayOnPaid } from "./modules/billing/stays.ts";
+import { clearFinance } from "./modules/inpatient/admissions.ts";
+import { closeCalendarForLeave, reopenCalendarAfterLeave } from "./modules/booking/leave-closures.ts";
+import { endStaffOnExit } from "./modules/hr/employees.ts";
 import {
   cancelEncounterForAppointment,
+  closeEncounterForAdmission,
+  openEncounterForAdmission,
   openEncounterForAppointment,
 } from "./modules/clinical/encounters.ts";
 import {
@@ -190,13 +197,144 @@ export const whatsAppCallbacks: EventHandler = {
   module: "comms",
   handle: handleWhatsAppCallback,
 };
+/** Checked-in consultations are charged at the booked fee (after the encounter opens, so the charge links to it). */
+export const chargeConsultationOnCheckIn: EventHandler = {
+  consumer: "billing.charge_consultation_on_check_in",
+  eventTypes: ["appointment.checked_in"],
+  module: "billing",
+  async handle(tx, event) {
+    await chargeConsultation(tx, event.tenantId, String(event.payload["appointmentId"]), event.correlationId);
+  },
+};
+
+/** A cancelled appointment's not-yet-billed consultation charge is reversed. */
+export const reverseConsultationOnCancel: EventHandler = {
+  consumer: "billing.reverse_consultation_on_cancel",
+  eventTypes: ["appointment.cancelled"],
+  module: "billing",
+  async handle(tx, event) {
+    await reverseConsultation(tx, event.tenantId, String(event.payload["appointmentId"]), String(event.payload["reason"] ?? "cancelled"), event.correlationId);
+  },
+};
+
+/** An admission opens its inpatient encounter (the admitting doctor attends). */
+export const openEncounterOnAdmission: EventHandler = {
+  consumer: "clinical.open_encounter_on_admission",
+  eventTypes: ["admission.admitted"],
+  module: "clinical",
+  async handle(tx, event) {
+    await openEncounterForAdmission(tx, event.tenantId, String(event.payload["admissionId"]), event.correlationId);
+  },
+};
+
+/** Departure finishes the stay's encounter; a cancelled admission cancels it. */
+export const closeEncounterOnAdmissionEnd: EventHandler = {
+  consumer: "clinical.close_encounter_on_admission_end",
+  eventTypes: ["admission.discharged", "admission.cancelled"],
+  module: "clinical",
+  async handle(tx, event) {
+    const admissionId = String(event.payload["admissionId"]);
+    await closeEncounterForAdmission(tx, event.tenantId, admissionId, event.eventType === "admission.cancelled"
+      ? { cancelled: String(event.payload["reason"] ?? "cancelled") }
+      : { departedAt: String(event.payload["departedAt"]), dischargeType: String(event.payload["dischargeType"]) }, event.correlationId);
+  },
+};
+
+/** An admission gets its stay account; a cancelled one closes it. */
+export const stayAccountOnAdmission: EventHandler = {
+  consumer: "billing.stay_account_on_admission",
+  eventTypes: ["admission.admitted", "admission.cancelled"],
+  module: "billing",
+  async handle(tx, event) {
+    const admissionId = String(event.payload["admissionId"]);
+    if (event.eventType === "admission.admitted") await openStayAccount(tx, event.tenantId, admissionId, event.correlationId);
+    else await closeStayAccount(tx, admissionId);
+  },
+};
+
+/** A final bill paid at the counter settles its stay account. */
+export const settleStayOnFinalPaid: EventHandler = {
+  consumer: "billing.settle_stay_on_final_paid",
+  eventTypes: ["invoice.paid"],
+  module: "billing",
+  async handle(tx, event) {
+    if (event.payload["billingAccountId"]) await settleStayOnPaid(tx, event.tenantId, String(event.payload["invoiceId"]), event.correlationId);
+  },
+};
+
+/** A settled stay account clears the discharge's finance clearance. */
+export const clearFinanceOnSettled: EventHandler = {
+  consumer: "inpatient.clear_finance_on_settled",
+  eventTypes: ["billing.account_settled"],
+  module: "inpatient",
+  async handle(tx, event) {
+    await clearFinance(tx, String(event.payload["admissionId"]));
+  },
+};
+
+/** Each dispensed line is charged (counter sales, prescriptions; ward indents onto the stay's account). */
+export const chargeDispenseLines: EventHandler = {
+  consumer: "billing.charge_dispense_lines",
+  eventTypes: ["dispense.completed"],
+  module: "billing",
+  async handle(tx, event) {
+    await chargeDispense(tx, event.tenantId, String(event.payload["dispenseId"]), event.correlationId);
+  },
+};
+
+/** A medicine return takes the returned quantity off its line's unbilled charge. */
+export const rechargeOnReturn: EventHandler = {
+  consumer: "billing.recharge_on_return",
+  eventTypes: ["dispense.returned"],
+  module: "billing",
+  async handle(tx, event) {
+    await rechargeAfterReturn(tx, event.tenantId, String(event.payload["dispenseLineId"]), event.correlationId);
+  },
+};
+
+/** A doctor's approved full-day leave closes their bookable days; cancelling it reopens them. */
+export const calendarOnLeave: EventHandler = {
+  consumer: "booking.calendar_on_leave",
+  eventTypes: ["leave.approved", "leave.cancelled"],
+  module: "booking",
+  async handle(tx, event) {
+    const p = event.payload;
+    if (event.eventType === "leave.approved") {
+      await closeCalendarForLeave(tx, event.tenantId, {
+        leaveRequestId: String(p["leaveRequestId"]), staffId: String(p["staffId"]), startsOn: String(p["startsOn"]), endsOn: String(p["endsOn"]), halfDay: String(p["halfDay"] ?? "none"),
+      }, event.correlationId);
+    } else await reopenCalendarAfterLeave(tx, event.tenantId, String(p["leaveRequestId"]), event.correlationId);
+  },
+};
+
+/** An employee's exit ends their staff record's active period. */
+export const endStaffOnEmployeeExit: EventHandler = {
+  consumer: "platform.end_staff_on_exit",
+  eventTypes: ["employee.exited"],
+  module: "platform",
+  async handle(tx, event) {
+    await endStaffOnExit(tx, String(event.payload["staffId"]), String(event.payload["dateOfExit"]));
+  },
+};
+
 export const consumers: EventHandler[] = [
   whatsAppCallbacks,
   waitlistNotifications,
   appointmentNotifications,
   startTokenOnEncounterStarted,
   openEncounterOnCheckIn,
+  chargeConsultationOnCheckIn,
   cancelEncounterOnAppointmentCancelled,
+  reverseConsultationOnCancel,
+  openEncounterOnAdmission,
+  stayAccountOnAdmission,
+  closeEncounterOnAdmissionEnd,
+  settleStayOnFinalPaid,
+  clearFinanceOnSettled,
+  chargeDispenseLines,
+  rechargeOnReturn,
+  calendarOnLeave,
+  endStaffOnEmployeeExit,
   completeAppointmentOnEncounterFinished,
   createTeleSessionOnVirtualBooking,
   closeTeleSessionWithAppointment,

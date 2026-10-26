@@ -1,0 +1,15 @@
+.research-benchmarks{padding:48px 0 56px!important}
+.research-benchmarks>header{text-align:center;margin:0 auto 32px;max-width:760px}
+.research-benchmarks .research-eyebrow{font-size:12px;letter-spacing:.07em;color:#54758f;font-weight:550;margin:0 0 14px}
+.research-benchmarks>header h2{font-size:42px;line-height:1.14;letter-spacing:-1.4px;font-weight:650;margin:0 0 14px;text-wrap:balance}
+.research-benchmarks>header>p:last-child{font-size:17px;line-height:1.6;color:#657580;margin:0}
+.research-benchmark-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.research-benchmark-grid article{min-width:0;min-height:236px;display:flex;flex-direction:column;justify-content:space-between;padding:32px;background:#f5f8fb;border:1px solid #e4ebf1;border-radius:12px}
+.research-benchmark-grid article:nth-child(2){background:#faf5f5;border-color:#eee4e4}
+.research-benchmark-grid article:nth-child(3){background:#f7f5fb;border-color:#eae5f1}
+.research-benchmark-grid .research-benchmark-value{font-size:clamp(44px,4.5vw,64px);line-height:1;letter-spacing:-2.5px;font-weight:650;color:#286fa9;margin:0 0 32px;white-space:nowrap;font-variant-numeric:lining-nums tabular-nums}
+.research-benchmark-grid article:nth-child(2) .research-benchmark-value{color:#b8555d}
+.research-benchmark-grid article:nth-child(3) .research-benchmark-value{color:#8164a5}
+.research-benchmark-grid h3{font-size:20px;line-height:1.3;letter-spacing:-.35px;font-weight:650;margin:0;max-width:24ch;text-wrap:balance}
+@media(max-width:900px){.research-benchmark-grid{gap:14px}.research-benchmark-grid article{padding:26px 22px;min-height:212px}.research-benchmark-grid .research-benchmark-value{font-size:44px;letter-spacing:-1.8px}}
+@media(max-width:700px){.research-benchmark-grid{grid-template-columns:1fr}.research-benchmarks{padding:40px 0!important}.research-benchmarks>header{text-align:left;margin-bottom:24px}.research-benchmarks>header h2{font-size:32px;letter-spacing:-.8px}.research-benchmark-grid article{padding:28px;min-height:200px}.research-benchmark-grid .research-benchmark-value{font-size:56px;margin-bottom:28px}}

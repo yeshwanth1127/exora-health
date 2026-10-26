@@ -1,0 +1,66 @@
+.capture-account-page { min-height: 100dvh; background: white; color: var(--foreground); }
+.capture-account-page header { display: flex; align-items: center; justify-content: space-between; padding: 1.8rem 3rem; }
+.capture-account-page header > a:first-child { color: var(--action); }
+.capture-account-page header svg { width: 1.6rem; height: 1.6rem; }
+.capture-account-close { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 50%; background: #f5f4f3; font-size: 1.8rem; color: var(--muted-foreground); text-decoration: none; }
+.capture-account-panel { box-sizing: border-box; width: min(100% - 2rem, 25rem); min-height: calc(100dvh - 8rem); display: flex; flex-direction: column; justify-content: center; margin: 0 auto; padding: 2rem 0 4rem; }
+.capture-account-screen { width: 100%; }
+.capture-account-emblem { margin: 0 auto 1.4rem; display: grid; place-items: center; width: 3.1rem; height: 3.1rem; border-radius: 50%; background: #eaf5fe; color: var(--action); }
+.capture-account-emblem svg { width: 1.5rem; height: 1.5rem; }
+.capture-account-step { text-align: center; font-size: .7rem; color: var(--muted-foreground); margin-bottom: .65rem; }
+.capture-account-panel h1 { font-size: 1.5rem; line-height: 1.25; font-weight: 500; text-align: center; letter-spacing: -.03em; margin: 0; }
+.capture-account-panel h1:focus { outline: none; }
+.capture-account-intro { color: var(--muted-foreground); font-size: .85rem; line-height: 1.5; text-align: center; margin: .55rem 0 1.8rem; overflow-wrap: anywhere; }
+.capture-account-panel form { display: grid; gap: 1rem; }
+.capture-account-panel label { display: grid; gap: .45rem; min-width: 0; font-size: .75rem; }
+.capture-account-panel input { box-sizing: border-box; width: 100%; min-height: 3rem; border: 2px solid transparent; border-radius: .8rem; padding: .7rem .85rem; background: #f1f6fb; font: inherit; font-size: .85rem; color: var(--foreground); }
+.capture-account-panel input:focus { outline: none; border-color: var(--action); background: #f8fbff; box-shadow: 0 0 0 3px rgb(98 84 232 / 12%); }
+.capture-account-panel input[aria-invalid=true] { border-color: #a12b28; }
+.capture-account-continue { width: 100%; justify-content: center; min-height: 3rem; display: flex; gap: .6rem; border-radius: .8rem; }
+.capture-account-continue:disabled { opacity: .5; cursor: wait; }
+.capture-account-note { text-align: center; color: var(--muted-foreground); font-size: .75rem; line-height: 1.6; margin: .5rem 0 0; }
+.capture-account-preview { text-align: center; color: #777; font-size: .6rem; line-height: 1.6; margin: 1.7rem 0 0; }
+.capture-account-error { color: #a12b28; font-size: .75rem; line-height: 1.5; margin: 1rem 0 0; text-align: center; }
+.capture-account-close:focus-visible, .capture-account-panel button:focus-visible { outline: 2px solid var(--action); outline-offset: 3px; }
+.capture-account-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.capture-otp-group { display: flex; align-items: center; justify-content: center; gap: .45rem; width: 100%; margin: 2rem 0 1.5rem; }
+.capture-otp-slot { display: flex; align-items: center; gap: .4rem; min-width: 0; }
+.capture-otp-group input { width: 2.8rem; min-height: 3.25rem; padding: .35rem; border-radius: .85rem; font-size: 1.35rem; font-weight: 500; text-align: center; }
+.capture-otp-group input::placeholder { color: #cbd0d8; }
+.capture-otp-divider { font-size: 1rem; color: var(--muted-foreground); }
+.capture-demo-code strong { font-weight: 500; color: var(--foreground); }
+.capture-login-actions { display: flex; justify-content: center; gap: 1.3rem; margin-top: 1.2rem; }
+.capture-login-actions button, .capture-login-back { padding: .25rem 0; border: 0; background: none; color: var(--muted-foreground); cursor: pointer; font-size: .7rem; text-decoration: underline; text-underline-offset: 3px; }
+.capture-avatar-card { display: grid; place-items: center; height: 13rem; border: 1px solid #e5e7eb; border-radius: 1.4rem; margin-bottom: 1.5rem; }
+.capture-avatar { position: relative; width: 8rem; height: 8rem; border: 0; border-radius: 50%; display: grid; place-items: center; cursor: pointer; }
+.capture-avatar-options { position: absolute; bottom: 0; right: 0; width: 1.8rem; height: 1.8rem; display: grid; place-items: center; border: 1px solid #e5e7eb; background: white; color: #777; font-size: .7rem; letter-spacing: 1px; border-radius: 50%; }
+@media (max-width: 540px) { .capture-account-page header { padding: 1rem; } .capture-account-panel { min-height: calc(100dvh - 5rem); } }
+@media (max-width: 380px) { .capture-otp-group { gap: .25rem; } .capture-otp-group input { width: 2.4rem; } }
+@media (prefers-reduced-motion: no-preference) { .capture-account-screen { animation: capture-account-enter 180ms cubic-bezier(.23,1,.32,1) both; } @keyframes capture-account-enter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } } }
+
+/* Production workspace setup keeps the illustrated question-first flow. */
+.workspace-setup{width:min(100% - 2rem,38rem)}
+.workspace-setup fieldset{display:grid;gap:1rem;border:0;padding:0;margin:0;min-width:0}
+.workspace-setup select{width:100%;min-height:3rem;border:1px solid #dce7f1;border-radius:.8rem;padding:.7rem .85rem;background:#f1f6fb;color:inherit;font:inherit}
+.workspace-setup select:focus-visible{outline:2px solid var(--action);outline-offset:3px}
+.workspace-steps{display:flex;gap:.6rem;justify-content:center;margin:0 -2rem 1rem}
+.workspace-steps button{background:none;border:0;display:grid;justify-items:center;gap:.4rem;font-size:11px;color:#75808b;cursor:pointer}
+.workspace-steps button span{display:grid;place-items:center;width:25px;height:25px;border:1px solid #dce7f1;border-radius:50%}
+.workspace-steps button[aria-current]{color:var(--action)}
+.workspace-steps button[aria-current] span{background:#e7f3ff;border-color:var(--action)}
+.workspace-steps button:disabled{cursor:default}
+.workspace-options{display:grid;gap:.7rem}
+.workspace-options label{display:flex;align-items:center;gap:12px;padding:16px;border:1px solid #dde5ec;border-radius:12px;cursor:pointer}
+.workspace-options label.selected{border-color:#0875de;background:#f1f7fe}
+.workspace-setup input[type=radio],.workspace-setup input[type=checkbox]{width:18px;height:18px;min-height:18px;accent-color:#0875de;flex-shrink:0}
+.workspace-options strong{display:block;font-size:16px}.workspace-options small,.workspace-check small{display:block;font-size:12px;color:#6c7681;margin-top:5px}
+.workspace-setup .workspace-check{display:flex;flex-direction:row;align-items:flex-start;gap:12px;line-height:1.6}
+.workspace-review{margin:0}.workspace-review>div{display:grid;grid-template-columns:145px 1fr;gap:16px;padding:13px 0;border-bottom:1px solid #e7edf3;font-size:14px}
+.workspace-review dt{color:#75808b}.workspace-review dd{margin:0;overflow-wrap:anywhere}
+.workspace-consent{margin:16px 0}.workspace-actions{display:flex;align-items:center;gap:16px;margin-top:14px}
+.workspace-secondary{border:1px solid #dce7f1;background:white;color:#0875de;border-radius:9px;padding:10px 16px;font-size:14px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.workspace-secondary:disabled{opacity:.4;cursor:default}.workspace-progress{display:grid;gap:12px;padding:0;list-style:none;margin:24px 0;color:#75808b;font-size:14px}
+.workspace-progress li{padding:14px 18px;border:1px solid #e3eaf1;border-radius:10px}.workspace-progress .done{color:#0875de;background:#eff7ff;border-color:#b8dafa}
+.workspace-status .welcome-actions{margin:24px 0}.workspace-credentials{padding:20px;background:#f1f7fe;border-radius:14px;margin:24px 0;display:grid;gap:12px;font-size:14px;overflow-wrap:anywhere}
+.workspace-credentials h2{font-size:19px;margin:0}.workspace-credentials p{font-size:13px;line-height:1.6;margin:0}.workspace-notice{font-size:14px;line-height:1.6;background:#eff7ff;border:1px solid #b8dafa;padding:16px;border-radius:10px}
+@media(max-width:600px){.workspace-steps{gap:.2rem;margin:0 0 1rem}.workspace-steps button{font-size:9px;padding:0 4px}.workspace-review>div{grid-template-columns:110px 1fr}.workspace-actions{gap:8px}.workspace-secondary{padding:10px}.workspace-setup .capture-account-heading .onboarding-mascot{width:9rem}}

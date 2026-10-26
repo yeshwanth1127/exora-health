@@ -1,0 +1,22 @@
+{
+  "reference": "/Users/deepakonda/.codex/worktrees/capture-site-base/brave-mendel/website-clones/capture-site/web/public/assets/capture-home-product/home-portrait-a.png",
+  "transparent_background": true,
+  "jobs": [
+    {
+      "name": "caller-lime",
+      "prompt": "Create ONE new original standalone portrait asset for Capture healthcare SaaS. Use the supplied image ONLY as a visual style reference: simple friendly editorial doodle, irregular crisp black ink contours, solid black hair, opaque white face and clothing interiors, flat restrained colour, expressive angular nose, no realism or shading. Draw ONE person head-and-shoulders, centered, with 12 percent clear margin, square canvas, fully transparent background outside the character. No circle, frame, text, letters, speech bubbles, interface, floating icons, collage or second person. Readable at 100px. A friendly young adult woman with black wavy shoulder-length hair, a lime #AACA60 collar, holding one simple black-outlined smartphone to her ear. Listening and smiling slightly. Her hand and phone stay compact beside her face."
+    },
+    {
+      "name": "texter-coral",
+      "prompt": "Create ONE new original standalone portrait asset for Capture healthcare SaaS. Use the supplied image ONLY as a visual style reference: simple friendly editorial doodle, irregular crisp black ink contours, solid black hair, opaque white face and clothing interiors, flat restrained colour, expressive angular nose, no realism or shading. Draw ONE person head-and-shoulders, centered, with 12 percent clear margin, square canvas, fully transparent background outside the character. No circle, frame, text, letters, speech bubbles, interface, floating icons, collage or second person. Readable at 100px. A friendly young adult man with short black curly hair, coral #EE927B shirt, looking down at one simple smartphone held at upper chest level with both hands as he types. Compact head-and-shoulders portrait."
+    },
+    {
+      "name": "enquirer-blue",
+      "prompt": "Create ONE new original standalone portrait asset for Capture healthcare SaaS. Use the supplied image ONLY as a visual style reference: simple friendly editorial doodle, irregular crisp black ink contours, solid black hair, opaque white face and clothing interiors, flat restrained colour, expressive angular nose, no realism or shading. Draw ONE person head-and-shoulders, centered, with 12 percent clear margin, square canvas, fully transparent background outside the character. No circle, frame, text, letters, speech bubbles, interface, floating icons, collage or second person. Readable at 100px. A friendly older woman with a short silver-white bob outlined in black, round black glasses, and a sky blue #79B8EF scarf. Looking thoughtfully towards the viewer with a small smile. Head and shoulders only; no props."
+    },
+    {
+      "name": "parent-lime",
+      "prompt": "Create ONE new original standalone portrait asset for Capture healthcare SaaS. Use the supplied image ONLY as a visual style reference: simple friendly editorial doodle, irregular crisp black ink contours, solid black hair, opaque white face and clothing interiors, flat restrained colour, expressive angular nose, no realism or shading. Draw ONE person head-and-shoulders, centered, with 12 percent clear margin, square canvas, fully transparent background outside the character. No circle, frame, text, letters, speech bubbles, interface, floating icons, collage or second person. Readable at 100px. A friendly middle-aged man with a neatly drawn black beard and softly wavy hair, a white shirt and a lime #AACA60 collar accent. Face in three-quarter view looking slightly left, a relaxed attentive smile. Head and shoulders only, no props."
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+# Project-scoped administrative access for the Exora Health operator.
+# The wrapper is root-owned and validates every Docker resource before use.
+sachin ALL=(root) NOPASSWD: /usr/local/sbin/exora-healthctl *

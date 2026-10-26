@@ -40,7 +40,15 @@ umask 077
   printf 'POSTGRES_PASSWORD="%s"\n' "$database_password"
 } > "$tenant_dir/.env"
 
-docker compose --env-file "$tenant_dir/.env" -f "$tenant_dir/compose.yml" up -d
+if docker compose version >/dev/null 2>&1; then
+  compose=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1; then
+  compose=(docker-compose)
+else
+  echo 'Docker Compose is not installed' >&2
+  exit 5
+fi
+"${compose[@]}" --env-file "$tenant_dir/.env" -f "$tenant_dir/compose.yml" up -d
 container="exora-health-data-${slug}-postgres-1"
 for _ in $(seq 1 60); do
   [[ $(docker inspect -f '{{.State.Health.Status}}' "$container" 2>/dev/null || true) == healthy ]] && break

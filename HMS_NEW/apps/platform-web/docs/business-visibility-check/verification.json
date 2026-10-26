@@ -1,0 +1,32 @@
+{
+  "placement": "Compact horizontal bar after DayNightStory and directly before #home-blog",
+  "reference": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/combobox/",
+  "checks": {
+    "typescript": "PASS",
+    "existing_tests": "PASS: 12 tests",
+    "adapter_tests": "PASS: 7 tests, including session forwarding, predictions and invalid inputs",
+    "production_export": "PASS: 32 static pages",
+    "live_autocomplete": "PASS: real Google Places suggestions for Avoke Bengaluru",
+    "keyboard_selection_new_window": "PASS: ArrowDown and Enter opened a separate report tab",
+    "live_details": "PASS: selected Avoke The Avocado Cafe details returned by Google",
+    "empty_results": "PASS",
+    "escape_outside_and_tab_dismissal": "PASS",
+    "clear_selection": "PASS",
+    "narrow_layout": "PASS: 354 CSS pixel viewport, no horizontal overflow",
+    "public_key_scan": "PASS: credential absent from sanitized public export",
+    "reduced_motion": "Preserved original motion hook and CSS; OS preference switching not exercised"
+  },
+  "adaptations": [
+    "User-requested horizontal wrapper and visually hidden field label",
+    "Async Google predictions replace the demo option data; demo dimensions, icons, springs, highlight and key navigation retained",
+    "Google Maps attribution appears only inside the open dropdown",
+    "Tab dismisses the async list when leaving the field"
+  ],
+  "limits": [
+    "Website audit and reach score are not implemented; report explicitly says they have not run",
+    "Live API runs through local Python preview adapter; production service deployment remains separate",
+    "Browser controls whether a requested new window appears as a window or tab",
+    "No claim of exact parity across every Arc demo state; disabled options and OS reduced motion were not exercised"
+  ],
+  "visuals": ["compact-bar-desktop.png", "compact-bar-suggestions.png", "compact-bar-mobile.png", "separate-report.png"]
+}

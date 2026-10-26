@@ -16,7 +16,7 @@ import { dispatchOnce } from "../../../worker/src/dispatcher.ts";
 import { consumers } from "../consumers.ts";
 import type { ManagedSettings } from "../modules/comms/managed-config.ts";
 import type { ChannelSettings } from "../modules/comms/voice-growth.ts";
-import { buildServer } from "../server.ts";
+import { buildServer, type ServerDeps } from "../server.ts";
 
 export type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -57,8 +57,11 @@ export async function startKit(
   channels?: ChannelSettings,
   whatsappTemplateFetcher?: typeof fetch,
   managed?: ManagedSettings,
+  /** Extra server dependencies that need the new tenant (for example its public tenant id). */
+  extra?: (tenant: TenantFixture) => Partial<ServerDeps>,
 ): Promise<Kit> {
   const admin = adminPool();
+  const tenant = await createTenant(admin, label);
   const db = createDb({
     connectionString: config.testAppDatabaseUrl,
     maxConnections: 5,
@@ -74,8 +77,8 @@ export async function startKit(
     channels,
     whatsappTemplateFetcher,
     managed,
+    ...extra?.(tenant),
   });
-  const tenant = await createTenant(admin, label);
   const run = randomUUID().slice(0, 8);
   let n = 0;
   return {

@@ -18,6 +18,8 @@ export interface PriceChange {
   /** null removes the price from that date (a doctor then falls back to the service fee). */
   feeMinor: number | null;
   effectiveFrom: string;
+  /** A bed category's daily price (the service is the tenant's bed-day item); omitted for fees. */
+  bedCategoryId?: string | null | undefined;
 }
 
 export async function publishPrice(ctx: CommandContext, change: PriceChange): Promise<{ priceListId: string; listVersion: number }> {
@@ -64,7 +66,7 @@ export async function publishPrice(ctx: CommandContext, change: PriceChange): Pr
              CASE WHEN same THEN CASE WHEN valid_to IS NULL OR valid_to > ${change.effectiveFrom}::date THEN ${change.effectiveFrom}::date ELSE valid_to END
                   ELSE valid_to END,
              ${actor}
-      FROM (SELECT *, (service_item_id = ${change.serviceItemId} AND bed_category_id IS NULL
+      FROM (SELECT *, (service_item_id = ${change.serviceItemId} AND bed_category_id IS NOT DISTINCT FROM ${change.bedCategoryId ?? null}::uuid
                        AND staff_id IS NOT DISTINCT FROM ${change.staffId}::uuid
                        AND encounter_class IS NOT DISTINCT FROM ${encounterClass}::text) AS same
             FROM catalog.price_list_item WHERE price_list_id = ${current.id}) i
@@ -78,9 +80,10 @@ export async function publishPrice(ctx: CommandContext, change: PriceChange): Pr
         price_list_id: next.id,
         service_item_id: change.serviceItemId,
         staff_id: change.staffId,
+        bed_category_id: change.bedCategoryId ?? null,
         encounter_class: encounterClass,
         unit_price_minor: change.feeMinor,
-        charge_trigger: 'on_order',
+        charge_trigger: change.bedCategoryId ? 'daily' : 'on_order',
         valid_from: change.effectiveFrom,
         created_by: actor,
       })
@@ -97,7 +100,7 @@ export async function publishPrice(ctx: CommandContext, change: PriceChange): Pr
     subjectType: 'catalog.price_list',
     subjectId: next.id,
     reason: 'fee changed',
-    diff: { replaces: current?.id ?? null, listVersion: v!.n, serviceItemId: change.serviceItemId, staffId: change.staffId, mode: change.mode, feeMinor: change.feeMinor, effectiveFrom: change.effectiveFrom },
+    diff: { replaces: current?.id ?? null, listVersion: v!.n, serviceItemId: change.serviceItemId, staffId: change.staffId, bedCategoryId: change.bedCategoryId ?? null, mode: change.mode, feeMinor: change.feeMinor, effectiveFrom: change.effectiveFrom },
   });
   return { priceListId: next.id, listVersion: v!.n };
 }

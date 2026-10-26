@@ -1,4 +1,6 @@
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { Onboarding } from './onboarding.ts';
+import { exportedPlatformPage } from './platform-pages.ts';
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,8 +9,11 @@ import fastifyStatic from '@fastify/static';
 import Fastify from 'fastify';
 import pg from 'pg';
 import { z } from 'zod';
-import { compileVoiceManifest, defaultVoiceSettings, VoiceSettingsSchema } from './voice-control.ts';
-import { processOneVoiceOperation } from './voice-provisioner.ts';
+import { compileVoiceManifest, defaultVoiceSettings, tenantBackendOrigin, VoiceSettingsSchema } from './voice-control.ts';
+import {
+  activateVoiceRequest, declineVoiceRequest, listOpenVoiceRequests, loadVoiceRequest, requestVoiceAgent, requestVoiceChanges,
+  saveVoiceDraft, startVoiceRequest, tenantVoiceStatus, testVoiceRequest, VoiceRequestError,
+} from './voice-requests.ts';
 
 const app = Fastify({ logger: true, bodyLimit: 128 * 1024 });
 const databaseUrl = process.env.CONTROL_DATABASE_URL ?? 'postgres://postgres:exora-control@127.0.0.1:54330/exora_control?sslmode=disable';
@@ -18,29 +23,47 @@ const hash = (value: string) => createHash('sha256').update(value).digest('hex')
 const publicBase = process.env.PUBLIC_BASE_URL ?? 'http://127.0.0.1';
 const tenantUrlTemplate = process.env.TENANT_PUBLIC_URL_TEMPLATE?.trim();
 const autoProvision = process.env.AUTO_PROVISION === '1';
-const autoVoiceProvision = process.env.AUTO_VOICE_PROVISION === '1';
-const voiceProvisionerUrl = process.env.SARVAM_PROVISIONER_URL;
-const voiceProvisionerToken = process.env.SARVAM_PROVISIONER_TOKEN;
+// Agents are created by a superadmin in Sarvam. The platform only uses the workspace key for the runtime
+// call-URL endpoint, which proves an agent version exists and serves each clinic's browser calls.
+const sarvamApiKey = process.env.SARVAM_API_KEY?.trim();
+const sarvamOrgId = process.env.SARVAM_ORG_ID?.trim();
+const sarvamWorkspaceId = process.env.SARVAM_WORKSPACE_ID?.trim();
+const sarvamRuntimeOrigin = (process.env.SARVAM_RUNTIME_ORIGIN?.trim() || 'https://apps.sarvam.ai').replace(/\/$/, '');
+const tenantRoot = process.env.TENANT_ROOT?.trim() || '/srv/apps/exora-health/tenants';
 const superadminToken = process.env.SUPERADMIN_TOKEN;
 const provisionerToken = process.env.PROVISIONER_TOKEN;
 const isSuperadmin = (authorization?: string) => !!superadminToken && authorization === `Bearer ${superadminToken}`;
 const isProvisioner = (authorization?: string) => !!provisionerToken && authorization === `Bearer ${provisionerToken}`;
+/** Each clinic container holds only its own derived token, never the provisioner token. */
+const tenantControlToken = (tenantId: string) => provisionerToken
+  ? createHmac('sha256', provisionerToken).update(`tenant-control:${tenantId.toLowerCase()}`).digest('hex')
+  : undefined;
+function isTenant(authorization: string | undefined, tenantId: string) {
+  const token = tenantControlToken(tenantId);
+  if (!token || !authorization) return false;
+  return timingSafeEqual(hash32(authorization), hash32(`Bearer ${token}`));
+}
+const hash32 = (value: string) => createHash('sha256').update(value).digest();
+const credentialKey = provisionerToken
+  ? createHash('sha256').update(`exora-onboarding-credential:${provisionerToken}`).digest()
+  : undefined;
+function encryptCredential(value: string) {
+  if (!credentialKey) throw new Error('PROVISIONER_TOKEN is required to protect onboarding credentials');
+  const iv = randomBytes(12), cipher = createCipheriv('aes-256-gcm', credentialKey, iv);
+  const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+  return ['v1', iv.toString('base64url'), cipher.getAuthTag().toString('base64url'), encrypted.toString('base64url')].join('.');
+}
+function decryptCredential(value: string) {
+  if (!credentialKey) return undefined;
+  try {
+    const [version, iv, tag, encrypted] = value.split('.');
+    if (version !== 'v1' || !iv || !tag || !encrypted) return undefined;
+    const decipher = createDecipheriv('aes-256-gcm', credentialKey, Buffer.from(iv, 'base64url'));
+    decipher.setAuthTag(Buffer.from(tag, 'base64url'));
+    return Buffer.concat([decipher.update(Buffer.from(encrypted, 'base64url')), decipher.final()]).toString('utf8');
+  } catch { return undefined; }
+}
 
-const Onboarding = z.object({
-  organisation: z.string().trim().min(2).max(120),
-  slug: z.string().regex(/^[a-z0-9][a-z0-9-]{1,62}$/),
-  ownerName: z.string().trim().min(2).max(100),
-  email: z.email().max(254),
-  phone: z.string().trim().max(30).optional(),
-  city: z.string().trim().min(2).max(80),
-  timezone: z.string().trim().min(3).max(64),
-  facilityName: z.string().trim().min(2).max(120),
-  facilityType: z.enum(['clinic', 'hospital', 'diagnostic_centre', 'virtual']),
-  plan: z.enum(['launch', 'connect', 'scale']),
-  voice: z.boolean(),
-  whatsapp: z.boolean(),
-  termsAccepted: z.literal(true),
-}).refine((value) => !value.voice || value.plan !== 'launch', { path: ['voice'], message: 'Voice requires the Connect or Scale plan.' });
 
 async function schema() {
   await pool.query(`
@@ -55,9 +78,13 @@ async function schema() {
       status text NOT NULL CHECK(status IN ('queued','provisioning','ready','failed')),
       allocated_port integer NOT NULL UNIQUE,
       error text,
+      admin_credential_ciphertext text,
+      credential_expires_at timestamptz,
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     );
+    ALTER TABLE control.onboarding_request ADD COLUMN IF NOT EXISTS admin_credential_ciphertext text;
+    ALTER TABLE control.onboarding_request ADD COLUMN IF NOT EXISTS credential_expires_at timestamptz;
     CREATE TABLE IF NOT EXISTS control.customer (
       id uuid PRIMARY KEY,
       onboarding_id uuid NOT NULL UNIQUE REFERENCES control.onboarding_request(id),
@@ -139,6 +166,19 @@ async function schema() {
     CREATE INDEX IF NOT EXISTS voice_operation_queue_idx ON control.voice_provisioning_operation(state,created_at);
     UPDATE control.voice_agent_binding v SET service_secret_ref='tenant-env://' || c.slug || '/VOICE_SERVICE_KEY'
       FROM control.customer c WHERE c.id=v.customer_id AND v.service_secret_ref IS NULL;
+    -- Voice agents are now requested by the clinic and set up by a superadmin. Close the automatic jobs
+    -- that nothing processes any more and return those clinics to "not requested".
+    UPDATE control.voice_provisioning_operation SET state='cancelled',stage='declined',
+      error='Replaced by clinic-requested setup from the Voice page.',completed_at=now(),updated_at=now()
+      WHERE state IN ('queued','running') AND created_by NOT LIKE 'clinic:%';
+    UPDATE control.voice_configuration_revision SET state='draft',updated_at=now() WHERE state='publishing' AND provider_version IS NULL;
+    UPDATE control.customer c SET voice_status='not_requested'
+      WHERE voice_status IN ('requested','configuring','failed')
+        AND NOT EXISTS (SELECT 1 FROM control.voice_agent_binding v WHERE v.customer_id=c.id AND v.agent_id IS NOT NULL AND v.app_version IS NOT NULL)
+        AND NOT EXISTS (SELECT 1 FROM control.voice_provisioning_operation o WHERE o.customer_id=c.id AND o.state IN ('queued','running'));
+    CREATE UNIQUE INDEX IF NOT EXISTS voice_binding_agent_unique ON control.voice_agent_binding(agent_id) WHERE agent_id IS NOT NULL;
+    CREATE UNIQUE INDEX IF NOT EXISTS voice_request_open_unique ON control.voice_provisioning_operation(customer_id)
+      WHERE state IN ('queued','running') AND stage IN ('awaiting_superadmin','in_setup');
   `);
 }
 
@@ -160,6 +200,8 @@ type CompletedDeployment = {
   image?: string;
   publicUrl?: string;
   staffUrl?: string;
+  adminUsername?: string;
+  temporaryPassword?: string;
 };
 
 async function markReady(id: string, payload: z.infer<typeof Onboarding>, port: number, deployment: CompletedDeployment = {}) {
@@ -169,7 +211,7 @@ async function markReady(id: string, payload: z.infer<typeof Onboarding>, port: 
     const customerId = randomUUID();
     await client.query(`INSERT INTO control.customer(id,onboarding_id,name,slug,owner_email,plan_code,modules,voice_status)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(onboarding_id) DO NOTHING`,
-      [customerId, id, payload.organisation, payload.slug, payload.email.toLowerCase(), payload.plan, JSON.stringify(modulesFor(payload.plan)), payload.voice ? 'requested' : 'not_requested']);
+      [customerId, id, payload.organisation, payload.slug, payload.email.toLowerCase(), payload.plan, JSON.stringify(modulesFor(payload.plan)), 'not_requested']);
     const { rows: [customer] } = await client.query('SELECT id FROM control.customer WHERE onboarding_id=$1', [id]);
     const tenantUrl = deployment.publicUrl?.replace(/\/$/, '') ?? (tenantUrlTemplate
       ? tenantUrlTemplate.replaceAll('{slug}', payload.slug).replace(/\/$/, '')
@@ -177,36 +219,18 @@ async function markReady(id: string, payload: z.infer<typeof Onboarding>, port: 
     await client.query(`INSERT INTO control.deployment(id,customer_id,tenant_id,compose_project,image,public_url,staff_url,state,health)
       VALUES($1,$2,$3,$4,$5,$6,$7,'ready','healthy') ON CONFLICT(customer_id) DO UPDATE SET tenant_id=excluded.tenant_id,compose_project=excluded.compose_project,image=excluded.image,state='ready',health='healthy',public_url=excluded.public_url,staff_url=excluded.staff_url,last_error=NULL,updated_at=now()`,
       [randomUUID(), customer.id, deployment.tenantId ?? tenantUuid(payload.slug), deployment.composeProject ?? `exora-${payload.slug}`, deployment.image ?? 'exora/hms:local', `${tenantUrl}/`, deployment.staffUrl ?? `${tenantUrl}/staff/appointments`]);
-    if (payload.voice) {
-      const settings = defaultVoiceSettings(payload.organisation);
-      const manifest = compileVoiceManifest({
-        customerId: customer.id,
-        tenantId: deployment.tenantId ?? tenantUuid(payload.slug),
-        slug: payload.slug,
-        hospitalName: payload.organisation,
-        facilityName: payload.facilityName,
-        timezone: payload.timezone,
-        publicUrl: `${tenantUrl}/`,
-      }, settings, process.env.SARVAM_TEMPLATE_AGENT_ID);
-      await client.query(`INSERT INTO control.voice_agent_binding(customer_id,state,service_secret_ref,desired_revision,configuration_hash,tenant_api_origin)
-        VALUES($1,'configuring',$2,1,$3,$4) ON CONFLICT(customer_id) DO NOTHING`,
-        [customer.id, `tenant-env://${payload.slug}/VOICE_SERVICE_KEY`, manifest.configurationHash, manifest.backendOrigin]);
-      await client.query(`INSERT INTO control.voice_configuration_revision(customer_id,revision,settings,configuration_hash,state,created_by)
-        VALUES($1,1,$2,$3,'publishing','onboarding') ON CONFLICT(customer_id,revision) DO NOTHING`,
-        [customer.id, settings, manifest.configurationHash]);
-      await client.query(`INSERT INTO control.voice_provisioning_operation(id,customer_id,revision,operation,idempotency_key,state,stage,created_by)
-        VALUES($1,$2,1,'provision',$3,'queued','configure_agent','onboarding') ON CONFLICT(idempotency_key) DO NOTHING`,
-        [randomUUID(), customer.id, `voice:onboarding:${id}`]);
-      await client.query("UPDATE control.customer SET voice_status='configuring' WHERE id=$1", [customer.id]);
-    }
-    await client.query("UPDATE control.onboarding_request SET status='ready',error=NULL,updated_at=now() WHERE id=$1", [id]);
+    const protectedCredential = deployment.temporaryPassword ? encryptCredential(deployment.temporaryPassword) : null;
+    await client.query(`UPDATE control.onboarding_request SET status='ready',error=NULL,
+      admin_credential_ciphertext=COALESCE($2,admin_credential_ciphertext),
+      credential_expires_at=CASE WHEN $2 IS NOT NULL THEN now()+interval '24 hours' ELSE credential_expires_at END,
+      updated_at=now() WHERE id=$1`, [id, protectedCredential]);
     await client.query('COMMIT');
   } catch (error) { await client.query('ROLLBACK'); throw error; }
   finally { client.release(); }
 }
 
 async function provision(id: string, payload: z.infer<typeof Onboarding>, port: number) {
-  const args = [path.join(root, 'scripts/provision-tenant.mjs'), '--slug', payload.slug, '--name', payload.organisation, '--email', payload.email, '--owner', payload.ownerName, '--facility', payload.facilityName, '--city', payload.city, '--plan', payload.plan, '--voice', String(payload.voice), '--port', String(port)];
+  const args = [path.join(root, 'scripts/provision-tenant.mjs'), '--slug', payload.slug, '--name', payload.organisation, '--email', payload.email, '--owner', payload.ownerName, '--facility', payload.facilityName, '--city', payload.city, '--plan', payload.plan, '--voice', String(payload.voice), '--website-template', payload.websiteTemplate, '--timezone', payload.timezone, '--facility-type', payload.facilityType, '--port', String(port)];
   const child = spawn(process.execPath, args, { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
   let failure = '';
   child.stderr.on('data', (chunk) => { failure = `${failure}${String(chunk)}`.slice(-4000); });
@@ -219,7 +243,6 @@ async function provision(id: string, payload: z.infer<typeof Onboarding>, port: 
 }
 
 let provisionTimer: ReturnType<typeof setTimeout> | undefined;
-let voiceProvisionTimer: ReturnType<typeof setTimeout> | undefined;
 async function claimProvisioningJob() {
   if (!autoProvision) return;
   try {
@@ -234,17 +257,8 @@ async function claimProvisioningJob() {
   }
 }
 
-async function claimVoiceProvisioningJob() {
-  if (!autoVoiceProvision || !voiceProvisionerUrl || !voiceProvisionerToken) return;
-  try {
-    await processOneVoiceOperation(pool, { url: voiceProvisionerUrl, token: voiceProvisionerToken, templateAgentId: process.env.SARVAM_TEMPLATE_AGENT_ID, preferredConnectionId: process.env.SARVAM_TELEPHONY_CONNECTION_ID });
-  } catch (error) { app.log.error(error, 'failed to process Voice provisioning operation'); }
-  finally { voiceProvisionTimer = setTimeout(() => void claimVoiceProvisioningJob(), 2000); }
-}
-
 await schema();
 if (autoProvision) void claimProvisioningJob();
-if (autoVoiceProvision && voiceProvisionerUrl && voiceProvisionerToken) void claimVoiceProvisioningJob();
 await app.register(cors, { origin: process.env.CORS_ORIGINS?.split(',') ?? ['http://127.0.0.1:5190'], methods: ['GET','POST','PUT','PATCH'], allowedHeaders: ['content-type','idempotency-key','authorization','x-onboarding-access'] });
 
 app.get('/health', async () => ({ status: 'ok' }));
@@ -256,6 +270,8 @@ const Completion = z.object({
   image: z.string().min(3).max(200),
   publicUrl: z.url(),
   staffUrl: z.url(),
+  adminUsername: z.string().trim().email().max(254),
+  temporaryPassword: z.string().min(20).max(128),
 });
 
 app.post('/control/v1/internal/provisioning/claim', async (request, reply) => {
@@ -294,9 +310,16 @@ app.post('/control/v1/onboarding', async (request, reply) => {
   if (typeof idempotencyKey !== 'string' || idempotencyKey.length < 16 || idempotencyKey.length > 128) return reply.status(400).send({ error: 'idempotency_key_required' });
   const requestedAccess = request.headers['x-onboarding-access'];
   if (requestedAccess !== undefined && (typeof requestedAccess !== 'string' || requestedAccess.length < 32 || requestedAccess.length > 128)) return reply.status(400).send({ error: 'invalid_onboarding_access' });
-  const existing = await pool.query('SELECT id,status,access_token_hash FROM control.onboarding_request WHERE idempotency_key=$1', [idempotencyKey]);
+  const existing = await pool.query(
+    'SELECT id,status,access_token_hash,payload=$2::jsonb AS payload_matches FROM control.onboarding_request WHERE idempotency_key=$1',
+    [idempotencyKey, JSON.stringify(parsed.data)],
+  );
   if (existing.rows[0]) {
     if (!requestedAccess || hash(requestedAccess) !== existing.rows[0].access_token_hash) return reply.status(409).send({ error: 'idempotency_recovery_requires_access_token' });
+    if (!existing.rows[0].payload_matches) return reply.status(409).send({
+      error: 'idempotency_payload_mismatch',
+      message: 'This browser request key belongs to a different workspace. Start a new onboarding request.',
+    });
     return reply.status(202).send({ onboardingId: existing.rows[0].id, accessToken: requestedAccess, status: existing.rows[0].status });
   }
   const slug = await pool.query('SELECT id FROM control.onboarding_request WHERE slug=$1', [parsed.data.slug]);
@@ -316,10 +339,20 @@ app.get('/control/v1/onboarding/:id', async (request, reply) => {
   const id = z.uuid().safeParse((request.params as { id?: string }).id);
   const bearer = request.headers.authorization?.replace(/^Bearer\s+/i, '');
   if (!id.success || !bearer) return reply.status(401).send({ error: 'unauthorized' });
-  const { rows: [row] } = await pool.query(`SELECT r.id,r.status,r.slug,r.error,d.public_url,d.staff_url,d.health,c.voice_status
+  const { rows: [row] } = await pool.query(`SELECT r.id,r.status,r.slug,r.owner_email,r.error,r.admin_credential_ciphertext,r.credential_expires_at,
+      d.public_url,d.staff_url,d.health,c.voice_status
     FROM control.onboarding_request r LEFT JOIN control.customer c ON c.onboarding_id=r.id LEFT JOIN control.deployment d ON d.customer_id=c.id
     WHERE r.id=$1 AND r.access_token_hash=$2`, [id.data, hash(bearer)]);
   if (!row) return reply.status(404).send({ error: 'not_found' });
+  if (row.status === 'ready') {
+    row.admin_username = row.owner_email;
+    if (row.admin_credential_ciphertext && row.credential_expires_at && new Date(row.credential_expires_at) > new Date()) {
+      row.temporary_password = decryptCredential(row.admin_credential_ciphertext);
+      row.credential_expires_at = new Date(row.credential_expires_at).toISOString();
+    }
+  }
+  delete row.owner_email;
+  delete row.admin_credential_ciphertext;
   return row;
 });
 
@@ -370,148 +403,178 @@ app.get('/control/v1/admin/customers/:id/voice', async (request, reply) => {
   return { customer, revisions, operations, defaults: defaultVoiceSettings(String(customer.name)) };
 });
 
-app.put('/control/v1/admin/customers/:id/voice-draft', async (request, reply) => {
-  if (!isSuperadmin(request.headers.authorization)) return reply.status(401).send({ error: 'unauthorized' });
-  const id = z.uuid().safeParse((request.params as { id?: string }).id);
-  const body = z.strictObject({ expectedRevision: z.number().int().nonnegative(), settings: VoiceSettingsSchema }).safeParse(request.body);
-  if (!id.success || !body.success) return reply.status(400).send({ error: 'validation', issues: body.success ? [] : body.error.issues });
-  const client = await pool.connect();
+// Clinic Voice routes. Each call authenticates with that clinic's own derived token; the tenant id in the
+// path must match it, so one clinic's container cannot read or change another clinic's Voice state.
+async function tenantCustomer(request: { params: unknown; headers: { authorization?: string } }) {
+  const tenantId = z.uuid().safeParse((request.params as { tenantId?: string }).tenantId);
+  if (!tenantId.success) throw new VoiceRequestError(400, { error: 'validation' });
+  if (!isTenant(request.headers.authorization, tenantId.data)) throw new VoiceRequestError(401, { error: 'unauthorized' });
+  const { rows: [row] } = await pool.query('SELECT customer_id,public_url FROM control.deployment WHERE tenant_id=$1', [tenantId.data]);
+  if (!row?.customer_id) throw new VoiceRequestError(404, { error: 'not_found' });
+  return { customerId: String(row.customer_id), publicUrl: row.public_url ? String(row.public_url) : null };
+}
+
+const RequestedBy = z.string().trim().min(1).max(200);
+const idempotencyOf = (request: { headers: Record<string, unknown> }) => {
+  const key = request.headers['idempotency-key'];
+  if (typeof key !== 'string' || key.length < 16 || key.length > 128) throw new VoiceRequestError(400, { error: 'idempotency_key_required' });
+  return key;
+};
+
+app.get('/control/v1/internal/tenants/:tenantId/voice', async (request, reply) => voiceResult(reply, async () => {
+  const { customerId } = await tenantCustomer(request);
+  const status = await tenantVoiceStatus(pool, customerId);
+  return { status: 200, body: { ...status, runtime: status.agent && sarvamOrgId && sarvamWorkspaceId ? { orgId: sarvamOrgId, workspaceId: sarvamWorkspaceId } : null } };
+}));
+
+app.post('/control/v1/internal/tenants/:tenantId/voice-request', async (request, reply) => voiceResult(reply, async () => {
+  const { customerId, publicUrl } = await tenantCustomer(request);
+  const body = z.strictObject({ requestedBy: RequestedBy }).safeParse(request.body);
+  if (!body.success) throw new VoiceRequestError(400, { error: 'validation' });
+  let origin: string | null = null;
+  try { origin = publicUrl ? tenantBackendOrigin(publicUrl) : null; } catch { origin = null; }
+  return requestVoiceAgent(pool, { customerId, requestedBy: body.data.requestedBy, idempotencyKey: idempotencyOf(request), tenantApiOrigin: origin });
+}));
+
+app.put('/control/v1/internal/tenants/:tenantId/voice-draft', async (request, reply) => voiceResult(reply, async () => {
+  const { customerId } = await tenantCustomer(request);
+  const body = z.strictObject({ expectedRevision: z.number().int().nonnegative(), settings: VoiceSettingsSchema, requestedBy: RequestedBy }).safeParse(request.body);
+  if (!body.success) throw new VoiceRequestError(400, { error: 'validation', issues: body.error.issues });
+  return saveVoiceDraft(pool, { customerId, expectedRevision: body.data.expectedRevision, settings: body.data.settings, createdBy: `clinic:${body.data.requestedBy}` });
+}));
+
+app.post('/control/v1/internal/tenants/:tenantId/voice-changes', async (request, reply) => voiceResult(reply, async () => {
+  const { customerId } = await tenantCustomer(request);
+  const body = z.strictObject({ revision: z.number().int().positive(), requestedBy: RequestedBy }).safeParse(request.body);
+  if (!body.success) throw new VoiceRequestError(400, { error: 'validation' });
+  return requestVoiceChanges(pool, { customerId, revision: body.data.revision, requestedBy: body.data.requestedBy, idempotencyKey: idempotencyOf(request) });
+}));
+
+/** Browser calls: the clinic asks for a signed Sarvam URL for its own bound agent. The workspace key stays here. */
+app.post('/control/v1/internal/tenants/:tenantId/voice-runtime-url', async (request, reply) => voiceResult(reply, async () => {
+  const { customerId } = await tenantCustomer(request);
+  const body = z.strictObject({ interactionType: z.string().regex(/^[a-z_]{1,40}$/).default('call') }).safeParse(request.body ?? {});
+  if (!body.success) throw new VoiceRequestError(400, { error: 'validation' });
+  const { rows: [binding] } = await pool.query(`SELECT v.agent_id,v.app_version FROM control.voice_agent_binding v JOIN control.customer c ON c.id=v.customer_id
+    WHERE v.customer_id=$1 AND c.voice_status='active' AND v.agent_id IS NOT NULL AND v.app_version IS NOT NULL`, [customerId]);
+  if (!binding) throw new VoiceRequestError(409, { error: 'voice_agent_missing' });
+  const result = await sarvamRuntimeUrl(String(binding.agent_id), Number(binding.app_version), body.data.interactionType);
+  if (!result.ok) {
+    app.log.warn({ status: result.status, customerId }, 'Sarvam runtime URL request failed');
+    return { status: 502, body: { error: 'voice_runtime_unavailable' } };
+  }
+  return { status: 200, body: result.body };
+}));
+
+async function sarvamRuntimeUrl(agentId: string, appVersion: number, interactionType = 'call') {
+  if (!sarvamApiKey || !sarvamOrgId || !sarvamWorkspaceId) {
+    throw new VoiceRequestError(503, { error: 'sarvam_not_configured', message: 'Set SARVAM_API_KEY, SARVAM_ORG_ID and SARVAM_WORKSPACE_ID on the platform.' });
+  }
+  const url = new URL(`${sarvamRuntimeOrigin}/api/app-runtime/orgs/${encodeURIComponent(sarvamOrgId)}/workspaces/${encodeURIComponent(sarvamWorkspaceId)}/apps/${encodeURIComponent(agentId)}/url`);
+  url.searchParams.set('interaction_type', interactionType);
+  url.searchParams.set('version', String(appVersion));
   try {
-    await client.query('BEGIN');
-    await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`voice:${id.data}`]);
-    const { rows: [customer] } = await client.query(`SELECT c.id,c.voice_status,COALESCE(v.desired_revision,0) AS desired_revision
-      FROM control.customer c LEFT JOIN control.voice_agent_binding v ON v.customer_id=c.id WHERE c.id=$1 FOR UPDATE OF c`, [id.data]);
-    if (!customer) { await client.query('ROLLBACK'); return reply.status(404).send({ error: 'not_found' }); }
-    if (customer.voice_status === 'not_requested') { await client.query('ROLLBACK'); return reply.status(409).send({ error: 'voice_not_requested' }); }
-    if (customer.desired_revision !== body.data.expectedRevision) {
-      await client.query('ROLLBACK');
-      return reply.status(409).send({ error: 'stale_revision', currentRevision: customer.desired_revision });
-    }
-    const revision = customer.desired_revision + 1;
-    await client.query(`INSERT INTO control.voice_configuration_revision(customer_id,revision,settings,state,created_by)
-      VALUES($1,$2,$3,'draft','superadmin')`, [id.data, revision, body.data.settings]);
-    await client.query(`INSERT INTO control.voice_agent_binding(customer_id,state,desired_revision)
-      VALUES($1,'requested',$2) ON CONFLICT(customer_id) DO UPDATE SET desired_revision=excluded.desired_revision,updated_at=now()`, [id.data, revision]);
-    await client.query('COMMIT');
-    return reply.status(201).send({ customerId: id.data, revision, state: 'draft', settings: body.data.settings });
-  } catch (error) { await client.query('ROLLBACK'); throw error; }
-  finally { client.release(); }
+    const response = await fetch(url, { headers: { 'X-API-Key': sarvamApiKey }, signal: AbortSignal.timeout(10_000) });
+    const text = await response.text();
+    let body: unknown = null;
+    try { body = text ? JSON.parse(text) as unknown : null; } catch { body = null; }
+    return { ok: response.ok && body !== null, status: response.status, body };
+  } catch {
+    return { ok: false, status: 0, body: null };
+  }
+}
+
+// Superadmin request inbox: list, setup kit, start, test, activate, decline.
+const requireSuperadmin = (authorization?: string) => {
+  if (!isSuperadmin(authorization)) throw new VoiceRequestError(401, { error: 'unauthorized' });
+};
+const requestId = (params: unknown) => {
+  const id = z.uuid().safeParse((params as { id?: string }).id);
+  if (!id.success) throw new VoiceRequestError(400, { error: 'validation' });
+  return id.data;
+};
+const AgentBody = z.strictObject({
+  agentId: z.string().trim().min(3).max(200),
+  appVersion: z.number().int().positive(),
+  phoneNumber: z.string().trim().regex(/^\+[1-9]\d{7,14}$/).nullable().optional(),
+  deploymentId: z.string().trim().min(3).max(200).nullable().optional(),
 });
 
-app.post('/control/v1/admin/customers/:id/voice-publish', async (request, reply) => {
-  if (!isSuperadmin(request.headers.authorization)) return reply.status(401).send({ error: 'unauthorized' });
-  const id = z.uuid().safeParse((request.params as { id?: string }).id);
-  const body = z.strictObject({ revision: z.number().int().positive() }).safeParse(request.body);
-  const idempotencyKey = request.headers['idempotency-key'];
-  if (!id.success || !body.success) return reply.status(400).send({ error: 'validation' });
-  if (typeof idempotencyKey !== 'string' || idempotencyKey.length < 16 || idempotencyKey.length > 128) return reply.status(400).send({ error: 'idempotency_key_required' });
-  const customer = await voiceCustomer(id.data);
-  if (!customer) return reply.status(404).send({ error: 'not_found' });
-  if (customer.subscription_status === 'suspended' || customer.subscription_status === 'cancelled') return reply.status(409).send({ error: 'subscription_inactive' });
-  if (!customer.service_secret_ref) return reply.status(409).send({ error: 'voice_secret_required' });
-  const { rows: [revision] } = await pool.query(`SELECT revision,settings,state FROM control.voice_configuration_revision WHERE customer_id=$1 AND revision=$2`, [id.data, body.data.revision]);
-  if (!revision) return reply.status(404).send({ error: 'voice_revision_not_found' });
-  let manifest;
-  try { manifest = compileVoiceManifest(voiceTenant(customer), VoiceSettingsSchema.parse(revision.settings), process.env.SARVAM_TEMPLATE_AGENT_ID); }
-  catch (error) { return reply.status(409).send({ error: 'voice_not_ready', message: error instanceof Error ? error.message : 'Voice configuration is not ready' }); }
-  const operationId = randomUUID();
-  const client = await pool.connect();
+app.get('/control/v1/admin/voice-requests', async (request, reply) => voiceResult(reply, async () => {
+  requireSuperadmin(request.headers.authorization);
+  return { status: 200, body: { items: await listOpenVoiceRequests(pool) } };
+}));
+
+app.get('/control/v1/admin/voice-requests/:id', async (request, reply) => voiceResult(reply, async () => {
+  requireSuperadmin(request.headers.authorization);
+  const { row, view } = await loadVoiceRequest(pool, requestId(request.params));
+  const customer = await voiceCustomer(String(row.customer_id));
+  if (!customer) throw new VoiceRequestError(404, { error: 'not_found' });
+  const { rows } = await pool.query(`SELECT revision,settings FROM control.voice_configuration_revision WHERE customer_id=$1 AND revision = ANY($2::int[])`,
+    [row.customer_id, [Number(row.revision), Number(customer.active_revision ?? 0)]]);
+  const settings = VoiceSettingsSchema.parse(rows.find((item) => item.revision === Number(row.revision))?.settings ?? defaultVoiceSettings(String(customer.name)));
+  const previous = rows.find((item) => item.revision === Number(customer.active_revision ?? 0) && item.revision !== Number(row.revision))?.settings ?? null;
+  const tenant = voiceTenant(customer);
+  let manifest: ReturnType<typeof compileVoiceManifest> | null = null, manifestError: string | null = null;
+  try { manifest = compileVoiceManifest(tenant, settings); }
+  catch (error) { manifestError = error instanceof Error ? error.message : 'Voice configuration is not ready'; }
+  return { status: 200, body: {
+    request: { ...view, customerId: String(row.customer_id), customerName: String(customer.name), customerSlug: String(customer.slug) },
+    hospital: { name: tenant.hospitalName, facilityName: tenant.facilityName, timezone: tenant.timezone, publicUrl: customer.public_url ?? null, staffUrl: customer.staff_url ?? null },
+    settings,
+    previousSettings: previous,
+    manifest: manifest && { agentName: manifest.agentName, greeting: settings.greeting, prompt: manifest.prompt, apiBaseUrl: manifest.apiBaseUrl, tools: manifest.tools, auth: manifest.auth },
+    manifestError,
+    serviceKey: { header: 'X-Service-Key', command: `jq -r .voiceServiceKey ${tenantRoot}/${customer.slug}/secrets.json` },
+    binding: { agentId: customer.agent_id ?? null, appVersion: customer.app_version == null ? null : Number(customer.app_version), phoneNumber: customer.phone_number ?? null, deploymentId: customer.deployment_id ?? null },
+    tested: (row.result as { tested?: unknown } | null)?.tested ?? null,
+    sarvamConfigured: !!(sarvamApiKey && sarvamOrgId && sarvamWorkspaceId),
+  } };
+}));
+
+app.post('/control/v1/admin/voice-requests/:id/start', async (request, reply) => voiceResult(reply, async () => {
+  requireSuperadmin(request.headers.authorization);
+  return startVoiceRequest(pool, requestId(request.params));
+}));
+
+app.post('/control/v1/admin/voice-requests/:id/test', async (request, reply) => voiceResult(reply, async () => {
+  requireSuperadmin(request.headers.authorization);
+  const body = AgentBody.pick({ agentId: true, appVersion: true }).safeParse(request.body);
+  if (!body.success) throw new VoiceRequestError(400, { error: 'validation', issues: body.error.issues });
+  return testVoiceRequest(pool, requestId(request.params), body.data, async (agentId, appVersion) => sarvamRuntimeUrl(agentId, appVersion));
+}));
+
+app.post('/control/v1/admin/voice-requests/:id/activate', async (request, reply) => voiceResult(reply, async () => {
+  requireSuperadmin(request.headers.authorization);
+  const id = requestId(request.params);
+  const body = AgentBody.safeParse(request.body);
+  if (!body.success) throw new VoiceRequestError(400, { error: 'validation', issues: body.error.issues });
+  const { row } = await loadVoiceRequest(pool, id);
+  const customer = await voiceCustomer(String(row.customer_id));
+  const { rows: [revision] } = await pool.query('SELECT settings FROM control.voice_configuration_revision WHERE customer_id=$1 AND revision=$2', [row.customer_id, row.revision]);
+  if (!customer || !revision) throw new VoiceRequestError(404, { error: 'voice_revision_not_found' });
+  let configurationHash: string;
+  try { configurationHash = compileVoiceManifest(voiceTenant(customer), VoiceSettingsSchema.parse(revision.settings)).configurationHash; }
+  catch (error) { throw new VoiceRequestError(409, { error: 'voice_not_ready', message: error instanceof Error ? error.message : 'Voice configuration is not ready' }); }
+  return activateVoiceRequest(pool, id, { ...body.data, configurationHash });
+}));
+
+app.post('/control/v1/admin/voice-requests/:id/decline', async (request, reply) => voiceResult(reply, async () => {
+  requireSuperadmin(request.headers.authorization);
+  const body = z.strictObject({ reason: z.string().trim().min(3).max(500) }).safeParse(request.body);
+  if (!body.success) throw new VoiceRequestError(400, { error: 'validation' });
+  return declineVoiceRequest(pool, requestId(request.params), body.data.reason);
+}));
+
+async function voiceResult(reply: { status: (code: number) => { send: (body: unknown) => unknown } }, run: () => Promise<{ status: number; body: unknown }>) {
   try {
-    await client.query('BEGIN');
-    const inserted = await client.query(`INSERT INTO control.voice_provisioning_operation(id,customer_id,revision,operation,idempotency_key,state,stage,created_by)
-      VALUES($1,$2,$3,'publish',$4,'queued','configure_agent','superadmin') ON CONFLICT(idempotency_key) DO NOTHING RETURNING id`,
-      [operationId,id.data,body.data.revision,idempotencyKey]);
-    if (!inserted.rowCount) {
-      const { rows: [existing] } = await client.query('SELECT * FROM control.voice_provisioning_operation WHERE idempotency_key=$1', [idempotencyKey]);
-      await client.query('ROLLBACK');
-      return reply.status(202).send(existing);
-    }
-    await client.query(`UPDATE control.voice_configuration_revision SET state='publishing',configuration_hash=$3,updated_at=now()
-      WHERE customer_id=$1 AND revision=$2`, [id.data,body.data.revision,manifest.configurationHash]);
-    await client.query(`UPDATE control.voice_agent_binding SET state='configuring',tenant_api_origin=$2,configuration_hash=$3,updated_at=now()
-      WHERE customer_id=$1`, [id.data,manifest.backendOrigin,manifest.configurationHash]);
-    await client.query("UPDATE control.customer SET voice_status='configuring' WHERE id=$1", [id.data]);
-    await client.query('COMMIT');
-  } catch (error) { await client.query('ROLLBACK'); throw error; }
-  finally { client.release(); }
-  return reply.status(202).send({ operationId, customerId: id.data, revision: body.data.revision, state: 'queued', stage: 'configure_agent', configurationHash: manifest.configurationHash });
-});
-
-app.post('/control/v1/admin/customers/:id/voice-phone/allocate', async (request, reply) => {
-  if (!isSuperadmin(request.headers.authorization)) return reply.status(401).send({ error: 'unauthorized' });
-  const id = z.uuid().safeParse((request.params as { id?: string }).id);
-  const idempotencyKey = request.headers['idempotency-key'];
-  if (!id.success) return reply.status(400).send({ error: 'validation' });
-  if (typeof idempotencyKey !== 'string' || idempotencyKey.length < 16 || idempotencyKey.length > 128) return reply.status(400).send({ error: 'idempotency_key_required' });
-  const customer = await voiceCustomer(id.data);
-  if (!customer) return reply.status(404).send({ error: 'not_found' });
-  if (customer.voice_status === 'not_requested') return reply.status(409).send({ error: 'voice_not_requested' });
-  if (customer.subscription_status === 'suspended' || customer.subscription_status === 'cancelled') return reply.status(409).send({ error: 'subscription_inactive' });
-  if (customer.phone_number && customer.deployment_id) {
-    return { state: 'active', phoneNumber: customer.phone_number, deploymentId: customer.deployment_id, alreadyAssigned: true };
+    const result = await run();
+    return reply.status(result.status).send(result.body);
+  } catch (error) {
+    if (error instanceof VoiceRequestError) return reply.status(error.status).send(error.body);
+    throw error;
   }
-  const { rows: [revision] } = await pool.query(`SELECT revision FROM control.voice_configuration_revision
-    WHERE customer_id=$1 ORDER BY revision DESC LIMIT 1`, [id.data]);
-  if (!revision) return reply.status(409).send({ error: 'voice_revision_required', message: 'Save the initial Voice configuration before assigning a number.' });
-  const operationId = randomUUID();
-  const result = await pool.query(`INSERT INTO control.voice_provisioning_operation(id,customer_id,revision,operation,idempotency_key,state,stage,created_by)
-    VALUES($1,$2,$3,'provision',$4,'queued','allocate_number','superadmin') ON CONFLICT(idempotency_key) DO NOTHING RETURNING *`,
-    [operationId,id.data,revision.revision,idempotencyKey]);
-  if (!result.rowCount) {
-    const { rows: [existing] } = await pool.query('SELECT * FROM control.voice_provisioning_operation WHERE idempotency_key=$1', [idempotencyKey]);
-    return reply.status(202).send(existing);
-  }
-  await pool.query("UPDATE control.voice_agent_binding SET state='configuring',last_error=NULL,updated_at=now() WHERE customer_id=$1", [id.data]);
-  await pool.query("UPDATE control.customer SET voice_status='configuring' WHERE id=$1", [id.data]);
-  return reply.status(202).send(result.rows[0]);
-});
-
-app.post('/control/v1/admin/customers/:id/voice-rollback', async (request, reply) => {
-  if (!isSuperadmin(request.headers.authorization)) return reply.status(401).send({ error: 'unauthorized' });
-  const id = z.uuid().safeParse((request.params as { id?: string }).id);
-  const body = z.strictObject({ revision: z.number().int().positive() }).safeParse(request.body);
-  const idempotencyKey = request.headers['idempotency-key'];
-  if (!id.success || !body.success) return reply.status(400).send({ error: 'validation' });
-  if (typeof idempotencyKey !== 'string' || idempotencyKey.length < 16 || idempotencyKey.length > 128) return reply.status(400).send({ error: 'idempotency_key_required' });
-  const { rows: [revision] } = await pool.query(`SELECT revision,provider_version FROM control.voice_configuration_revision
-    WHERE customer_id=$1 AND revision=$2 AND provider_version IS NOT NULL`, [id.data,body.data.revision]);
-  if (!revision) return reply.status(409).send({ error: 'revision_not_deployed', message: 'Only a previously committed Voice revision can be restored.' });
-  const operationId = randomUUID();
-  const result = await pool.query(`INSERT INTO control.voice_provisioning_operation(id,customer_id,revision,operation,idempotency_key,state,stage,created_by)
-    VALUES($1,$2,$3,'rollback',$4,'queued','configure_agent','superadmin') ON CONFLICT(idempotency_key) DO NOTHING RETURNING *`,
-    [operationId,id.data,body.data.revision,idempotencyKey]);
-  if (!result.rowCount) {
-    const { rows: [existing] } = await pool.query('SELECT * FROM control.voice_provisioning_operation WHERE idempotency_key=$1', [idempotencyKey]);
-    return reply.status(202).send(existing);
-  }
-  await pool.query("UPDATE control.voice_configuration_revision SET state='publishing',updated_at=now() WHERE customer_id=$1 AND revision=$2", [id.data,body.data.revision]);
-  await pool.query("UPDATE control.voice_agent_binding SET state='configuring',updated_at=now() WHERE customer_id=$1", [id.data]);
-  await pool.query("UPDATE control.customer SET voice_status='configuring' WHERE id=$1", [id.data]);
-  return reply.status(202).send(result.rows[0]);
-});
-
-app.post('/control/v1/admin/customers/:id/voice-operations/:operationId/retry', async (request, reply) => {
-  if (!isSuperadmin(request.headers.authorization)) return reply.status(401).send({ error: 'unauthorized' });
-  const params = z.strictObject({ id: z.uuid(), operationId: z.uuid() }).safeParse(request.params);
-  const idempotencyKey = request.headers['idempotency-key'];
-  if (!params.success) return reply.status(400).send({ error: 'validation' });
-  if (typeof idempotencyKey !== 'string' || idempotencyKey.length < 16 || idempotencyKey.length > 128) return reply.status(400).send({ error: 'idempotency_key_required' });
-  const { rows: [failed] } = await pool.query(`SELECT customer_id,revision,operation FROM control.voice_provisioning_operation
-    WHERE id=$1 AND customer_id=$2 AND state='failed'`, [params.data.operationId,params.data.id]);
-  if (!failed) return reply.status(409).send({ error: 'operation_not_retryable' });
-  const operationId = randomUUID();
-  const result = await pool.query(`INSERT INTO control.voice_provisioning_operation(id,customer_id,revision,operation,idempotency_key,state,stage,created_by)
-    VALUES($1,$2,$3,$4,$5,'queued','configure_agent','superadmin') ON CONFLICT(idempotency_key) DO NOTHING RETURNING *`,
-    [operationId,failed.customer_id,failed.revision,failed.operation,idempotencyKey]);
-  if (!result.rowCount) {
-    const { rows: [existing] } = await pool.query('SELECT * FROM control.voice_provisioning_operation WHERE idempotency_key=$1', [idempotencyKey]);
-    return reply.status(202).send(existing);
-  }
-  await pool.query("UPDATE control.voice_configuration_revision SET state='publishing',error=NULL,updated_at=now() WHERE customer_id=$1 AND revision=$2", [failed.customer_id,failed.revision]);
-  await pool.query("UPDATE control.voice_agent_binding SET state='configuring',last_error=NULL,updated_at=now() WHERE customer_id=$1", [failed.customer_id]);
-  await pool.query("UPDATE control.customer SET voice_status='configuring' WHERE id=$1", [failed.customer_id]);
-  return reply.status(202).send(result.rows[0]);
-});
+}
 
 app.patch('/control/v1/admin/customers/:id/deployment-urls', async (request, reply) => {
   if (!isSuperadmin(request.headers.authorization)) return reply.status(401).send({ error: 'unauthorized' });
@@ -593,10 +656,15 @@ if (process.env.SERVE_PLATFORM_ASSETS === '1') {
   await app.register(fastifyStatic, { root: staticRoot, prefix: '/', wildcard: false, cacheControl: true, maxAge: '1h' });
   await app.register(fastifyStatic, { root: adminRoot, prefix: '/admin/', wildcard: false, decorateReply: false, cacheControl: true, maxAge: '1h' });
   app.get('/admin/*', async (_request, reply) => reply.sendFile('index.html', adminRoot));
-  app.get('/*', async (_request, reply) => reply.sendFile('index.html'));
+  app.get('/*', async (request, reply) => {
+    const page = await exportedPlatformPage(staticRoot, request.url);
+    if (page) return reply.sendFile(page, staticRoot);
+    if (request.url.startsWith('/control/')) return reply.code(404).send({ error: 'not_found' });
+    return reply.code(404).sendFile('404.html', staticRoot);
+  });
 }
 
-const shutdown = async () => { if (provisionTimer) clearTimeout(provisionTimer); if (voiceProvisionTimer) clearTimeout(voiceProvisionTimer); await app.close(); await pool.end(); process.exit(0); };
+const shutdown = async () => { if (provisionTimer) clearTimeout(provisionTimer); await app.close(); await pool.end(); process.exit(0); };
 process.on('SIGINT', () => void shutdown());
 process.on('SIGTERM', () => void shutdown());
 await app.listen({ host: process.env.HOST ?? '127.0.0.1', port: Number(process.env.PORT ?? 3040) });

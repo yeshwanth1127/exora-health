@@ -1,0 +1,38 @@
+/* Values and geometry retained from the public reference, lost in inference. */
+:root { --tatami-color-black: #000; --site-logo-fill: #000; }
+nav[data-component="nav"] > div { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); overflow: visible; }
+nav[data-component="nav"] > div > div:last-child { justify-self: end; }
+@media (max-width: 1023px) {
+  nav[data-component="nav"] > div { grid-template-columns: minmax(0, 1fr) 0 auto; }
+}
+[data-reference-hero-grid]::before, [data-reference-hero-grid]::after { grid-column: 1 / -1; }
+@media (min-width: 1024px) {
+  [data-reference-hero-grid] { grid-template-columns: [full-bleed-start] minmax(0,1fr) [full-start] 64px [content-start] minmax(0,122px) 24px [center-start] 468px [center-mid-start] 24px [center-mid-end] 468px [center-end] 24px minmax(0,122px) [content-end] 64px [full-end] minmax(0,1fr) [full-bleed-end]; }
+}
+
+/* Keep the features content centered and its final background edge to edge. */
+html main[data-reference-features-page] { width: 100%; margin-inline: auto; }
+html main[data-reference-features-page] > section:last-child { width: 100vw; max-width: none; margin-inline: calc(50% - 50vw); }
+
+/* Capture asset rebrand. Keep transparent illustrations within their slots. */
+
+img[src^="/assets/capture-illustrations/"] { object-fit:contain; object-position:center; }
+img[src^="/assets/capture-rebrand/capability-"] { object-fit:contain!important; object-position:center!important; mask-image:none!important; background:transparent!important; }
+
+/* Explicit tracks preserve the two-column enterprise hero after asset replacement. */
+[data-capture-enterprise-hero] { grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:center; gap:32px; }
+[data-capture-enterprise-hero] > div:first-child { grid-column:1; grid-row:1; }
+[data-capture-enterprise-hero] > div:last-child { grid-column:2; grid-row:1; }
+@media(max-width:1023px) { [data-capture-enterprise-hero] { grid-template-columns:minmax(0,1fr); } [data-capture-enterprise-hero] > div:first-child { grid-column:1; grid-row:2; } [data-capture-enterprise-hero] > div:last-child { grid-column:1; grid-row:1; } }
+
+/* Longer Capture CTA labels must not wrap inside the captured button widths. */
+[data-ditto-id="style-div-149"]{width:auto;max-width:100%}[data-ditto-id="style-div-149"]>a{white-space:nowrap;flex-shrink:0}@media(max-width:767px){[data-ditto-id="style-div-149"]{width:100%}}
+
+/* Captured desktop named lines do not exist in the narrow-screen grid.
+   Explicit tracks keep the hero inside the viewport instead of an implicit edge column. */
+@media (max-width: 1023px) {
+  [data-reference-hero-grid] { grid-template-columns: 16px minmax(0, 1fr) 16px !important; }
+  [data-reference-hero-grid] > div { grid-column: 2 / 3 !important; }
+  [data-reference-hero-grid]::before,
+  [data-reference-hero-grid]::after { width: 100%; }
+}

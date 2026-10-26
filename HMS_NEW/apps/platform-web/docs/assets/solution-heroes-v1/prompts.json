@@ -1,0 +1,39 @@
+[
+  {
+    "name": "labs",
+    "prompt": "Use case: illustration-story.\nAsset type: healthcare SaaS website hero illustration, standalone landscape scene for a 3:2 container.\nInput images: Image 1 and Image 2 are STYLE REFERENCES ONLY, not edit targets. Match their playful editorial hand-drawn visual language: confident slightly imperfect rounded black outlines, simple angular noses, tiny vertical black eyes, clean white filled figures, open uncluttered composition and a few flat coloured details. Avoid the glow visible around Image 1: no glow, gradients or shadows.\nComposition: one compact coherent scene, all characters and objects fully contained with generous transparent breathing room at every edge. Large readable forms at 440px display width. No background rectangle, scenery, floor plane or decorative frame. Genuine transparent alpha outside the opaque white figures and props.\nConstraints: no words, letters, numbers, logos, brand marks, captions, UI screenshots or watermarks. No photorealism, 3D, dense detail, green or medical procedure imagery. Friendly, calm, professional.\nSubject: a friendly female lab technician in a white coat welcoming a patient at a low reception counter; a simple upright microscope and one capped sample tube sit safely on the counter. The patient holds a small appointment card. This is arrival and coordination, not testing or interpreting results. Colour palette: black, white, restrained soft lavender (#b39ada) and a few pale lavender accents.",
+    "tool": "built-in imagegen",
+    "references": [
+      "/Users/deepakonda/Documents/ClinicSheet-public-preview/web/public/assets/capture-illustrations/welcome-clinic.png",
+      "/Users/deepakonda/Documents/ClinicSheet-public-preview/web/public/assets/capture-onboarding/doctor-welcome.png"
+    ],
+    "source": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-6bf8d39a-282f-4cc9-835f-ce5802fec7c5.png"
+  },
+  {
+    "name": "dental",
+    "prompt": "Use case: illustration-story.\nAsset type: healthcare SaaS website hero illustration, standalone landscape scene for a 3:2 container.\nInput images: Image 1 is a STYLE REFERENCE ONLY, not edit targets. Match its playful editorial hand-drawn visual language: confident slightly imperfect rounded black outlines, simple angular noses, tiny vertical black eyes, clean white filled figures, open uncluttered composition and a few flat coloured details. No glow, gradients or shadows anywhere.\nComposition: one compact coherent scene, all characters and objects fully contained with generous transparent breathing room at every edge. Large readable forms at 440px display width. No background rectangle, scenery, floor plane or decorative frame. Genuine transparent alpha outside the opaque white figures and props.\nConstraints: no words, letters, numbers, logos, brand marks, captions, UI screenshots or watermarks. No photorealism, 3D, dense detail, green or medical procedure imagery. Friendly, calm, professional.\nSubject: a friendly dentist in a white coat standing beside an empty dental chair, having a welcoming conversation with a standing patient holding a small appointment card. A small clearly recognisable tooth-shaped model on the nearby tray conveys dentistry, no extra floating objects. No procedure, no open mouth close-up. Colour palette: black, white, restrained sky blue (#68bdf1) and a small blue clothing accent.",
+    "tool": "built-in imagegen",
+    "references": [
+      "/Users/deepakonda/Documents/ClinicSheet-public-preview/web/public/assets/capture-onboarding/doctor-welcome.png"
+    ],
+    "source": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-b2c39d1f-fa96-4946-b583-6a7ae4178079.png"
+  },
+  {
+    "name": "physiotherapy",
+    "prompt": "Use case: illustration-story.\nAsset type: healthcare SaaS website hero illustration, standalone landscape scene for a 3:2 container.\nInput images: Image 1 is a STYLE REFERENCE ONLY, not edit targets. Match its playful editorial hand-drawn visual language: confident slightly imperfect rounded black outlines, simple angular noses, tiny vertical black eyes, clean white filled figures, open uncluttered composition and a few flat coloured details. No glow, gradients or shadows anywhere.\nComposition: one compact coherent scene, all characters and objects fully contained with generous transparent breathing room at every edge. Large readable forms at 440px display width. No background rectangle, scenery, floor plane or decorative frame. Genuine transparent alpha outside the opaque white figures and props.\nConstraints: no words, letters, numbers, logos, brand marks, captions, UI screenshots or watermarks. No photorealism, 3D, dense detail, green or medical procedure imagery. Friendly, calm, professional.\nSubject: a friendly physiotherapist in a simple polo with a clipboard beside a physiotherapy plinth; an adult patient in comfortable clothes stands beside them, in an easy conversational pose. A small rolled exercise mat beneath the plinth suggests the setting. This is discussing the next appointment, not prescribing or demonstrating a treatment. Colour palette: black, white, restrained warm coral red (#ed8f8f), tiny pale coral accents.",
+    "tool": "built-in imagegen",
+    "references": [
+      "/Users/deepakonda/Documents/ClinicSheet-public-preview/web/public/assets/capture-onboarding/doctor-welcome.png"
+    ],
+    "source": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-b776231e-e25b-4625-bf93-ac4b04c5398a.png"
+  },
+  {
+    "name": "teleconsultations",
+    "prompt": "Use case: illustration-story.\nAsset type: healthcare SaaS website hero illustration, standalone landscape scene for a 3:2 container.\nInput images: Image 1 is a STYLE REFERENCE ONLY, not edit targets. Match its playful editorial hand-drawn visual language: confident slightly imperfect rounded black outlines, simple angular noses, tiny vertical black eyes, clean white filled figures, open uncluttered composition and a few flat coloured details. No glow, gradients or shadows anywhere.\nComposition: one compact coherent scene, all characters and objects fully contained with generous transparent breathing room at every edge. Large readable forms at 440px display width. No background rectangle, scenery, floor plane or decorative frame. Genuine transparent alpha outside the opaque white figures and props.\nConstraints: no words, letters, numbers, logos, brand marks, captions, UI screenshots or watermarks. No photorealism, 3D, dense detail, green or medical procedure imagery. Friendly, calm, professional.\nSubject: a friendly female doctor with a bun, white coat and stethoscope seated at a small desk looking at an open laptop; a simple large rounded video window next to the laptop contains the smiling upper body of an adult patient. Clear visual connection between doctor and remote patient. Two tiny simple video-call symbols only, no elaborate UI, text or numerical details. Colour palette: black, white, restrained sky blue (#68bdf1) and a tiny lavender clothing detail.",
+    "tool": "built-in imagegen",
+    "references": [
+      "/Users/deepakonda/Documents/ClinicSheet-public-preview/web/public/assets/capture-onboarding/doctor-welcome.png"
+    ],
+    "source": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-6b0e12b8-fb51-48c7-9416-f9581af1adf0.png"
+  }
+]

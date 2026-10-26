@@ -27,6 +27,7 @@ Result: **17 modules, ~230 tables**, PostgreSQL 18, standalone (no Medplum), sha
 | M15 | Workforce, work queues, facility services | `operations` | same file |
 | M16 | Integration, reconciliation & reporting | `integration` | same file |
 | M17 | ABDM & FHIR interoperability | `abdm` | [m17-abdm.md](m17-abdm.md) |
+| M18 | HR: employment, attendance, leave, payroll (added 2026-10-21) | `hr` | [m18-hr.md](m18-hr.md) |
 
 ## Medplum decision: standalone PostgreSQL
 

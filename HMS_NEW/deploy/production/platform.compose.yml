@@ -5,6 +5,13 @@ services:
     build:
       context: ../..
       dockerfile: Dockerfile.platform
+      args:
+        NEXT_PUBLIC_SITE_ORIGIN: ${NEXT_PUBLIC_SITE_ORIGIN:-https://health.exora.solutions}
+        NEXT_PUBLIC_SEARCH_INDEXING: ${NEXT_PUBLIC_SEARCH_INDEXING:-true}
+        NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY:-}
+        NEXT_PUBLIC_POSTHOG_HOST: ${NEXT_PUBLIC_POSTHOG_HOST:-https://us.i.posthog.com}
+        NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION:-}
+        NEXT_PUBLIC_BING_SITE_VERIFICATION: ${NEXT_PUBLIC_BING_SITE_VERIFICATION:-}
     image: exora/health-platform:${IMAGE_TAG:-production}
     restart: unless-stopped
     init: true
@@ -25,6 +32,9 @@ services:
       SARVAM_PROVISIONER_TOKEN: ${SARVAM_PROVISIONER_TOKEN:-}
       SARVAM_TEMPLATE_AGENT_ID: ${SARVAM_TEMPLATE_AGENT_ID:-Exora-Healt-a2d5537f-9801}
       SARVAM_TELEPHONY_CONNECTION_ID: ${SARVAM_TELEPHONY_CONNECTION_ID:-}
+      SARVAM_API_KEY: ${SARVAM_API_KEY:-}
+      SARVAM_ORG_ID: ${SARVAM_ORG_ID:-}
+      SARVAM_WORKSPACE_ID: ${SARVAM_WORKSPACE_ID:-}
     ports:
       - "127.0.0.1:${PLATFORM_PORT:-8111}:3040"
     mem_limit: 1g

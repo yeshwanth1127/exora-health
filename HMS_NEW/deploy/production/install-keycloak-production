@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+[[ ${EUID:-$(id -u)} == 0 ]] || { echo "run as root" >&2; exit 1; }
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+identity_env=/etc/exora-health/identity.env
+provisioner_identity_env=/etc/exora-health/keycloak-provisioner.env
+managed_compose=/etc/exora-health/compose
+gateway_sites=/srv/gateway/nginx/sites
+
+for dependency in docker openssl install awk; do
+  command -v "$dependency" >/dev/null || { echo "missing dependency: $dependency" >&2; exit 1; }
+done
+[[ -d $gateway_sites ]] || { echo "missing gateway sites directory: $gateway_sites" >&2; exit 1; }
+
+install -d -m 700 /etc/exora-health
+install -d -m 755 "$managed_compose" "$managed_compose/keycloak"
+
+if [[ ! -f $identity_env ]]; then
+  identity_temp="$(mktemp /etc/exora-health/.identity.XXXXXX)"
+  chmod 600 "$identity_temp"
+  {
+    printf 'KEYCLOAK_DB_PASSWORD=%s\n' "$(openssl rand -hex 32)"
+    printf 'KEYCLOAK_ADMIN_USERNAME=exora-admin\n'
+    printf 'KEYCLOAK_ADMIN_PASSWORD=%s\n' "$(openssl rand -hex 32)"
+    printf 'KEYCLOAK_INTERNAL_URL=http://127.0.0.1:8120\n'
+    printf 'KEYCLOAK_REALM=exora-health\n'
+    printf 'KEYCLOAK_PROVISIONER_CLIENT_ID=tenant-provisioner\n'
+    printf 'KEYCLOAK_PROVISIONER_CLIENT_SECRET=%s\n' "$(openssl rand -hex 32)"
+    printf 'OIDC_CLIENT_ID=exora-health-staff\n'
+    printf 'OIDC_AUDIENCE=exora-health-api\n'
+  } > "$identity_temp"
+  install -o root -g root -m 600 "$identity_temp" "$identity_env"
+  rm -f "$identity_temp"
+fi
+
+[[ $(stat -c '%u' "$identity_env") == 0 ]] || { echo "$identity_env must be owned by root" >&2; exit 1; }
+[[ $((8#$(stat -c '%a' "$identity_env") & 8#077)) == 0 ]] || { echo "$identity_env must have mode 0600" >&2; exit 1; }
+# shellcheck disable=SC1090
+source "$identity_env"
+: "${KEYCLOAK_PROVISIONER_CLIENT_SECRET:?missing provisioner client secret}"
+
+provisioner_temp="$(mktemp /etc/exora-health/.keycloak-provisioner.XXXXXX)"
+chmod 600 "$provisioner_temp"
+{
+  printf 'KEYCLOAK_INTERNAL_URL=http://127.0.0.1:8120\n'
+  printf 'KEYCLOAK_PUBLIC_URL=https://auth.health.exora.solutions\n'
+  printf 'KEYCLOAK_REALM=%s\n' "${KEYCLOAK_REALM:-exora-health}"
+  printf 'KEYCLOAK_PROVISIONER_CLIENT_ID=%s\n' "${KEYCLOAK_PROVISIONER_CLIENT_ID:-tenant-provisioner}"
+  printf 'KEYCLOAK_PROVISIONER_CLIENT_SECRET=%s\n' "$KEYCLOAK_PROVISIONER_CLIENT_SECRET"
+  printf 'OIDC_CLIENT_ID=%s\n' "${OIDC_CLIENT_ID:-exora-health-staff}"
+  printf 'OIDC_AUDIENCE=%s\n' "${OIDC_AUDIENCE:-exora-health-api}"
+  printf 'OIDC_SCOPE="openid profile email"\n'
+} > "$provisioner_temp"
+install -o root -g root -m 600 "$provisioner_temp" "$provisioner_identity_env"
+rm -f "$provisioner_temp"
+
+install -o root -g root -m 644 "$script_dir/keycloak.compose.yml" "$managed_compose/keycloak.compose.yml"
+install -o root -g root -m 644 "$script_dir/keycloak/Containerfile" "$managed_compose/keycloak/Containerfile"
+install -o root -g root -m 755 "$script_dir/bootstrap-keycloak" /usr/local/sbin/exora-health-bootstrap-keycloak
+install -o root -g root -m 755 "$script_dir/provision-oidc-keycloak" /usr/local/sbin/exora-health-provision-oidc
+install -o root -g root -m 755 "$script_dir/provision-tenant-production" /usr/local/sbin/exora-health-provision-tenant
+install -o root -g root -m 755 "$script_dir/exora-healthctl" /usr/local/sbin/exora-healthctl
+install -o root -g root -m 644 "$script_dir/nginx-keycloak.conf" "$gateway_sites/identity-health.conf"
+
+set_config() {
+  local path=$1 key=$2 value=$3 temp
+  temp="$(mktemp "$(dirname "$path")/.${key}.XXXXXX")"
+  awk -v key="$key" -v value="$value" '
+    BEGIN { found=0 }
+    index($0, key "=") == 1 { print key "=" value; found=1; next }
+    { print }
+    END { if (!found) print key "=" value }
+  ' "$path" > "$temp"
+  install -o root -g root -m 600 "$temp" "$path"
+  rm -f "$temp"
+}
+
+[[ -f /etc/exora-health/provisioner.env ]] || { echo "missing provisioner configuration" >&2; exit 1; }
+# shellcheck disable=SC1091
+source /etc/exora-health/provisioner.env
+: "${REPO_ROOT:?missing REPO_ROOT in provisioner configuration}"
+
+# Keep the protected production compose definition aligned with the checked-out release while
+# retaining an absolute build context that remains valid outside the repository.
+tenant_compose_temp="$(mktemp "$managed_compose/.tenant-compose.XXXXXX")"
+awk -v context="$REPO_ROOT" '
+  $0 == "      context: ../.." { print "      context: " context; next }
+  { print }
+' "$script_dir/tenant.compose.yml" > "$tenant_compose_temp"
+install -o root -g root -m 644 "$tenant_compose_temp" "$managed_compose/tenant.compose.yml"
+rm -f "$tenant_compose_temp"
+
+set_config /etc/exora-health/provisioner.env OIDC_PROVISIONER /usr/local/sbin/exora-health-provision-oidc
+if [[ -n ${TENANT_IMAGE_TAG:-} ]]; then
+  [[ $TENANT_IMAGE_TAG =~ ^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$ ]] || { echo "invalid TENANT_IMAGE_TAG" >&2; exit 1; }
+  set_config /etc/exora-health/provisioner.env IMAGE_TAG "$TENANT_IMAGE_TAG"
+fi
+if [[ -n ${PLATFORM_IMAGE_TAG:-} ]]; then
+  [[ $PLATFORM_IMAGE_TAG =~ ^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$ ]] || { echo "invalid PLATFORM_IMAGE_TAG" >&2; exit 1; }
+  set_config "$managed_compose/platform.env" IMAGE_TAG "$PLATFORM_IMAGE_TAG"
+fi
+
+systemctl daemon-reload
+systemctl restart exora-health-provisioner.service
+
+echo "Keycloak files installed. Identity containers are not started by this installer."

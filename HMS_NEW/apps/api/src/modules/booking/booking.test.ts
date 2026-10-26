@@ -221,13 +221,20 @@ describe('holding and booking', () => {
     const pending = Promise.allSettled(
       Array.from({ length: 20 }, () => holdSlot(db, caller(at), { staffId: doctor, slotStart: ist(monday, '09:00') })),
     );
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    const { rows: [waiting] } = await admin.query<{ n: number }>(
+    const waiters = async () => (await admin.query<{ n: number }>(
       `SELECT count(*)::int AS n FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND usename = 'hms_app'`,
-    );
+    )).rows[0]!.n;
+    // A fixed sleep is unreliable on a busy CI worker: all 20 requests are launched together,
+    // but obtaining a database connection and reaching the locked insert can take longer than 500 ms.
+    let waiting = await waiters();
+    const deadline = Date.now() + 10_000;
+    while (waiting < 20 && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      waiting = await waiters();
+    }
     await gate.query('COMMIT');
     gate.release();
-    expect(waiting!.n).toBe(20); // every hold got past the availability check and is waiting to write
+    expect(waiting).toBe(20); // every hold got past the availability check and is waiting to write
     const results = await pending;
     const ok = results.filter((r) => r.status === 'fulfilled');
     const failed = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');

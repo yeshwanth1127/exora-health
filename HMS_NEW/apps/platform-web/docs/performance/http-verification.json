@@ -1,0 +1,129 @@
+{
+  "pass": true,
+  "routes": [
+    {
+      "route": "/",
+      "images": 40,
+      "rasterImages": 33
+    },
+    {
+      "route": "/product/features",
+      "images": 24,
+      "rasterImages": 13
+    },
+    {
+      "route": "/pricing",
+      "images": 2,
+      "rasterImages": 1
+    },
+    {
+      "route": "/teams",
+      "images": 29,
+      "rasterImages": 19
+    },
+    {
+      "route": "/enterprise",
+      "images": 31,
+      "rasterImages": 20
+    },
+    {
+      "route": "/contact-sales",
+      "images": 10,
+      "rasterImages": 2
+    },
+    {
+      "route": "/blog",
+      "images": 5,
+      "rasterImages": 4
+    },
+    {
+      "route": "/help",
+      "images": 8,
+      "rasterImages": 7
+    },
+    {
+      "route": "/releases",
+      "images": 6,
+      "rasterImages": 5
+    },
+    {
+      "route": "/labs-diagnostics",
+      "images": 12,
+      "rasterImages": 11
+    },
+    {
+      "route": "/specialties/dental",
+      "images": 12,
+      "rasterImages": 11
+    },
+    {
+      "route": "/specialties/physiotherapy",
+      "images": 12,
+      "rasterImages": 11
+    },
+    {
+      "route": "/solutions/ai-receptionist",
+      "images": 3,
+      "rasterImages": 2
+    },
+    {
+      "route": "/solutions/whatsapp-outreach",
+      "images": 3,
+      "rasterImages": 2
+    },
+    {
+      "route": "/solutions/google-business-management",
+      "images": 3,
+      "rasterImages": 2
+    },
+    {
+      "route": "/solutions/clinic-analytics",
+      "images": 3,
+      "rasterImages": 2
+    },
+    {
+      "route": "/solutions/teleconsultations",
+      "images": 3,
+      "rasterImages": 2
+    },
+    {
+      "route": "/blog/a-clearer-front-desk",
+      "images": 3,
+      "rasterImages": 2
+    },
+    {
+      "route": "/blog/a-shared-clinic-day",
+      "images": 3,
+      "rasterImages": 2
+    },
+    {
+      "route": "/blog/follow-ups-with-a-clear-next-step",
+      "images": 3,
+      "rasterImages": 2
+    },
+    {
+      "route": "/resources/clinic-front-desk-checklist",
+      "images": 3,
+      "rasterImages": 2
+    },
+    {
+      "route": "/privacy",
+      "images": 2,
+      "rasterImages": 1
+    },
+    {
+      "route": "/demo/overview",
+      "images": 5,
+      "rasterImages": 5
+    }
+  ],
+  "referencedAssetsChecked": 319,
+  "homepageFallbackImageBytes": {
+    "before": 2045420,
+    "after": 487032,
+    "reductionPercent": 76.2
+  },
+  "cacheHeader": "public, max-age=31536000, immutable",
+  "paidApiCalls": 0,
+  "scope": "HTML image references and local file bytes; not a measured network transfer or Core Web Vitals score"
+}

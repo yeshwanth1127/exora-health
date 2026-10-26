@@ -1,0 +1,3 @@
+.hero-dashboard-frame { position:relative; width:100%; aspect-ratio:1200/940; border:1px solid #e6e6e6; border-radius:12px; overflow:hidden; background:#fff; box-shadow:0 2px 4px #00000006,0 18px 60px #0000000c; }
+.hero-dashboard-frame iframe { display:block; width:1200px; height:940px; max-width:none; border:0; transform-origin:top left; background:#fff; }
+@media(max-width:600px) { .hero-dashboard-frame { aspect-ratio:1200/940; border-radius:6px; } }

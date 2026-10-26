@@ -35,9 +35,22 @@ if (process.env.TENANT_BOOTSTRAP === 'custom') {
   const ownerEmail = required('BOOTSTRAP_OWNER_EMAIL').toLowerCase();
   const facilityName = required('BOOTSTRAP_FACILITY_NAME');
   const city = required('BOOTSTRAP_CITY');
+  const facilityType = process.env.BOOTSTRAP_FACILITY_TYPE ?? 'clinic';
+  const timezone = process.env.BOOTSTRAP_TIMEZONE ?? 'Asia/Kolkata';
+  if (!['clinic','hospital','diagnostic_centre','virtual'].includes(facilityType)) throw new Error('BOOTSTRAP_FACILITY_TYPE is invalid');
+  new Intl.DateTimeFormat('en', { timeZone: timezone });
   const plan = process.env.TENANT_PLAN ?? 'launch';
   if (!/^[a-z0-9][a-z0-9-]{1,62}$/.test(slug)) throw new Error('TENANT_SLUG is invalid');
   if (!['launch', 'connect', 'scale'].includes(plan)) throw new Error('TENANT_PLAN must be launch, connect, or scale');
+  const CLINIC_MODULES = ['inpatient', 'billing', 'inventory', 'pharmacy', 'hr'];
+  const clinicModules = process.env.TENANT_CLINIC_MODULES === undefined
+    ? CLINIC_MODULES
+    : process.env.TENANT_CLINIC_MODULES.split(',').map((m) => m.trim()).filter(Boolean);
+  const unknownModule = clinicModules.find((m) => !CLINIC_MODULES.includes(m));
+  if (unknownModule) throw new Error(`TENANT_CLINIC_MODULES has an unknown module: ${unknownModule}`);
+  // Inventory is pharmacy's stock, and inpatient discharge needs billing.
+  if (clinicModules.includes('pharmacy') && !clinicModules.includes('inventory')) clinicModules.push('inventory');
+  if (clinicModules.includes('inpatient') && !clinicModules.includes('billing')) throw new Error('TENANT_CLINIC_MODULES: inpatient needs billing');
   const client = new pg.Client({ connectionString: config.databaseUrl });
   await client.connect();
   try {
@@ -58,13 +71,13 @@ if (process.env.TENANT_BOOTSTRAP === 'custom') {
         );
         await client.query(
           `INSERT INTO platform.organization(id,tenant_id,name,org_type)
-           VALUES($1,$2,$3,'clinic')`,
-          [organisationId, tenantId, tenantName],
+           VALUES($1,$2,$3,$4)`,
+          [organisationId, tenantId, tenantName, facilityType === 'hospital' ? 'hospital' : 'clinic'],
         );
         await client.query(
           `INSERT INTO platform.facility(id,tenant_id,organization_id,code,name,facility_type,state_code,city,timezone)
-           VALUES($1,$2,$3,'MAIN',$4,'clinic','29',$5,'Asia/Kolkata')`,
-          [facilityId, tenantId, organisationId, facilityName, city],
+           VALUES($1,$2,$3,'MAIN',$4,$6,'29',$5,$7)`,
+          [facilityId, tenantId, organisationId, facilityName, city, facilityType, timezone],
         );
         await client.query(
           `INSERT INTO platform.staff(id,tenant_id,employee_no,given_name,display_name,email,staff_type)
@@ -100,6 +113,13 @@ if (process.env.TENANT_BOOTSTRAP === 'custom') {
           `INSERT INTO platform.module_state(tenant_id,module_code,state)
            SELECT $1,module,'active' FROM unnest($2::text[]) AS module`,
           [tenantId, active],
+        );
+        // Clinic operation modules are entitled but off ('configured'); the clinic admin switches them on
+        // under Settings / Modules. TENANT_CLINIC_MODULES (comma list) narrows the entitlement.
+        await client.query(
+          `INSERT INTO platform.module_state(tenant_id,module_code,state)
+           SELECT $1,module,'configured' FROM unnest($2::text[]) AS module`,
+          [tenantId, clinicModules],
         );
         await client.query('COMMIT');
         console.log(`Provisioned tenant ${slug} (${tenantId})`);

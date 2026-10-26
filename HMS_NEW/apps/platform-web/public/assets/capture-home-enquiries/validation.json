@@ -1,0 +1,9 @@
+{
+  "portraits": 4,
+  "canvas": "1254x1254",
+  "alpha": "RGBA; confirmed with sips",
+  "build": "passed",
+  "desktop": "visually checked",
+  "mobile_390": "visually checked",
+  "central_cta": "clicked; navigates to /contact-sales"
+}

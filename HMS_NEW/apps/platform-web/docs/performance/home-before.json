@@ -1,0 +1,282 @@
+[
+  {
+    "src": "/assets/capture-brand/reception-bell.png",
+    "width": "64",
+    "height": "64",
+    "alt": ""
+  },
+  {
+    "loading": "lazy",
+    "decoding": "async",
+    "class": "h-18 block isolate min-w-0 -mx-1 overflow-clip aspect-[auto_225/225] text-color-006 max-lg:w-12 max-lg:h-12",
+    "alt": "",
+    "height": "225",
+    "src": "/assets/capture-home-product/home-portrait-a.webp",
+    "srcset": "/assets/capture-home-product/home-portrait-a.webp 1x",
+    "width": "225"
+  },
+  {
+    "loading": "lazy",
+    "decoding": "async",
+    "class": "h-18 block isolate min-w-0 -mx-1 overflow-clip aspect-[auto_225/225] text-color-006 max-lg:w-12 max-lg:h-12",
+    "alt": "",
+    "height": "225",
+    "src": "/assets/capture-home-product/home-portrait-b.webp",
+    "srcset": "/assets/capture-home-product/home-portrait-b.webp 1x",
+    "width": "225"
+  },
+  {
+    "class": "capture-home-character",
+    "src": "/assets/capture-illustrations/care-messaging-coral.webp",
+    "width": "1254",
+    "height": "1254",
+    "alt": ""
+  },
+  {
+    "class": "capture-home-character",
+    "src": "/assets/capture-illustrations/appointments-lime.webp",
+    "width": "1254",
+    "height": "1254",
+    "alt": ""
+  },
+  {
+    "src": "/assets/capture-home-enquiries/caller-lime.webp",
+    "width": "160",
+    "height": "160",
+    "alt": "",
+    "loading": "lazy"
+  },
+  {
+    "src": "/assets/capture-home-enquiries/texter-coral.webp",
+    "width": "160",
+    "height": "160",
+    "alt": "",
+    "loading": "lazy"
+  },
+  {
+    "src": "/assets/capture-home-enquiries/enquirer-blue.webp",
+    "width": "160",
+    "height": "160",
+    "alt": "",
+    "loading": "lazy"
+  },
+  {
+    "src": "/assets/capture-home-enquiries/parent-lime.webp",
+    "width": "160",
+    "height": "160",
+    "alt": "",
+    "loading": "lazy"
+  },
+  {
+    "src": "/assets/capture-home-product/home-portrait-a.webp",
+    "width": "160",
+    "height": "160",
+    "alt": "",
+    "loading": "lazy"
+  },
+  {
+    "src": "/assets/capture-home-product/home-portrait-b.webp",
+    "width": "160",
+    "height": "160",
+    "alt": "",
+    "loading": "lazy"
+  },
+  {
+    "src": "/assets/capture-product-art/ai-reception.webp",
+    "width": "160",
+    "height": "160",
+    "alt": "",
+    "loading": "lazy"
+  },
+  {
+    "src": "/assets/capture-product-art/whatsapp-outreach.webp",
+    "width": "160",
+    "height": "160",
+    "alt": "",
+    "loading": "lazy"
+  },
+  {
+    "src": "/assets/capture-product-art/clinic-analytics.webp",
+    "width": "160",
+    "height": "160",
+    "alt": "",
+    "loading": "lazy"
+  },
+  {
+    "src": "/assets/claude-showcases/portrait-1.jpg",
+    "style": "width:60px;height:60px;border-radius:50%;object-fit:cover"
+  },
+  {
+    "src": "/assets/claude-showcases/portrait-2.jpg",
+    "style": "width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid #fff"
+  },
+  {
+    "src": "/assets/claude-showcases/portrait-4.jpg",
+    "style": "width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid #fff;margin-left:-8px"
+  },
+  {
+    "src": "/assets/claude-showcases/portrait-3.jpg",
+    "style": "width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid #fff;margin-left:-8px"
+  },
+  {
+    "src": "/assets/claude-showcases/portrait-1.jpg",
+    "style": "width:42px;height:42px;border-radius:50%;object-fit:cover"
+  },
+  {
+    "src": "/assets/dashboard-people/sofia-ramirez.jpg",
+    "alt": ""
+  },
+  {
+    "src": "/assets/dashboard-people/marcus-johnson.jpg",
+    "alt": ""
+  },
+  {
+    "src": "/assets/dashboard-people/jasmine-brooks.jpg",
+    "alt": ""
+  },
+  {
+    "src": "/assets/dashboard-people/emma-collins.jpg",
+    "alt": ""
+  },
+  {
+    "src": "/assets/dashboard-people/sofia-ramirez.jpg",
+    "alt": ""
+  },
+  {
+    "loading": "lazy",
+    "decoding": "async",
+    "class": "w-10 h-10 block overflow-clip aspect-[auto_48/48] text-color-006 pointer-events-none max-lg:w-7 max-lg:h-7",
+    "data-component": "image",
+    "alt": "",
+    "height": "48",
+    "src": "/assets/capture-home-product/product-records.webp",
+    "srcset": "/assets/capture-home-product/product-records.webp 1x",
+    "width": "48"
+  },
+  {
+    "loading": "lazy",
+    "decoding": "async",
+    "class": "w-10 h-10 block overflow-clip aspect-[auto_48/48] text-color-006 pointer-events-none max-lg:w-7 max-lg:h-7",
+    "data-component": "image",
+    "alt": "",
+    "height": "48",
+    "src": "/assets/capture-home-product/product-search.webp",
+    "srcset": "/assets/capture-home-product/product-search.webp 1x",
+    "width": "48"
+  },
+  {
+    "loading": "lazy",
+    "decoding": "async",
+    "class": "w-10 h-10 block overflow-clip aspect-[auto_48/48] text-color-006 pointer-events-none max-lg:w-7 max-lg:h-7",
+    "data-component": "image",
+    "alt": "",
+    "height": "48",
+    "src": "/assets/capture-home-product/product-next-step.webp",
+    "srcset": "/assets/capture-home-product/product-next-step.webp 1x",
+    "width": "48"
+  },
+  {
+    "loading": "lazy",
+    "decoding": "async",
+    "class": "w-10 h-10 block overflow-clip aspect-[auto_48/48] text-color-006 pointer-events-none max-lg:w-7 max-lg:h-7",
+    "data-component": "image",
+    "alt": "",
+    "height": "48",
+    "src": "/assets/capture-home-product/product-team.webp",
+    "srcset": "/assets/capture-home-product/product-team.webp 1x",
+    "width": "48"
+  },
+  {
+    "class": "w-10 h-10 block overflow-clip aspect-[auto_48/48] text-color-006 pointer-events-none max-lg:w-7 max-lg:h-7",
+    "data-ditto-id": "style-image-25",
+    "data-component": "image",
+    "alt": "Capture records",
+    "height": "48",
+    "src": "/assets/capture-home-product/product-team.webp",
+    "srcset": "/assets/capture-home-product/product-team.webp 1x",
+    "width": "48"
+  },
+  {
+    "class": "w-6 h-6 block absolute -right-[1.35rem] bottom-[11.5px] overflow-clip aspect-[auto_24/24] text-color-006 [rotate:8.84deg] pointer-events-none max-lg:-right-[0.525rem] max-lg:bottom-[0.3125rem]",
+    "data-ditto-id": "style-image-26",
+    "data-component": "image",
+    "alt": "Capture inbox",
+    "height": "24",
+    "src": "/assets/capture-home-product/product-team.webp",
+    "srcset": "/assets/capture-home-product/product-team.webp 1x",
+    "width": "24"
+  },
+  {
+    "src": "/assets/business-visibility/ios-status-bar-black.png",
+    "alt": ""
+  },
+  {
+    "class": "business-phone-frame",
+    "src": "/assets/business-visibility/iphone-15-pro-natural-titanium.png",
+    "width": "1419",
+    "height": "2796",
+    "alt": ""
+  },
+  {
+    "loading": "lazy",
+    "decoding": "async",
+    "src": "/assets/capture-illustrations/appointments-blue.webp",
+    "alt": "A person organising a clinic calendar",
+    "width": "600",
+    "height": "480"
+  },
+  {
+    "loading": "lazy",
+    "decoding": "async",
+    "src": "/assets/capture-illustrations/clinic-team-lime.webp",
+    "alt": "A clinician and a reception teammate working together",
+    "width": "600",
+    "height": "480"
+  },
+  {
+    "loading": "lazy",
+    "decoding": "async",
+    "src": "/assets/capture-illustrations/care-messaging-coral.webp",
+    "alt": "A clinician holding a phone with conversation illustrations",
+    "width": "600",
+    "height": "480"
+  },
+  {
+    "class": "care-object care-stethoscope",
+    "src": "/assets/capture-footer/stethoscope.webp",
+    "alt": "",
+    "width": "300",
+    "height": "300",
+    "loading": "lazy"
+  },
+  {
+    "class": "care-object care-bandages",
+    "src": "/assets/capture-footer/bandages.webp",
+    "alt": "",
+    "width": "180",
+    "height": "180",
+    "loading": "lazy"
+  },
+  {
+    "class": "care-object care-syringe",
+    "src": "/assets/capture-footer/syringe.webp",
+    "alt": "",
+    "width": "220",
+    "height": "220",
+    "loading": "lazy"
+  },
+  {
+    "class": "care-object care-first-aid",
+    "src": "/assets/capture-footer/first-aid.webp",
+    "alt": "",
+    "width": "270",
+    "height": "270",
+    "loading": "lazy"
+  },
+  {
+    "src": "/assets/capture-brand/reception-bell.png",
+    "width": "64",
+    "height": "64",
+    "alt": ""
+  }
+]

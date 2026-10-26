@@ -1,0 +1,7 @@
+.figure { display:grid; justify-items:center; gap:12px; margin:0; text-align:center; min-width:0; }
+.visual { position:relative; width:88px; aspect-ratio:1; }
+.visual svg { display:block; width:100%; height:100%; transform:rotate(-90deg); }
+.track, .arc { fill:none; stroke-width:6; }.track { stroke:#edf0ee; }.arc { stroke:var(--progress-color); stroke-linecap:round; }
+.success { --progress-color:var(--success,#10b981); --progress-text:var(--success-strong,#00875f); }.warning { --progress-color:var(--warning,#ffb020); --progress-text:var(--warning-strong,#a66500); }.danger { --progress-color:var(--danger,#ff4d57); --progress-text:var(--danger-strong,#dc2940); }.unknown { --progress-text:#a6aaa6; }
+.number { position:absolute; inset:0; display:grid; place-content:center; font-size:25px; font-weight:500; letter-spacing:-.04em; color:var(--progress-text); font-variant-numeric:tabular-nums; }
+.figure figcaption { display:grid; gap:5px; }.figure strong { font-size:13px; font-weight:500; color:#454a43; }.figure figcaption>span { font-size:11px; color:#93998f; }

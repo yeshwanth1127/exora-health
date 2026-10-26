@@ -1,0 +1,206 @@
+{
+  "mode": "preview",
+  "origin": "http://127.0.0.1:4492",
+  "agents": [
+    {
+      "agent": "Mozilla/5.0",
+      "status": 200,
+      "h1": "Where care teams  Connect .",
+      "body_chars": 5173
+    },
+    {
+      "agent": "Googlebot",
+      "status": 200,
+      "h1": "Where care teams  Connect .",
+      "body_chars": 5173
+    },
+    {
+      "agent": "bingbot",
+      "status": 200,
+      "h1": "Where care teams  Connect .",
+      "body_chars": 5173
+    },
+    {
+      "agent": "OAI-SearchBot",
+      "status": 200,
+      "h1": "Where care teams  Connect .",
+      "body_chars": 5173
+    },
+    {
+      "agent": "GPTBot",
+      "status": 200,
+      "h1": "Where care teams  Connect .",
+      "body_chars": 5173
+    },
+    {
+      "agent": "ChatGPT-User",
+      "status": 200,
+      "h1": "Where care teams  Connect .",
+      "body_chars": 5173
+    },
+    {
+      "agent": "ClaudeBot",
+      "status": 200,
+      "h1": "Where care teams  Connect .",
+      "body_chars": 5173
+    },
+    {
+      "agent": "Claude-SearchBot",
+      "status": 200,
+      "h1": "Where care teams  Connect .",
+      "body_chars": 5173
+    },
+    {
+      "agent": "Claude-User",
+      "status": 200,
+      "h1": "Where care teams  Connect .",
+      "body_chars": 5173
+    },
+    {
+      "agent": "PerplexityBot",
+      "status": 200,
+      "h1": "Where care teams  Connect .",
+      "body_chars": 5173
+    },
+    {
+      "agent": "Perplexity-User",
+      "status": 200,
+      "h1": "Where care teams  Connect .",
+      "body_chars": 5173
+    }
+  ],
+  "routes": [
+    {
+      "route": "/product/features",
+      "status": 200,
+      "title": "Healthcare Reception & Patient Engagement Features | Capture",
+      "h1": "Your AI receptionist. More time for care."
+    },
+    {
+      "route": "/pricing",
+      "status": 200,
+      "title": "Clinic Software Plans & Pricing | Capture",
+      "h1": "One workspace for your clinic."
+    },
+    {
+      "route": "/teams",
+      "status": 200,
+      "title": "Software for Independent & Multi-doctor Clinics | Capture",
+      "h1": "A calmer clinic day starts here."
+    },
+    {
+      "route": "/enterprise",
+      "status": 200,
+      "title": "Connected Hospital & Healthcare Group Software | Capture",
+      "h1": "Connected care, across every team."
+    },
+    {
+      "route": "/contact-sales",
+      "status": 200,
+      "title": "Request a Healthcare Software Demo | Capture",
+      "h1": "Let\u2019s talk about your clinic."
+    },
+    {
+      "route": "/blog",
+      "status": 200,
+      "title": "Clinic Reception & Patient Engagement Guides | Capture",
+      "h1": "A calmer clinic day. A little perspective."
+    },
+    {
+      "route": "/blog/a-clearer-front-desk",
+      "status": 200,
+      "title": "A clearer front desk starts with the first enquiry. | Capture",
+      "h1": "A clearer front desk starts with the first enquiry."
+    },
+    {
+      "route": "/help",
+      "status": 200,
+      "title": "Help with Clinic Software & Getting Started | Capture",
+      "h1": "Hi, how can we help?"
+    },
+    {
+      "route": "/releases",
+      "status": 200,
+      "title": "Product Updates & Release Notes | Capture",
+      "h1": "What\u2019s new"
+    },
+    {
+      "route": "/solutions/ai-receptionist",
+      "status": 200,
+      "title": "AI Receptionist for Clinics & Hospitals | Capture",
+      "h1": "Every patient call deserves a clear next step."
+    },
+    {
+      "route": "/solutions/clinic-analytics",
+      "status": 200,
+      "title": "Clinic Booking & Patient Enquiry Analytics | Capture",
+      "h1": "See the clinic day with more context."
+    },
+    {
+      "route": "/specialties/dental",
+      "status": 200,
+      "title": "Dental Practice Reception & Appointment Workflows | Capture",
+      "h1": "From the first call to the next recall."
+    },
+    {
+      "route": "/resources/clinic-front-desk-checklist",
+      "status": 200,
+      "title": "Clinic Front-Desk Workflow Checklist | Capture",
+      "h1": "A calmer front desk starts with a shared checklist."
+    },
+    {
+      "route": "/privacy",
+      "status": 200,
+      "title": "Website Analytics & Privacy | Capture",
+      "h1": "Optional analytics. Clear choices."
+    },
+    {
+      "route": "/solutions/whatsapp-outreach",
+      "status": 200,
+      "title": "WhatsApp Patient Outreach for Clinics | Capture",
+      "h1": "Keep the next conversation useful."
+    },
+    {
+      "route": "/solutions/google-business-management",
+      "status": 200,
+      "title": "Google Business Profile Management for Clinics | Capture",
+      "h1": "A clearer path from local discovery to care."
+    },
+    {
+      "route": "/solutions/teleconsultations",
+      "status": 200,
+      "title": "Teleconsultation Appointment Workflows for Healthcare Teams | Capture",
+      "h1": "Care can continue beyond the clinic."
+    },
+    {
+      "route": "/labs-diagnostics",
+      "status": 200,
+      "title": "Lab & Diagnostic Centre Reception Software | Capture",
+      "h1": "A clearer journey. Before every test."
+    },
+    {
+      "route": "/specialties/physiotherapy",
+      "status": 200,
+      "title": "Physiotherapy Appointment & Patient Follow-up Workflows | Capture",
+      "h1": "Keep every session connected."
+    },
+    {
+      "route": "/blog/a-shared-clinic-day",
+      "status": 200,
+      "title": "Give your care team one view of the clinic day. | Capture",
+      "h1": "Give your care team one view of the clinic day."
+    },
+    {
+      "route": "/blog/follow-ups-with-a-clear-next-step",
+      "status": 200,
+      "title": "Make every follow-up useful to the patient. | Capture",
+      "h1": "Make every follow-up useful to the patient."
+    }
+  ],
+  "fresh_nonce_per_request": true,
+  "private_routes_noindex": true,
+  "source_and_post_blocking": true,
+  "lookup_status_only": true,
+  "paid_lookup_requests": 0,
+  "note": "HTTP with claimed crawler agents; not a provider crawl, indexing or citation acceptance test."
+}

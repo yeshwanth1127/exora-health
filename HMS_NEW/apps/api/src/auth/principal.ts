@@ -74,19 +74,21 @@ export async function resolvePrincipal(db: Kysely<DB>, identity: Identity, reque
   });
 }
 
+/** Whether the principal holds `permission` (same scoping rules as authorize). */
+export function can(principal: Principal, permission: string, facilityId?: string | null): boolean {
+  const scopes = principal.grants.get(permission);
+  if (!scopes || scopes.size === 0) return false;
+  if (scopes.has(null)) return true; // granted for every facility
+  if (facilityId == null) return true; // no specific facility involved: any grant suffices
+  return scopes.has(facilityId); // facility-scoped grant must match
+}
+
 /**
  * Throws forbidden unless the principal holds `permission` — for the given facility when one is
  * known (a facility-wide grant or a grant for that facility), or anywhere when it isn't.
  */
 export function authorize(principal: Principal, permission: string, facilityId?: string | null): void {
-  const scopes = principal.grants.get(permission);
-  let ok = false;
-  if (scopes && scopes.size > 0) {
-    if (scopes.has(null)) ok = true; // granted for every facility
-    else if (facilityId == null) ok = true; // no specific facility involved: any grant suffices
-    else ok = scopes.has(facilityId); // facility-scoped grant must match
-  }
-  if (!ok) throw forbidden(`missing permission ${permission}${facilityId ? ' for this facility' : ''}`, { permission, facilityId: facilityId ?? null });
+  if (!can(principal, permission, facilityId)) throw forbidden(`missing permission ${permission}${facilityId ? ' for this facility' : ''}`, { permission, facilityId: facilityId ?? null });
 }
 
 /** Facilities where the principal holds `permission`: null = every facility, empty = none. */

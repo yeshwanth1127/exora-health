@@ -1,0 +1,7 @@
+.playwright-cli/
+
+# Local website audit runtime and credentials
+artifacts/
+.playwright-cli/
+.env*.local
+__pycache__/

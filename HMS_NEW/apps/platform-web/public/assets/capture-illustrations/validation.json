@@ -1,0 +1,50 @@
+[
+  {
+    "file": "appointments-blue.png",
+    "width": 1254,
+    "height": 1254,
+    "alpha": true,
+    "alphaMin": 0,
+    "alphaMax": 255
+  },
+  {
+    "file": "appointments-lime.png",
+    "width": 1254,
+    "height": 1254,
+    "alpha": true,
+    "alphaMin": 0,
+    "alphaMax": 255
+  },
+  {
+    "file": "care-messaging-coral.png",
+    "width": 1254,
+    "height": 1254,
+    "alpha": true,
+    "alphaMin": 0,
+    "alphaMax": 255
+  },
+  {
+    "file": "care-messaging-lime.png",
+    "width": 1254,
+    "height": 1254,
+    "alpha": true,
+    "alphaMin": 0,
+    "alphaMax": 255
+  },
+  {
+    "file": "clinic-team-lime.png",
+    "width": 1536,
+    "height": 1024,
+    "alpha": true,
+    "alphaMin": 0,
+    "alphaMax": 254
+  },
+  {
+    "file": "patient-records-lime.png",
+    "width": 1254,
+    "height": 1254,
+    "alpha": true,
+    "alphaMin": 0,
+    "alphaMax": 255
+  }
+]

@@ -1,0 +1,37 @@
+[
+  {
+    "name": "clinic",
+    "prompt": "Use case: stylized-concept. Asset type: individual healthcare website navigation and discovery-card illustration icon. Style: charming hand-drawn editorial doodle, bold slightly imperfect black ink outlines with rounded corners, flat white interiors and a few solid sky-blue / light-blue accent fills, matching a playful but professional white healthcare SaaS website with hand-drawn illustrations. Single centered self-contained object, upright and completely straight (no tilt or rotation), front elevation, no 3D perspective, no realistic rendering, no shading, no shadows, no gradient, no green, no surrounding scenery, no text or lettering, no people or extra decorative sparkles. The drawing occupies about 74 percent of a square canvas, with generous even transparent padding on every side. Crisp legible silhouette. Genuine transparent alpha background, no checkerboard painted into artwork. Black, white, sky blue only. Subject: A small welcoming independent medical clinic, straight-on front view. One simple white one-storey facade with a sky-blue striped awning, a blue medical plus over the entrance, one door and two simple windows. Restrained details readable at 48 pixels.",
+    "source": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-728a90ad-c94a-4ab0-8bd2-1069d4ce040b.png",
+    "tool": "built-in image_gen.imagegen",
+    "transparent_background": true
+  },
+  {
+    "name": "hospital",
+    "prompt": "Use case: stylized-concept. Asset type: individual healthcare website navigation and discovery-card illustration icon. Style: charming hand-drawn editorial doodle, bold slightly imperfect black ink outlines with rounded corners, flat white interiors and a few solid sky-blue / light-blue accent fills, matching a playful but professional white healthcare SaaS website with hand-drawn illustrations. Single centered self-contained object, upright and completely straight (no tilt or rotation), front elevation, no 3D perspective, no realistic rendering, no shading, no shadows, no gradient, no green, no surrounding scenery, no text or lettering, no people or extra decorative sparkles. The drawing occupies about 74 percent of a square canvas, with generous even transparent padding on every side. Crisp legible silhouette. Genuine transparent alpha background, no checkerboard painted into artwork. Black, white, sky blue only. Subject: A compact two-storey hospital building, straight-on front view. One simple white facade with a clear blue medical plus over the main door, four sky-blue windows and two small architectural side wings. Restrained details readable at 48 pixels.",
+    "source": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-fdbfd979-574d-431d-9f7a-0cdab556a656.png",
+    "tool": "built-in image_gen.imagegen",
+    "transparent_background": true
+  },
+  {
+    "name": "labs",
+    "prompt": "Use case: stylized-concept. Asset type: individual healthcare website navigation and discovery-card illustration icon. Style: charming hand-drawn editorial doodle, bold slightly imperfect black ink outlines with rounded corners, flat white interiors and a few solid sky-blue / light-blue accent fills, matching a playful but professional white healthcare SaaS website with hand-drawn illustrations. Single centered self-contained object, upright and completely straight (no tilt or rotation), front elevation, no 3D perspective, no realistic rendering, no shading, no shadows, no gradient, no green, no surrounding scenery, no text or lettering, no people or extra decorative sparkles. The drawing occupies about 74 percent of a square canvas, with generous even transparent padding on every side. Crisp legible silhouette. Genuine transparent alpha background, no checkerboard painted into artwork. Black, white, sky blue only. Subject: A laboratory icon: one clean white microscope with blue focus knobs and blue sample stage, beside a single short test tube with blue liquid. Treat this as one compact lab emblem, not a whole room. Restrained details readable at 48 pixels.",
+    "source": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-7b625799-5f6e-426b-9678-5dd874a08921.png",
+    "tool": "built-in image_gen.imagegen",
+    "transparent_background": true
+  },
+  {
+    "name": "dental",
+    "prompt": "Use case: stylized-concept. Asset type: individual healthcare website navigation and discovery-card illustration icon. Style: charming hand-drawn editorial doodle, bold slightly imperfect black ink outlines with rounded corners, flat white interiors and a few solid sky-blue / light-blue accent fills, matching a playful but professional white healthcare SaaS website with hand-drawn illustrations. Single centered self-contained object, upright and completely straight (no tilt or rotation), front elevation, no 3D perspective, no realistic rendering, no shading, no shadows, no gradient, no green, no surrounding scenery, no text or lettering, no people or extra decorative sparkles. The drawing occupies about 74 percent of a square canvas, with generous even transparent padding on every side. Crisp legible silhouette. Genuine transparent alpha background, no checkerboard painted into artwork. Black, white, sky blue only. Subject: A single friendly white molar tooth, upright, with a small simple blue dental mirror beside it. One compact dental-practice emblem, no human face, no anatomy detail. Restrained details readable at 48 pixels.",
+    "source": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-aae47781-1e70-4f3f-bfee-5bb3fe99ba8b.png",
+    "tool": "built-in image_gen.imagegen",
+    "transparent_background": true
+  },
+  {
+    "name": "physiotherapy",
+    "prompt": "Use case: stylized-concept. Asset type: individual healthcare website navigation and discovery-card illustration icon. Style: charming hand-drawn editorial doodle, bold slightly imperfect black ink outlines with rounded corners, flat white interiors and a few solid sky-blue / light-blue accent fills, matching a playful but professional white healthcare SaaS website with hand-drawn illustrations. Single centered self-contained object, upright and completely straight (no tilt or rotation), front elevation, no 3D perspective, no realistic rendering, no shading, no shadows, no gradient, no green, no surrounding scenery, no text or lettering, no people or extra decorative sparkles. The drawing occupies about 74 percent of a square canvas, with generous even transparent padding on every side. Crisp legible silhouette. Genuine transparent alpha background, no checkerboard painted into artwork. Black, white, sky blue only. Subject: One simple white padded physiotherapy treatment table with blue cushion and a compact rolled sky-blue exercise mat beside it. One compact physiotherapy-practice emblem, no person, no big scene. Restrained details readable at 48 pixels.",
+    "source": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-808c03e7-373e-4c51-a22b-0e9808815762.png",
+    "tool": "built-in image_gen.imagegen",
+    "transparent_background": true
+  }
+]

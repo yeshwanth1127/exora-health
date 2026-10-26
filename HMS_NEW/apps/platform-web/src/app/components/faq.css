@@ -1,0 +1,20 @@
+/* Shared FAQ treatment across audience, product, help and pricing pages. */
+.site-faq{display:grid!important;grid-template-columns:minmax(0,.75fr) minmax(0,1.5fr);align-items:start;gap:56px;max-width:none!important;width:100%;margin:0 auto 48px}
+.site-faq-heading{position:sticky;top:100px;min-width:0}.site-faq .site-faq-heading h2{font-size:36px!important;font-weight:650;line-height:1.12!important;letter-spacing:-1.1px!important;margin:0 0 16px!important;max-width:10ch;text-wrap:balance}
+.site-faq-heading>p:last-child{font-size:16px!important;line-height:1.65!important;color:#697780;margin:0;max-width:27ch}.site-faq-eyebrow{font-size:12px!important;line-height:1.5!important;letter-spacing:.035em;color:#0875de!important;margin:0 0 16px!important;font-weight:500}
+.site-faq-list{min-width:0;display:grid;gap:12px}
+.site-faq-item{background:#f7f9fb;border:1px solid #e5ebf0;border-radius:12px;transition:background-color 200ms ease,border-color 200ms ease;overflow:hidden}
+.site-faq-item[data-open=true]{background:#f1f7fd;border-color:#d1e3f3}.site-faq-item h3{margin:0!important;font:inherit!important}
+.site-faq-item h3 button{width:100%;display:flex;gap:24px;justify-content:space-between;align-items:center;padding:22px 24px;background:transparent;border:0;text-align:left;font:inherit;font-size:17px;line-height:1.5;font-weight:550;color:#202d38;cursor:pointer;touch-action:manipulation}
+.site-faq-item h3 button:hover{color:#0875de}.site-faq-item h3 button:focus-visible{outline:2px solid #0875de;outline-offset:-5px;border-radius:12px}
+.site-faq-plus{flex:none;display:grid;place-items:center;width:28px;height:28px;background:#fff;border:1px solid #e0e8ef;border-radius:50%;color:#587995;transition:transform 240ms cubic-bezier(.22,1,.36,1),color 200ms ease}
+.site-faq-item[data-open=true] .site-faq-plus{transform:rotate(45deg);color:#0875de}
+/* One short local grid expansion prevents the surrounding content from jumping. */
+.site-faq-answer{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows 260ms cubic-bezier(.22,1,.36,1),opacity 180ms ease-out}
+.site-faq-item[data-open=true] .site-faq-answer{grid-template-rows:1fr;opacity:1}
+.site-faq-answer>div{min-height:0;overflow:hidden}.site-faq-answer>div>p{font-size:16px!important;line-height:1.75!important;color:#566675;margin:0!important;padding:0 72px 24px 24px;max-width:76ch}
+.site-faq-list[data-instant=true] .site-faq-answer,.site-faq-list[data-instant=true] .site-faq-plus{transition:none}
+.help-faq .site-faq-list{margin-top:24px}.help-faq .site-faq-item h3{font-size:inherit}
+@media(max-width:800px){.site-faq{grid-template-columns:1fr;gap:28px}.site-faq-heading{position:static}.site-faq .site-faq-heading h2{max-width:none;font-size:32px!important}.site-faq-heading>p:last-child{max-width:none}}
+@media(max-width:500px){.site-faq-item h3 button{font-size:16px;padding:20px 18px;gap:14px}.site-faq-answer>div>p{padding:0 18px 22px}.site-faq-plus{width:26px;height:26px}.site-faq{gap:24px}}
+@media(prefers-reduced-motion:reduce){.site-faq-answer,.site-faq-plus,.site-faq-item{transition:none}}

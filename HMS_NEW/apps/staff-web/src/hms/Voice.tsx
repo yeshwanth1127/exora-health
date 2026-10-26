@@ -25,8 +25,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { voiceSource } from "./voice-source";
-import { useWorkspace } from "./hooks";
+import { useCommand, useQuery, useWorkspace } from "./hooks";
+import { useUnsaved } from "./leave";
 import { requestBytes } from "./client";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { WorkspaceChoice } from "@/components/WorkspaceChoice";
 
 type VoiceRuntime = {
   enabled: boolean;
@@ -45,6 +50,54 @@ type BookingBootstrap = {
   facilities: { facilityId: string; name: string }[];
   practitioners: { staffId: string; name: string }[];
 };
+
+type VoiceLanguage = "en" | "hi" | "kn" | "ta" | "te" | "ml" | "mr" | "bn" | "gu" | "pa" | "od";
+type SpokenSettings = {
+  displayName: string;
+  greeting: string;
+  languages: VoiceLanguage[];
+  defaultLanguage: VoiceLanguage;
+  voiceId: string | null;
+  tone: "professional" | "warm" | "concise";
+  speakingRate: number;
+  maxCallSeconds: number;
+  actions: { book: boolean; lookup: boolean; cancel: boolean; reschedule: boolean };
+  consultationTypes: ("in_person" | "virtual")[];
+  humanTransferNumber: string | null;
+  failureAction: "take_callback" | "transfer" | "end_call";
+  recordingEnabled: boolean;
+};
+type VoiceRequest = {
+  id: string;
+  kind: "create" | "changes";
+  state: "pending" | "in_setup" | "completed" | "declined";
+  revision: number;
+  requestedBy: string;
+  requestedAt: string;
+  updatedAt: string;
+  reason: string | null;
+};
+type AgentSettings = {
+  customerId: string;
+  entitled: boolean;
+  voiceStatus: string;
+  agent: { agentId: string; appVersion: number; displayName: string; phoneNumber: string | null } | null;
+  request: VoiceRequest | null;
+  desiredRevision: number;
+  activeRevision: number;
+  revisionState: string | null;
+  settings: SpokenSettings;
+};
+const openRequest = (request: VoiceRequest | null) =>
+  request?.state === "pending" || request?.state === "in_setup" ? request : null;
+const when = (value: string) => new Date(value).toLocaleString();
+const LANGUAGES: [VoiceLanguage, string][] = [
+  ["en", "English"], ["hi", "Hindi"], ["kn", "Kannada"], ["ta", "Tamil"], ["te", "Telugu"],
+  ["ml", "Malayalam"], ["mr", "Marathi"], ["bn", "Bengali"], ["gu", "Gujarati"], ["pa", "Punjabi"], ["od", "Odia"],
+];
+const BOOKING_ACTIONS: [keyof SpokenSettings["actions"], string][] = [
+  ["book", "Book"], ["lookup", "Look up"], ["cancel", "Cancel"], ["reschedule", "Reschedule"],
+];
 
 function AssignedVoiceNumber() {
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
@@ -98,7 +151,20 @@ function AssignedVoiceNumber() {
   );
 }
 
+function useAgentSettings() {
+  const { facility } = useWorkspace();
+  const [poll, setPoll] = useState(0);
+  const query = useQuery<AgentSettings>(`/v1/voice/agent-settings?facilityId=${facility.facilityId}`, poll);
+  // While Exora works on a request, refresh now and then so the page turns live without a reload.
+  const waiting = !!openRequest(query.data?.request ?? null);
+  useEffect(() => {
+    setPoll(waiting ? 15000 : 0);
+  }, [waiting]);
+  return query;
+}
+
 function VoiceControl() {
+  const agent = useAgentSettings();
   const [runtime, setRuntime] = useState<VoiceRuntime | null>(null);
   const [booking, setBooking] = useState<BookingBootstrap | null>(null);
   const [busy, setBusy] = useState(true);
@@ -153,10 +219,12 @@ function VoiceControl() {
     },
     {
       label: "Tenant-specific Sarvam agent",
-      detail: runtime?.agent_ready
-        ? `${runtime.agent_name ?? "Agent"} · version ${runtime.version ?? "—"}`
-        : "Waiting for the platform administrator to clone, test and bind the agent.",
-      ready: runtime?.agent_ready === true,
+      detail: agent.data?.agent
+        ? `${agent.data.agent.displayName} · version ${agent.data.agent.appVersion}`
+        : openRequest(agent.data?.request ?? null)
+          ? "Requested. Exora is setting up this clinic's agent."
+          : "Not created yet. Use Create voice agent below.",
+      ready: !!agent.data?.agent,
     },
     {
       label: "Patient website calling",
@@ -212,9 +280,9 @@ function VoiceControl() {
         </div>
       </div>
 
-      {error && (
+      {(error || agent.error) && (
         <p className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-          {error}
+          {error || agent.error}
         </p>
       )}
 
@@ -239,6 +307,17 @@ function VoiceControl() {
           </Card>
         ))}
       </div>
+
+      {agent.data && !agent.data.agent && (
+        <AgentRequestCard setup={agent.data} refresh={agent.refresh} />
+      )}
+      {agent.data?.agent && (
+        <SpokenAgentForm
+          key={agent.data.desiredRevision}
+          setup={agent.data}
+          refresh={agent.refresh}
+        />
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -311,6 +390,205 @@ function VoiceControl() {
         </Card>
       </div>
     </section>
+  );
+}
+
+function AgentRequestCard({ setup, refresh }: { setup: AgentSettings; refresh: () => Promise<boolean> }) {
+  const { facility, can } = useWorkspace();
+  const canManage = can("voice.manage");
+  const cmd = useCommand();
+  const pending = openRequest(setup.request);
+  const declined = setup.request?.kind === "create" && setup.request.state === "declined" ? setup.request : null;
+  async function create() {
+    const result = await cmd.run(`/v1/voice/agent-request`, { facilityId: facility.facilityId }, true);
+    if (result) await refresh();
+  }
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Bot className="size-4" /> Voice agent
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        {!setup.entitled ? (
+          <p className="text-muted-foreground">
+            A voice agent is not included in this clinic&apos;s plan. Contact Exora to add it.
+          </p>
+        ) : pending ? (
+          <>
+            <Badge variant="secondary">
+              {pending.state === "in_setup" ? "Being set up" : "Requested"}
+            </Badge>
+            <p>
+              Requested by {pending.requestedBy} on {when(pending.requestedAt)}.{" "}
+              {pending.state === "in_setup"
+                ? "Exora is setting up your agent now."
+                : "Exora will set up your agent using this clinic's details."}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              This page updates on its own when the agent is ready. You can then change how it speaks here.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-muted-foreground">
+              Exora creates a dedicated voice agent for this clinic. It answers patients using your live
+              doctors, schedules and booking rules.
+            </p>
+            {declined?.reason && (
+              <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900">
+                Your last request was declined: {declined.reason}
+              </p>
+            )}
+            {cmd.error && <p className="text-destructive">{cmd.error}</p>}
+            <Button type="button" disabled={!canManage || cmd.busy} onClick={() => void create()}>
+              {cmd.busy ? <LoaderCircle className="animate-spin" /> : <Bot />} Create voice agent
+            </Button>
+            {!canManage && (
+              <p className="text-xs text-muted-foreground">Only a clinic administrator can request the agent.</p>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function SpokenAgentForm({ setup, refresh }: { setup: AgentSettings; refresh: () => Promise<boolean> }) {
+  const { facility, can } = useWorkspace();
+  const canManage = can("voice.manage");
+  const [settings, setSettings] = useState<SpokenSettings>(setup.settings);
+  const [notice, setNotice] = useState("");
+  const cmd = useCommand();
+  const dirty = JSON.stringify(settings) !== JSON.stringify(setup.settings);
+  const pending = openRequest(setup.request);
+  const declined = setup.request?.kind === "changes" && setup.request.state === "declined" && setup.revisionState === "failed"
+    ? setup.request : null;
+  const requestable = !dirty && setup.revisionState === "draft" && setup.desiredRevision > setup.activeRevision;
+  useUnsaved(dirty);
+  const update = (patch: Partial<SpokenSettings>) => {
+    setSettings({ ...settings, ...patch });
+    setNotice("");
+  };
+  function toggleLanguage(code: VoiceLanguage) {
+    const languages = settings.languages.includes(code)
+      ? settings.languages.filter((item) => item !== code)
+      : [...settings.languages, code];
+    if (languages.length === 0) return;
+    update({
+      languages,
+      defaultLanguage: languages.includes(settings.defaultLanguage) ? settings.defaultLanguage : languages[0] ?? settings.defaultLanguage,
+    });
+  }
+  function payload(): SpokenSettings {
+    return {
+      ...settings,
+      voiceId: settings.voiceId?.trim() || null,
+      humanTransferNumber: settings.humanTransferNumber?.trim() || null,
+    };
+  }
+  async function saveDraft() {
+    const result = await cmd.run(`/v1/voice/agent-settings`, {
+      facilityId: facility.facilityId,
+      expectedRevision: setup.desiredRevision,
+      settings: payload(),
+    }, false, "PUT");
+    if (result) {
+      setNotice("Draft saved. Request the changes when you are ready for Exora to apply them.");
+      await refresh();
+    }
+  }
+  async function requestChanges() {
+    const result = await cmd.run(`/v1/voice/agent-settings/request-changes`, {
+      facilityId: facility.facilityId,
+      revision: setup.desiredRevision,
+    }, true);
+    if (result) {
+      setNotice("");
+      await refresh();
+    }
+  }
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Spoken agent</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {pending && (
+          <p className="rounded-md border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
+            Changes requested by {pending.requestedBy} on {when(pending.requestedAt)}.{" "}
+            {pending.state === "in_setup" ? "Exora is applying them now." : "Exora will apply them to your agent."}{" "}
+            Editing is paused until then.
+          </p>
+        )}
+        {declined?.reason && (
+          <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+            Your last change request was declined: {declined.reason}
+          </p>
+        )}
+        <fieldset disabled={!canManage || cmd.busy || !!pending} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="voice-display-name">Display name</Label>
+            <Input id="voice-display-name" value={settings.displayName} maxLength={80}
+              onChange={(event) => update({ displayName: event.target.value })} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="voice-greeting">Greeting</Label>
+            <Textarea id="voice-greeting" value={settings.greeting} maxLength={1000}
+              onChange={(event) => update({ greeting: event.target.value })} />
+          </div>
+          <div className="space-y-2">
+            <Label>Languages</Label>
+            <div className="flex flex-wrap gap-4">
+              {LANGUAGES.map(([code, label]) => (
+                <label key={code} className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={settings.languages.includes(code)} onChange={() => toggleLanguage(code)} />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
+          <WorkspaceChoice label="Default language" value={settings.defaultLanguage}
+            onChange={(value) => update({ defaultLanguage: value as VoiceLanguage })}
+            options={LANGUAGES.filter(([code]) => settings.languages.includes(code)).map(([value, label]) => ({ value, label }))} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="voice-pace">Speaking rate ({settings.speakingRate.toFixed(2)})</Label>
+              <Input id="voice-pace" type="range" min={0.8} max={1.2} step={0.05} value={settings.speakingRate}
+                onChange={(event) => update({ speakingRate: Number(event.target.value) })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="voice-max-call">Max call length (seconds)</Label>
+              <Input id="voice-max-call" type="number" min={60} max={3600} value={settings.maxCallSeconds}
+                onChange={(event) => update({ maxCallSeconds: Number(event.target.value) })} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Booking actions</Label>
+            <div className="flex flex-wrap gap-4">
+              {BOOKING_ACTIONS.map(([key, label]) => (
+                <label key={key} className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={settings.actions[key]}
+                    onChange={(event) => update({ actions: { ...settings.actions, [key]: event.target.checked } })} />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="voice-transfer">Human-transfer number</Label>
+            <Input id="voice-transfer" placeholder="+919876543210" value={settings.humanTransferNumber ?? ""}
+              onChange={(event) => update({ humanTransferNumber: event.target.value || null })} />
+          </div>
+        </fieldset>
+        {(cmd.error || notice) && <p className={cmd.error ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>{cmd.error || notice}</p>}
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" disabled={!canManage || cmd.busy || !dirty || !!pending} onClick={() => void saveDraft()}>Save draft</Button>
+          <Button type="button" disabled={!canManage || cmd.busy || !requestable || !!pending} onClick={() => void requestChanges()}>Request changes</Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

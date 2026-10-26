@@ -1,0 +1,33 @@
+# syntax=docker/dockerfile:1.7
+ARG BASE_IMAGE=exora/hms:credential-ui-20261021
+FROM ${BASE_IMAGE}
+
+USER root
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
+
+WORKDIR /app
+ARG VITE_OIDC_AUTHORITY
+ARG VITE_OIDC_CLIENT_ID
+ARG VITE_OIDC_AUDIENCE
+ARG VITE_OIDC_SCOPE="openid profile email"
+ENV VITE_OIDC_AUTHORITY=$VITE_OIDC_AUTHORITY
+ENV VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID
+ENV VITE_OIDC_AUDIENCE=$VITE_OIDC_AUDIENCE
+ENV VITE_OIDC_SCOPE=$VITE_OIDC_SCOPE
+ARG VITE_HMS_DEV_LOGIN=false
+ARG VITE_HMS_DEFAULT_SUBJECT=admin
+ENV VITE_HMS_DEV_LOGIN=$VITE_HMS_DEV_LOGIN
+ENV VITE_HMS_DEFAULT_SUBJECT=$VITE_HMS_DEFAULT_SUBJECT
+
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json vitest.config.ts ./
+COPY --chown=node:node apps/api ./apps/api
+COPY --chown=node:node apps/hospital-editorial-web ./apps/hospital-editorial-web
+COPY --chown=node:node apps/staff-web ./apps/staff-web
+COPY --chown=node:node packages ./packages
+COPY --chown=node:node db ./db
+
+RUN pnpm install --frozen-lockfile && pnpm editorial:build && pnpm staff:build
+
+USER node

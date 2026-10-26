@@ -1,0 +1,28 @@
+/* Public-site motion and light-blue identity. Arc component contracts stay scoped. */
+html{scroll-behavior:smooth;scroll-padding-top:90px}
+main [id]{scroll-margin-top:90px}
+body:not(:has(.arc-demo-scope)){--capture-tint:#eef7ff;--capture-accent:#77b9ed;--capture-ink:#163a5b}
+body:not(:has(.arc-demo-scope)) ::selection{background:#cbe8ff;color:#163a5b}
+.clinic-comparison .is-capture{background:#eff7ff;border-inline-color:#d4e8fa}
+.clinic-comparison thead .is-capture{background:#e1f0ff}
+.clinic-comparison .clinic-tool-mark{border:0;background:transparent;width:44px;height:44px;border-radius:0}
+.clinic-comparison .clinic-tool-mark img{width:40px;height:40px;object-fit:contain;max-width:none}
+.clinic-comparison .is-capture .clinic-tool-tag{color:#285d89}
+.clinic-comparison .clinic-comparison-dot.lime{background:#77b9ed}
+.home-enquiries-scene{background:#fff}
+@media(hover:hover) and (pointer:fine){
+ .blog-card,.help-topic{transition:transform 180ms cubic-bezier(.23,1,.32,1),border-color 180ms ease}
+ .blog-card:hover,.help-topic:hover{transform:translateY(-3px);border-color:#bddcf4}
+ .closing-care-actions a:hover,.pricing-cta:hover{transform:translateY(-2px)}
+}
+body:not(:has(.arc-demo-scope)) :is(a[data-component=button],.brand-button-primary,.pricing-cta,.closing-care-actions a,.help-topic):active{transform:scale(.98)}
+body:not(:has(.arc-demo-scope)) :is(a[data-component=button],.brand-button-primary,.pricing-cta,.closing-care-actions a){transition:background-color 160ms ease,transform 160ms cubic-bezier(.23,1,.32,1)}
+@media(prefers-reduced-motion:no-preference){
+ .help-faq details[open]>p,.pricing-faq details[open]>p{animation:answer-enter 180ms ease-out}
+ @keyframes answer-enter{from{opacity:.25;transform:translateY(-4px)}to{opacity:1;transform:none}}
+}
+html[data-page-hidden=true] *{animation-play-state:paused!important}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}body:not(:has(.arc-demo-scope)) :is(.blog-card,.help-topic,.closing-care-actions a,.pricing-cta){transition:none;transform:none!important}}
+.clinic-comparison .is-capture .clinic-tool-mark{background:transparent;border:0}
+@media(prefers-reduced-motion:reduce){body:not(:has(.arc-demo-scope)) *,body:not(:has(.arc-demo-scope)) *::before,body:not(:has(.arc-demo-scope)) *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+@media(prefers-reduced-motion:no-preference){html:not([data-keyboard-navigation=true]) #capture-product-menu,html:not([data-keyboard-navigation=true]) #capture-solutions-menu{animation:public-menu-enter 160ms cubic-bezier(.23,1,.32,1) both;transform-origin:top center}@keyframes public-menu-enter{from{opacity:.25;transform:translateY(-4px)}to{opacity:1;transform:none}}}

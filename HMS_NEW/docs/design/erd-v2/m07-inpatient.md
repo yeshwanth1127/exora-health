@@ -1,5 +1,7 @@
 # M07 — Inpatient: admission, beds, transfer, discharge, housekeeping (schema `inpatient`)
 
+> **Clinic scope (2026-10-21):** the built schema is a trimmed version of this design — see [CLINIC_OPERATIONS_MODULES.md](../../plan/CLINIC_OPERATIONS_MODULES.md) and the migration `m07_inpatient` for what exists.
+
 Manages the bed as a resource. A bed is a `platform.location` row (kind `bed`); this module owns its status, reservations and occupancy. The discharge decision, the clearances, the departure and bed readiness each have their own record and timestamp — **a bed becomes available after cleaning and inspection, not at discharge**.
 
 ```mermaid

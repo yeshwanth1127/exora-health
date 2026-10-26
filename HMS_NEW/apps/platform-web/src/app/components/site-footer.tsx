@@ -1,0 +1,7 @@
+import {AnalyticsPreferences} from "./website-analytics";
+import {organisationLinks,specialtyLinks} from "../../lib/site-navigation";
+import { BRAND_NAME } from "../../lib/brand";
+import CaptureBrand from "./brand";
+import "./site-footer.css";
+const groups=[{title:"Product",links:[["AI reception","/solutions/ai-receptionist"],["WhatsApp outreach","/solutions/whatsapp-outreach"],["Google Business","/solutions/google-business-management"],["Clinic analytics","/solutions/clinic-analytics"],["Teleconsultations","/solutions/teleconsultations"],["Features","/product/features"],["Pricing","/pricing"],["Request a demo","/contact-sales"]]},{title:"Solutions",links:[...organisationLinks,...specialtyLinks].map(link=>[link.label,link.href])},{title:"Resources",links:[["Front-desk checklist","/resources/clinic-front-desk-checklist"],["Blog","/blog"],["Help centre","/help"],["What’s new","/releases"]]}];
+export default function SiteFooter(){return <footer className="capture-site-footer" id="site-footer"><div className="capture-footer-main"><div><a href="/" aria-label={(BRAND_NAME + " – Home")}><CaptureBrand /></a><p>A clearer clinic day.<br/>More time for care.</p></div><nav aria-label="Footer">{groups.map(g=><div key={g.title}><h2>{g.title}</h2>{g.links.map(([label,href])=><a key={href} href={href}>{label}</a>)}</div>)}</nav></div><p className="capture-footer-bottom">© 2026 {BRAND_NAME} · <a href="/privacy">Privacy</a> · <AnalyticsPreferences/></p></footer>}

@@ -1,0 +1,22 @@
+{
+  "status": {
+    "build": "passed after local media rebase",
+    "demoBundle": "passed: local React/ReactDOM bundle imports dist and emits media files",
+    "cleanConsumer": "passed after static media imports: component, CSS, fonts and media files bundle with host React external",
+    "browserParity": "pending parent comparison",
+    "interopAudit": "passed: t mode 2, o, nc, r/d/n/g implemented; no mode 1 calls found",
+    "mediaRebase": "passed: exact captured media files are package imports; no /_next/image or /media upstream paths",
+    "harnessProps": "audited: render call passes no explicit props"
+  },
+  "capture": {
+    "entryModule": "67436",
+    "export": "TeamShowcase"
+  },
+  "limits": [
+    "Captured browser JavaScript was reconstructed; original TSX was not recovered.",
+    "Build success does not establish exhaustive behavioral parity."
+  ],
+  "checks": {
+    "browserMount": "passed: component content attached and browser DOM inspected on 2026-10-16"
+  }
+}

@@ -1,0 +1,18 @@
+[
+  {
+    "source": "assets/capture-brand/bricolage-grotesque.ttf",
+    "sourceSha256": "413e7357809ddd12fd80a96a8a396de0e401638d4acd3cb3e37532f0472ac682",
+    "originalBytes": 408496,
+    "optimized": "assets/optimized/fonts/bricolage-grotesque.413e735780.woff2",
+    "optimizedBytes": 205196,
+    "glyphMapPreserved": true
+  },
+  {
+    "source": "assets/cloned/fonts/51ed8ad4b862.ttf",
+    "sourceSha256": "c0e1c0185427c4776348f631ebafacf81f044e982c66579aa2db41c8bb6fff09",
+    "originalBytes": 1531280,
+    "optimized": "assets/optimized/fonts/51ed8ad4b862.c0e1c01854.woff2",
+    "optimizedBytes": 579328,
+    "glyphMapPreserved": true
+  }
+]

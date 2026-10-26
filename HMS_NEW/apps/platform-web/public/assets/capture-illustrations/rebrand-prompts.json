@@ -1,0 +1,42 @@
+{
+  "palette": [
+    "#AACA60",
+    "#79B8EF",
+    "#EE927B"
+  ],
+  "tool": "image_gen.imagegen",
+  "jobs": [
+    {
+      "name": "secure-workspace",
+      "prompt": "Original healthcare SaaS editorial spot illustration. Match the supplied approved Capture/Wavefind style reference: slightly uneven confident black ink outlines, tiny expressive eyes, angular noses, playful simplified human shapes, flat opaque white interiors and sparse coloured accents. Minimal composition with clear silhouette and generous transparent margins. No site characters, words, logos, gradients, outer glows, drop shadows, photo realism, UI screenshot, or 3D. Keep all bodies and objects inside canvas. Genuine transparent background. Accent soft sky blue #79B8EF. Square image. A friendly clinician gently holds an oversized blue shield containing a simple black keyhole. One small medical folder beside the shield. Warm, calm and human, no militaristic imagery.",
+      "reference": "patient-records-lime.png",
+      "transparent_background": true,
+      "output_file": "secure-workspace.png",
+      "original_output": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-4b319762-2cb5-41f7-a584-20836a97cce5.png"
+    },
+    {
+      "name": "connected-clinics",
+      "prompt": "Original healthcare SaaS editorial spot illustration. Match the supplied approved Capture/Wavefind style reference: slightly uneven confident black ink outlines, tiny expressive eyes, angular noses, playful simplified human shapes, flat opaque white interiors and sparse coloured accents. Minimal composition with clear silhouette and generous transparent margins. No site characters, words, logos, gradients, outer glows, drop shadows, photo realism, UI screenshot, or 3D. Keep all bodies and objects inside canvas. Genuine transparent background. Accent warm coral #EE927B with tiny lime #AACA60 detail. Landscape image, 3:2. Three friendly healthcare teammates, a clinician, a nurse and a receptionist, stand together around one small shared folder. A curved dotted line connects two simple clinic-building symbols above them. Sparse scene, no lettering.",
+      "reference": "patient-records-lime.png",
+      "transparent_background": true,
+      "output_file": "connected-clinics.png",
+      "original_output": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-6af3a85b-fab5-4bd1-8d6e-0f309fb86528.png"
+    },
+    {
+      "name": "care-coordination",
+      "prompt": "Original healthcare SaaS editorial spot illustration. Match the supplied approved Capture/Wavefind style reference: slightly uneven confident black ink outlines, tiny expressive eyes, angular noses, playful simplified human shapes, flat opaque white interiors and sparse coloured accents. Minimal composition with clear silhouette and generous transparent margins. No site characters, words, logos, gradients, outer glows, drop shadows, photo realism, UI screenshot, or 3D. Keep all bodies and objects inside canvas. Genuine transparent background. Accent soft sky blue #79B8EF. Square image. A friendly clinic coordinator moves one oversized appointment card from a short stack toward a small tray with a lime checkmark. Simple sleeves, cheerful face, two hands. Keep it very sparse, readable as task coordination.",
+      "reference": "patient-records-lime.png",
+      "transparent_background": true,
+      "output_file": "care-coordination.png",
+      "original_output": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-f40a0e0b-40b5-4ec0-baf9-b705a8f41de5.png"
+    },
+    {
+      "name": "welcome-clinic",
+      "prompt": "Original healthcare SaaS editorial spot illustration. Match the supplied approved Capture/Wavefind style reference: slightly uneven confident black ink outlines, tiny expressive eyes, angular noses, playful simplified human shapes, flat opaque white interiors and sparse coloured accents. Minimal composition with clear silhouette and generous transparent margins. No site characters, words, logos, gradients, outer glows, drop shadows, photo realism, UI screenshot, or 3D. Keep all bodies and objects inside canvas. Genuine transparent background. Accent warm coral #EE927B. Landscape image, 3:2. A clinician and a patient warmly greet each other across a small reception counter. A simple small potted plant at one end and one coral appointment card between them. Friendly welcoming gesture, no handshake anatomy complexity.",
+      "reference": "patient-records-lime.png",
+      "transparent_background": true,
+      "output_file": "welcome-clinic.png",
+      "original_output": "/Users/deepakonda/.codex/generated_images/01a152d4-1059-7ce2-8726-e3d684346436/exec-eeb8e759-9ac6-4a9f-84fa-dfed6361caf4.png"
+    }
+  ]
+}

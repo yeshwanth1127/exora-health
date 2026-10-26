@@ -290,10 +290,103 @@ Patient endpoints take the link token in `X-Teleconsult-Token` (no bearer token)
 | `POST /tele/v1/session/join` | Participant Jitsi grant, once the doctor has started |
 | `POST /tele/v1/session/leave` | Record that the patient left (the call can be rejoined) |
 
+### Billing (switchable module `billing`)
+Every route answers 422 `module_inactive` until the tenant switches billing on (`PUT /v1/modules/billing`). Money is integer paise. A consultation is charged by the worker at check-in from the appointment's booked fee; lines no GST rule matches are exempt.
+
+| Method & path | Permission | Purpose |
+|---|---|---|
+| `GET /v1/billing/summary?facilityId&date` | `billing.read` @ facility | The counter's day: charges, bills issued, money by method, refunds, open shifts |
+| `GET /v1/billing/charges?facilityId[&patientId&status&unbilled=true]` | `billing.read` | Charges (with the live bill each is on) |
+| `POST /v1/billing/charges` 🔑 | `billing.charge` | Manual charge (service priced from the active list, or a typed price) |
+| `POST /v1/billing/charges/:id/reverse` | `billing.charge` | Reverse an unbilled charge |
+| `POST /v1/billing/charges/:id/discounts` 🔑 | `billing.charge` | Discount; applies at once within the role's `max_discount_percent` or with `billing.approve`, else pending |
+| `POST /v1/billing/discounts/:id/decision` | `billing.approve` | Approve or reject a pending discount |
+| `POST /v1/billing/invoices` 🔑 | `billing.invoice` | Draft a bill from a patient's open charges (or given charge ids) |
+| `POST /v1/billing/invoices/:id/issue` 🔑 | `billing.invoice` | Issue: recompute, number (`BOS/`, `INV/` per facility per FY), mark charges invoiced |
+| `POST /v1/billing/invoices/:id/void` | `billing.invoice` | Void a draft or an unpaid, uncredited bill |
+| `GET /v1/billing/invoices?facilityId[…]` · `GET /v1/billing/invoices/:id` | `billing.read` | Bills; one bill as a print-ready payload |
+| `POST /v1/billing/invoices/:id/credit-notes` 🔑 | `billing.approve` | Credit whole charges off an issued bill (`CN/` numbering); overpayment becomes refundable |
+| `POST /v1/billing/payments` 🔑 | `billing.collect` | Payment + allocations + receipt (`RC/`); cash needs your open shift; s.269ST cash limit |
+| `POST /v1/billing/payments/:id/allocations` 🔑 | `billing.collect` | Allocate what is left of a payment |
+| `GET /v1/billing/payments?facilityId[&patientId&date]` | `billing.read` | Payments with unallocated balance |
+| `POST /v1/billing/refunds` 🔑 · `/:id/decision` · `/:id/pay` 🔑 | `billing.refund` · `billing.approve` · `billing.refund` | Request, approve, pay out a refund |
+| `GET /v1/billing/refunds?facilityId` | `billing.read` | Refunds |
+| `POST /v1/billing/cashier-shifts` 🔑 · `/:id/close` · `/:id/verify` | `billing.collect` · `billing.collect` · `billing.approve` | Open your shift, close it with the counted cash, verify (not your own) |
+| `GET /v1/billing/cashier-shifts?facilityId` | `billing.read` | Shifts with expected/counted cash and variance |
+| `GET /v1/billing/accounts?facilityId[&status&admissionId]` | `billing.read` | Inpatient stay accounts (one per admission, opened by the worker) |
+| `GET /v1/billing/accounts/:id/statement` | `billing.read` | Interim statement: charges so far, deposits, due/credit, deposit-low flag |
+| `POST /v1/billing/accounts/:id/deposits` 🔑 | `billing.collect` | Deposit (advance) with receipt; s.269ST also per stay |
+| `POST /v1/billing/accounts/:id/final-invoice` 🔑 | `billing.invoice` | Final bill (discharge must be planned): bed days to now, every open charge, deposits applied; settled → finance clearance |
+| `GET /v1/billing/deposit-alerts?facilityId` · `PUT /v1/billing/deposit-rules` 🔑 | `billing.read` · `billing.settings` | Stays below the alert threshold; set the clinic's deposit rule |
+
+### Inpatient (switchable module `inpatient`; needs billing on)
+Every route answers 422 `module_inactive` until inpatient is switched on. Beds are locations under a ward; a bed has one occupant at a time.
+
+| Method & path | Permission | Purpose |
+|---|---|---|
+| `GET /v1/bed-categories` · `POST` 🔑 | `inpatient.read` · `catalog.manage` | Bed categories (what a bed is billed as) |
+| `PUT /v1/bed-categories/:id/price` 🔑 | `pricing.manage` | Daily bed price from a date (new default price-list version) |
+| `POST /v1/facilities/:id/wards` 🔑 · `POST /v1/wards/:id/beds` 🔑 · `PATCH /v1/beds/:id` | `facility.manage` | Wards and beds |
+| `GET /v1/inpatient/bed-board?facilityId` | `inpatient.read` | Wards → beds: status, occupant (no clinical detail), counts; bed-pending count |
+| `POST /v1/beds/:id/ready` · `/block` · `/unblock` · `/maintenance` | `inpatient.manage` | Housekeeping and bed availability |
+| `GET /v1/admissions?facilityId[&status&open&patientId]` · `GET /v1/admissions/:id` | `inpatient.read` | Admissions; one with beds, encounter, discharge clearances, stay account |
+| `POST /v1/admissions` 🔑 | `inpatient.manage` | Admit (IP number per facility per FY) into a ready bed, or bed-pending |
+| `POST /v1/admissions/:id/assign-bed` 🔑 · `/transfer` 🔑 · `/cancel` 🔑 | `inpatient.manage` | Place a bed-pending patient, move beds (optionally retaining the old one), cancel an admission made in error |
+| `POST /v1/admissions/:id/discharge` 🔑 | `inpatient.discharge` | Plan the discharge; opens clinical, nursing, pharmacy, finance clearances |
+| `POST /v1/discharges/:id/clearances/:kind/clear` · `/waive` | `inpatient.discharge` (doctor: clinical, nurse: nursing) · `pharmacy.dispense` · `inpatient.discharge.override` | Clear or waive a clearance; finance clears when the final bill settles |
+| `POST /v1/discharges/:id/depart` 🔑 | `inpatient.manage` | The patient leaves (every clearance done); beds go to cleaning; the encounter finishes |
+
+### Inventory and pharmacy (switchable module `pharmacy`, which carries `inventory`)
+Quantities are in each item's base unit; MRP and cost are per base unit. Medicines are sold at most at MRP, and billed GST-inclusive.
+
+| Method & path | Permission | Purpose |
+|---|---|---|
+| `GET/POST /v1/inventory/stores` 🔑 | `inventory.read` · `inventory.manage` | The clinic's pharmacy store (drug licence required) |
+| `GET/POST /v1/inventory/items` 🔑 · `PATCH /v1/inventory/items/:id` | `inventory.read` · `inventory.manage` | Items and drug profiles (schedule H/H1/X, NDPS, high alert), with stock on hand |
+| `GET/POST /v1/inventory/suppliers` 🔑 | `inventory.read` · `inventory.manage` | Suppliers (GSTIN, drug licence) |
+| `GET /v1/inventory/stock?storeId[&itemId]` · `/alerts` · `/ledger` | `inventory.read` | Stock by batch; low/expiring/expired; an item's movements |
+| `GET/POST /v1/inventory/receipts` 🔑 | `inventory.read` · `inventory.receive` | Goods received against a supplier bill (once per bill); creates or tops up batches |
+| `POST /v1/inventory/adjustments` 🔑 | `inventory.receive` (opening) · `inventory.adjust` | Opening stock, corrections, consumption, damage, expiry disposal, vendor returns |
+| `POST /v1/inventory/batches/:id/status` | `inventory.manage` | Quarantine, recall, expire or release a batch |
+| `GET/POST /v1/encounters/:id/prescriptions` 🔑 | `prescriptions.read` · `prescriptions.write` (doctor with care access) | A visit's prescriptions; draft one (inpatient orders may omit quantity; `discharge: true`) |
+| `GET/PUT /v1/prescriptions/:id` · `/sign` · `/cancel` | `prescriptions.read` · `prescriptions.write` | Detail with what is left; edit a draft; sign (registration; allergy override reason); cancel |
+| `POST /v1/prescription-items/:id/hold` · `/resume` · `/stop` | `prescriptions.write` | Inpatient order changes |
+| `GET /v1/pharmacy/queue?facilityId` | `pharmacy.read` | Signed outpatient prescriptions still to fill |
+| `POST /v1/pharmacy/dispenses` 🔑 | `pharmacy.dispense` · `pharmacy.sell` (OTC) | Dispense a prescription or an indent, or sell over the counter (FEFO batches; OTC refuses Schedule H/H1/X/NDPS) |
+| `GET /v1/pharmacy/dispenses[/:id]` | `pharmacy.read` | Dispenses and counter sales with lines and their charges |
+| `POST /v1/pharmacy/returns` 🔑 | `pharmacy.dispense` | Take medicine back (restock or not); an unbilled charge is re-charged |
+| `GET /v1/pharmacy/registers/controlled?facilityId&from&to` | `pharmacy.registers` | Schedule H1/X and NDPS register |
+| `POST /v1/admissions/:id/indents` 🔑 · `POST /v1/pharmacy/indents/:id/cancel` · `GET /v1/pharmacy/indents` | `pharmacy.indent` · `pharmacy.read` | Ward indents for admitted patients |
+| `GET /v1/admissions/:id/mar?date` · `POST /v1/admissions/:id/mar` 🔑 | `prescriptions.read` · `medication.administer` | The day's dose schedule and charting; witness for H1/X/NDPS/high-alert; a dose charted given once |
+
+Billing a counter sale: `POST /v1/billing/invoices` with `dispenseId` (the sale's charges are posted by the worker a moment after the sale).
+
+### HR (switchable module `hr`)
+Payroll amounts are paise. Statutory values (PF/ESI rates and ceilings, professional-tax slabs) are settings to confirm with the clinic's CA; TDS is entered per person when computing.
+
+| Method & path | Permission | Purpose |
+|---|---|---|
+| `GET /v1/hr/employees?facilityId` · `GET /v1/hr/employees/:staffId` | `hr.read` (statutory, bank and salary only with `payroll.read`) | Directory; one employee |
+| `PUT /v1/hr/employees/:staffId` · `POST …/status` | `hr.manage` | Employment profile; notice and exit (exit ends the staff record's active period) |
+| `PUT /v1/hr/employees/:staffId/statutory` | `payroll.manage` | PAN, UAN, ESIC, bank, PF/ESI applicability, PT state (never Aadhaar) |
+| `GET/POST /v1/hr/shifts` 🔑 · `GET/PUT /v1/hr/roster` | `hr.read` · `hr.manage` | Shifts; roster days (shift or week off) |
+| `GET /v1/hr/attendance?facilityId&date` · `GET /v1/hr/employees/:id/attendance?month` | `hr.read` | A clinic's day; a person's month |
+| `POST /v1/hr/employees/:id/punches` · `POST /v1/hr/attendance/compute` | `attendance.manage` | Record a punch for someone (with a reason); recompute a range |
+| `POST /v1/hr/regularisations/:id/decision` | `attendance.manage` | Decide a regularisation (not your own) |
+| `GET/POST /v1/hr/leave-types` 🔑 · `POST /v1/hr/employees/:id/leave-grants` 🔑 | `leave.request` · `hr.manage` | Leave types; grants and corrections on the balance |
+| `GET /v1/hr/leave-requests?facilityId` · `POST …/:id/decision` · `POST …/:id/cancel` | `leave.approve` | Decide (not your own; reports booked appointments for doctors) and cancel leave |
+| `PUT /v1/hr/payroll-settings` · `PUT /v1/hr/professional-tax/:state` · `GET/POST /v1/hr/salary-components` 🔑 · `POST /v1/hr/employees/:id/salary` 🔑 | `payroll.manage` (`payroll.read` to list) | Payroll setup and salary structures (versioned from a month) |
+| `GET/POST /v1/hr/payroll-runs` 🔑 · `GET …/:id` · `POST …/:id/compute` | `payroll.read` · `payroll.manage` | Monthly runs; compute (attendance → paid days → payslips) |
+| `POST /v1/hr/payroll-runs/:id/approve` · `/mark-paid` · `/lock` | `payroll.approve` | Approve (not who computed), paid with bank refs, lock (freezes attendance) |
+| `GET /v1/hr/payslips/:id` | `payroll.read` | One payslip |
+| `POST /v1/me/attendance/punch` · `GET /v1/me/attendance?month` · `POST /v1/me/regularisations` 🔑 | `attendance.self` | Clock in/out; own month; ask to correct a day |
+| `GET /v1/me/leave` · `POST /v1/me/leave-requests` 🔑 · `POST /v1/me/leave-requests/:id/cancel` | `leave.request` | Own balances and requests |
+| `GET /v1/me/payslips[/:id]` | `leave.request` | Own approved payslips |
+
 🔑 = requires `Idempotency-Key`.
 
 ## Worker
-`pnpm worker:dev` delivers outbox events (exactly once per consumer, retries with exponential backoff, dead-letters after 10 attempts), expires lapsed slot holds every 30 s, keeps monthly audit/outbox partitions ahead daily, and purges expired idempotency records hourly. Registered consumers: `appointment.checked_in` → open encounter; `appointment.cancelled` → cancel a not-yet-started encounter; `encounter.finished` → complete the appointment and its queue token; `appointment.confirmed` (virtual) → create the teleconsultation; `appointment.cancelled`/`no_show` → close it and revoke the link; `teleconsult.patient_waiting` → check the appointment in. Still to come: notifications (comms) and charges (billing).
+`pnpm worker:dev` delivers outbox events (exactly once per consumer, retries with exponential backoff, dead-letters after 10 attempts), expires lapsed slot holds every 30 s, keeps monthly audit/outbox partitions ahead daily, and purges expired idempotency records hourly. Registered consumers: `appointment.checked_in` → open encounter; `appointment.cancelled` → cancel a not-yet-started encounter; `encounter.finished` → complete the appointment and its queue token; `appointment.confirmed` (virtual) → create the teleconsultation; `appointment.cancelled`/`no_show` → close it and revoke the link; `teleconsult.patient_waiting` → check the appointment in; `appointment.checked_in` → charge the consultation and `appointment.cancelled` → reverse it while unbilled (billing, only while the module is on). `admission.admitted` → open the stay's encounter and billing account; `admission.discharged`/`cancelled` → finish/cancel that encounter; `invoice.paid`/`billing.account_settled` → settle the stay and clear finance. `dispense.completed` → charge each line (stay account for inpatients); `dispense.returned` → re-charge an unbilled line. `leave.approved`/`cancelled` → close/reopen a doctor's bookable days; `employee.exited` → end the staff record. Bed days are charged hourly (idempotent per occupancy per date). Consumers of a switched-off clinic module skip their events.
 
 ## Try it
 ```bash

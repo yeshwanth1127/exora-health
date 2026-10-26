@@ -8,8 +8,22 @@ import { createHash, randomUUID } from 'node:crypto';
 import { sql, type DB, type Kysely, type Transaction } from '@hms/db';
 import { DomainError } from './errors.ts';
 
-export const MODULES = ['platform', 'patient', 'catalog', 'booking', 'clinical', 'comms'] as const;
+export const MODULES = ['platform', 'patient', 'catalog', 'booking', 'clinical', 'comms', 'billing', 'inpatient', 'inventory', 'pharmacy', 'hr'] as const;
 export type ModuleName = (typeof MODULES)[number];
+
+/**
+ * Modules a tenant switches on separately (platform.module_state). They are off until their row says
+ * 'active' — unlike the older modules, where a missing row still means on. Their commands refuse work
+ * and their event consumers skip while they are off.
+ */
+export const SWITCHED_MODULES: readonly string[] = ['inpatient', 'billing', 'inventory', 'pharmacy', 'hr'];
+
+/** Whether a module may take new work in the current transaction's tenant. */
+export async function moduleIsActive(tx: Transaction<DB>, module: string): Promise<boolean> {
+  if (!SWITCHED_MODULES.includes(module)) return true;
+  const row = await tx.selectFrom('platform.module_state').select('state').where('module_code', '=', module as never).executeTakeFirst();
+  return row?.state === 'active';
+}
 
 export interface Actor {
   kind: 'staff' | 'patient' | 'system';
@@ -81,6 +95,9 @@ export async function runCommand<T>(db: Kysely<DB>, options: CommandOptions, fn:
 
   return db.transaction().execute(async (tx) => {
     await setTransactionContext(tx, options.tenantId, options.actor.staffId);
+    if (!(await moduleIsActive(tx, options.module))) {
+      throw new DomainError('precondition_failed', `the ${options.module} module is not switched on for this hospital`, { reason: 'module_inactive', module: options.module });
+    }
     await sql`SET LOCAL ROLE ${sql.id(`mod_${options.module}`)}`.execute(tx);
 
     let idempotencyId: string | undefined;

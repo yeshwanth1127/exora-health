@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { DomainError } from '@hms/platform';
 import type { VoiceRuntimeSettings } from '../../config.ts';
 import { ingestVoice, type ChannelSettings } from '../../modules/comms/voice-growth.ts';
+import type { VoiceAgentSource } from '../../modules/comms/managed-voice.ts';
 import { parse } from '../support.ts';
 
 const hash = (value: string) => createHash('sha256').update(value).digest();
@@ -35,38 +36,50 @@ function browserBinding(settings: ChannelSettings) {
   return bindings.length === 1 ? bindings[0] : undefined;
 }
 
-/** Public browser calling surface. The Sarvam API key remains server-side in the signed-URL proxy. */
+/**
+ * Public browser calling surface. The Sarvam API key stays server-side: either in this container (an
+ * environment-pinned agent) or in the control plane (an agent bound by Exora), resolved per request.
+ */
 export function registerPublicVoiceRoutes(
   app: FastifyInstance,
   db: Kysely<DB>,
   settings: VoiceRuntimeSettings,
   channels: ChannelSettings,
+  source: VoiceAgentSource,
 ) {
-  const agent = settings.agent;
   const integration = settings.integration;
-  const enabled = !!agent && !!integration && !!settings.sarvamApiKey;
+  async function activeAgent() {
+    const active = integration ? await source() : undefined;
+    if (!active || !integration) throw new DomainError('precondition_failed', 'voice calling has not been activated for this clinic');
+    return { ...active, integration };
+  }
 
-  app.get('/public/v1/voice/config', async () => ({
-    enabled,
-    integration_ready: !!integration,
-    agent_ready: !!agent && !!settings.sarvamApiKey,
-    state: enabled ? 'active' : integration ? 'awaiting_sarvam_agent' : 'not_requested',
-    phone_number: settings.assignedPhoneNumber ?? null,
-    ...(enabled ? {
-      org_id: agent.orgId,
-      workspace_id: agent.workspaceId,
-      app_id: agent.appId,
-      version: agent.appVersion,
-      agent_name: agent.agentName,
-      runtime_base_url: agent.runtimeBaseUrl,
-      recording_notice: settings.recordingNotice,
-      notice_version: settings.noticeVersion,
-      session_seconds: settings.sessionSeconds,
-    } : {}),
-  }));
+  app.get('/public/v1/voice/config', async () => {
+    const active = await source();
+    const agent = active?.agent;
+    const enabled = !!agent && !!integration;
+    return {
+      enabled,
+      integration_ready: !!integration,
+      agent_ready: !!agent,
+      state: enabled ? 'active' : integration ? 'awaiting_sarvam_agent' : 'not_requested',
+      phone_number: active?.phoneNumber ?? settings.assignedPhoneNumber ?? null,
+      ...(enabled ? {
+        org_id: agent.orgId,
+        workspace_id: agent.workspaceId,
+        app_id: agent.appId,
+        version: agent.appVersion,
+        agent_name: agent.agentName,
+        runtime_base_url: agent.runtimeBaseUrl,
+        recording_notice: settings.recordingNotice,
+        notice_version: settings.noticeVersion,
+        session_seconds: settings.sessionSeconds,
+      } : {}),
+    };
+  });
 
   app.post('/public/v1/voice/sessions', async (request, reply) => {
-    if (!enabled) throw new DomainError('precondition_failed', 'voice calling has not been activated for this clinic');
+    const { agent, integration } = await activeAgent();
     parse(z.object({ recording_consent: z.literal(true), notice_version: z.literal(settings.noticeVersion) }), request.body);
     const runtimeSessionId = randomUUID();
     const startedAt = Date.now();
@@ -91,7 +104,9 @@ export function registerPublicVoiceRoutes(
   });
 
   app.post('/public/v1/voice/sessions/end', async (request, reply) => {
-    if (enabled) {
+    const active = integration ? await source() : undefined;
+    if (active && integration) {
+      const agent = active.agent;
       const session = verifySession(integration.signingSecret, request.headers['x-voice-session'] as string | undefined);
       const binding = browserBinding(channels);
       if (binding) await ingestVoice(db, {
@@ -104,7 +119,7 @@ export function registerPublicVoiceRoutes(
   });
 
   app.get('/sarvam-runtime/orgs/:orgId/workspaces/:workspaceId/apps/:appId/url', async (request, reply) => {
-    if (!enabled) throw new DomainError('precondition_failed', 'voice calling has not been activated for this clinic');
+    const { agent, integration, signedUrl } = await activeAgent();
     verifySession(integration.signingSecret, request.headers['x-voice-session'] as string | undefined);
     const params = parse(z.object({ orgId: z.string().min(1), workspaceId: z.string().min(1), appId: z.string().min(1) }), request.params);
     if (params.orgId !== agent.orgId || params.workspaceId !== agent.workspaceId || params.appId !== agent.appId) {
@@ -114,23 +129,13 @@ export function registerPublicVoiceRoutes(
     if (query.version !== undefined && query.version !== agent.appVersion) {
       throw new DomainError('forbidden', 'the requested voice agent version is not active');
     }
-    const upstream = new URL(`https://apps.sarvam.ai/api/app-runtime/orgs/${encodeURIComponent(agent.orgId)}/workspaces/${encodeURIComponent(agent.workspaceId)}/apps/${encodeURIComponent(agent.appId)}/url`);
-    upstream.searchParams.set('interaction_type', query.interaction_type || 'call');
-    upstream.searchParams.set('version', String(agent.appVersion));
-    const response = await fetch(upstream, {
-      headers: { 'X-API-Key': settings.sarvamApiKey! },
-      signal: AbortSignal.timeout(10_000),
-    });
-    const text = await response.text();
-    reply.status(response.status).header('cache-control', 'no-store');
-    if (!response.ok) {
+    const response = await signedUrl(query.interaction_type || 'call');
+    reply.header('cache-control', 'no-store');
+    if (response.status !== 200 || response.body === null) {
       request.log.warn({ status: response.status }, 'Sarvam signed URL request failed');
-      return reply.send({ error: { code: 'voice_runtime_unavailable', message: 'Voice calling is temporarily unavailable.' } });
+      return reply.status(response.status >= 400 ? response.status : 502)
+        .send({ error: { code: 'voice_runtime_unavailable', message: 'Voice calling is temporarily unavailable.' } });
     }
-    try {
-      return reply.send(JSON.parse(text));
-    } catch {
-      throw new DomainError('precondition_failed', 'voice runtime returned an invalid response');
-    }
+    return reply.status(200).send(response.body);
   });
 }

@@ -8,3 +8,10 @@ dist/
 
 .comms-storage/
 .tenants/
+
+.next/
+out/
+
+**/node_modules
+
+.playwright-cli/

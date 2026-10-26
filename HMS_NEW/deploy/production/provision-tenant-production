@@ -4,13 +4,10 @@ set -euo pipefail
 request_path=${1:?claim JSON path is required}
 config=${EXORA_PROVISIONER_CONFIG:-/etc/exora-health/provisioner.env}
 [[ -r $config ]] || { echo "missing $config" >&2; exit 1; }
-# Real tenant hostnames must never expose the password-free development issuer.
 # shellcheck disable=SC1090
 source "$config"
-: "${OIDC_ISSUER:?Configure the company identity provider before provisioning customers}"
-: "${OIDC_JWKS_URL:?OIDC_JWKS_URL is required}"
-: "${OIDC_AUDIENCE:?OIDC_AUDIENCE is required}"
-: "${OIDC_CLIENT_ID:?OIDC_CLIENT_ID is required; the image must be built with matching browser settings}"
+: "${OIDC_PROVISIONER:=/usr/local/sbin/exora-health-provision-oidc}"
+[[ -x $OIDC_PROVISIONER ]] || { echo "OIDC provisioner $OIDC_PROVISIONER is not executable" >&2; exit 1; }
 
 slug="$(jq -er '.payload.slug | select(test("^[a-z0-9][a-z0-9-]{1,62}$"))' "$request_path")"
 name="$(jq -er '.payload.organisation' "$request_path")"
@@ -19,13 +16,19 @@ email="$(jq -er '.payload.email' "$request_path")"
 facility="$(jq -er '.payload.facilityName' "$request_path")"
 city="$(jq -er '.payload.city' "$request_path")"
 plan="$(jq -er '.payload.plan' "$request_path")"
-voice="$(jq -er '.payload.voice' "$request_path")"
+voice="$(jq -er '.payload.voice | if type == "boolean" then tostring else error("voice must be boolean") end' "$request_path")"
+website_template="$(jq -er '.payload.websiteTemplate // "standard" | select(. == "standard" or . == "sri-lakshmi" or . == "hospital-editorial")' "$request_path")"
+facility_type="$(jq -er '.payload.facilityType // "clinic" | select(. == "clinic" or . == "hospital" or . == "diagnostic_centre" or . == "virtual")' "$request_path")"
+timezone="$(jq -er '.payload.timezone // "Asia/Kolkata"' "$request_path")"
 port="$(jq -er '.allocated_port' "$request_path")"
+origin="https://$slug.health.exora.solutions"
 tenant_dir="$TENANT_ROOT/$slug"
 secrets="$tenant_dir/secrets.json"
 env_path="$tenant_dir/.env"
 cert_dir="/etc/letsencrypt/live/$WILDCARD_CERT_NAME"
+data_known_hosts="${DATA_SSH_KNOWN_HOSTS:-/etc/exora-health/known_hosts}"
 [[ -s $cert_dir/fullchain.pem && -s $cert_dir/privkey.pem ]] || { echo "wildcard certificate $WILDCARD_CERT_NAME is not installed" >&2; exit 2; }
+[[ -r $data_known_hosts ]] || { echo "SSH known-hosts file $data_known_hosts is not readable" >&2; exit 2; }
 
 install -d -m 700 "$tenant_dir"
 if [[ ! -f $secrets ]]; then
@@ -38,7 +41,8 @@ if [[ ! -f $secrets ]]; then
     --arg voiceServiceKey "$(openssl rand -hex 40)" \
     --arg voiceSigningSecret "$(openssl rand -hex 40)" \
     --arg voiceCallbackSecret "$(openssl rand -hex 40)" \
-    '{databasePassword:$databasePassword,appPassword:$appPassword,jwtSecret:$jwtSecret,jitsiSecret:$jitsiSecret,voiceServiceKey:$voiceServiceKey,voiceSigningSecret:$voiceSigningSecret,voiceCallbackSecret:$voiceCallbackSecret}' > "$secrets"
+    --arg ownerTemporaryPassword "Ex!$(openssl rand -hex 16)" \
+    '{databasePassword:$databasePassword,appPassword:$appPassword,jwtSecret:$jwtSecret,jitsiSecret:$jitsiSecret,voiceServiceKey:$voiceServiceKey,voiceSigningSecret:$voiceSigningSecret,voiceCallbackSecret:$voiceCallbackSecret,ownerTemporaryPassword:$ownerTemporaryPassword}' > "$secrets"
   chmod 600 "$secrets"
 fi
 if [[ $(jq -r '.voiceCallbackSecret // empty' "$secrets") == '' ]]; then
@@ -49,9 +53,15 @@ if [[ $(jq -r '.voiceCallbackSecret // empty' "$secrets") == '' ]]; then
 fi
 
 # Generate missing managed secrets once; never rotate existing encrypted connections on restart.
-for field in integrationsKey bookingSecret whatsappVerifyToken bookingStaffId; do
+for field in integrationsKey bookingSecret whatsappVerifyToken bookingStaffId voiceServiceAccountId ownerTemporaryPassword; do
   if [[ $(jq -r --arg field "$field" '.[$field] // empty' "$secrets") == '' ]]; then
-    if [[ $field == bookingStaffId ]]; then value="$(cat /proc/sys/kernel/random/uuid)"; else value="$(openssl rand -hex 32)"; fi
+    if [[ $field == bookingStaffId || $field == voiceServiceAccountId ]]; then
+      value="$(cat /proc/sys/kernel/random/uuid)"
+    elif [[ $field == ownerTemporaryPassword ]]; then
+      value="Ex!$(openssl rand -hex 16)"
+    else
+      value="$(openssl rand -hex 32)"
+    fi
     secret_temp="$(mktemp "$tenant_dir/.secrets.XXXXXX")"
     jq --arg field "$field" --arg value "$value" '.[$field]=$value' "$secrets" > "$secret_temp"
     chmod 600 "$secret_temp"
@@ -59,15 +69,26 @@ for field in integrationsKey bookingSecret whatsappVerifyToken bookingStaffId; d
   fi
 done
 
+# Register the tenant origin and issue the owner a strong temporary password. Retries reuse the
+# same root-only secret, so infrastructure failures do not silently rotate the displayed login.
+owner_temporary_password="$(jq -er .ownerTemporaryPassword "$secrets")"
+oidc_state="$(jq -n --arg slug "$slug" --arg email "$email" --arg origin "$origin" \
+  --arg temporaryPassword "$owner_temporary_password" \
+  '{slug:$slug,email:$email,origin:$origin,temporaryPassword:$temporaryPassword}' | "$OIDC_PROVISIONER")"
+oidc_issuer="$(jq -er .issuer <<<"$oidc_state")"
+oidc_jwks_url="$(jq -er .jwksUrl <<<"$oidc_state")"
+oidc_audience="$(jq -er .audience <<<"$oidc_state")"
+oidc_client_id="$(jq -er .clientId <<<"$oidc_state")"
+oidc_scope="$(jq -er .scope <<<"$oidc_state")"
+
 database_password="$(jq -r .databasePassword "$secrets")"
 app_password="$(jq -r .appPassword "$secrets")"
-data_state="$(jq -n --arg slug "$slug" --arg databasePassword "$database_password" '{slug:$slug,databasePassword:$databasePassword}' | ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i "$DATA_SSH_KEY" "$DATA_SSH_TARGET" provision)"
+data_state="$(jq -n --arg slug "$slug" --arg databasePassword "$database_password" '{slug:$slug,databasePassword:$databasePassword}' | ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$data_known_hosts" -i "$DATA_SSH_KEY" "$DATA_SSH_TARGET" provision)"
 database_port="$(jq -er .databasePort <<<"$data_state")"
 export_path="$(jq -er .exportPath <<<"$data_state")"
 tenant_id="$(node -e "const{createHash}=require('crypto');let b=createHash('sha256').update('exora-tenant:'+process.argv[1]).digest().subarray(0,16);b[6]=(b[6]&15)|80;b[8]=(b[8]&63)|128;let h=b.toString('hex');console.log([h.slice(0,8),h.slice(8,12),h.slice(12,16),h.slice(16,20),h.slice(20)].join('-'))" "$slug")"
 facility_id="$(node -e "const{createHash}=require('crypto');let b=createHash('sha256').update('exora-facility:'+process.argv[1]).digest().subarray(0,16);b[6]=(b[6]&15)|80;b[8]=(b[8]&63)|128;let h=b.toString('hex');console.log([h.slice(0,8),h.slice(8,12),h.slice(12,16),h.slice(16,20),h.slice(20)].join('-'))" "$slug")"
-origin="https://$slug.health.exora.solutions"
-voice_account="$(cat /proc/sys/kernel/random/uuid)"
+voice_account="$(jq -er .voiceServiceAccountId "$secrets")"
 
 env_line() { printf '%s=%s\n' "$1" "$(jq -Rn --arg value "$2" '$value')"; }
 umask 077
@@ -75,6 +96,9 @@ umask 077
   env_line TENANT_SLUG "$slug"
   env_line TENANT_PORT "$port"
   env_line TENANT_PLAN "$plan"
+  env_line WEBSITE_TEMPLATE "$website_template"
+  env_line BOOTSTRAP_FACILITY_TYPE "$facility_type"
+  env_line BOOTSTRAP_TIMEZONE "$timezone"
   env_line VOICE_REQUESTED "$([[ $voice == true ]] && echo 1 || echo 0)"
   env_line PUBLIC_TENANT_ID "$tenant_id"
   env_line BOOTSTRAP_TENANT_ID "$tenant_id"
@@ -94,11 +118,11 @@ umask 077
   env_line AUTH_MODE oidc
   env_line NODE_ENV production
   env_line VITE_HMS_DEV_LOGIN false
-  env_line OIDC_ISSUER "$OIDC_ISSUER"
-  env_line OIDC_JWKS_URL "$OIDC_JWKS_URL"
-  env_line OIDC_AUDIENCE "$OIDC_AUDIENCE"
-  env_line OIDC_CLIENT_ID "$OIDC_CLIENT_ID"
-  env_line OIDC_SCOPE "${OIDC_SCOPE:-openid profile email}"
+  env_line OIDC_ISSUER "$oidc_issuer"
+  env_line OIDC_JWKS_URL "$oidc_jwks_url"
+  env_line OIDC_AUDIENCE "$oidc_audience"
+  env_line OIDC_CLIENT_ID "$oidc_client_id"
+  env_line OIDC_SCOPE "$oidc_scope"
   env_line INTEGRATIONS_PUBLIC_ORIGIN "$origin"
   env_line INTEGRATIONS_ENCRYPTION_KEY "$(jq -r .integrationsKey "$secrets")"
   env_line MANAGED_BOOKING_STAFF_ID "$(jq -r .bookingStaffId "$secrets")"
@@ -115,18 +139,31 @@ umask 077
   env_line CORS_ORIGINS "$origin"
   env_line TELE_PATIENT_LINK_BASE "$origin/staff/video-consult"
   env_line TENANT_DATA_EXPORT "$export_path"
+  env_line TENANT_CONTROL_URL "${TENANT_CONTROL_URL:-https://health.exora.solutions}"
+  # Only this tenant's derived token reaches the container; the control API recomputes it from PROVISIONER_TOKEN.
+  if [[ -n ${PROVISIONER_TOKEN:-} ]]; then
+    env_line TENANT_CONTROL_TOKEN "$(printf '%s' "tenant-control:${tenant_id,,}" | openssl dgst -sha256 -hmac "$PROVISIONER_TOKEN" | awk '{print $NF}')"
+  fi
   env_line VOICE_SERVICE_KEY "$(jq -r .voiceServiceKey "$secrets")"
   env_line VOICE_SIGNING_SECRET "$(jq -r .voiceSigningSecret "$secrets")"
   env_line VOICE_SERVICE_ACCOUNT_ID "$voice_account"
   env_line VOICE_NOTICE_VERSION 2026-10-14
   env_line VOICE_SESSION_SECONDS 900
-  env_line VOICE_CALLBACK_TENANT_ID "$tenant_id"
-  env_line VOICE_CALLBACK_FACILITY_ID "$facility_id"
-  env_line VOICE_CALLBACK_ACCOUNT_ID "$voice_account"
-  env_line VOICE_CALLBACK_SECRET "$(jq -r .voiceCallbackSecret "$secrets")"
+  if [[ $voice == true && -n ${SARVAM_API_KEY:-} && -n ${SARVAM_ORG_ID:-} &&
+        -n ${SARVAM_WORKSPACE_ID:-} && -n ${SARVAM_APP_ID:-} && -n ${SARVAM_APP_VERSION:-} ]]; then
+    env_line VOICE_CALLBACK_TENANT_ID "$tenant_id"
+    env_line VOICE_CALLBACK_FACILITY_ID "$facility_id"
+    env_line VOICE_CALLBACK_ACCOUNT_ID "$voice_account"
+    env_line VOICE_CALLBACK_SECRET "$(jq -r .voiceCallbackSecret "$secrets")"
+    for key in SARVAM_API_KEY SARVAM_ORG_ID SARVAM_WORKSPACE_ID SARVAM_APP_ID SARVAM_APP_VERSION SARVAM_AGENT_NAME SARVAM_PHONE_NUMBER; do
+      if [[ -n ${!key:-} ]]; then env_line "$key" "${!key}"; fi
+    done
+  fi
 } > "$env_path"
 
-docker compose --env-file "$env_path" -f "$REPO_ROOT/deploy/production/tenant.compose.yml" up -d --no-build
+tenant_compose_file="${TENANT_COMPOSE_FILE:-$REPO_ROOT/deploy/production/tenant.compose.yml}"
+[[ -r $tenant_compose_file ]] || { echo "tenant compose file $tenant_compose_file is not readable" >&2; exit 2; }
+docker compose --env-file "$env_path" -f "$tenant_compose_file" up -d --no-build
 
 nginx_path="$GATEWAY_DIR/nginx/sites/tenant-$slug.conf"
 nginx_temp="$(mktemp "$GATEWAY_DIR/nginx/sites/.tenant-$slug.XXXXXX")"
@@ -173,5 +210,22 @@ docker compose -f "$GATEWAY_DIR/compose.yaml" exec -T nginx nginx -s reload
 
 for _ in $(seq 1 60); do curl -fsS "http://127.0.0.1:$port/public/v1/bootstrap" >/dev/null && break; sleep 2; done
 curl -fsS "http://127.0.0.1:$port/public/v1/bootstrap" >/dev/null
+
+# Send the owner invitation only after the tenant is reachable. The one-time Keycloak action link
+# requires a new password and then returns the owner to this tenant's staff dashboard. Record the
+# successful delivery so a later infrastructure retry does not send duplicate invitations.
+if [[ $(jq -r '.ownerInviteSentAt // empty' "$secrets") == '' ]]; then
+  jq -n --arg slug "$slug" --arg email "$email" --arg origin "$origin" \
+    --arg temporaryPassword "$owner_temporary_password" \
+    '{slug:$slug,email:$email,origin:$origin,temporaryPassword:$temporaryPassword,sendInvite:true}' | \
+    "$OIDC_PROVISIONER" >/dev/null
+  secret_temp="$(mktemp "$tenant_dir/.secrets.XXXXXX")"
+  jq --arg sentAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '.ownerInviteSentAt=$sentAt' \
+    "$secrets" > "$secret_temp"
+  chmod 600 "$secret_temp"
+  mv "$secret_temp" "$secrets"
+fi
+
 jq -n --arg tenantId "$tenant_id" --arg composeProject "exora-$slug" --arg image "exora/hms:$IMAGE_TAG" --arg publicUrl "$origin/" --arg staffUrl "$origin/staff/appointments" \
-  '{tenantId:$tenantId,composeProject:$composeProject,image:$image,publicUrl:$publicUrl,staffUrl:$staffUrl}'
+  --arg adminUsername "$email" --arg temporaryPassword "$owner_temporary_password" \
+  '{tenantId:$tenantId,composeProject:$composeProject,image:$image,publicUrl:$publicUrl,staffUrl:$staffUrl,adminUsername:$adminUsername,temporaryPassword:$temporaryPassword}'
