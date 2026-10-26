@@ -61,6 +61,22 @@ export function useAlertsSource() {
   const accounts = useQuery<{ items: StaffAccount[] }>(on.accounts ? `/v1/staff-accounts?facilityId=${at}` : null, POLL);
   const marks = useQuery<{ states: AlertMark[]; registrations: Registration[]; teamRegistrations: TeamRegistration[] | null }>("/v1/me/alerts", POLL);
   const setup = useSetupItems("in_person", "");
+  // Setup progress (first-run guide, sidebar locks) follows saves made anywhere in the workspace.
+  const recheck = useRef(setup.recheck);
+  recheck.current = setup.recheck;
+  useEffect(() => {
+    if (!setup.admin) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const saved = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => void recheck.current().catch(() => false), 400);
+    };
+    window.addEventListener("hms-saved", saved);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("hms-saved", saved);
+    };
+  }, [setup.admin]);
   const [pending, setPending] = useState<Record<string, AlertMark>>({});
   const [error, setError] = useState("");
 
@@ -146,7 +162,7 @@ export function useAlertsSource() {
       ...(on.teleconsults ? [teleconsults.refresh()] : []), ...(on.clinical ? [encounters.refresh(), referrals.refresh()] : []),
       ...(on.accounts ? [accounts.refresh()] : []), ...(setup.admin ? [setup.recheck().catch(() => false)] : [])]);
   };
-  return { alerts, unavailable, error, now, loading, mark, refresh };
+  return { alerts, unavailable, error, now, loading, mark, refresh, setup };
 }
 
 export type AlertsState = ReturnType<typeof useAlertsSource>;

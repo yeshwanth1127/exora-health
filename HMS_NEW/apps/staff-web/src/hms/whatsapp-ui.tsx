@@ -215,7 +215,7 @@ export function StepDot({
 }) {
   return (
     <span
-      className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-medium ${done ? "bg-primary text-primary-foreground" : active ? "border-2 border-primary" : "border text-muted-foreground"}`}
+      className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-medium ${done ? "bg-guide-done text-white" : active ? "bg-guide-now text-white" : "border text-muted-foreground"}`}
     >
       {done ? <Check className="size-3.5" /> : n}
     </span>
