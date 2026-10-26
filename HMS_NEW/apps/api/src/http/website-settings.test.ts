@@ -28,7 +28,7 @@ it('publishes the connected runtime and saved mode through the public website en
  process.env.WEBSITE_TEMPLATE='swastikaa';delete process.env.BOOTSTRAP_FACILITY_ID;
  const site={siteSlug:'river-hospital',tenantId:k.tenant.tenantId,facilityId:k.tenant.facilityId,identityIssuer:'test',identitySubject:'test',origins:['https://river.example'],doctorAliases:{},websiteBranchId:null};
  const booking={sites:[site],signingSecret:'test-only-signing-secret-123456789012345'};
- const app=buildServer({db:k.db,publicTenantId:k.tenant.tenantId,publicBooking:booking,managed:{encryptionKey:Buffer.alloc(32,9),publicOrigin:'https://river.example',whatsappSending:false,booking},verifier:createVerifier({mode:'dev',secret:DEV_SECRET_DEFAULT,issuer:DEV_ISSUER})});
+ const app=buildServer({db:k.db,publicTenantId:k.tenant.tenantId,publicBooking:booking,managed:{encryptionKey:Buffer.alloc(32,9),publicOrigin:'https://river.example',whatsappSending:false,fetcher:fetch,booking},verifier:createVerifier({mode:'dev',secret:DEV_SECRET_DEFAULT,issuer:DEV_ISSUER})});
  try{const r=await app.inject('/public/v1/website');expect(r.statusCode,r.body).toBe(200);expect(r.json()).toMatchObject({runtime:{template:'swastikaa',demoEnabled:false,bookingSite:'river-hospital',facilityId:k.tenant.facilityId},content:{headline:'Care close to home'}});expect(r.json().name).not.toBe('Swastikaa Hospital');expect(r.headers['cache-control']).toBe('no-store')}
  finally{await app.close();if(previous===undefined)delete process.env.WEBSITE_TEMPLATE;else process.env.WEBSITE_TEMPLATE=previous;if(facility===undefined)delete process.env.BOOTSTRAP_FACILITY_ID;else process.env.BOOTSTRAP_FACILITY_ID=facility}
 });
