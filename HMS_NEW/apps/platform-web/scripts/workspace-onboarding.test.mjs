@@ -35,3 +35,9 @@ test('editorial template survives quote handoff, validation, and draft recovery 
  assert.equal(workspacePayload(draft,true).websiteTemplate,'hospital-editorial');
  assert.equal(workspacePayload({...draft,facilityName:'Riverbend Hospital'},true).facilityName,'Riverbend Hospital');
 });
+
+test('Swastikaa selection retains the entered hospital identity',()=>{
+ const draft=fromIntake({profile:{name:'Owner',email:'owner@example.test',phone:''},facility:{name:'River Hospital',city:'Pune',size:'hospital'},preferences:{template:'swastikaa'}});
+ assert.equal(workspacePayload(draft,true).websiteTemplate,'swastikaa');
+ assert.equal(workspacePayload(draft,true).facilityName,'River Hospital');
+});

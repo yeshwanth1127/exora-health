@@ -1,0 +1,75 @@
+{
+  "arc": [
+    {
+      "source": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/button/button.tsx",
+      "destination": "src/vendor/arc/button/button.tsx",
+      "source_sha256": "6a56d78cb75a6fd5f5cfdd03be8b02bf96f0bc96790d3c81abeee10e089fecec",
+      "adapted_sha256": "6d55d48fd4142bd96ff6bf6f61a87d25d1480b91f1abec9bfa8bab1a4bba8c3f"
+    },
+    {
+      "source": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/button/button.module.css",
+      "destination": "src/vendor/arc/button/button.module.css",
+      "source_sha256": "77323140c3f9fbad7b08dddba0db7260aa233c34c39a9d24cfa646fea287e140",
+      "adapted_sha256": "77323140c3f9fbad7b08dddba0db7260aa233c34c39a9d24cfa646fea287e140"
+    },
+    {
+      "source": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/input/input.tsx",
+      "destination": "src/vendor/arc/input/input.tsx",
+      "source_sha256": "16a4e761b51482e9c066f284a38171085e71ae390e4b26f9f0c18dd8af21c8f2",
+      "adapted_sha256": "604ae702538243dcb272540c54b7006d7f1614a0b45aa7b95f816393cac7c3bf"
+    },
+    {
+      "source": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/input/input.module.css",
+      "destination": "src/vendor/arc/input/input.module.css",
+      "source_sha256": "ef6716aa7b9f45898859735f416ac932517b94e66bed6b3d23d7aed180529bdf",
+      "adapted_sha256": "ef6716aa7b9f45898859735f416ac932517b94e66bed6b3d23d7aed180529bdf"
+    },
+    {
+      "source": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/textarea/textarea.tsx",
+      "destination": "src/vendor/arc/textarea/textarea.tsx",
+      "source_sha256": "1ed43b87e45b04180f1c6b8b3b7543e071bed3a6fcb2033e98015c77a8b7135a",
+      "adapted_sha256": "55107053721c968b023a8bc89b9f619e5a2f3597f07c22653e0388a50b29a8de"
+    },
+    {
+      "source": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/textarea/textarea.module.css",
+      "destination": "src/vendor/arc/textarea/textarea.module.css",
+      "source_sha256": "57a9294f6f7eea903296334bf1203982b41736aa1082a83af4dc2e8bbc6a144c",
+      "adapted_sha256": "57a9294f6f7eea903296334bf1203982b41736aa1082a83af4dc2e8bbc6a144c"
+    },
+    {
+      "source": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/accordion/accordion.tsx",
+      "destination": "src/vendor/arc/accordion/accordion.tsx",
+      "source_sha256": "4d24d519b511812da9dd2b5e2c7d696c0f849ac9ea391480927acf5cfaa3a977",
+      "adapted_sha256": "696883670aadb4bd31ae8143d7989a2c78261b45fec5d13fb3974868135c5524"
+    },
+    {
+      "source": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/accordion/accordion.module.css",
+      "destination": "src/vendor/arc/accordion/accordion.module.css",
+      "source_sha256": "8a4fc9578571f3d7d2fe16998f7977f12671fcabcfc8d50a462c7bf9abd65243",
+      "adapted_sha256": "8a4fc9578571f3d7d2fe16998f7977f12671fcabcfc8d50a462c7bf9abd65243"
+    },
+    {
+      "source": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/select/select.tsx",
+      "destination": "src/vendor/arc/select/select.tsx",
+      "source_sha256": "673dc0c887a255c87bfbabd1835606d87cfbf59ed6fd4909a28038f00f673eaa",
+      "adapted_sha256": "1f9950c09ab9edef1dd6540ae7a2ef0c24cbbf1a093efd729b60366abec30207"
+    },
+    {
+      "source": "/Users/deepakonda/Downloads/test/arc-components/free-source/components/arc/select/select.module.css",
+      "destination": "src/vendor/arc/select/select.module.css",
+      "source_sha256": "f700250cfa39db22e974f417d6d776e70b037e031500ca85c3c94e0c558a2b04",
+      "adapted_sha256": "f700250cfa39db22e974f417d6d776e70b037e031500ca85c3c94e0c558a2b04"
+    }
+  ],
+  "adaptations": [
+    "motion/react import redirected to installed framer-motion exports",
+    "Radix imports use installed radix-ui aggregate exports; component behavior and CSS retained",
+    "Arc foundation root tokens copied; global theme/reset rules excluded",
+    "Sri Lakshmi ServicesBentoSection adapted to data/callback props and scoped CSS; 22px/1.2:1/700ms photo contract retained",
+    "Sri Lakshmi InsurancePartnersSection adapted to scoped CSS and accessible buttons; same five logos, grayscale row and hover retained; no flip timer needed because all five logos are visible"
+  ],
+  "sri_lakshmi_sources": [
+    "../sri-lakshmi-web/src/components/sections/ServicesBentoSection.tsx",
+    "../sri-lakshmi-web/src/components/sections/InsurancePartnersSection.tsx"
+  ]
+}

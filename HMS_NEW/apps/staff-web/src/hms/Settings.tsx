@@ -1,3 +1,4 @@
+import { WebsiteSettingsPanel } from "./WebsiteSettings";
 import { SettingsPage as ArcSettingsPage } from "@/components/arc/settings-page/settings-page";
 import {
   Users,
@@ -83,7 +84,7 @@ export function SettingsPage({
       ? (["team", "roles"] as SettingsSection[])
       : []),
     ...(can(me, "config.manage", facility.facilityId)
-      ? (["booking"] as SettingsSection[])
+      ? (["booking", "website"] as SettingsSection[])
       : []),
     ...((me.permissions["tenant.manage"] ?? []).includes("*")
       ? (["modules"] as SettingsSection[])
@@ -271,6 +272,7 @@ export function SettingsPage({
             team: Users,
             roles: ShieldCheck,
             booking: CalendarCheck,
+            website: Palette,
             modules: SlidersHorizontal,
             registrations: Stethoscope,
             "consent-documents": FileCheck,
@@ -282,6 +284,7 @@ export function SettingsPage({
             roles:
               "Review permissions and clinic access before applying a change.",
             booking: `Appointment booking rules for ${facility.name}.`,
+            website: "Swastikaa template content and general enquiries.",
             modules: "Manage the modules available to this organisation.",
             registrations:
               "Review professional registrations and verification.",
@@ -325,6 +328,7 @@ export function SettingsPage({
             account={{ name: me.displayName, detail: titleCase(me.staffType) }}
           />
         )}
+        {section === "website" && <WebsiteSettingsPanel key={facility.facilityId} />}
         {section === "appearance" && (
           <Card>
             <CardHeader>

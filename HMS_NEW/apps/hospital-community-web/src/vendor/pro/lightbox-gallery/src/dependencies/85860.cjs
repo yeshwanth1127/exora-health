@@ -1,0 +1,32 @@
+// Reconstructed from captured browser-delivered JavaScript; original TSX was not recovered.
+const interop = require("../interop.cjs");
+module.exports = {
+  root: "lightbox-gallery_root__E6HYB",
+  grid: "lightbox-gallery_grid__z_mPA",
+  column: "lightbox-gallery_column___PieR",
+  thumb: "lightbox-gallery_thumb__8D_zs",
+  thumbImage: "lightbox-gallery_thumbImage__HArCl",
+  overlay: "lightbox-gallery_overlay__bVXd4",
+  veil: "lightbox-gallery_veil__0vI2b",
+  stage: "lightbox-gallery_stage__eGRsz",
+  strip: "lightbox-gallery_strip__pi9pC",
+  slide: "lightbox-gallery_slide__s4cMB",
+  frame: "lightbox-gallery_frame__34gpM",
+  zoom: "lightbox-gallery_zoom__yflu3",
+  layer: "lightbox-gallery_layer__RiubC",
+  topBar: "lightbox-gallery_topBar__RXJNi",
+  counter: "lightbox-gallery_counter__Ky3ur",
+  num: "lightbox-gallery_num__cBne3",
+  actions: "lightbox-gallery_actions__82gJp",
+  iconButton: "lightbox-gallery_iconButton__6S4_n",
+  navButton: "lightbox-gallery_navButton__qindi",
+  sideNav: "lightbox-gallery_sideNav__ilsXP",
+  bottom: "lightbox-gallery_bottom__I4wK3",
+  captions: "lightbox-gallery_captions__2GuTE",
+  caption: "lightbox-gallery_caption__j78Ga",
+  captionTitle: "lightbox-gallery_captionTitle__2vwPG",
+  captionText: "lightbox-gallery_captionText__cz7YH",
+  thumbStrip: "lightbox-gallery_thumbStrip__OERk8",
+  stripThumb: "lightbox-gallery_stripThumb__t6HPp",
+  srOnly: "lightbox-gallery_srOnly__yzTHM"
+};

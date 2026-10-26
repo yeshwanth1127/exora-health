@@ -10,7 +10,7 @@ afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) awai
 async function fixture(template?: string, bookingSite?: string) {
   const root = await mkdtemp(path.join(tmpdir(), 'hms-website-'));
   cleanups.push(() => rm(root, { recursive: true, force: true }));
-  for (const [app, content] of [['public-web', 'standard website'], ['sri-lakshmi-web', 'Sri Lakshmi website'], ['hospital-editorial-web','editorial hospital website'], ['staff-web', 'staff dashboard']]) {
+  for (const [app, content] of [['public-web', 'standard website'], ['sri-lakshmi-web', 'Sri Lakshmi website'], ['hospital-editorial-web','editorial hospital website'], ['hospital-community-web','Swastikaa website'], ['staff-web', 'staff dashboard']]) {
     const dir = path.join(root, 'apps', app!, 'dist');
     await mkdir(dir, { recursive: true });
     await writeFile(path.join(dir, 'index.html'), content!);
@@ -54,4 +54,13 @@ it('serves the editorial hospital template without changing Sri Lakshmi, staff o
  expect((await app.inject('/staff/appointments')).body).toBe('staff dashboard');
  expect((await app.inject('/assets/missing.js')).statusCode).toBe(404);
  await expect(fixture('hospital-editorial')).rejects.toThrow('requires a tenant booking site');
+});
+
+it('serves Swastikaa deep routes with the tenant binding and shared dashboard',async()=>{
+ const app=await fixture('swastikaa','any-hospital');
+ for(const url of ['/','/consultants/dr-one','/clinics/medicine','/treatments/example','/tests-scans/mri','/book','/contact'])expect((await app.inject(url)).body).toBe('Swastikaa website');
+ expect((await app.inject('/website-config.js')).body).toContain('"bookingSite":"any-hospital"');
+ expect((await app.inject('/staff/appointments')).body).toBe('staff dashboard');
+ expect((await app.inject('/public/v1/missing')).statusCode).toBe(404);
+ await expect(fixture('swastikaa')).rejects.toThrow('requires a tenant booking site');
 });

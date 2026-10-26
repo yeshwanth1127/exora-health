@@ -1,3 +1,4 @@
+import {websiteVoiceContext} from '../modules/booking/website-voice-context.ts';
 import { createHmac } from 'node:crypto';
 import { seal, type ManagedSettings } from '../modules/comms/managed-config.ts';
 import { dispatchBookingChats } from '../modules/comms/managed-booking-chat.ts';
@@ -64,6 +65,33 @@ describe('public website booking into HMS',()=>{
     expect((await request('POST','/appointments',payload('invalid'),undefined,null)).status).toBe(403);
     const r=await app.inject({method:'OPTIONS',url:prefix+'/appointments',headers:{origin,'access-control-request-method':'POST','access-control-request-headers':'content-type,idempotency-key'}});
     expect(r.statusCode).toBe(204);expect(r.headers['access-control-allow-origin']).toBe(origin);
+  });
+  it('saves and idempotently recovers enquiries in the scoped staff inbox',async()=>{
+    const body={name:'Website Visitor',email:'visitor@example.test',topic:'Visiting information',message:'Which entrance should I use?'},key=randomUUID();
+    const [a,b]=await Promise.all([request('POST','/enquiries',body,key),request('POST','/enquiries',body,key)]);
+    expect(a.status,JSON.stringify(a.body)).toBe(201);expect(b.body).toEqual(a.body);
+    expect((await request('POST','/enquiries',{...body,message:'Changed'},key)).status).toBe(409);
+    expect((await request('POST','/enquiries',body,randomUUID(),null)).status).toBe(403);
+    expect((await request('POST','/enquiries',{...body,patientId:randomUUID()})).status).toBe(400);
+    const path=`/v1/facilities/${site.facilityId}/website/enquiries`;
+    const inbox=await k.call(admin,'GET',path);expect(inbox.status,JSON.stringify(inbox.body)).toBe(200);
+    const row=inbox.body.items.find((i:any)=>i.id===a.body.id);expect(row).toMatchObject({name:body.name,status:'new',version:1});
+    expect((await k.call(doctor,'GET',path)).status).toBe(403);
+    const reviewed=await k.call(admin,'POST',path+'/'+row.id+'/review',{version:row.version},true);
+    expect(reviewed.status,JSON.stringify(reviewed.body)).toBe(200);expect(reviewed.body).toMatchObject({status:'reviewed',version:2});
+    expect((await k.call(admin,'POST',path+'/'+row.id+'/review',{version:row.version},true)).status).toBe(409);
+  });
+  it('validates a website slot preference without holding or booking it',async()=>{
+    const [slot]=await slots(),config={sites:[site],signingSecret:secret};
+    const before=(await k.admin.query('SELECT count(*)::int n FROM booking.reservation WHERE tenant_id=$1',[site.tenantId])).rows[0].n;
+    const ctx=await websiteVoiceContext(k.db,config,{site:site.siteSlug,slotToken:slot!.slotToken},origin,'voice-test');
+    expect(ctx).toMatchObject({doctor_slug:'dr-real',preferred_start:slot!.startsAt,selection_status:'preference_only'});
+    expect((await k.admin.query('SELECT count(*)::int n FROM booking.reservation WHERE tenant_id=$1',[site.tenantId])).rows[0].n).toBe(before);
+    const claim=readSlot(slot!.slotToken,secret);
+    for(const token of [slot!.slotToken+'x',signSlot({...claim,expiresAt:Date.now()-1},secret),signSlot({...claim,facilityId:randomUUID()},secret)])await expect(websiteVoiceContext(k.db,config,{site:site.siteSlug,slotToken:token},origin,'voice-test')).rejects.toThrow();
+    await expect(websiteVoiceContext(k.db,config,{site:site.siteSlug,slotToken:slot!.slotToken},'https://wrong.example','voice-test')).rejects.toThrow();
+    await k.admin.query("UPDATE catalog.practitioner_profile SET published=false WHERE staff_id=$1",[doctor.staffId]);
+    try{await expect(websiteVoiceContext(k.db,config,{site:site.siteSlug,slotToken:slot!.slotToken},origin,'voice-test')).rejects.toThrow()}finally{await k.admin.query("UPDATE catalog.practitioner_profile SET published=true WHERE staff_id=$1",[doctor.staffId])}
   });
   it('atomically persists one web appointment, unverified contact, audit/outbox; concurrent retry returns same receipt',async()=>{
     const [slot]=await slots(),key=randomUUID(),body=payload(slot!.slotToken);

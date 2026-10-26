@@ -24,10 +24,12 @@ ENV VITE_HMS_DEFAULT_SUBJECT=$VITE_HMS_DEFAULT_SUBJECT
 COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json vitest.config.ts ./
 COPY --chown=node:node apps/api ./apps/api
 COPY --chown=node:node apps/hospital-editorial-web ./apps/hospital-editorial-web
+COPY --chown=node:node apps/hospital-community-web ./apps/hospital-community-web
+COPY --chown=node:node apps/public-web ./apps/public-web
 COPY --chown=node:node apps/staff-web ./apps/staff-web
 COPY --chown=node:node packages ./packages
 COPY --chown=node:node db ./db
 
-RUN pnpm install --frozen-lockfile && pnpm editorial:build && pnpm staff:build
+RUN pnpm install --frozen-lockfile && pnpm editorial:build && pnpm swastikaa:build && pnpm staff:build
 
 USER node

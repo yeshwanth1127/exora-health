@@ -1,0 +1,11 @@
+import {WebsiteRuntimeProvider} from './ui/Runtime';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './ui/App';
+import './vendor/pro/lightbox-gallery/dist/app.css';
+import './arc-hospital.css';
+import './vendor/arc/foundation.css';
+import './ui/site.css';
+import './ui/refinements.css';
+import './ui/reference/reference.css';
+ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><WebsiteRuntimeProvider><App/></WebsiteRuntimeProvider></React.StrictMode>);

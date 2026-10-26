@@ -1,0 +1,22 @@
+{
+  "source": "https://uiarc.dev/components/lightbox-gallery/frame",
+  "entryModule": 68014,
+  "export": "LightboxGalleryDemo",
+  "capturedFactorySha256": "58ab2e9c81e937c2dcb113fe8b6d9c0098650127356f95a2b089a9b3b84bbe5c",
+  "assetCount": 45,
+  "cssAssetReferences": [
+    "_next/static/media/9ff55a8a9670220d-s.p.woff2",
+    "_next/static/media/6c596dfcddeca1e9-s.p.woff2"
+  ],
+  "checks": {
+    "conversion": "passed",
+    "build": "passed after interop and runtime asset bridge repair",
+    "cleanConsumer": "passed: external React, bundled JS/CSS and local font outputs",
+    "browserParity": "pending parent comparison",
+    "demo": "passed: bundled local React/ReactDOM app.js; sha256 prefix a8438132ba18",
+    "mode1Audit": "no mode-1 interop.t imports found",
+    "browserMount": "pending parent recheck after runtime repair",
+    "assetPathRebase": "passed: source literals and nested JSX image/srcSet/inline background-image props resolve to captured dist/assets; unique basename fallback for captured portrait aliases"
+  },
+  "previewProps": {}
+}

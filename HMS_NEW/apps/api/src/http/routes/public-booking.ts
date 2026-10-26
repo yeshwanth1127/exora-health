@@ -1,3 +1,4 @@
+import {Enquiry,saveEnquiry} from '../../modules/booking/website-enquiries.ts';
 import { attributeBooking } from "../../modules/comms/managed-analytics.ts";
 import type { ManagedSettings } from "../../modules/comms/managed-config.ts";
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -52,6 +53,11 @@ export function registerPublicBookingRoutes(parent:FastifyInstance,db:Kysely<DB>
     app.get(`${prefix}/slots`,async request=>{
       const query=parse(Query,request.query),{site,caller}=await authority(request);
       return publicSlots(db,caller,site,config.signingSecret,query);
+    });
+    app.post(`${prefix}/enquiries`,async(request,reply)=>{
+      const body=parse(Enquiry,request.body),key=parse(z.uuid(),request.headers['idempotency-key']);
+      const {site,caller}=await authority(request);await publicCatalog(db,caller,site);
+      return reply.status(201).send(await saveEnquiry(db,site,body,key));
     });
     app.post(`${prefix}/appointments`,async(request,reply)=>{
       const body=parse(Book,request.body),key=parse(z.uuid(),request.headers['idempotency-key']);

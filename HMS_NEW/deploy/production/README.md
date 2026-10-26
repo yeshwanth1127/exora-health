@@ -85,3 +85,9 @@ changed and the app recreated. See `apps/sri-lakshmi-web/README.md` for the data
 ### Editorial hospital template
 
 `hospital-editorial` is the third supported `websiteTemplate`. Both provisioners forward this ID unchanged; the tenant image bundles `apps/hospital-editorial-web/dist`. Select **Editorial hospital website** during launch setup and enter the desired facility name (for example, NDR Hospital). Rebuild both platform and tenant images, update the installed production provisioner from this release, then use the normal onboarding workflow. No existing tenant is reassigned by this source change. Optional tenant-scoped `WEBSITE_CONTENT_JSON` supplies approved imagery/editorial copy/gallery/packages; persisted facility records supply identity/contact data. See `apps/hospital-editorial-web/README.md`.
+
+## Swastikaa hospital template
+
+`swastikaa` is available as **Swastikaa template** in the quote chooser and workspace setup. Both provisioners preserve this ID; the tenant image builds and serves `apps/hospital-community-web/dist`, alongside the existing API, worker and `/staff/` dashboard. Update platform/control images, tenant image and installed `provision-tenant-production` together. This source change does not migrate existing tenant template selections.
+
+Swastikaa defaults to labelled demo mode and retains the frontend sample content. Workspace settings → Website lets facility administrators publish validated website content and explicitly switch to live mode. Live doctors, fees and availability come from the existing HMS catalog/scheduling configuration. Managed voice activation and provider credentials remain separate prerequisites; choosing a template does not activate an agent. The new enquiry migration is applied by the normal tenant migration job. See `apps/hospital-community-web/README.md` for contracts and evidence limits.

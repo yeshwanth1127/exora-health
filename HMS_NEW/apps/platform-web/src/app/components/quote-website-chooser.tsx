@@ -12,6 +12,7 @@ const palettes = [
 ];
 
 function Preview({ index, category }: { index: number; category: string }) {
+  if(index===3)return <span className="quote-template-preview" aria-hidden="true"><img src="/templates/swastikaa.png" alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"top"}}/></span>;
   const offset = category === "hospital" ? 2 : category === "specialist" ? 1 : 0;
   const [background, ink, soft] = palettes[(index + offset) % palettes.length];
   return <span className={`quote-template-preview layout-${index % 3}`} style={{ "--preview-background": background, "--preview-ink": ink, "--preview-soft": soft } as CSSProperties} aria-hidden="true">
