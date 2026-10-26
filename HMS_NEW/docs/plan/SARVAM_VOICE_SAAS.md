@@ -1,13 +1,13 @@
-# Exora Health managed Sarvam voice platform
+# Paperwhale managed Sarvam voice platform
 
 Status: implementation blueprint
 Scope: configurable Sarvam agents, tenant-specific HMS backends, website voice, inbound telephony,
-unanswered-call forwarding, tenant administration and Exora superadmin operations.
+unanswered-call forwarding, tenant administration and Paperwhale superadmin operations.
 
 ## 1. Product outcome
 
-Exora is the management wrapper and source of truth for every tenant's Sarvam voice agent. A clinic
-administrator configures the assistant from the Exora Voice screen. Publishing those settings must
+Paperwhale is the management wrapper and source of truth for every tenant's Sarvam voice agent. A clinic
+administrator configures the assistant from the Paperwhale Voice screen. Publishing those settings must
 change the actual Sarvam draft, create an immutable Sarvam version, test it, and move the tenant's
 browser and telephone deployments onto that version. The clinic never needs to open Sarvam.
 
@@ -50,13 +50,13 @@ Rules:
    mismatch fails closed.
 8. Rotating or disabling Tenant A cannot affect Tenant B.
 
-This remains true even though all agents are managed from the same Exora Sarvam organization or
+This remains true even though all agents are managed from the same Paperwhale Sarvam organization or
 workspace. Provider workspace membership is not the clinical-data boundary; the per-agent backend
 origin, credential, fixed runtime tenant id and separate tenant database are the boundary.
 
 ## 3. Core decisions
 
-1. Exora is authoritative for desired configuration. Sarvam is authoritative for runtime ids and
+1. Paperwhale is authoritative for desired configuration. Sarvam is authoritative for runtime ids and
    interactions.
 2. Use one Sarvam agent per tenant, never a shared multi-tenant agent.
 3. Use a dedicated inbound/overflow number per tenant. Use one per facility when a call must resolve
@@ -64,7 +64,7 @@ origin, credential, fixed runtime tenant id and separate tenant database are the
 4. Keep changing hospital data out of prompts and knowledge bases; fetch it through live HMS tools.
 5. Treat a Sarvam draft as mutable preparation and a committed version as an immutable release.
 6. Existing calls stay on their starting version; new calls use the promoted version.
-7. A shared Exora phone number is not the default. Forwarding networks do not reliably preserve the
+7. A shared Paperwhale phone number is not the default. Forwarding networks do not reliably preserve the
    originally dialled number, and one phone number routes to one inbound deployment at a time.
 8. Use Sarvam APIs/service authentication for unattended production automation. MCP is for
    development and supervised operations, not an approval-dependent background worker.
@@ -93,7 +93,7 @@ The tenant is fixed by the container. Holds are signed and write operations are 
 
 ### Browser calling
 
-The website creates a short Exora session after explicit consent. The tenant backend proxies only the
+The website creates a short Paperwhale session after explicit consent. The tenant backend proxies only the
 Sarvam signed-WebSocket-URL request. The Sarvam API key never reaches the browser, and the SDK is
 pinned to the active committed agent version.
 
@@ -101,7 +101,7 @@ pinned to the active committed agent version.
 
 The HMS has facility-scoped call history, transcript revisions, recording permissions, consent and
 audit logging. Its callback boundary must gain a Sarvam webhook adapter instead of assuming Sarvam
-sends Exora's internal event shape.
+sends Paperwhale's internal event shape.
 
 ### Current gap
 
@@ -113,7 +113,7 @@ action, reconciliation or automatic rollback.
 
 Sarvam's agent-authoring endpoints reject workspace API keys (`401`), and the Voice Agents MCP needs
 a browser SSO login that expires daily. Until Sarvam grants server-to-server authoring access, agents
-are created and changed by hand by an Exora superadmin:
+are created and changed by hand by a Paperwhale superadmin:
 
 1. A clinic administrator (`voice.manage`) clicks **Create voice agent** on the Voice page. The
    clinic server relays the request to its control-plane record using its own derived token
@@ -135,7 +135,7 @@ Onboarding no longer queues automatic provisioning, and the provisioning worker 
 ## 5. Target architecture
 
 ```text
-Tenant Voice UI                    Exora superadmin UI
+Tenant Voice UI                    Paperwhale superadmin UI
        |                                   |
        +------------ Control API ----------+
                            |
@@ -173,7 +173,7 @@ Replace the single binding row with explicit resources.
 - provider organization, workspace and agent ids;
 - template id;
 - tenant API origin and opaque service-secret reference;
-- desired and active Exora revisions;
+- desired and active Paperwhale revisions;
 - active and previous Sarvam versions;
 - lifecycle state, last error and reconciliation timestamp.
 
@@ -232,10 +232,10 @@ independent sources of truth.
 - appointment types and permitted booking actions;
 - human-transfer number and rules;
 - after-hours, busy and failure behaviour;
-- consent wording subject to Exora policy;
+- consent wording subject to Paperwhale policy;
 - number strategy and forwarding conditions.
 
-### Exora-protected
+### Paperwhale-protected
 
 - tenant/facility binding and backend origin;
 - tool URLs, schemas and credentials;
@@ -249,9 +249,9 @@ Tenants edit typed controls, never raw Sarvam JSON or an unrestricted system pro
 
 ## 8. Configuration compiler
 
-The compiler converts a complete Exora revision into a complete Sarvam desired configuration:
+The compiler converts a complete Paperwhale revision into a complete Sarvam desired configuration:
 
-1. Start from a versioned Exora base template.
+1. Start from a versioned Paperwhale base template.
 2. Render branding, greeting, language and permitted behaviour.
 3. Add trusted facility/timezone variables.
 4. Generate all tool definitions using only the bound tenant backend origin.
@@ -271,13 +271,13 @@ prohibited.
 2. Verify at least one bookable published schedule before advertising booking.
 3. Create the tenant Voice service account, credential and signing secret.
 4. Store secrets in the production secret manager.
-5. Clone the reviewed Exora template or create an agent.
+5. Clone the reviewed Paperwhale template or create an agent.
 6. Bind the agent immediately to that tenant's backend origin and secret references.
 7. Compile revision 1 and configure the real Sarvam draft.
 8. Create/reconcile tools and Sarvam secrets.
 9. Test calls to the expected tenant and assert returned facility ids belong to it.
 10. Commit immutable Sarvam version 1.
-11. Run the Exora Voice regression suite.
+11. Run the Paperwhale Voice regression suite.
 12. Create the browser endpoint.
 13. Provision the chosen telephone path.
 14. Configure a signed completion webhook.
@@ -292,7 +292,7 @@ The tenant sees **Save draft** and **Publish changes**.
 
 ### Save draft
 
-- validate and store an Exora revision;
+- validate and store a Paperwhale revision;
 - show a before/after summary;
 - do not change Sarvam or live calls.
 
@@ -357,7 +357,7 @@ Steps:
 2. Create its inbound deployment for the tenant agent's active version.
 3. Capture existing number, carrier/provider and forwarding conditions.
 4. Show provider-specific forwarding instructions. The tenant/carrier performs ordinary carrier
-   forwarding; Exora must not assume universal USSD codes.
+   forwarding; Paperwhale must not assume universal USSD codes.
 5. Store ring duration, normally 15-25 seconds.
 6. Test busy, no-answer and unavailable independently.
 7. Assert each call reached the expected tenant/facility deployment and backend.
@@ -387,14 +387,14 @@ the Exophone. Other providers use their documented webhook/media-stream setup.
 
 1. Show region, availability and recurring cost before purchase.
 2. Require authorized approval of the billable action.
-3. Rent through Sarvam or an approved Exora telephony account.
+3. Rent through Sarvam or an approved Paperwhale telephony account.
 4. Record ownership and renewal metadata.
 5. Create the inbound deployment and verify it.
 6. Alert before low credit or renewal failure can release it.
 
 Current implementation: numbers are not allocated automatically. The superadmin enters the
 dedicated number and inbound deployment id when activating a clinic's voice request (section 4a).
-Exora still enforces unique phone and deployment bindings in the control database.
+Paperwhale still enforces unique phone and deployment bindings in the control database.
 
 Sarvam currently rents new numbers through its dashboard after KYC and a billable confirmation; the
 workspace API does not expose that purchase operation. Accordingly, automatic tenant provisioning
@@ -405,13 +405,13 @@ tenant.
 
 ### Shared number policy
 
-Never route unrelated tenants through one shared Sarvam number unless Exora first owns a verified
+Never route unrelated tenants through one shared Sarvam number unless Paperwhale first owns a verified
 telephony router that receives trusted original-destination metadata and selects the tenant before
 Sarvam. Caller speech, caller id and unverified forwarding headers are not routing boundaries.
 
 ## 13. Webhook ingestion
 
-Each deployment gets an Exora completion webhook with an opaque endpoint reference. The adapter:
+Each deployment gets a Paperwhale completion webhook with an opaque endpoint reference. The adapter:
 
 1. authenticates provider and rejects replay;
 2. locates endpoint by deployment id and signed metadata;
@@ -479,7 +479,7 @@ Tenant APIs submit desired state; they never call Sarvam directly.
 
 Provider ids, secrets and raw JSON are hidden from tenant staff.
 
-### Exora superadmin
+### Paperwhale superadmin
 
 - tenant/state/plan list;
 - desired versus observed provider state;
@@ -555,7 +555,7 @@ drift and opens a reviewed operation for dangerous differences.
 - confirm production authoring API/service-auth access;
 - confirm telephony, tool and evaluation features for the workspace;
 - obtain a sandbox number/connection;
-- review and commit the generic Exora template.
+- review and commit the generic Paperwhale template.
 
 Exit: a backend process can create, modify and commit an agent without browser automation.
 
@@ -577,7 +577,7 @@ Exit: one authoritative view explains desired, active and observed state.
 - tool tests and Sarvam evaluations;
 - deployment version promotion.
 
-Exit: changing Test Hospital's settings in Exora changes its actual Sarvam agent and is reversible.
+Exit: changing Test Hospital's settings in Paperwhale changes its actual Sarvam agent and is reversible.
 
 ### Phase 3 — browser production path
 
@@ -604,7 +604,7 @@ Exit: an unanswered Test Hospital call reaches only its agent and backend.
 - Exotel first, then providers based on demand;
 - deployment and test-call automation.
 
-Exit: tenants bring supported numbers without Exora staff manually configuring Sarvam.
+Exit: tenants bring supported numbers without Paperwhale staff manually configuring Sarvam.
 
 ### Phase 6 — operations and scale
 
@@ -627,13 +627,13 @@ Exit: routine multi-tenant Voice operation requires no provider-console work.
 8. Allocate a dedicated overflow number and inbound deployment.
 9. Configure the existing reception number to forward when selected conditions occur.
 10. Verify every forwarding condition and human handoff to a separate destination.
-11. Change the greeting in Exora, publish version 2 and test rollback.
+11. Change the greeting in Paperwhale, publish version 2 and test rollback.
 
 ## 21. Acceptance criteria
 
 - every tenant has a distinct Sarvam agent, backend origin, service identity and credential;
 - no agent tool can select or override its tenant;
-- publishing in Exora changes the actual Sarvam configuration and creates a traceable version;
+- publishing in Paperwhale changes the actual Sarvam configuration and creates a traceable version;
 - validation failure never changes live deployments;
 - rollback is a supported one-action operation;
 - all hospital facts come from the bound tenant HMS backend;
@@ -647,7 +647,7 @@ Exit: routine multi-tenant Voice operation requires no provider-console work.
 
 ## 22. External dependencies
 
-- Sarvam must enable required authoring, tool, evaluation and telephony APIs for Exora.
+- Sarvam must enable required authoring, tool, evaluation and telephony APIs for Paperwhale.
 - Provider onboarding can require tenant action in an external console.
 - Forwarding availability and charges vary by carrier.
 - Exotel live transfer may require Sarvam enablement.

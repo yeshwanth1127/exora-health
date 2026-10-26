@@ -216,7 +216,7 @@ function Setup({ clinic }: { clinic: Clinic }) {
       )}
       {!remote.query.data?.available && (
         <p className="mb-4 text-sm text-muted-foreground">
-          Exora is preparing WhatsApp connections. No technical setup is needed
+          Paperwhale is preparing WhatsApp connections. No technical setup is needed
           from your team.
         </p>
       )}
@@ -330,8 +330,8 @@ const eligibility = [
   "You can log in to Facebook as an admin of the clinic's business",
 ];
 const coexistenceChanges = [
-  "Your team keeps using the Business app. New incoming messages appear in Exora.",
-  "Past chats and phone contacts are not imported into Exora. App replies stay in the Business app.",
+  "Your team keeps using the Business app. New incoming messages appear in Paperwhale.",
+  "Past chats and phone contacts are not imported into Paperwhale. App replies stay in the Business app.",
   "Groups and disappearing messages are not supported in the dashboard.",
   "Linked devices (WhatsApp Web) sign out once and need re-linking.",
 ];
@@ -470,7 +470,7 @@ function ConnectStep({
               co
                 ? "Open the Business app on that phone and scan the QR code shown"
                 : "Enter the code Meta sends by SMS or call",
-              "Allow Exora Health to manage messages for this number",
+              "Allow Paperwhale to manage messages for this number",
             ].map((t, i) => (
               <li key={t} className="flex gap-3">
                 <StepDot n={i + 1} done={false} active={false} />

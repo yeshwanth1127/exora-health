@@ -18,7 +18,7 @@ const ChangesBody = z.object({
 });
 
 /**
- * Clinic Voice agent requests. The clinic asks Exora for an agent or for changes to it; an Exora superadmin
+ * Clinic Voice agent requests. The clinic asks Paperwhale for an agent or for changes to it; a Paperwhale superadmin
  * completes the request in Sarvam. These routes only relay to this clinic's control-plane record.
  */
 export function registerVoiceAgentSettingsRoutes(app: FastifyInstance, control?: VoiceControlTarget) {

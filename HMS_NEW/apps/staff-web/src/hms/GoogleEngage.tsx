@@ -33,7 +33,7 @@ import {
   privacyIssues,
   suggestReply,
   uid,
-  type Exora,
+  type Paperwhale,
   type GbpData,
   type Photo,
   type PhotoSlot,
@@ -74,7 +74,7 @@ export function Reviews({
 }: {
   data: GbpData;
   change: GChange;
-  exora: Exora;
+  exora: Paperwhale;
   canManage: boolean;
 }) {
   const [filter, setFilter] = useState<"waiting" | "all" | "low">("waiting");
@@ -387,7 +387,7 @@ export function Posts({
 }: {
   data: GbpData;
   change: GChange;
-  exora: Exora;
+  exora: Paperwhale;
   canManage: boolean;
 }) {
   const [kind, setKind] = useState<PostKind>("update");

@@ -15,7 +15,7 @@ The dated Meta inspection below is historical; consult the current report before
 | Staff login | Configure one company OIDC provider with a browser client and HMS API audience. Build the staff image with those public OIDC settings, development login disabled, `openid profile email`. Access tokens must contain verified `email` and `email_verified=true` for first invite acceptance. Register each exact `/staff/callback` URL and allowed browser origin. | Signs in with the invited work email; completes the identity provider's email verification. |
 | WhatsApp | Reuse the company Meta app after checking its Business portfolio, app review and Embedded Signup configuration. Configure a v4 Login for Business configuration with the appropriate WhatsApp products, supported Graph version, server app secret and webhook verify token. Approve the required WhatsApp permissions for customer assets; subscribe `messages`, and the coexistence fields below if using the Business app. | An authorized business administrator chooses their business/number in Meta, grants access and completes phone verification. A payment method may need to be attached to their WABA. |
 | Google Business | Create a Google Cloud project, request/obtain Business Profile API access, enable the used APIs, configure an OAuth web client and external consent screen, and complete the required verification/publication for external customers. Register each exact dashboard `/integrations/google/callback` URL. | Signs in as an owner/manager of the clinic's verified listing and selects that listing. |
-| Website analytics | Host a company-controlled Umami v3 release supporting persistent API keys. Set a private HTTPS API origin and a server API key with website creation/read rights. Optionally use one company team. Keep the Umami console private. | Adds the website address. The Exora-hosted website's default clinic loads tracking automatically on the next visit; a separate website needs the one installation snippet. |
+| Website analytics | Host a company-controlled Umami v3 release supporting persistent API keys. Set a private HTTPS API origin and a server API key with website creation/read rights. Optionally use one company team. Keep the Umami console private. | Adds the website address. The Paperwhale-hosted website's default clinic loads tracking automatically on the next visit; a separate website needs the one installation snippet. |
 | PostHog (optional) | Create one company project; choose US/EU ingestion and store the project ingestion key on the server. It receives only the limited analytics mirror, without autocapture, replay or person profiles. | Nothing. No separate account or key. |
 | Pilot clinic | Prepare one facility, an invited administrator, a reception test user and a real owner/manager for the provider accounts. Publish a doctor, consultation fee and schedule before enabling WhatsApp booking. Use a consenting test phone and synthetic appointment details. | Connects accounts, tests a booking and enables notices only after approval/readback. |
 
@@ -49,7 +49,7 @@ access. Read-only provider results show:
 Your existing flow is acknowledged. These findings do not establish customer-onboarding approval,
 and do not establish that the dashboard uses the same live phone/account. No live subscription,
 callback, account, phone number or app mode was changed during this inspection. If the working
-Exora flow uses another Meta app, it is not among the apps currently exposed to this connector.
+Paperwhale flow uses another Meta app, it is not among the apps currently exposed to this connector.
 
 For independent clinic customers, finish the company app's public business/contact/privacy/deletion
 settings, Tech Provider/app review requirements and Advanced Access for the required
@@ -89,7 +89,7 @@ References: [Meta partner requirements](https://developers.facebook.com/document
   and its own replies. Historical chat import and cross-app outbound mirroring are not offered.
   Sync requests are claimed durably before sending; renewing a connection does not repeat them.
   Unknown acceptance needs operator reconciliation rather than automatic resubmission.
-- For the Exora-hosted patient website, the bootstrap exposes only the default clinic's public tracker identifier.
+- For the Paperwhale-hosted patient website, the bootstrap exposes only the default clinic's public tracker identifier.
   No snippet needs to be pasted by the clinic. Saved web bookings are attributed once to the
   matching clinic/origin, with DNT/GPC respected. External websites need their public snippet once.
 

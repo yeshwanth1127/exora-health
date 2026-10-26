@@ -196,7 +196,7 @@ export function Settings({
     <div className="max-w-3xl space-y-6">
       <Card className="gap-3 p-5 shadow-none">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
-          <ShieldCheck className="size-4" /> Managed by Exora
+          <ShieldCheck className="size-4" /> Managed by Paperwhale
         </h2>
         <p className="text-sm text-muted-foreground">
           Your website analytics is managed here. No separate account or login
@@ -205,7 +205,7 @@ export function Settings({
         <p className="flex items-center gap-2 text-sm">
           <Check className="size-4" />{" "}
           {data.posthogEnabled
-            ? "Additional insights are enabled by Exora."
+            ? "Additional insights are enabled by Paperwhale."
             : "Visitor and click counts appear in this dashboard."}
         </p>
       </Card>

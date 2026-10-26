@@ -676,7 +676,7 @@ function SettingsTab({
       </Section>
       <Section
         title="Disconnect"
-        text="Stops all WhatsApp booking, reminders and promotions from Exora. Your Business app keeps working."
+        text="Stops all WhatsApp booking, reminders and promotions from Paperwhale. Your Business app keeps working."
       >
         <Button
           variant="outline"

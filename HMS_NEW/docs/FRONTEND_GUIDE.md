@@ -13,7 +13,7 @@ There will be **two separate front-ends**. Know which one you are building:
 | Front-end | Who uses it | Login | Status |
 | --- | --- | --- | --- |
 | **Admin dashboard** (staff app, hosted separately) | Front desk, doctors, nurses, admins | Bearer token from an external identity provider (OIDC). Locally: a dev token | **Build this now** — every `/v1` API in this guide is for it |
-| **Exora webpage** (patient-facing site; today's code is in `hospital-webpage/`, moving to `HMS_NEW/apps/website`) | Patients | None (booking by name + phone) | Its public API (`/public/v1`) is planned, not built. Only the patient video-consult page can be built today (`/tele/v1`) |
+| **Paperwhale webpage** (patient-facing site; today's code is in `hospital-webpage/`, moving to `HMS_NEW/apps/website`) | Patients | None (booking by name + phone) | Its public API (`/public/v1`) is planned, not built. Only the patient video-consult page can be built today (`/tele/v1`) |
 
 **What the backend covers today:**
 
@@ -293,7 +293,7 @@ The base URL locally is `http://127.0.0.1:3000`. 🔑 means `Idempotency-Key` is
 | `POST /v1/teleconsults/:id/identity` | same | `{method: known_patient \| photo_id \| abha \| verified_by_staff, note?}` |
 | `POST /v1/teleconsults/:id/end` | same | `{outcome: consulted \| patient_did_not_join \| technical_failure, note?}` |
 
-**Virtual OPD: patient page** (on the Exora webpage; header `X-Teleconsult-Token`, no login)
+**Virtual OPD: patient page** (on the Paperwhale webpage; header `X-Teleconsult-Token`, no login)
 
 | Call | Use |
 | --- | --- |
@@ -372,7 +372,7 @@ Build these in order. Each one can be tested end to end on the demo data today.
     - `consulted` needs identity first; the other outcomes need a note.
     - Then finish the encounter as in screen 6. Ending the call does **not** finish the visit.
 
-**8. Virtual OPD: patient page** (Exora webpage, e.g. `/video-consult`)
+**8. Virtual OPD: patient page** (Paperwhale webpage, e.g. `/video-consult`)
 
 1. Read the token from the URL fragment (`#t=…`), keep it in memory, and remove it from the address bar with `history.replaceState`. Send it as `X-Teleconsult-Token`.
 2. Call `GET /tele/v1/session` and render by `next`:
@@ -434,11 +434,11 @@ The three are linked. Check-in opens the encounter. Finishing the encounter comp
 - Document and photo upload
 - Reports and dashboards with totals
 - Staff and role administration screens: the tables exist, the API doesn't yet
-- The Exora webpage's public booking API
+- The Paperwhale webpage's public booking API
 
 **Open questions (for the team):**
 
 - Which OIDC identity provider? This decides the login library and its config.
 - Jitsi: will the hospital self-host Jitsi with token login? Without it, video calls don't connect.
-- Exora webpage: the public booking API (`/public/v1`) is planned in `HMS_NEW/docs/plan/WEBSITE_PLAN.md` and not started.
+- Paperwhale webpage: the public booking API (`/public/v1`) is planned in `HMS_NEW/docs/plan/WEBSITE_PLAN.md` and not started.
 - The consent text in the demo is a **sample**; real wording needs legal sign-off before go-live.

@@ -1,5 +1,5 @@
 // Loyalty programs model. Pure: no React, so it runs under node:test.
-// Exora never handles money: fees and discounts stay with the clinic's billing, Exora records what was earned and used.
+// Paperwhale never handles money: fees and discounts stay with the clinic's billing, Paperwhale records what was earned and used.
 
 export const DAY = 86_400_000;
 

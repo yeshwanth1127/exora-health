@@ -1,4 +1,4 @@
-> Imported ClinicSheet preview evidence. Exora keeps its real signup/control-API integration and existing static deployment. This historical preview document is not Exora deployment verification; see `ARCHITECTURE.md`.
+> Imported ClinicSheet preview evidence. Paperwhale keeps its real signup/control-API integration and existing static deployment. This historical preview document is not Paperwhale deployment verification; see `ARCHITECTURE.md`.
 
 # SSR and crawler readiness — 23 October 2026
 

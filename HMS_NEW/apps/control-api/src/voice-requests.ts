@@ -5,7 +5,7 @@ import { defaultVoiceSettings, type VoiceSettings } from './voice-control.ts';
 type Queryable = Pick<pg.Pool, 'connect' | 'query'>;
 
 /**
- * Clinic-raised Voice requests, completed by an Exora superadmin by hand in Sarvam.
+ * Clinic-raised Voice requests, completed by a Paperwhale superadmin by hand in Sarvam.
  * A request is a voice_provisioning_operation created by the clinic: `provision` asks for a new agent,
  * `publish` asks for a saved settings revision to be applied. Nothing here calls Sarvam's authoring API.
  */
@@ -152,7 +152,7 @@ export async function saveVoiceDraft(pool: Queryable, input: { customerId: strin
   });
 }
 
-/** "Request changes": asks Exora to apply the clinic's latest saved draft to its live agent. */
+/** "Request changes": asks Paperwhale to apply the clinic's latest saved draft to its live agent. */
 export async function requestVoiceChanges(pool: Queryable, input: { customerId: string; revision: number; requestedBy: string; idempotencyKey: string }) {
   return transaction(pool, async (client) => {
     const { rows: [replayed] } = await client.query('SELECT * FROM control.voice_provisioning_operation WHERE idempotency_key=$1', [input.idempotencyKey]);

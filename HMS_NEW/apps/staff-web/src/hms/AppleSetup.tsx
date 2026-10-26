@@ -51,13 +51,13 @@ export function AppleSetup({ live, onOpenConversations }: { live: boolean; onOpe
           {live ? "Apple Messages is live" : "Set up Apple Messages"}
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          iPhone users message your clinic from Maps, Safari or Search. You add your details; Exora handles Apple.
+          iPhone users message your clinic from Maps, Safari or Search. You add your details; Paperwhale handles Apple.
         </p>
       </div>
       {!live && (
         <div className="arc-demo-scope max-w-2xl">
           <Alert tone="warning" title="Eligibility is not confirmed">
-            Apple isn&apos;t currently onboarding businesses whose main service is medical. Exora confirms eligibility with Apple before anything goes live.
+            Apple isn&apos;t currently onboarding businesses whose main service is medical. Paperwhale confirms eligibility with Apple before anything goes live.
           </Alert>
         </div>
       )}
@@ -165,7 +165,7 @@ function AppleSetupForm({
         <p className="text-sm text-muted-foreground">Only a clinic administrator can change this setup.</p>
       )}
       {setup.state === "requested" && open < 3 && (
-        <p className="text-sm text-muted-foreground">Editing is paused while Exora reviews your request.</p>
+        <p className="text-sm text-muted-foreground">Editing is paused while Paperwhale reviews your request.</p>
       )}
 
       {step === "details" && (
@@ -249,7 +249,7 @@ function AppleSetupForm({
               </Field>
               <label className="flex items-start gap-2 text-sm">
                 <input type="checkbox" className="mt-1" checked={authorized} onChange={(e) => { setAuthorized(e.target.checked); setError(""); }} />
-                I&apos;m allowed to represent this clinic. Exora and Apple still verify this.
+                I&apos;m allowed to represent this clinic. Paperwhale and Apple still verify this.
               </label>
             </fieldset>
             <Footer error={error} cmd={cmd} refresh={refresh}>
@@ -265,7 +265,7 @@ function AppleSetupForm({
             <p>
               {draft.brandName} · {draft.website} · {draft.supportHours.length} support day{draft.supportHours.length === 1 ? "" : "s"}
             </p>
-            <p className="text-muted-foreground">Submitting sends this to Exora. It doesn&apos;t connect Apple Messages.</p>
+            <p className="text-muted-foreground">Submitting sends this to Paperwhale. It doesn&apos;t connect Apple Messages.</p>
             <Footer error={error} cmd={cmd} refresh={refresh}>
               <Button disabled={locked || dirty} onClick={() => void submit()}>Submit request</Button>
             </Footer>
@@ -276,7 +276,7 @@ function AppleSetupForm({
       {step === "review" && (
         <Card>
           <CardContent className="pt-5 text-sm text-muted-foreground">
-            Submitted{setup.requestedAt ? ` ${new Date(setup.requestedAt).toLocaleDateString()}` : ""}. Exora checks eligibility with Apple and
+            Submitted{setup.requestedAt ? ` ${new Date(setup.requestedAt).toLocaleDateString()}` : ""}. Paperwhale checks eligibility with Apple and
             connects your account. Nothing goes live until then.
           </CardContent>
         </Card>

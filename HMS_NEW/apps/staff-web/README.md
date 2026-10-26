@@ -1,4 +1,4 @@
-# Exora staff workspace
+# Paperwhale staff workspace
 
 Selected React/shadcn/Geist monochrome source, imported from `hms-monochrome/staff-web`. The original source is untouched; `SOURCE_PROVENANCE.json` records all 73 imported file hashes and its Git identity. The original app remains at `src/legacy/OriginalApp.tsx` with its advanced modules preserved for later integration.
 

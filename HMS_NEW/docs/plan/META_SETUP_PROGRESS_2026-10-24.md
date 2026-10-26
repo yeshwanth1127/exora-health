@@ -4,7 +4,7 @@
 
 ### Hosting correction and test-sender attempt — 25 October 2026
 
-The user explicitly clarified that Paperwhale has its own VPS and is unrelated to the Exora
+The user explicitly clarified that Paperwhale has its own VPS and is unrelated to the Paperwhale
 deployment. **Use only `root@201.18.196.230` (`srv2086263`) for Paperwhale hosting.** Live SSH
 confirms the healthy `paperwhale-website-web-1` and Caddy `paperwhale-website-edge-1` containers.
 The website release is `5dc30b0f16957c871b1f5a72d54382a72eca31c1`, under
@@ -13,9 +13,9 @@ The release contains only the marketing deployment subset, not the HMS API/datab
 The VPS has approximately 8 GB RAM and 87 GB free disk. Both app.paperwhale.health and
 auth.paperwhale.health resolve to this VPS; DNS resolution alone is not a deployed service.
 
-The earlier Exora inspection was read-only: no tenant, deployment or server configuration was
-changed. Its hosted production identity and booking checks are evidence about Exora only and
-must not be attributed to Paperwhale. Do not copy Exora's credentials, tenants or clinical data.
+The earlier Paperwhale inspection was read-only: no tenant, deployment or server configuration was
+changed. Its hosted production identity and booking checks are evidence about Paperwhale only and
+must not be attributed to Paperwhale. Do not copy Paperwhale's credentials, tenants or clinical data.
 
 The user approved the WhatsApp Business Platform and Cloud API terms and test-credential
 generation. Meta's **Claim test number** failed twice, including after a reload, with

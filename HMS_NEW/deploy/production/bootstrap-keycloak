@@ -19,7 +19,7 @@ if [[ -n ${KEYCLOAK_SMTP_PASSWORD:-} ]]; then
   : "${KEYCLOAK_SMTP_HOST:=smtp.hostinger.com}"
   : "${KEYCLOAK_SMTP_PORT:=465}"
   : "${KEYCLOAK_SMTP_FROM:=support@exora.solutions}"
-  : "${KEYCLOAK_SMTP_FROM_DISPLAY_NAME:=Exora Health Support}"
+  : "${KEYCLOAK_SMTP_FROM_DISPLAY_NAME:=Paperwhale Support}"
   : "${KEYCLOAK_SMTP_USERNAME:=$KEYCLOAK_SMTP_FROM}"
   : "${KEYCLOAK_SMTP_SSL:=true}"
   : "${KEYCLOAK_SMTP_STARTTLS:=false}"
@@ -51,7 +51,7 @@ realm_status="$(curl -sS -o /dev/null -w '%{http_code}' -H "$auth_header" \
   "$KEYCLOAK_INTERNAL_URL/admin/realms/$KEYCLOAK_REALM")"
 if [[ $realm_status == 404 ]]; then
   realm="$(jq -n --arg realm "$KEYCLOAK_REALM" \
-    '{realm:$realm,displayName:"Exora Health",enabled:true,sslRequired:"external",
+    '{realm:$realm,displayName:"Paperwhale",enabled:true,sslRequired:"external",
       registrationAllowed:false,registrationEmailAsUsername:true,loginWithEmailAllowed:true,
       duplicateEmailsAllowed:false,resetPasswordAllowed:true,editUsernameAllowed:false,
       verifyEmail:true,bruteForceProtected:true,failureFactor:5,waitIncrementSeconds:60,
@@ -104,12 +104,12 @@ ensure_client() {
 }
 
 api_representation="$(jq -n --arg id "$OIDC_AUDIENCE" \
-  '{clientId:$id,name:"Exora Health API",enabled:true,protocol:"openid-connect",bearerOnly:true,
+  '{clientId:$id,name:"Paperwhale API",enabled:true,protocol:"openid-connect",bearerOnly:true,
     publicClient:false,standardFlowEnabled:false,directAccessGrantsEnabled:false,serviceAccountsEnabled:false}')"
 api_uuid="$(ensure_client "$OIDC_AUDIENCE" "$api_representation")"
 
 staff_representation="$(jq -n --arg id "$OIDC_CLIENT_ID" \
-  '{clientId:$id,name:"Exora Health Staff",description:"First-party staff browser application for managed tenants",
+  '{clientId:$id,name:"Paperwhale Staff",description:"First-party staff browser application for managed tenants",
     enabled:true,protocol:"openid-connect",publicClient:true,bearerOnly:false,standardFlowEnabled:true,
     implicitFlowEnabled:false,directAccessGrantsEnabled:false,serviceAccountsEnabled:false,
     frontchannelLogout:true,redirectUris:[],webOrigins:[],attributes:{"pkce.code.challenge.method":"S256"}}')"
@@ -127,7 +127,7 @@ if ! jq -e '.[] | select(.name == "exora-health-api-audience")' <<<"$mappers" >/
 fi
 
 provisioner_representation="$(jq -n --arg id "$KEYCLOAK_PROVISIONER_CLIENT_ID" --arg secret "$KEYCLOAK_PROVISIONER_CLIENT_SECRET" \
-  '{clientId:$id,name:"Exora Health tenant provisioner",enabled:true,protocol:"openid-connect",
+  '{clientId:$id,name:"Paperwhale tenant provisioner",enabled:true,protocol:"openid-connect",
     publicClient:false,bearerOnly:false,clientAuthenticatorType:"client-secret",secret:$secret,
     standardFlowEnabled:false,directAccessGrantsEnabled:false,serviceAccountsEnabled:true}')"
 provisioner_uuid="$(ensure_client "$KEYCLOAK_PROVISIONER_CLIENT_ID" "$provisioner_representation")"

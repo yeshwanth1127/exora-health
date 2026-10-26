@@ -31,7 +31,7 @@ Files:
 
 ## Blockers outside the code
 
-- [ ] Meta Tech Provider (partner) approval for Exora. Embedded Signup and coexistence depend on it.
+- [ ] Meta Tech Provider (partner) approval for Paperwhale. Embedded Signup and coexistence depend on it.
 - [ ] Meta app: Embedded Signup configuration ID, app review for `whatsapp_business_management` and `whatsapp_business_messaging`, business verification.
 - [ ] An HTTPS environment registered with Meta (Embedded Signup origin and webhook URL).
 - [ ] Secret store for per-clinic tokens. Tokens never reach the dashboard.
@@ -118,7 +118,7 @@ Files:
 
 ## Open questions
 
-- Should each clinic's WABA live under Exora's partner business, or under the clinic's own Meta business (the default with Embedded Signup)?
+- Should each clinic's WABA live under Paperwhale's partner business, or under the clinic's own Meta business (the default with Embedded Signup)?
 - Languages: does the bot and template set need Telugu or Hindi at launch? Templates are per language at Meta.
 - Billing: Meta charges marketing and utility templates per delivered message. Do we pass that cost to clinics, or include it in the plan?
 - The old WhatsApp screens (`modules/whatsapp.tsx`, `campaigns.tsx`, `conversations.tsx`, `whatsapp-notifications.tsx`, `hms/MessageTemplates.tsx`, `hms/whatsapp-full-source.ts`) are no longer used by the page. Should they be deleted? Some have uncommitted changes.

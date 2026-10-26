@@ -1,5 +1,5 @@
 [Unit]
-Description=Exora Health tenant provisioner
+Description=Paperwhale tenant provisioner
 After=docker.service network-online.target
 Wants=network-online.target
 Requires=docker.service

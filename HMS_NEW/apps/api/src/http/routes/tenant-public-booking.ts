@@ -16,7 +16,7 @@ const PublicRange = z.object({
   to: isoDate,
 }).refine((value) => value.to >= value.from && Date.parse(value.to) - Date.parse(value.from) <= 14 * 86_400_000, 'range must be 0–14 days');
 
-/** Public booking surface for a dedicated single-tenant Exora runtime. */
+/** Public booking surface for a dedicated single-tenant Paperwhale runtime. */
 export function registerTenantPublicBookingRoutes(app: FastifyInstance, db: Kysely<DB>, tenantId: string, managed: ManagedSettings) {
   const content = websiteContent(process.env.WEBSITE_CONTENT_JSON);
   app.get('/public/v1/website', async (_request, reply) => {

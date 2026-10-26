@@ -1,6 +1,6 @@
 # Managed WhatsApp and Sarvam onboarding
 
-13 October 2026. Goal: Exora manages service for clinics; reception answers normal calls and AI handles overflow; WhatsApp automation leads until a requested human takes over; templates editable in the dashboard. Desktop only. Public webpage remains deferred.
+13 October 2026. Goal: Paperwhale manages service for clinics; reception answers normal calls and AI handles overflow; WhatsApp automation leads until a requested human takes over; templates editable in the dashboard. Desktop only. Public webpage remains deferred.
 
 **Current turn scope: WhatsApp only. Sarvam implementation is paused at the owner's request.** Voice descriptions below retain earlier work and future requirements; they are not an instruction to continue it now.
 
@@ -24,12 +24,12 @@ Latest WhatsApp-only phase adds read-only Meta template status lookup, exact dra
 | Existing cloud telephony | Connect supported provider numbers to Sarvam; configure receptionist-first flow on provider/PBX. | Sarvam supports existing Exotel/Twilio/Smartflo/Pulse/Intalk/Vobiz connections. Not every routing feature/number is automatically verified. |
 | New managed voice number | Telephony front door rings reception then bridges overflow to Sarvam. | A line directly assigned to a Sarvam inbound agent answers AI immediately. Rental alone does not provide reception-first routing; use it as overflow destination or implement a front door. |
 | Voice number porting | Possible future carrier migration. | Number type, region, continuity and eligibility unverified; not offered as a working route. |
-| New WhatsApp number supplied by Exora | Clinic completes Embedded Signup using supplied number; delegates company app access. | Number verification, display name, business/billing setup and authorization required. |
+| New WhatsApp number supplied by Paperwhale | Clinic completes Embedded Signup using supplied number; delegates company app access. | Number verification, display name, business/billing setup and authorization required. |
 | Existing WhatsApp Business app | Coexistence retains eligible app+number alongside Cloud API. | Actual Meta eligibility; additional contacts/history/echo webhook processing and synchronization required. Current callback does not implement Coexistence echo/history events. App-origin human replies must also pause automation. |
 | Existing WhatsApp Cloud API | Authorized WABA connection or partner migration. | Reconcile old partner access, asset grants and subscriptions; selection is not migration. |
 | Personal WhatsApp | Business conversion/migration review or separate number. | No promise of keeping personal app unchanged with automation. Do not deregister an existing number without an accepted migration plan. |
 
-Company-managed is delegated operation, not ownership of every customer's Meta assets. Embedded Signup customers own generated WhatsApp assets and retain WhatsApp Manager access. Phone supply/contract and platform asset ownership are separate. Avoid putting unrelated clinics into one Exora-owned WABA. Require ownership/authority/offboarding records and exclusive active number bindings before provider activation.
+Company-managed is delegated operation, not ownership of every customer's Meta assets. Embedded Signup customers own generated WhatsApp assets and retain WhatsApp Manager access. Phone supply/contract and platform asset ownership are separate. Avoid putting unrelated clinics into one Paperwhale-owned WABA. Require ownership/authority/offboarding records and exclusive active number bindings before provider activation.
 
 ## Primary sources and actual account evidence
 

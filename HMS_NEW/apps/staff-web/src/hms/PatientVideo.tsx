@@ -109,7 +109,7 @@ export function PatientVideo() {
     <main className="min-h-screen bg-muted/30 p-6 flex justify-center">
       <Card className="w-full max-w-2xl h-fit mt-10">
         <CardContent className="pt-8 space-y-6">
-          <Badge variant="outline">Exora Health · Video consultation</Badge>
+          <Badge variant="outline">Paperwhale · Video consultation</Badge>
           <h1 className="text-2xl font-semibold">
             {session?.hospitalName ?? "Join your consultation"}
           </h1>

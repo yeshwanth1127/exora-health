@@ -312,7 +312,7 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   if (deps.publicTenantId) {
     const voice = deps.voice ?? loadVoiceRuntimeSettings();
     registerTenantPublicBookingRoutes(app, deps.db, deps.publicTenantId, managed);
-    // An agent pinned in this container's environment wins; otherwise use the one Exora bound in the control plane.
+    // An agent pinned in this container's environment wins; otherwise use the one Paperwhale bound in the control plane.
     const agentSource: VoiceAgentSource = voice.agent && voice.sarvamApiKey
       ? environmentVoiceSource(voice.agent, voice.sarvamApiKey, voice.assignedPhoneNumber ?? null)
       : deps.voiceControl ? controlVoiceSource(deps.voiceControl, app.log) : async () => undefined;

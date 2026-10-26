@@ -12,7 +12,7 @@ The display font and legacy GT America font have lossless WOFF2 copies. Characte
 - Logo: 356,384-byte PNG → 2,428-byte 128px WebP (larger candidates remain available for higher pixel density).
 - Phone frame: 392,819-byte PNG → 18,186-byte 768px WebP; the mobile candidate checked in-browser was 480px/10,756 bytes.
 - All 67 source hashes are verified. Aspect ratio/transparency checks passed for a display variant of every image. Pixel comparison over white had minimum PSNR 35.3 dB; this is a technical check alongside browser visual review, not a claim of pixel-identical lossy compression.
-- HTTP audit verifies initial image markup and 319 referenced local candidates across 23 routes. The SSR runtime returns `image/webp` and immutable one-year caching for content-addressed `/assets/optimized/` files. Exora's existing static host retains its existing hosting headers; the Next cache rule applies to the SSR runtime only.
+- HTTP audit verifies initial image markup and 319 referenced local candidates across 23 routes. The SSR runtime returns `image/webp` and immutable one-year caching for content-addressed `/assets/optimized/` files. Paperwhale's existing static host retains its existing hosting headers; the Next cache rule applies to the SSR runtime only.
 - Desktop/mobile phone crop, brand mark and layout were inspected in-browser. Browser evidence is saved here. Source art, fonts and SVGs remain available for future edits. No paid Google query was run.
 - Page load JS increased by about 5 KB for the responsive lookup shared by interactive components; the image reduction is much larger. No Lighthouse/Core Web Vitals or deployed CDN/network result is claimed from local checks.
 

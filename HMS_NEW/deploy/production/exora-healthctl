@@ -95,7 +95,7 @@ require_container() {
   local name=$1 project
   valid_resource_name "$name" || die "invalid container name"
   project=$(container_project "$name") || die "container does not exist"
-  allowed_project "$project" || die "container is not managed by Exora Health"
+  allowed_project "$project" || die "container is not managed by Paperwhale"
 }
 
 list_containers() {
@@ -135,7 +135,7 @@ allowed_volume() {
 }
 
 require_volume() {
-  allowed_volume "$1" || die "volume does not exist or is not managed by Exora Health"
+  allowed_volume "$1" || die "volume does not exist or is not managed by Paperwhale"
 }
 
 list_volumes() {
@@ -160,7 +160,7 @@ list_volumes() {
 
 tenant_env() {
   local slug=$1 path
-  allowed_tenant_slug "$slug" || die "unknown Exora Health tenant"
+  allowed_tenant_slug "$slug" || die "unknown Paperwhale tenant"
   if [[ $slug == test-hospital ]]; then
     path="$managed_root/test-hospital.env"
   else
@@ -191,7 +191,7 @@ run_platform() {
 
 run_tenant() {
   local slug=${1:-} action=${2:-} env_path
-  allowed_tenant_slug "$slug" || die "unknown Exora Health tenant"
+  allowed_tenant_slug "$slug" || die "unknown Paperwhale tenant"
   env_path=$(tenant_env "$slug")
   [[ -r $tenant_compose ]] || die "managed tenant deployment is not installed"
   case "$action" in

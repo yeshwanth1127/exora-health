@@ -151,7 +151,7 @@ function useAgentSettings() {
   const { facility } = useWorkspace();
   const [poll, setPoll] = useState(0);
   const query = useQuery<AgentSettings>(`/v1/voice/agent-settings?facilityId=${facility.facilityId}`, poll);
-  // While Exora works on a request, refresh now and then so the page turns live without a reload.
+  // While Paperwhale works on a request, refresh now and then so the page turns live without a reload.
   const waiting = !!openRequest(query.data?.request ?? null);
   useEffect(() => {
     setPoll(waiting ? 15000 : 0);
@@ -195,7 +195,7 @@ function VoiceControl() {
   });
   const open = picked !== null && picked < current ? picked : Math.min(current, VOICE_STEPS.length - 1);
   const step = VOICE_STEPS[open]!.id;
-  // The control plane answers 412 until Exora switches voice on for this clinic.
+  // The control plane answers 412 until Paperwhale switches voice on for this clinic.
   const notEnabled = !!agent.error && /not configured/i.test(agent.error);
   const checks = [
     ["Voice service", runtime?.integration_ready ? "Installed" : runtime ? "Not enabled" : "Not reachable", runtime?.integration_ready === true],
@@ -210,7 +210,7 @@ function VoiceControl() {
             {active ? "Your voice agent is live" : "Set up your voice agent"}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            The agent answers patient calls and books real appointments. Exora builds it; you choose how calls reach it.
+            The agent answers patient calls and books real appointments. Paperwhale builds it; you choose how calls reach it.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -261,7 +261,7 @@ function VoiceControl() {
             {agent.loading
               ? "Checking agent status…"
               : notEnabled
-                ? "Voice isn't switched on for this clinic yet. Ask Exora to enable it, then request your agent here."
+                ? "Voice isn't switched on for this clinic yet. Ask Paperwhale to enable it, then request your agent here."
                 : agent.error}
           </p>
         )
@@ -284,7 +284,7 @@ function VoiceControl() {
                 </>
               ) : (
                 <p className="text-muted-foreground">
-                  {agent.data.agent.displayName} is built. Exora is connecting it to your line. This page updates when calls can start.
+                  {agent.data.agent.displayName} is built. Paperwhale is connecting it to your line. This page updates when calls can start.
                 </p>
               )}
             </CardContent>
@@ -328,7 +328,7 @@ function AgentRequestCard({ setup, refresh }: { setup: AgentSettings; refresh: (
       <CardContent className="space-y-3 text-sm">
         {!setup.entitled ? (
           <p className="text-muted-foreground">
-            A voice agent is not included in this clinic&apos;s plan. Contact Exora to add it.
+            A voice agent is not included in this clinic&apos;s plan. Contact Paperwhale to add it.
           </p>
         ) : pending ? (
           <>
@@ -338,8 +338,8 @@ function AgentRequestCard({ setup, refresh }: { setup: AgentSettings; refresh: (
             <p>
               Requested by {pending.requestedBy} on {when(pending.requestedAt)}.{" "}
               {pending.state === "in_setup"
-                ? "Exora is setting up your agent now."
-                : "Exora will set up your agent using this clinic's details."}
+                ? "Paperwhale is setting up your agent now."
+                : "Paperwhale will set up your agent using this clinic's details."}
             </p>
             <p className="text-xs text-muted-foreground">
               This page updates on its own when the agent is ready. You can then change how it speaks here.
@@ -348,7 +348,7 @@ function AgentRequestCard({ setup, refresh }: { setup: AgentSettings; refresh: (
         ) : (
           <>
             <p className="text-muted-foreground">
-              Exora creates a dedicated voice agent for this clinic. It answers patients using your live
+              Paperwhale creates a dedicated voice agent for this clinic. It answers patients using your live
               doctors, schedules and booking rules.
             </p>
             {declined?.reason && (
@@ -410,7 +410,7 @@ function SpokenAgentForm({ setup, refresh }: { setup: AgentSettings; refresh: ()
       settings: payload(),
     }, false, "PUT");
     if (result) {
-      setNotice("Draft saved. Request the changes when you are ready for Exora to apply them.");
+      setNotice("Draft saved. Request the changes when you are ready for Paperwhale to apply them.");
       await refresh();
     }
   }
@@ -433,7 +433,7 @@ function SpokenAgentForm({ setup, refresh }: { setup: AgentSettings; refresh: ()
         {pending && (
           <p className="rounded-md border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
             Changes requested by {pending.requestedBy} on {when(pending.requestedAt)}.{" "}
-            {pending.state === "in_setup" ? "Exora is applying them now." : "Exora will apply them to your agent."}{" "}
+            {pending.state === "in_setup" ? "Paperwhale is applying them now." : "Paperwhale will apply them to your agent."}{" "}
             Editing is paused until then.
           </p>
         )}

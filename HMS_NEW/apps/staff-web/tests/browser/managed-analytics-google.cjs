@@ -19,7 +19,7 @@ async page => {
   assert(siteWrites===1,'Analytics add submits one API intent');
   assert(await page.getByText('Waiting for a visit',{exact:true}).count()===1,'Analytics installation waits for a real event');
   await page.getByRole('tab',{name:'Settings',exact:true}).click();
-  assert(await page.getByText('Managed by Exora',{exact:true}).count()===1,'Analytics settings are company managed');
+  assert(await page.getByText('Managed by Paperwhale',{exact:true}).count()===1,'Analytics settings are company managed');
   assert(await page.getByLabel(/API key|Personal key|Project ID/).count()===0,'No customer provider credentials are requested');
   const overflow=[];
   for(const width of [1440,390]){await page.setViewportSize({width,height:900});await page.waitForFunction(()=>document.documentElement.scrollWidth<=innerWidth);overflow.push(await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth})));}

@@ -517,7 +517,7 @@ function EditorBody({
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                You collect the fee at your desk. Exora doesn't handle payments
+                You collect the fee at your desk. Paperwhale doesn't handle payments
                 or bills; it keeps track of who is a member and what they've
                 used.
               </p>

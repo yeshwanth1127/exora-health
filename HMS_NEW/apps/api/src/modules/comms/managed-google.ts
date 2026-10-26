@@ -356,13 +356,13 @@ async function locationsFor(settings: ManagedSettings, token: string) {
       page = result.nextPageToken;
       if (i === 9)
         throw preconditionFailed(
-          "Too many listings to load. Contact Exora to connect this account.",
+          "Too many listings to load. Contact Paperwhale to connect this account.",
         );
     }
   }
   if (accounts.nextPageToken)
     throw preconditionFailed(
-      "Too many business accounts to load. Contact Exora to connect this account.",
+      "Too many business accounts to load. Contact Paperwhale to connect this account.",
     );
   return items;
 }

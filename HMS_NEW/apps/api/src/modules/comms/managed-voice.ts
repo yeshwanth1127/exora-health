@@ -70,7 +70,7 @@ const CONTROL_MESSAGES: Record<string, string> = {
   voice_not_entitled: 'Voice is not included in this clinic plan.',
   voice_agent_exists: 'This clinic already has a voice agent.',
   voice_agent_missing: 'This clinic does not have a voice agent yet.',
-  voice_request_open: 'A voice request is already with Exora.',
+  voice_request_open: 'A voice request is already with Paperwhale.',
   voice_revision_not_draft: 'Save your changes before requesting them.',
   stale_revision: 'Voice settings changed elsewhere. Reload and try again.',
   idempotency_key_reused: 'This request was already used for a different change. Reload and try again.',

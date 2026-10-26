@@ -195,7 +195,7 @@ function Brand({ tenantName }: { tenantName: string }) {
           {tenantName}
         </div>
         <div className="text-xs text-muted-foreground mt-0.5">
-          Powered by Exora Health
+          Powered by Paperwhale
         </div>
       </div>
     </div>

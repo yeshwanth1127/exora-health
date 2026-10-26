@@ -44,7 +44,7 @@ import {
   score,
   suggestCategories,
   tasks,
-  type Exora,
+  type Paperwhale,
   type GbpData,
   type Listing,
   type Period,
@@ -143,7 +143,7 @@ function GooglePage() {
       ...clinic.doctors.map((x) => x.specialtyName ?? "").filter(Boolean),
     ]),
   ];
-  const exora: Exora = {
+  const exora: Paperwhale = {
     name: facility.name,
     phone: d?.phone ?? "",
     address: [d?.addressLine1, d?.addressLine2, d?.city, d?.pincode]
@@ -212,7 +212,7 @@ function useGbp(facilityId: string) {
         )
       ) {
         toast.error(
-          "This field is not available for publishing from Exora yet.",
+          "This field is not available for publishing from Paperwhale yet.",
         );
         return false;
       }
@@ -302,7 +302,7 @@ function useGbp(facilityId: string) {
 const tabs = workspaceTabs.google_business;
 export type GTab = (typeof tabs)[number][0];
 
-function Google({ exora }: { exora: Exora }) {
+function Google({ exora }: { exora: Paperwhale }) {
   const { facility, can } = useWorkspace();
   const remote = useGbp(facility.facilityId);
   const { data, change } = remote;
@@ -320,7 +320,7 @@ function Google({ exora }: { exora: Exora }) {
           variant="outline"
           disabled={remote.busy}
           onClick={() => {
-            if (window.confirm("Disconnect this Google listing from Exora?"))
+            if (window.confirm("Disconnect this Google listing from Paperwhale?"))
               void request(
                 `/v1/managed-connections/google?facilityId=${facility.facilityId}`,
                 { method: "DELETE", idempotencyKey: crypto.randomUUID() },
@@ -474,7 +474,7 @@ function Connect({
   available,
   onConnected,
 }: {
-  exora: Exora;
+  exora: Paperwhale;
   canManage: boolean;
   available: boolean;
   onConnected: () => void;
@@ -556,7 +556,7 @@ function Connect({
         </Button>
         {!available && (
           <p className="text-sm text-muted-foreground">
-            Exora is preparing Google connections. No account keys or technical
+            Paperwhale is preparing Google connections. No account keys or technical
             setup are needed from you.
           </p>
         )}
@@ -621,7 +621,7 @@ function Overview({
 }: {
   data: GbpData;
   change: GChange;
-  exora: Exora;
+  exora: Paperwhale;
   open: (t: GTab, s?: string | null) => void;
   canManage: boolean;
 }) {
@@ -636,7 +636,7 @@ function Overview({
     100,
     s + todo.slice(0, 3).reduce((n, t) => n + t.weight, 0),
   );
-  /** One-tap fixes where Exora already has the answer; everything else opens the right place. */
+  /** One-tap fixes where Paperwhale already has the answer; everything else opens the right place. */
   const quick: Partial<Record<string, [string, () => void]>> = {
     book: ["Add", () => setListing({ bookUrl: exora.bookUrl })],
     whatsapp: exora.whatsappUrl

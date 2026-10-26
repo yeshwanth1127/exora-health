@@ -2,7 +2,7 @@
 
 New hospital management system: TypeScript (Node 22) modular backend on PostgreSQL 18. Separate from `hospital-backend/` (left untouched).
 
-**Frontend developers start here: [docs/FRONTEND_GUIDE.md](docs/FRONTEND_GUIDE.md)** — data model, API, auth, and the screens to build for the admin dashboard and the Exora webpage.
+**Frontend developers start here: [docs/FRONTEND_GUIDE.md](docs/FRONTEND_GUIDE.md)** — data model, API, auth, and the screens to build for the admin dashboard and the Paperwhale webpage.
 
 **Selected staff frontend integration:** [master plan](docs/plan/STAFF_FRONTEND_INTEGRATION_MASTER_PLAN.md) and [prioritized gap backlog](docs/plan/staff-integration-audit/backend-gap-backlog.csv). This audits the existing `hms-monochrome/staff-web` against the current backend, including scheduling differences, lifecycle corrections, and missing UI. Core integration is now implemented in `apps/staff-web`; see the [executed checkpoint](docs/plan/STAFF_FRONTEND_INTEGRATION_CHECKPOINT.md) and [35-area missing backend ledger](docs/plan/BACKEND_WORK_LEDGER.md). Local preview: `http://127.0.0.1:5188/staff/appointments`.
 
@@ -31,13 +31,13 @@ pnpm worker:dev        # outbox delivery + housekeeping
 
 Settings: see `.env.example`.
 
-## Exora SaaS and tenant containers
+## Paperwhale SaaS and tenant containers
 
-The Exora product website and connected onboarding run at `pnpm platform:dev`
+The Paperwhale product website and connected onboarding run at `pnpm platform:dev`
 (`http://127.0.0.1:5190`). The SaaS architecture and delivery gates are documented in
 [`docs/plan/SAAS_PLATFORM_PLAN.md`](docs/plan/SAAS_PLATFORM_PLAN.md).
 
-Start the containerized Exora control plane (corporate site, onboarding API, superadmin UI and its
+Start the containerized Paperwhale control plane (corporate site, onboarding API, superadmin UI and its
 operations-only PostgreSQL database):
 
 ```bash
@@ -120,7 +120,7 @@ hosting runbook.
 | `apps/api/src/modules/` | Module commands and queries: `booking`, `patient`, `directory` |
 | `apps/api/src/http/`, `src/auth/` | HTTP routes, token verification, principal + permission checks |
 | `apps/worker/` | Outbox dispatcher and housekeeping jobs |
-| `apps/platform-web/` | Exora corporate site and connected onboarding |
+| `apps/platform-web/` | Paperwhale corporate site and connected onboarding |
 | `apps/control-api/`, `apps/admin-web/` | SaaS registry/API and isolated superadmin control plane |
 | `apps/public-web/` | Tenant-branded public site and live booking flow |
 | `docs/api/` | API reference |

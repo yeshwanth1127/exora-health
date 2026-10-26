@@ -427,7 +427,7 @@ function Programs({
           </h2>
           <p className="text-muted-foreground">
             Pick a format that already works for hospitals, clinics and big
-            brands. Run one, or mix a few. Exora keeps track of who earned what;
+            brands. Run one, or mix a few. Paperwhale keeps track of who earned what;
             you keep billing as it is.
           </p>
           {preview && canEdit && (

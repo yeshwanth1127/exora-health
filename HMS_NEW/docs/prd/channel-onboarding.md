@@ -9,7 +9,7 @@ Apple Messages opens on Conversations (like Voice opens on Call history); its em
 - **Voice (Sarvam).** Call setup shows four technical readiness cards (tenant
   connection, public HTTPS, Sarvam agent, website calling), a "Create voice agent"
   card, the phone-number setup form and two test cards, all at once. A clinic admin
-  can't tell what to do first, what Exora does, or what "done" looks like. Call
+  can't tell what to do first, what Paperwhale does, or what "done" looks like. Call
   history is blank until calls arrive, with no explanation.
 - **Apple Messages.** It is a preview: an inbox page with a status line, a list of
   "Conversation N" buttons and no setup editor. The setup-request API exists
@@ -55,8 +55,8 @@ kept. The Apple migrations then get applied to the shared dev DB.
 
 ### Voice › Call setup (clinic admin)
 
-Stepper: **Booking data → Phone line → Request agent → Exora builds → Live.**
-Each step card shows a one-line "what this is", who does it (You / Exora) and its
+Stepper: **Booking data → Phone line → Request agent → Paperwhale builds → Live.**
+Each step card shows a one-line "what this is", who does it (You / Paperwhale) and its
 real state from existing reads. Finished steps collapse to a summary. Future steps
 are locked with a reason.
 
@@ -67,10 +67,10 @@ are locked with a reason.
    existing number, receptionist phone, overflow, languages, greeting), saved as a
    draft. Done when the draft is saved or requested.
 3. **Request agent.** The existing "Create voice agent" action, with three cases:
-   - plan not entitled: "Not in your plan, contact Exora";
+   - plan not entitled: "Not in your plan, contact Paperwhale";
    - no `voice.manage`: "Ask your administrator";
    - a declined request: shows the reason and a resubmit action.
-4. **Exora builds.** A waiting state: "Requested by X on D" or "Being set up".
+4. **Paperwhale builds.** A waiting state: "Requested by X on D" or "Being set up".
    The page already polls every 15 s. Copy says what happens next and that the page
    updates by itself.
 5. **Live.** Shows the assigned number (existing card), a Test voice call button
@@ -90,11 +90,11 @@ booking website."
 
 Tabs: **Setup** (default until conversations exist) and **Conversations**.
 
-**Setup.** Stepper: **Clinic details → Support hours → Submit → Exora review → Live.**
+**Setup.** Stepper: **Clinic details → Support hours → Submit → Paperwhale review → Live.**
 
 - An **eligibility notice** is always visible until a connection is configured.
   It reads: "Apple currently doesn't onboard businesses whose main service is
-  medical. Exora checks eligibility with Apple before anything goes live.
+  medical. Paperwhale checks eligibility with Apple before anything goes live.
   Submitting doesn't connect Apple Messages."
 - **Clinic details**: brand name, HTTPS website, business phone, support email,
   languages (English/Spanish) and greeting.
@@ -102,7 +102,7 @@ Tabs: **Setup** (default until conversations exist) and **Conversations**.
   message and human handoff (on request).
 - **Submit**: shows the declaration checkbox, then `submit`. The state becomes
   "Setup requested".
-- **Exora review**: waiting copy. It never claims approval, because the response
+- **Paperwhale review**: waiting copy. It never claims approval, because the response
   always has `live:false`.
 - **Live**: reached only when the inbox reports `configured` and is not a local
   demo.
@@ -167,4 +167,4 @@ Final copy is written per call site from what each query actually filters by.
 ## Known limits
 
 Real Sarvam activation, Apple approval, AWS deployment and a physical iPhone test
-stay outside this work. The UI shows them as Exora steps and never as completed.
+stay outside this work. The UI shows them as Paperwhale steps and never as completed.

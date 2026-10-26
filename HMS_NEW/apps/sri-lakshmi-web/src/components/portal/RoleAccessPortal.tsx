@@ -94,7 +94,7 @@ export function RoleAccessPortal() {
   return <PortalShell>
     <div className="w-full max-w-3xl">
       <div className="text-center">
-        <p className="text-xs font-bold uppercase tracking-[.2em] text-[#47705b]">Exora HMS</p>
+        <p className="text-xs font-bold uppercase tracking-[.2em] text-[#47705b]">Paperwhale HMS</p>
         <h1 className="mt-3 text-4xl sm:text-5xl font-semibold tracking-tight text-[#183429]">Choose your portal</h1>
         <p className="mt-3 text-[#65756d]">Select your role to use the correct login and dashboard.</p>
       </div>
