@@ -15,6 +15,9 @@ import { LoadingState } from "./ui";
 import { today } from "./model";
 import { patientDisplayName } from "./patient-presentation";
 import { SetupGuide } from "./SetupGuide";
+import { useAlerts } from "./use-alerts";
+import { overviewPhase, setupProgress } from "./first-run";
+import { ReadyHome, SetupHome } from "./FirstRun";
 import type { Appointment } from "./types";
 
 type OutboxEvent = {
@@ -118,6 +121,15 @@ export function Overview({
     }),
     [me, facility],
   );
+  // First run: setup only, then next steps, and reports once there is an appointment to report on.
+  const { setup } = useAlerts();
+  const totals = useQuery<Summary>(
+    page === "overview" ? `/v1/operations/summary?${query({ facilityId: facility.facilityId, date: end })}` : null,
+  );
+  const phase = overviewPhase(setupProgress(setup.items), totals.error ? 1 : (totals.data?.summary.appointmentsTotal ?? null));
+  if (page === "overview" && phase === "setup") return <SetupHome />;
+  if (page === "overview" && phase === "first_patients") return <ReadyHome />;
+  if (page === "overview" && phase === "loading") return <LoadingState loading error="" data={null} refresh={totals.refresh}>{null}</LoadingState>;
   return (
     <OriginalResourceContext.Provider value={source}>
       <OperationsModule

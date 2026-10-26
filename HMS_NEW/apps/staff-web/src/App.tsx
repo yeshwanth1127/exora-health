@@ -45,6 +45,8 @@ import { fallbackTenantName, fetchTenantName } from "@/hms/tenant-brand";
 import { can, permittedFacilities, practitionersFor } from "@/hms/model";
 import { WorkspaceContext, useQuery } from "@/hms/hooks";
 import { gatedChannel, useReadyChannels } from "@/hms/channel-ready";
+import { CoachMark, LockedPage, SetupWatch, WelcomeSlides } from "@/hms/FirstRun";
+import { LOCKED_UNTIL_SETUP } from "@/hms/first-run";
 import { hasUnsavedChanges, requestLeave, leaveState } from "@/hms/leave";
 import { useRecoverableCommand } from "@/hms/operational-command";
 import { RecoveryNotice } from "@/hms/OperationalRecovery";
@@ -185,6 +187,13 @@ const navigation = [
   },
 ];
 const groups = ["Clinic", "Care", "Messages", "Growth"];
+const phaseTone: Record<string, string> = {
+  Clinic: "var(--phase-run)",
+  Care: "var(--phase-run)",
+  Messages: "var(--phase-reach)",
+  Growth: "var(--phase-reach)",
+  Workspace: "var(--phase-setup)",
+};
 function Brand({ tenantName }: { tenantName: string }) {
   return (
     <div className="flex items-center gap-3">
@@ -455,6 +464,13 @@ function StaffApp() {
     me ? navigation.filter((n) => can(me, n.permission, facilityId)).map((n) => n.key) : [],
     page,
   );
+  // Known-unfinished booking setup greys out pages that need it (docs/prd/first-run-onboarding.md).
+  const [setupLocked, setSetupLocked] = useState(false);
+  // A clinic that isn't set up starts on its setup guide, not on a locked page.
+  useEffect(() => {
+    if (setupLocked && LOCKED_UNTIL_SETUP.has(page)) go("overview");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setupLocked]);
   if (!me)
     return (
       <TooltipProvider>
@@ -601,18 +617,21 @@ function StaffApp() {
   const allowed =
     extraPages.includes(page) || visible.some((n) => n.key === page);
   // Channels show their subpages only once set up; before that the page itself is the setup guide.
+  const locked = (key: string) => setupLocked && LOCKED_UNTIL_SETUP.has(key);
   const children = (key: string) =>
-    gatedChannel(key) && !readyChannels.has(key) ? undefined : workspaceChildren(key);
+    locked(key) || (gatedChannel(key) && !readyChannels.has(key)) ? undefined : workspaceChildren(key);
   const sidebarSections: SidebarSection[] = [...groups, "Workspace"]
     .map((group) => ({
       id: group.toLowerCase(),
       heading: group,
+      tone: phaseTone[group],
       items: visible
         .filter((item) => item.group === group)
         .map((item) => ({
           id: children(item.key) ? `${item.key}-group` : item.key,
           label: item.name,
           icon: item.icon,
+          ...(locked(item.key) ? { locked: "Finish setup first" } : {}),
           ...(children(item.key)
             ? {
                 children: children(item.key),
@@ -643,7 +662,7 @@ function StaffApp() {
                 : []),
               { id: "signout", label: "Sign out", icon: LogOut },
             ]}
-            active={gatedChannel(page) && !readyChannels.has(page) ? page : workspaceActiveRoute(page, location.search)}
+            active={locked(page) || (gatedChannel(page) && !readyChannels.has(page)) ? page : workspaceActiveRoute(page, location.search)}
             revealActiveGroup
             brand={{
               name: tenantName,
@@ -744,7 +763,12 @@ function StaffApp() {
               </header>
             )}
           >
-            <Directory
+            <SetupWatch onChange={setSetupLocked} />
+            <WelcomeSlides />
+            <CoachMark search={location.search} />
+            {locked(page) ? (
+              <LockedPage name={visible.find((n) => n.key === page)?.name ?? "This page"} />
+            ) : <Directory
               key={`${me.tenantId}:${facilityId}:${navVersion}`}
               me={me}
               facility={facility}
@@ -767,7 +791,7 @@ function StaffApp() {
                   }
                 />
               }
-            />
+            />}
             <footer className="workspace-footer">
               <span>
                 {tenantName} · {facility.name}

@@ -3,7 +3,8 @@ import { Lock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { StepDot } from "./whatsapp-ui";
 
-export type GuideStep = { id: string; title: string; hint: string; summary?: string };
+/** `done` overrides the order-based state when a later step is already saved. */
+export type GuideStep = { id: string; title: string; hint: string; summary?: string; done?: boolean };
 
 /** Channel setup guide: numbered cards, later steps locked, finished ones summarised and reopenable (WhatsApp's pattern). */
 export function StepList({
@@ -24,12 +25,12 @@ export function StepList({
   return (
     <ol className="space-y-3">
       {steps.map((s, i) => {
-        const done = i < reached,
-          locked = i > reached,
+        const done = s.done ?? i < reached,
+          locked = !done && i > reached,
           active = open === s.id && !locked;
         return (
           <li key={s.id}>
-            <Card className={`gap-0 p-0 shadow-none ${active ? "ring-1 ring-foreground/15" : ""}`}>
+            <Card className={`gap-0 p-0 shadow-none ${active ? "border-l-4 border-l-guide-now ring-1 ring-guide-now/30" : ""}`}>
               <button
                 type="button"
                 disabled={locked}
@@ -46,7 +47,7 @@ export function StepList({
                 {locked ? (
                   <Lock className="size-4 text-muted-foreground" />
                 ) : done && !active ? (
-                  <span className="text-xs text-muted-foreground">Edit</span>
+                  <span className="text-xs text-guide-done">Done · Edit</span>
                 ) : null}
               </button>
               {active && (

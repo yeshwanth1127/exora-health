@@ -120,6 +120,8 @@ export async function request<T>(
       data.requestId ?? requestId,
     );
   }
+  // Lets read-only views (setup progress) recheck after any confirmed save.
+  if (options.method && options.method !== "GET") globalThis.window?.dispatchEvent(new Event("hms-saved"));
   if (response.status === 204) return undefined as T;
   try {
     return (await response.json()) as T;

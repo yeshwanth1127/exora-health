@@ -783,3 +783,12 @@
 
 /* User-requested desktop placement; the original header placement remains the default. */
 .toggleRow { display: flex; flex: none; align-items: center; height: 40px; padding-inline: 16px; }
+
+/* Paperwhale: phase tint per section and locked rows while the clinic is being set up. */
+.toned .icon,
+.toned .lit .icon {
+  color: var(--section-tone);
+}
+.locked {
+  opacity: 0.5;
+}

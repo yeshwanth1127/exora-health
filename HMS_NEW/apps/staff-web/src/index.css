@@ -8,6 +8,12 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-guide-now: var(--guide-now);
+  --color-guide-done: var(--guide-done);
+  --color-guide-wait: var(--guide-wait);
+  --color-phase-setup: var(--phase-setup);
+  --color-phase-run: var(--phase-run);
+  --color-phase-reach: var(--phase-reach);
   --font-heading: var(--font-sans);
   --font-sans: "Geist Variable", sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
@@ -493,3 +499,75 @@ body {
 .chart-data-disclosure > summary:hover { color: var(--foreground); background: var(--muted); }
 .chart-data-disclosure > summary:focus-visible { outline: 2px solid var(--foreground); outline-offset: 3px; }
 .chart-data-disclosure[open] > summary > svg:last-child { transform: rotate(180deg); }
+
+/* First-run guide colours (docs/prd/first-run-onboarding.md): blue = do this now, green = done,
+   amber = waiting for approval; phase tints for sidebar groups. */
+:root {
+  --guide-now: oklch(52% 0.2 262);
+  --guide-done: oklch(52% 0.16 150);
+  --guide-wait: oklch(60% 0.16 70);
+  --phase-setup: var(--guide-now);
+  --phase-run: var(--guide-done);
+  --phase-reach: oklch(52% 0.2 300);
+}
+.dark {
+  --guide-now: oklch(70% 0.15 262);
+  --guide-done: oklch(72% 0.15 150);
+  --guide-wait: oklch(78% 0.14 75);
+  --phase-reach: oklch(72% 0.15 300);
+}
+
+/* Welcome slides: brand-blue panel (approved deviation from the Arc dialog look, 26 Oct 2026). */
+.welcome-slides.welcome-slides {
+  width: min(calc(100vw - 32px), 640px);
+  border: 0;
+  background: oklch(50% 0.21 268);
+  color: #fff;
+}
+.welcome-slides > div:first-child {
+  border-bottom: 0;
+  padding: 40px 40px 0;
+}
+.welcome-slides h2 {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.welcome-slides h2 + p {
+  margin-top: 16px;
+  color: rgb(255 255 255 / 0.9);
+  font-size: 18px;
+}
+.welcome-slides [aria-label="Close dialog"] {
+  border: 0;
+  background: transparent;
+  color: #fff;
+}
+.welcome-slides > div:last-child {
+  padding: 8px 40px 40px;
+}
+.welcome-next.welcome-next {
+  background: oklch(22% 0.04 270);
+  color: #fff;
+}
+.welcome-next.welcome-next:hover {
+  background: oklch(28% 0.05 270);
+}
+
+/* Coach marks: dark bubble (approved deviation from the Arc popover look, 26 Oct 2026). */
+:root {
+  --coach-bg: oklch(30% 0.03 250);
+}
+.coach-bubble {
+  border-radius: 8px;
+  padding: 16px 20px 18px;
+  background: var(--coach-bg);
+  color: #fff;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.25);
+  font-size: 14px;
+}
+/* Primary "do this now" button in the guide colour; Arc's primary paints from these two tokens. */
+.guide-cta {
+  --foreground: var(--guide-now);
+  --background: #fff;
+}

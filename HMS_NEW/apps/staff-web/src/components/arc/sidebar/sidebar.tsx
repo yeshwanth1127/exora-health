@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type ComponentType,
+  type CSSProperties,
   type ReactElement,
   type ReactNode,
   type SVGProps,
@@ -20,7 +21,7 @@ import {
 } from "motion/react";
 import { Dialog } from "@base-ui/react/dialog";
 import { Tooltip } from "@base-ui/react/tooltip";
-import { ChevronRight, X } from "lucide-react";
+import { ChevronRight, Lock, X } from "lucide-react";
 import { motionTokens as T } from "../motion-tokens";
 import styles from "./sidebar.module.css";
 
@@ -31,10 +32,14 @@ export type SidebarEntry = {
   count?: number;
   children?: SidebarEntry[];
   defaultOpen?: boolean;
+  /** Shown greyed with a lock; the tooltip says why. Still navigable. */
+  locked?: string;
 };
 export type SidebarSection = {
   id: string;
   heading?: string;
+  /** Icon tint for the section's phase (a CSS colour). */
+  tone?: string;
   items: SidebarEntry[];
 };
 type Props = {
@@ -136,9 +141,9 @@ function NavItem({
   const label = labelTransition(collapsed, reduce);
   return (
     <Tip
-      enabled={tips}
+      enabled={tips || !!entry.locked}
       label={entry.label}
-      note={entry.count ? `${entry.count} unread` : undefined}
+      note={entry.locked ?? (entry.count ? `${entry.count} unread` : undefined)}
     >
       <button
         type="button"
@@ -146,7 +151,9 @@ function NavItem({
           styles.item,
           nested ? styles.nested : "",
           lit ? styles.lit : "",
+          entry.locked ? styles.locked : "",
         ].join(" ")}
+        aria-description={entry.locked}
         aria-current={current ? "page" : undefined}
         aria-expanded={expanded}
         aria-controls={controls}
@@ -196,6 +203,17 @@ function NavItem({
             />
           </>
         ) : null}
+        {entry.locked && (
+          <motion.span
+            className={styles.chevron}
+            aria-hidden="true"
+            initial={false}
+            animate={{ opacity: +!collapsed }}
+            transition={label}
+          >
+            <Lock size={12} strokeWidth={1.75} />
+          </motion.span>
+        )}
         {turned !== undefined && (
           <motion.span
             className={styles.chevron}
@@ -254,7 +272,8 @@ function Navigation({
         return (
           <div
             key={section.id}
-            className={styles.section}
+            className={`${styles.section} ${section.tone ? styles.toned : ""}`}
+            style={section.tone ? ({ "--section-tone": section.tone } as CSSProperties) : undefined}
             role={section.heading ? "group" : undefined}
             aria-labelledby={section.heading ? id : undefined}
           >
