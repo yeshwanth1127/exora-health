@@ -224,7 +224,7 @@ export function StepDot({
 
 const templateLabels = {
   not_submitted: ["Not submitted", "outline"],
-  in_review: ["In review at Meta", "secondary"],
+  in_review: ["In review", "secondary"],
   rejected: ["Rejected", "destructive"],
   approved: ["Approved", "outline"],
   edited: ["Edited · not submitted", "outline"],

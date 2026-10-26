@@ -212,7 +212,7 @@ function useGbp(facilityId: string) {
         )
       ) {
         toast.error(
-          "This field is not available for publishing from Paperwhale yet.",
+          "This field can't be published yet.",
         );
         return false;
       }
@@ -320,7 +320,7 @@ function Google({ exora }: { exora: Paperwhale }) {
           variant="outline"
           disabled={remote.busy}
           onClick={() => {
-            if (window.confirm("Disconnect this Google listing from Paperwhale?"))
+            if (window.confirm("Disconnect this Google listing?"))
               void request(
                 `/v1/managed-connections/google?facilityId=${facility.facilityId}`,
                 { method: "DELETE", idempotencyKey: crypto.randomUUID() },
@@ -556,8 +556,7 @@ function Connect({
         </Button>
         {!available && (
           <p className="text-sm text-muted-foreground">
-            Paperwhale is preparing Google connections. No account keys or technical
-            setup are needed from you.
+            Google connections aren&apos;t available yet.
           </p>
         )}
         {new URLSearchParams(location.search).get("google") === "failed" && (

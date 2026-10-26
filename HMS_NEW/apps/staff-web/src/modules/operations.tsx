@@ -127,7 +127,7 @@ function ActivityPage({
           "Voice bookings",
           s.voice_bookings,
           s.voice_sessions_total == null
-            ? "Call sessions not connected"
+            ? "No call data yet"
             : `All time · ${s.voice_sessions_total} recorded call sessions`,
         ],
       ]

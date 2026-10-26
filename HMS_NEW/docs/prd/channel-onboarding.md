@@ -3,6 +3,7 @@
 Status: **approved and built** (26 Oct 2026). Branch `codex/admin-dashboard-arc`.
 The user asked for empty-state copy to stay small and minimal: one short sentence each.
 Apple Messages opens on Conversations (like Voice opens on Call history); its empty state links to Setup.
+26 Oct: the user asked to hide backend detail. The Apple eligibility notice is removed (criterion 4 is dropped), and Paperwhale and provider steps read only "Application submitted to Paperwhale. Wait for approval."
 
 ## Problem
 

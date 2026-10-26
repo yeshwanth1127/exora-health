@@ -229,7 +229,7 @@ export function ModuleSwitches() {
                         onClick={() =>
                           setReview({
                             title: `${to === "suspended" ? "Suspend" : to === "active" ? "Activate" : "Change"} ${label(m.module)}`,
-                            description: `Organisation-wide module state: ${label(m.state)} → ${label(to)}. ${to === "suspended" ? "New work stops; existing records stay readable." : "This changes internal module availability. It does not activate an external provider."}`,
+                            description: `Organisation-wide module state: ${label(m.state)} → ${label(to)}. ${to === "suspended" ? "New work stops; existing records stay readable." : "This changes availability for every clinic."}`,
                             path: `/v1/modules/${m.module}`,
                             method: "PUT",
                             body: { state: to, version: m.version },

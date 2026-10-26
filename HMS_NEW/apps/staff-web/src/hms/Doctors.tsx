@@ -1535,7 +1535,7 @@ function DoctorPrerequisite({
         if (typeof id !== "string" || !id) {
           setUnidentified(true);
           setReadError(
-            "The server did not identify the saved record. Keep this form open and review the request with the administrator.",
+            "We couldn't confirm the save. Keep this form open and check with your administrator.",
           );
           return;
         }

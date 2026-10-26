@@ -12,8 +12,6 @@ import { VOICE_STEPS, voiceStep } from "./voice-setup";
 import {
   ArrowUpRight,
   Bot,
-  CheckCircle2,
-  CircleDashed,
   Globe2,
   LoaderCircle,
   PhoneCall,
@@ -122,7 +120,7 @@ function AssignedVoiceNumber() {
           </span>
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Your hospital&apos;s voice agent number
+              Your voice agent number
             </p>
             <a
               className="text-xl font-semibold hover:underline"
@@ -131,8 +129,7 @@ function AssignedVoiceNumber() {
               {phoneNumber}
             </a>
             <p className="text-xs text-muted-foreground">
-              Patient calls to this number are answered by your dedicated voice
-              agent.
+              Your agent answers calls to this number.
             </p>
           </div>
         </div>
@@ -140,7 +137,7 @@ function AssignedVoiceNumber() {
           variant="outline"
           className="border-emerald-300 text-emerald-700"
         >
-          Active · Dedicated to this tenant
+          Active
         </Badge>
       </CardContent>
     </Card>
@@ -184,8 +181,6 @@ function VoiceControl() {
   }, [refresh]);
 
   const active = runtime?.enabled === true;
-  const local = ["localhost", "127.0.0.1"].includes(location.hostname);
-  const hostedSecurely = location.protocol === "https:" && !local;
   const doctors = practitioners.filter((p) => p.facilityId === facility.facilityId).length;
   const current = voiceStep({
     doctors,
@@ -195,12 +190,8 @@ function VoiceControl() {
   });
   const open = picked !== null && picked < current ? picked : Math.min(current, VOICE_STEPS.length - 1);
   const step = VOICE_STEPS[open]!.id;
-  // The control plane answers 412 until Paperwhale switches voice on for this clinic.
+  // The control plane answers 412 until voice is switched on for this clinic.
   const notEnabled = !!agent.error && /not configured/i.test(agent.error);
-  const checks = [
-    ["Voice service", runtime?.integration_ready ? "Installed" : runtime ? "Not enabled" : "Not reachable", runtime?.integration_ready === true],
-    ["Public HTTPS", hostedSecurely ? "Ready" : local ? "Local preview" : "Required", hostedSecurely],
-  ] as const;
 
   return (
     <section className="space-y-6" aria-label="Voice setup">
@@ -210,7 +201,7 @@ function VoiceControl() {
             {active ? "Your voice agent is live" : "Set up your voice agent"}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            The agent answers patient calls and books real appointments. Paperwhale builds it; you choose how calls reach it.
+            Answers patient calls and books appointments.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -233,7 +224,7 @@ function VoiceControl() {
           completeLabel="Voice agent live"
           steps={VOICE_STEPS.map((s) => ({
             ...s,
-            error: s.id === "request" && current === 2 && agent.error ? (notEnabled ? "Not switched on yet" : "Status unavailable") : undefined,
+            error: s.id === "request" && current === 2 && agent.error ? (notEnabled ? "Not available yet" : "Status unavailable") : undefined,
           }))}
         />
       </div>
@@ -261,8 +252,8 @@ function VoiceControl() {
             {agent.loading
               ? "Checking agent status…"
               : notEnabled
-                ? "Voice isn't switched on for this clinic yet. Ask Paperwhale to enable it, then request your agent here."
-                : agent.error}
+                ? "Voice isn't available for your clinic yet."
+                : "Couldn't load the status. Try Check status."}
           </p>
         )
       )}
@@ -284,7 +275,7 @@ function VoiceControl() {
                 </>
               ) : (
                 <p className="text-muted-foreground">
-                  {agent.data.agent.displayName} is built. Paperwhale is connecting it to your line. This page updates when calls can start.
+                  Approved. Your agent goes live soon.
                 </p>
               )}
             </CardContent>
@@ -293,17 +284,6 @@ function VoiceControl() {
         </>
       )}
 
-      <details className="text-sm text-muted-foreground">
-        <summary className="cursor-pointer">Technical checks</summary>
-        <ul className="mt-2 space-y-1">
-          {checks.map(([label, value, ok]) => (
-            <li key={label} className="flex items-center gap-2">
-              {ok ? <CheckCircle2 className="size-4 text-emerald-600" /> : <CircleDashed className="size-4 text-amber-600" />}
-              {label}: {value}
-            </li>
-          ))}
-        </ul>
-      </details>
     </section>
   );
 }
@@ -328,28 +308,19 @@ function AgentRequestCard({ setup, refresh }: { setup: AgentSettings; refresh: (
       <CardContent className="space-y-3 text-sm">
         {!setup.entitled ? (
           <p className="text-muted-foreground">
-            A voice agent is not included in this clinic&apos;s plan. Contact Paperwhale to add it.
+            Voice agent isn&apos;t in your plan. Contact Paperwhale to add it.
           </p>
         ) : pending ? (
           <>
             <Badge variant="secondary">
-              {pending.state === "in_setup" ? "Being set up" : "Requested"}
+              Submitted
             </Badge>
-            <p>
-              Requested by {pending.requestedBy} on {when(pending.requestedAt)}.{" "}
-              {pending.state === "in_setup"
-                ? "Paperwhale is setting up your agent now."
-                : "Paperwhale will set up your agent using this clinic's details."}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              This page updates on its own when the agent is ready. You can then change how it speaks here.
-            </p>
+            <p>Application submitted to Paperwhale on {when(pending.requestedAt)}. Wait for approval.</p>
           </>
         ) : (
           <>
             <p className="text-muted-foreground">
-              Paperwhale creates a dedicated voice agent for this clinic. It answers patients using your live
-              doctors, schedules and booking rules.
+              Your agent books from your doctors and their open times.
             </p>
             {declined?.reason && (
               <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900">
@@ -358,10 +329,10 @@ function AgentRequestCard({ setup, refresh }: { setup: AgentSettings; refresh: (
             )}
             {cmd.error && <p className="text-destructive">{cmd.error}</p>}
             <Button type="button" disabled={!canManage || cmd.busy} onClick={() => void create()}>
-              {cmd.busy ? <LoaderCircle className="animate-spin" /> : <Bot />} Create voice agent
+              {cmd.busy ? <LoaderCircle className="animate-spin" /> : <Bot />} Submit application
             </Button>
             {!canManage && (
-              <p className="text-xs text-muted-foreground">Only a clinic administrator can request the agent.</p>
+              <p className="text-xs text-muted-foreground">Only a clinic administrator can submit this.</p>
             )}
           </>
         )}
@@ -410,7 +381,7 @@ function SpokenAgentForm({ setup, refresh }: { setup: AgentSettings; refresh: ()
       settings: payload(),
     }, false, "PUT");
     if (result) {
-      setNotice("Draft saved. Request the changes when you are ready for Paperwhale to apply them.");
+      setNotice("Draft saved.");
       await refresh();
     }
   }
@@ -432,9 +403,7 @@ function SpokenAgentForm({ setup, refresh }: { setup: AgentSettings; refresh: ()
       <CardContent className="space-y-5">
         {pending && (
           <p className="rounded-md border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
-            Changes requested by {pending.requestedBy} on {when(pending.requestedAt)}.{" "}
-            {pending.state === "in_setup" ? "Paperwhale is applying them now." : "Paperwhale will apply them to your agent."}{" "}
-            Editing is paused until then.
+            Changes submitted on {when(pending.requestedAt)}. Wait for approval.
           </p>
         )}
         {declined?.reason && (

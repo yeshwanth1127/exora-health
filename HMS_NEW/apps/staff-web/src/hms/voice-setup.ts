@@ -2,8 +2,8 @@
 export const VOICE_STEPS = [
   { id: "doctors", label: "Doctors", description: "Who patients can book" },
   { id: "line", label: "Phone line", description: "How calls reach the agent" },
-  { id: "request", label: "Request agent", description: "Ask Paperwhale to build it" },
-  { id: "build", label: "Paperwhale setup", description: "Paperwhale builds and tests it" },
+  { id: "request", label: "Apply", description: "Submit your application" },
+  { id: "build", label: "Approval", description: "Wait for approval" },
   { id: "live", label: "Live", description: "Test it and adjust" },
 ] as const;
 

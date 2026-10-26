@@ -2,8 +2,8 @@
 export const APPLE_STEPS = [
   { id: "details", label: "Clinic details", description: "How patients see you" },
   { id: "hours", label: "Support hours", description: "When reception replies" },
-  { id: "submit", label: "Submit", description: "Send it to Paperwhale" },
-  { id: "review", label: "Paperwhale review", description: "Apple eligibility and setup" },
+  { id: "submit", label: "Submit", description: "Send your application" },
+  { id: "review", label: "Approval", description: "Wait for approval" },
   { id: "live", label: "Live", description: "Patients can message you" },
 ] as const;
 

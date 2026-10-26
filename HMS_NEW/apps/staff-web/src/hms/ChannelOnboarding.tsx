@@ -38,10 +38,10 @@ const strategies = {
     ["company_number", "New company-managed number"],
     [
       "business_app_coexistence",
-      "Keep WhatsApp Business app · eligibility check",
+      "Keep WhatsApp Business app",
     ],
-    ["existing_api", "Connect existing WhatsApp API number"],
-    ["migrate_number", "Migrate an existing number · provider review"],
+    ["existing_api", "Use an existing WhatsApp business number"],
+    ["migrate_number", "Move an existing number"],
   ],
 };
 function defaults(channel: Channel): ChannelOnboardingDraft {
@@ -138,7 +138,7 @@ function OnboardingForm({
       "PUT",
     );
     if (result) {
-      setSavedMessage("Preferences saved. Provider setup is still required.");
+      setSavedMessage("Preferences saved.");
       await refresh();
     }
   }
@@ -151,7 +151,7 @@ function OnboardingForm({
           </CardTitle>
           <Badge variant="outline">
             {setup.state === "requested"
-              ? "Setup requested"
+              ? "Submitted"
               : setup.state === "draft"
                 ? "Draft saved"
                 : "Not started"}
@@ -167,19 +167,6 @@ function OnboardingForm({
             <WorkspaceChoice label="Phone number" id="channel-number-plan" value={draft.numberStrategy}
               onChange={(numberStrategy) => update({ numberStrategy } as Partial<ChannelOnboardingDraft>)}
               options={strategies[setup.channel].map(([value, label]) => ({ value, label }))} />
-            {draft.numberStrategy === "business_app_coexistence" && (
-              <p className="text-muted-foreground">
-                Keeping the Business app depends on Meta eligibility. Personal
-                WhatsApp and API migrations need a separate review.
-              </p>
-            )}
-            {draft.numberStrategy === "existing_forwarded" && (
-              <p className="text-muted-foreground">
-                Your carrier or PBX must support conditional forwarding. Our
-                team will test busy, no-answer and unreachable behaviour with
-                your clinic.
-              </p>
-            )}
           </div>
           {draft.numberStrategy !== "company_number" && (
             <div className="space-y-2">
@@ -310,10 +297,6 @@ function OnboardingForm({
                 </label>
               ))}
             </div>
-            <p className="text-muted-foreground">
-              Requested languages will be checked against the selected provider
-              before activation.
-            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="channel-greeting">Assistant greeting</Label>
@@ -363,14 +346,14 @@ function OnboardingForm({
                 if (result) await refresh();
               }}
             >
-              Request setup
+              Submit
             </Button>
             <span className="text-muted-foreground">
               {dirty
-                ? "Save before requesting setup."
+                ? "Save before submitting."
                 : setup.state === "requested"
-                  ? "Our team still needs to configure and verify the provider."
-                  : "Request setup after reviewing these preferences."}
+                  ? "Submitted to Paperwhale. Wait for approval."
+                  : ""}
             </span>
           </div>
         )}

@@ -1511,7 +1511,7 @@ function PatientView({ data, clinic }: { data: LoyaltyData; clinic: string }) {
           disabled={!preview}
           onClick={() =>
             toast.info(
-              "Preview only. Nothing was sent; cards go out on WhatsApp once the backend is connected.",
+              "Preview only. Nothing was sent.",
             )
           }
         >

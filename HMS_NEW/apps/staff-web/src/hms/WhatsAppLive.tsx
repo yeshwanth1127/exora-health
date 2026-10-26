@@ -113,7 +113,7 @@ export function Live({
       )}
       <p className="text-sm text-muted-foreground">
         {data.capabilities?.sending
-          ? "Replies are sent from this inbox. Delivery is shown only after Meta confirms it."
+          ? "Replies are sent from this inbox."
           : "Sending is not available yet."}{" "}
         Booking and appointment notices follow the clinic’s saved settings.
       </p>
@@ -284,13 +284,13 @@ function Overview({
       failed > 0,
     ],
     [
-      `${waitingApproval} automation${waitingApproval === 1 ? " is" : "s are"} on but waiting for Meta approval`,
+      `${waitingApproval} automation${waitingApproval === 1 ? " is" : "s are"} on but waiting for approval`,
       "Review",
       () => open("automations"),
       waitingApproval > 0,
     ],
     [
-      `${rejected} template${rejected === 1 ? " was" : "s were"} rejected by Meta`,
+      `${rejected} template${rejected === 1 ? " was" : "s were"} rejected`,
       "Fix",
       () => open("automations"),
       rejected > 0,
@@ -441,7 +441,7 @@ function Overview({
                       {live
                         ? info.timings.find(([k]) => k === a.timing)?.[1]
                         : a.on
-                          ? "Waiting for Meta approval"
+                          ? "Waiting for approval"
                           : "Off"}
                     </p>
                   </button>
@@ -485,8 +485,8 @@ function SettingsTab({
         </p>
       )}
       <Section
-        title="Number and Meta account"
-        text="Meta reviews your messages. High quality keeps your sending limit rising."
+        title="Number and account"
+        text="High quality keeps your sending limit rising."
       >
         <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
           {(
@@ -501,7 +501,6 @@ function SettingsTab({
               ],
               ["Quality rating", "Unavailable"],
               ["Messaging limit", "Unavailable"],
-              ["Business verification", "Managed by Meta"],
             ] as const
           ).map(([k, v]) => (
             <div key={k}>

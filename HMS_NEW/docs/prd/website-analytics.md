@@ -1,6 +1,37 @@
 # PRD: Website analytics, self-serve
 
-Status: approved 14 October 2026 (two options: Paperwhale analytics or the clinic's own PostHog) · UI next
+Status: approved 14 October 2026 · **revision proposed 26 October 2026: Umami only (awaiting approval)**
+
+## Revision, 26 Oct 2026: Umami only
+
+The user decided Paperwhale uses only Umami for website analytics. This replaces the two-option
+decision below; everything else in this PRD stands (loader, `/a/collect`, privacy rules, screens).
+
+**Why the page says "not available" today.** The API sets `available` only when `UMAMI_ORIGIN`
+and `UMAMI_API_KEY` are set. No Umami instance is running, locally or on the VPS, so every clinic
+sees "not available". The code path already counts visits through Umami; it has never had a server.
+
+**Changes**
+
+1. **Run Umami on the VPS.** Use `deploy/production/analytics.compose.yml` (Umami v3 plus its own
+   Postgres, loopback port only, company-only HTTPS). Create the server API key, then set
+   `UMAMI_ORIGIN` and `UMAMI_API_KEY` on the API. Back up its database with the others.
+2. **Remove PostHog everywhere:**
+   - the API mirror (`MANAGED_POSTHOG_*`, `dispatchAnalyticsMirror`);
+   - the old single-clinic reader (`POSTHOG_*`, `websiteActivity` in `voice-growth.ts`);
+   - the PostHog SDK in the Sri Lakshmi website (replaced by the Paperwhale `/a.js` loader);
+   - the marketing site's analytics (Umami's own script, cookieless);
+   - every PostHog label in the dashboard: no provider name is shown, only "Website analytics".
+3. **Dashboard copy.** "Not available" becomes "Website analytics isn't switched on yet." No
+   provider, key or server detail on screen.
+
+**Out:** clinic-owned PostHog projects, GA4 and Plausible.
+
+**Acceptance:** with Umami configured, a visit to a clinic booking page shows on Website analytics
+within a minute; `git grep -i posthog` finds nothing outside lockfiles and this PRD's history.
+
+---
+
 
 ## Problem
 

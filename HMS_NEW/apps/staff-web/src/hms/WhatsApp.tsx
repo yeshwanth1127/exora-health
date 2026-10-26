@@ -216,8 +216,7 @@ function Setup({ clinic }: { clinic: Clinic }) {
       )}
       {!remote.query.data?.available && (
         <p className="mb-4 text-sm text-muted-foreground">
-          Paperwhale is preparing WhatsApp connections. No technical setup is needed
-          from your team.
+          WhatsApp connections aren&apos;t available yet.
         </p>
       )}
       <p className="mb-4 text-sm text-muted-foreground">

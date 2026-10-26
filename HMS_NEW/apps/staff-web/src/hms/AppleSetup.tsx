@@ -4,7 +4,6 @@ import {
   ChannelOnboardingSchema,
   type ChannelOnboardingDraft,
 } from "@hms/contracts";
-import { Alert } from "@/components/arc/alert/alert";
 import { Stepper } from "@/components/arc/stepper/stepper";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,16 +50,9 @@ export function AppleSetup({ live, onOpenConversations }: { live: boolean; onOpe
           {live ? "Apple Messages is live" : "Set up Apple Messages"}
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          iPhone users message your clinic from Maps, Safari or Search. You add your details; Paperwhale handles Apple.
+          Patients message your clinic from Maps, Safari or Search on their iPhone.
         </p>
       </div>
-      {!live && (
-        <div className="arc-demo-scope max-w-2xl">
-          <Alert tone="warning" title="Eligibility is not confirmed">
-            Apple isn&apos;t currently onboarding businesses whose main service is medical. Paperwhale confirms eligibility with Apple before anything goes live.
-          </Alert>
-        </div>
-      )}
       {q.error && <p role="alert" className="text-sm text-destructive">{q.error}</p>}
       {q.loading && !q.data && <p className="text-sm text-muted-foreground">Loading setup…</p>}
       {q.data && (
@@ -165,7 +157,7 @@ function AppleSetupForm({
         <p className="text-sm text-muted-foreground">Only a clinic administrator can change this setup.</p>
       )}
       {setup.state === "requested" && open < 3 && (
-        <p className="text-sm text-muted-foreground">Editing is paused while Paperwhale reviews your request.</p>
+        <p className="text-sm text-muted-foreground">Editing is paused until your application is approved.</p>
       )}
 
       {step === "details" && (
@@ -249,7 +241,7 @@ function AppleSetupForm({
               </Field>
               <label className="flex items-start gap-2 text-sm">
                 <input type="checkbox" className="mt-1" checked={authorized} onChange={(e) => { setAuthorized(e.target.checked); setError(""); }} />
-                I&apos;m allowed to represent this clinic. Paperwhale and Apple still verify this.
+                I&apos;m allowed to represent this clinic.
               </label>
             </fieldset>
             <Footer error={error} cmd={cmd} refresh={refresh}>
@@ -265,9 +257,8 @@ function AppleSetupForm({
             <p>
               {draft.brandName} · {draft.website} · {draft.supportHours.length} support day{draft.supportHours.length === 1 ? "" : "s"}
             </p>
-            <p className="text-muted-foreground">Submitting sends this to Paperwhale. It doesn&apos;t connect Apple Messages.</p>
             <Footer error={error} cmd={cmd} refresh={refresh}>
-              <Button disabled={locked || dirty} onClick={() => void submit()}>Submit request</Button>
+              <Button disabled={locked || dirty} onClick={() => void submit()}>Submit application</Button>
             </Footer>
           </CardContent>
         </Card>
@@ -276,8 +267,7 @@ function AppleSetupForm({
       {step === "review" && (
         <Card>
           <CardContent className="pt-5 text-sm text-muted-foreground">
-            Submitted{setup.requestedAt ? ` ${new Date(setup.requestedAt).toLocaleDateString()}` : ""}. Paperwhale checks eligibility with Apple and
-            connects your account. Nothing goes live until then.
+            Application submitted to Paperwhale{setup.requestedAt ? ` on ${new Date(setup.requestedAt).toLocaleDateString()}` : ""}. Wait for approval.
           </CardContent>
         </Card>
       )}

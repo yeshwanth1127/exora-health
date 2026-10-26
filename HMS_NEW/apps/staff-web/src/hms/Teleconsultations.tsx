@@ -358,8 +358,7 @@ export function VideoFrame({ grant }: { grant: JoinGrant }) {
   )
     return (
       <Hint>
-        The video provider has not been configured for real calls in this
-        preview.
+        Video calls aren&apos;t available in this preview.
       </Hint>
     );
   const url = `https://${grant.domain}/${encodeURIComponent(grant.roomName)}?jwt=${encodeURIComponent(grant.jwt)}`;
