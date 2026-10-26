@@ -1,0 +1,22 @@
+{
+  "source": "https://uiarc.dev/components/date-reel/frame",
+  "entryModule": 39385,
+  "export": "DateReelDemo",
+  "capturedFactorySha256": "68a94873e96edf8a5fb93051cc59f4316a7e1326a73848840cdccbf23b4021e6",
+  "assetCount": 45,
+  "cssAssetReferences": [
+    "_next/static/media/9ff55a8a9670220d-s.p.woff2",
+    "_next/static/media/6c596dfcddeca1e9-s.p.woff2"
+  ],
+  "checks": {
+    "conversion": "passed",
+    "build": "passed after interop and runtime asset bridge repair",
+    "cleanConsumer": "passed: external React, bundled JS/CSS and local font outputs",
+    "browserParity": "pending parent comparison",
+    "demo": "passed: bundled local React/ReactDOM app.js; sha256 prefix 6e111e01c698",
+    "mode1Audit": "no mode-1 interop.t imports found",
+    "browserMount": "pending parent recheck after runtime repair",
+    "assetPathRebase": "passed: source literals and nested JSX image/srcSet/inline background-image props resolve to captured dist/assets; unique basename fallback for captured portrait aliases"
+  },
+  "previewProps": {}
+}

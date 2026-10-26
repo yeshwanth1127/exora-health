@@ -1,0 +1,127 @@
+.arc-hospital, [class*="lightbox-gallery_overlay__"] {
+  color-scheme: light;
+  --neutral-0: oklch(100% 0 0);
+  --neutral-1: oklch(99% 0 0);
+  --neutral-2: oklch(97.8% 0 0);
+  --neutral-3: oklch(95.8% 0 0);
+  --neutral-4: oklch(91.5% 0 0);
+  --neutral-5: oklch(84% 0 0);
+  --neutral-6: oklch(72% 0 0);
+  --neutral-7: oklch(59% 0 0);
+  --neutral-8: oklch(46% 0 0);
+  --neutral-9: oklch(34% 0 0);
+  --neutral-10: oklch(23% 0 0);
+  --neutral-11: oklch(15% 0 0);
+  --background: var(--neutral-0);
+  --surface: var(--neutral-0);
+  --surface-raised: var(--neutral-0);
+  --surface-muted: var(--neutral-2);
+  --foreground: var(--neutral-11);
+  --text-secondary: var(--neutral-8);
+  --text-muted: var(--neutral-7);
+  --border: oklch(93.5% 0 0);
+  --border-subtle: oklch(96.5% 0 0);
+  --border-strong: oklch(82% 0 0);
+  --accent: oklch(33% 0 0);
+  --accent-strong: oklch(24% 0 0);
+  --accent-subtle: oklch(33% 0 0 / .1);
+  --accent-foreground: var(--background);
+  /* Selection controls (switch, checkbox, radio, slider). --control-on fills a chosen control; --control-glyph is the check or dot drawn on it;
+     thumbs stay white in both states so they always read against the track. Tuned per accent below so white thumbs hold on every hue. */
+  --control-on: oklch(23% 0 0);
+  --control-glyph: oklch(100% 0 0);
+  --control-track: oklch(89.5% 0 0);
+  --control-track-hover: oklch(86% 0 0);
+  --control-thumb: oklch(100% 0 0);
+  --control-thumb-on: oklch(100% 0 0);
+  --control-thumb-shadow: 0 0 0 .5px oklch(0% 0 0 / .07), 0 1px 2px oklch(0% 0 0 / .14), 0 2px 6px oklch(0% 0 0 / .06);
+  --control-on-subtle: color-mix(in oklab, var(--control-on) 10%, transparent);
+  /* Slider fills. Same as --control-on except neutral dark, where a mid grey keeps the white thumb distinct. */
+  --control-fill: var(--control-on);
+  /* Pointer focus draws no ring (product decision). --focus-ring is the halo a few fields drew for any input method, so it stays transparent.
+     Keyboard focus uses the outline at the end of this file; tune it with --focus-outline, --focus-outline-width and --focus-outline-offset. */
+  --focus-ring: transparent;
+  --success: oklch(49% .19 150);
+  --warning: oklch(58% .18 75);
+  --danger: oklch(54% .21 25);
+  --shadow-resting: 0 1px 2px oklch(0% 0 0 / .035);
+  --shadow-raised: 0 6px 18px oklch(0% 0 0 / .065), 0 1px 3px oklch(0% 0 0 / .035);
+  --shadow-floating: 0 20px 48px oklch(0% 0 0 / .105), 0 3px 10px oklch(0% 0 0 / .045);
+  /* Brand gradient: soft lavender to warm peach. Light enough for dark text (--arc-gradient-foreground, >12:1). */
+  --arc-gradient-from: oklch(90% .045 300);
+  --arc-gradient-to: oklch(92% .045 65);
+  --arc-gradient: linear-gradient(100deg, var(--arc-gradient-from), var(--arc-gradient-to));
+  --arc-gradient-foreground: oklch(22% .01 300);
+  /* Faint wash for backgrounds and tinted panels. */
+  --arc-gradient-soft: linear-gradient(135deg, oklch(97.5% .016 300), oklch(98% .016 65));
+  /* Hairline borders and rules. */
+  --arc-gradient-line: linear-gradient(100deg, oklch(83% .06 300), oklch(86% .06 65));
+  /* Text-safe stops for gradient text and small marks (>4.5:1 on the surface). */
+  --arc-gradient-ink: linear-gradient(100deg, oklch(47% .1 300), oklch(50% .09 55));
+  --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem;
+  --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem;
+  --space-12: 3rem; --space-16: 4rem; --space-20: 5rem; --space-24: 6rem;
+  --radius-control: 1.125rem; --radius-panel: 1.625rem; --radius-surface: 2.125rem; --radius-pill: 9999px;
+  --control-height-sm: 2.25rem; --control-height-md: 2.75rem; --control-height-lg: 3.125rem;
+  --font-display: var(--font-geist, "Geist Variable"), sans-serif;
+  --font-body: var(--font-inter, "Inter Variable"), sans-serif;
+  --text-xs: .75rem; --text-sm: .875rem; --text-base: 1rem; --text-lg: 1.125rem;
+  --text-xl: 1.375rem; --text-2xl: 1.75rem; --text-3xl: 2.25rem;
+  --text-4xl: 3.25rem; --text-5xl: 4.5rem;
+  --tracking-display: -.03em; --tracking-body: -.01em;
+  --leading-display: 1.1; --leading-body: 1.4;
+  --ease-enter: cubic-bezier(.16,1,.3,1);
+  --ease-standard: cubic-bezier(.22,1,.36,1);
+  --ease-exit: cubic-bezier(.7,0,.84,0);
+  --ease-in-out: cubic-bezier(.65,0,.35,1);
+  /* Spring with a gentle settle (bounce .15). Pair with --duration-spring for transform transitions. */
+  --ease-spring: linear(0, 0.0258, 0.09, 0.1763, 0.2732, 0.3724, 0.4683, 0.5573, 0.6376, 0.7082, 0.7689, 0.8202, 0.8628, 0.8976, 0.9256, 0.9476, 0.9648, 0.9778, 0.9875, 0.9945, 0.9994, 1.0026, 1.0047, 1.0058, 1.0062, 1.0062, 1.0059, 1.0055, 1.0049, 1.0043, 1.0036, 1.0031, 1.0025, 1.002, 1.0016, 1.0013, 1);
+  --duration-instant: 120ms; --duration-fast: 160ms; --duration-standard: 240ms; --duration-considered: 480ms; --duration-spring: 580ms;
+}
+
+
+.arc-hospital, [class*="lightbox-gallery_overlay__"] {
+ --font-body: Avenir, Arial, sans-serif; --font-display: Avenir, Arial, sans-serif;
+ --surface: #fefbf6; --surface-raised: #fff; --surface-muted: #f0f3f1;
+ --foreground: #08404f; --text-secondary: #52656a; --text-muted: #66767a;
+ --border: #d9e2df; --border-subtle: #e8edeb; --accent: #08404f; --accent-strong: #08404f;
+ --accent-subtle: #08404f12; --radius-control: 8px; --radius-panel: 16px;
+}
+.arc-hospital :focus-visible { outline: 2px solid #08404f; outline-offset: 4px; }
+/* Arc behavior fits the original Sri Lakshmi section dimensions. */
+.hospital-doctor-browser .team-showcase_showcase__XBNWz { width:100%; padding:0; border:0; border-radius:0; overflow:visible; background:transparent; }
+.hospital-doctor-browser .team-showcase_header__xuRdp { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.hospital-doctor-browser .team-showcase_galleryGrid__BZDJR { grid-template-columns:repeat(4,minmax(0,1fr)); gap:32px; }
+.hospital-doctor-browser .team-showcase_galleryPhoto__GyOw0 { aspect-ratio:4/5; border-radius:16px; background:#e9e5dc; }
+.hospital-doctor-browser .team-showcase_showcase__XBNWz img { object-position:center top; }
+.hospital-doctor-browser .team-showcase_personName__xn4Bc { margin-top:16px; font-size:19px; color:#121212; }
+.hospital-doctor-browser .team-showcase_personRole__HnoAI { margin-top:5px; }
+.hospital-doctor-browser .team-showcase_galleryDetail__ZASzd { margin-top:32px; min-height:130px; padding-top:24px; border-color:#d9e2df; }
+.hospital-doctor-browser .team-showcase_galleryBioStage__D6tzA,
+.hospital-doctor-browser .team-showcase_galleryBio__aldd2 { min-height:105px; }
+.hospital-doctor-browser .team-showcase_galleryBio__aldd2 { width:100%; grid-template-columns:minmax(0,1fr) minmax(0,1.5fr); }
+.hospital-doctor-browser .team-showcase_galleryBioIdentity__xU2RK h3 { font-size:26px; }
+.hospital-doctor-browser .team-showcase_galleryNavigation__bD6Oi { align-self:start; }
+.hospital-doctor-actions { display:flex; justify-content:flex-end; align-items:center; gap:24px; padding-top:16px; }
+.hospital-doctor-actions a { color:#08404f; font-size:14px; font-weight:600; text-decoration:underline; text-underline-offset:4px; }
+.hospital-doctor-actions button { padding:13px 20px; border:1px solid #08404f; border-radius:4px; background:#08404f; color:#fff; font:500 14px Avenir,Arial,sans-serif; cursor:pointer; transition:background-color 160ms ease-out; }
+.hospital-doctor-actions button:hover { background:#12576a; }
+.hospital-doctor-actions button:active { transform:translateY(1px); }
+.hospital-date-reel > p { margin:12px 0; color:#52656a; font-size:12px; line-height:1.5; }
+.hospital-date-reel > button { display:block; margin:8px auto 0; padding:8px; color:#08404f; font-size:13px; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+.hospital-date-reel .date-reel_root__Ic5be { border-radius:12px; background:#fff; }
+.hospital-gallery-loading { position:fixed; bottom:96px; left:50%; transform:translateX(-50%); padding:12px 20px; z-index:1001; background:#08404f; color:white; border-radius:8px; }
+[class*="lightbox-gallery_overlay__"] { z-index:10020; }
+@media(max-width:760px) {
+ .hospital-doctor-browser .team-showcase_galleryGrid__BZDJR { gap:20px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .hospital-doctor-browser .team-showcase_galleryBio__aldd2 { grid-template-columns:1fr; gap:12px; }
+ .hospital-doctor-browser .team-showcase_galleryBioStage__D6tzA { min-height:170px; }
+ .hospital-doctor-actions { justify-content:flex-start; flex-wrap:wrap; gap:16px; }
+}
+@media(max-width:480px) {
+ .hospital-doctor-browser .team-showcase_galleryGrid__BZDJR { display:flex; margin-right:0; padding-right:0; gap:16px; }
+ .hospital-doctor-browser .team-showcase_galleryPerson__kmQXB { flex-basis:78%; }
+ .hospital-doctor-browser .team-showcase_galleryBioIdentity__xU2RK h3 { font-size:23px; }
+ .hospital-doctor-actions { display:grid; }
+ .hospital-doctor-actions button { text-align:left; line-height:1.5; }
+}

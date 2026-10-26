@@ -41,7 +41,7 @@ export const websiteApproaches = [
   { id: "choose", title: "Let me choose a template", detail: "Explore a new look for your facility." },
 ] as const;
 export function websiteTemplates(_category: string) {
-  return [{ id: "standard", name: "Standard clinic website", index: 0 }, { id: "sri-lakshmi", name: "Sri Lakshmi hospital website", index: 1 }, { id: "hospital-editorial", name: "Editorial hospital website", index: 2 }];
+  return [{ id: "standard", name: "Standard clinic website", index: 0 }, { id: "sri-lakshmi", name: "Sri Lakshmi hospital website", index: 1 }, { id: "hospital-editorial", name: "Editorial hospital website", index: 2 }, { id: "swastikaa", name: "Swastikaa template", index: 3 }];
 }
 export function websiteDirection(draft: WizardDraft) {
   const approach = websiteApproaches.find(option => option.id === draft.websiteApproach)?.title;

@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.vite/
+# Private, checked-in runtime adapters are source inputs to this application.
+!src/vendor/pro/*/dist/
+!src/vendor/pro/*/dist/**

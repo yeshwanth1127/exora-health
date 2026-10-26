@@ -2,6 +2,7 @@ export const SETTINGS_SECTIONS = [
   ["team", "Team"],
   ["roles", "Roles & access"],
   ["booking", "Booking policy"],
+  ["website", "Website"],
   ["modules", "Modules"],
   ["registrations", "Professional registrations"],
   ["consent-documents", "Consent documents"],

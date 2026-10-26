@@ -1,3 +1,5 @@
+import {WebsiteSlotSelection,websiteVoiceContext} from '../../modules/booking/website-voice-context.ts';
+import type {PublicBookingConfig} from '../../modules/booking/public-config.ts';
 import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import type { DB, Kysely } from '@hms/db';
@@ -46,6 +48,7 @@ export function registerPublicVoiceRoutes(
   settings: VoiceRuntimeSettings,
   channels: ChannelSettings,
   source: VoiceAgentSource,
+  booking?: PublicBookingConfig,
 ) {
   const integration = settings.integration;
   async function activeAgent() {
@@ -80,11 +83,16 @@ export function registerPublicVoiceRoutes(
 
   app.post('/public/v1/voice/sessions', async (request, reply) => {
     const { agent, integration } = await activeAgent();
-    parse(z.object({ recording_consent: z.literal(true), notice_version: z.literal(settings.noticeVersion) }), request.body);
+    const body=parse(z.strictObject({ recording_consent: z.literal(true), notice_version: z.literal(settings.noticeVersion),website_booking:WebsiteSlotSelection.optional() }), request.body);
+    const binding = browserBinding(channels);
+    if(body.website_booking){
+      const selected=booking?.sites.find(s=>s.siteSlug===body.website_booking!.site);
+      if(!binding||!selected||selected.tenantId!==binding.tenantId||selected.facilityId!==binding.facilityId)throw new DomainError('forbidden','This website selection does not belong to the active appointment assistant');
+    }
+    const bookingContext=body.website_booking?await websiteVoiceContext(db,booking??{sites:[],signingSecret:''},body.website_booking,request.headers.origin,request.ip):undefined;
     const runtimeSessionId = randomUUID();
     const startedAt = Date.now();
     const expiresAt = Date.now() + Math.min(settings.sessionSeconds + 60, 3660) * 1000;
-    const binding = browserBinding(channels);
     if (binding) await ingestVoice(db, {
       eventId: `web:${runtimeSessionId}:0`, sessionId: runtimeSessionId, sequence: 0,
       startedAt: new Date(startedAt).toISOString(), status: 'active',
@@ -97,6 +105,7 @@ export function registerPublicVoiceRoutes(
       },
     }, { ...channels, voice: binding });
     return reply.status(201).send({
+      ...(bookingContext?{booking_context:bookingContext}:{}),
       runtime_session_id: runtimeSessionId,
       session_token: sessionToken(integration.signingSecret, runtimeSessionId, expiresAt, startedAt),
       expires_at: new Date(expiresAt).toISOString(),

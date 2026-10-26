@@ -118,3 +118,11 @@
 - The product owner approved (2026-10-21) inpatient, billing, pharmacy + inventory and HR/payroll as tenant-switchable backend modules. This supersedes the "out of scope / do not restore" notes for M07, M09, M10 and M11. Read `HMS_NEW/docs/plan/CLINIC_OPERATIONS_MODULES.md` before working on them; mark phases done there.
 - These modules are off until `platform.module_state` says `active` (`SWITCHED_MODULES` in `@hms/platform`): `runCommand` refuses their writes and the worker skips their consumers. Pharmacy switches inventory with it; inpatient needs billing.
 - No frontend for them yet. Future menu items must be gated by permission **and** module state (`GET /v1/session-context` → `modules`).
+
+## Swastikaa hospital website refinement
+
+- For `HMS_NEW/apps/hospital-community-web`, follow its scoped `AGENTS.md`: inspect all suitable Arc Free/Pro components first, reuse their visual and interaction contracts including corner radii, and reuse approved Sri Lakshmi insurance and department bento components. This website scope is frontend-only and separate from the dashboard rollout.
+
+## Swastikaa backend/template scope
+
+- The user now approved backend integration for `hospital-community-web`, registered as `swastikaa` / Swastikaa template. This supersedes its former frontend-only scope. Preserve sample content in a clearly separated demo mode; bind live data and automation through the existing HMS tenant services. Keep the appointment journey form-free.

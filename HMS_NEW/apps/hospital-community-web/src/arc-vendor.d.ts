@@ -1,0 +1,1 @@
+declare module "*/dist/app.js" { export const TeamShowcase: import("react").ComponentType<any>; export const HospitalLightboxViewer: import("react").ComponentType<any>; export const DateReel: import("react").ComponentType<any>; }

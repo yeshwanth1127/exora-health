@@ -1,3 +1,4 @@
+import {registerWebsiteSettingsRoutes} from './http/routes/website.ts';
 // HTTP API (Fastify). Every /v1 route requires a bearer token; the principal is resolved per request
 // and each route checks its permission (for the facility involved) before running a command.
 import { randomUUID } from "node:crypto";
@@ -310,7 +311,7 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
     const agentSource: VoiceAgentSource = voice.agent && voice.sarvamApiKey
       ? environmentVoiceSource(voice.agent, voice.sarvamApiKey, voice.assignedPhoneNumber ?? null)
       : deps.voiceControl ? controlVoiceSource(deps.voiceControl, app.log) : async () => undefined;
-    registerPublicVoiceRoutes(app, deps.db, voice, channels, agentSource);
+    registerPublicVoiceRoutes(app, deps.db, voice, channels, agentSource, publicBooking);
     registerVoiceAgentSettingsRoutes(app, deps.voiceControl);
     if (voice.integration) registerVoiceIntegrationRoutes(app, deps.db, deps.publicTenantId, voice.integration);
   }
@@ -321,6 +322,7 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   registerPatientRoutes(app, deps.db);
   registerCalendarRoutes(app, deps.db);
   registerBookingRoutes(app, deps.db);
+  registerWebsiteSettingsRoutes(app, deps.db);
   registerPublicBookingRoutes(app, deps.db, publicBooking, managed);
   registerQueueRoutes(app, deps.db);
   registerBillingRoutes(app, deps.db);
