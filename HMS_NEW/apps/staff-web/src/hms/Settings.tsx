@@ -284,7 +284,7 @@ export function SettingsPage({
             roles:
               "Review permissions and clinic access before applying a change.",
             booking: `Appointment booking rules for ${facility.name}.`,
-            website: "Swastikaa template content and general enquiries.",
+            website: "Hospital website content and general enquiries.",
             modules: "Manage the modules available to this organisation.",
             registrations:
               "Review professional registrations and verification.",

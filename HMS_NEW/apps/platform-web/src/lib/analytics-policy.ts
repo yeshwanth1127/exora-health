@@ -1,3 +1,4 @@
+import {websiteTemplateIds} from '@hms/website-templates';
 // Only fixed route/event identifiers cross the analytics boundary. Never pass form values.
 export const ANALYTICS_CONSENT_KEY='website.analytics-consent.v1';
 export const analyticsPaths=['/','/product/features','/pricing','/teams','/enterprise','/contact-sales','/help','/releases','/blog','/blog/a-clearer-front-desk','/blog/a-shared-clinic-day','/blog/follow-ups-with-a-clear-next-step','/quote','/onboarding','/privacy','/resources/clinic-front-desk-checklist','/solutions/ai-receptionist','/solutions/whatsapp-outreach','/solutions/google-business-management','/solutions/clinic-analytics','/solutions/teleconsultations','/labs-diagnostics','/specialties/dental','/specialties/physiotherapy'];
@@ -8,7 +9,7 @@ export const analyticsEvents=['$pageview','website_cta_clicked','quote_step_view
 export type AnalyticsEvent=typeof analyticsEvents[number];
 const allowedValues:Record<string,readonly string[]>={
  stage:['facility','volume','target','marketing','business','website','contact','offer','account','workspace','launch','review'],
- plan:['launch','connect','scale'],template:['standard','sri-lakshmi','hospital-editorial','swastikaa'],status:['queued','provisioning','ready','failed'],
+ plan:['launch','connect','scale'],template:websiteTemplateIds,status:['queued','provisioning','ready','failed'],
  outcome:['accepted','unavailable'],referrer_type:['direct','google','bing','chatgpt','perplexity','claude','other'],
 };
 export function cleanAnalyticsProperties(input:Record<string,unknown>):Record<string,string>{

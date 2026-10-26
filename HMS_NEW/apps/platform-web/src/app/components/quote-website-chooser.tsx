@@ -12,6 +12,8 @@ const palettes = [
 ];
 
 function Preview({ index, category }: { index: number; category: string }) {
+  const preview=websiteTemplates(category).find(template=>template.index===index)?.preview;
+  if(preview)return <span className="quote-template-preview" aria-hidden="true"><img src={preview} alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"top"}}/></span>;
   if(index===3)return <span className="quote-template-preview" aria-hidden="true"><img src="/templates/swastikaa.png" alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"top"}}/></span>;
   const offset = category === "hospital" ? 2 : category === "specialist" ? 1 : 0;
   const [background, ink, soft] = palettes[(index + offset) % palettes.length];

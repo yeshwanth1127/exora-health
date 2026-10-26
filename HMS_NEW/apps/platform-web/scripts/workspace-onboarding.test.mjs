@@ -41,3 +41,9 @@ test('Swastikaa selection retains the entered hospital identity',()=>{
  assert.equal(workspacePayload(draft,true).websiteTemplate,'swastikaa');
  assert.equal(workspacePayload(draft,true).facilityName,'River Hospital');
 });
+
+for(const template of ['hospital-pathway','hospital-atlas','hospital-grove'])test(`${template} retains the entered identity through onboarding`,()=>{
+ const draft=fromIntake({profile:{name:'Owner',email:'owner@example.test',phone:''},facility:{name:'Riverbend Hospital',city:'Pune',size:'hospital'},preferences:{template}});
+ assert.equal(workspacePayload(draft,true).websiteTemplate,template);
+ assert.equal(workspacePayload(draft,true).facilityName,'Riverbend Hospital');
+});

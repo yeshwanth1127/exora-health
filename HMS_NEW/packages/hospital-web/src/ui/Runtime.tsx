@@ -1,4 +1,8 @@
 import {
+  isHospitalTemplate,
+  type HospitalTemplateId,
+} from "@hms/website-templates";
+import {
   createContext,
   useContext,
   useEffect,
@@ -63,6 +67,7 @@ type Profile = {
   };
 };
 export type WebsiteRuntime = {
+  template: HospitalTemplateId;
   demoEnabled: boolean;
   bound: boolean;
   profile?: Profile;
@@ -80,6 +85,7 @@ export type WebsiteRuntime = {
   faqs: typeof demo.faqs;
 };
 const initial: WebsiteRuntime = {
+  template: "swastikaa",
   demoEnabled: true,
   bound: false,
   ...demo,
@@ -105,13 +111,40 @@ export function decodeWebsite(value: unknown): Profile {
     typeof d.phone !== "string" ||
     !d.content ||
     !Array.isArray(d.content.packages) ||
-    d.runtime?.template !== "swastikaa" ||
+    !isHospitalTemplate(d.runtime?.template) ||
     typeof d.runtime.demoEnabled !== "boolean"
   )
     throw Error("The hospital website configuration could not be verified.");
   return d;
 }
-export function WebsiteRuntimeProvider({ children }: { children: ReactNode }) {
+export function WebsiteRuntimeProvider({
+  children,
+  previewTemplate,
+  previewName,
+}: {
+  children: ReactNode;
+  previewTemplate?: HospitalTemplateId;
+  previewName?: string;
+}) {
+  const config = (
+    window as Window & {
+      HMS_WEBSITE?: { bookingSite: string; template?: string };
+    }
+  ).HMS_WEBSITE;
+  const query = import.meta.env.DEV
+    ? new URLSearchParams(location.search)
+    : null;
+  const candidate = previewTemplate || query?.get("template");
+  const demoTemplate = isHospitalTemplate(candidate) ? candidate : "swastikaa";
+  const demoName =
+    previewName || query?.get("name")?.slice(0, 120) || "Your hospital";
+  const preview = {
+    ...initial,
+    template: demoTemplate,
+    ...(demoTemplate !== "swastikaa"
+      ? { hospital: { name: demoName, area: "Bengaluru" } }
+      : {}),
+  };
   const binding = (window as Window & { HMS_WEBSITE?: { bookingSite: string } })
     .HMS_WEBSITE?.bookingSite;
   const [state, setState] = useState<{ data?: WebsiteRuntime; error?: string }>(
@@ -119,7 +152,7 @@ export function WebsiteRuntimeProvider({ children }: { children: ReactNode }) {
       binding
         ? {}
         : import.meta.env.DEV
-          ? { data: initial }
+          ? { data: preview }
           : { error: "This website is not bound to a hospital runtime." },
   );
   const [attempt, setAttempt] = useState(0);
@@ -136,7 +169,10 @@ export function WebsiteRuntimeProvider({ children }: { children: ReactNode }) {
         });
         if (!r.ok) throw Error("Hospital website settings are unavailable.");
         const profile = decodeWebsite(await r.json());
-        if (profile.runtime?.bookingSite !== binding)
+        if (
+          profile.runtime?.bookingSite !== binding ||
+          profile.runtime?.template !== (config?.template || "swastikaa")
+        )
           throw Error(
             "The hospital booking connection does not match this website.",
           );
@@ -204,6 +240,7 @@ export function WebsiteRuntimeProvider({ children }: { children: ReactNode }) {
         if (!abort.signal.aborted)
           setState({
             data: {
+              template: profile.runtime.template as HospitalTemplateId,
               demoEnabled: isDemo,
               bound: true,
               profile,

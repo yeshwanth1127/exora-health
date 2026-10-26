@@ -1,3 +1,4 @@
+import {isHospitalTemplate} from '@hms/website-templates';
 import { tenantWebsiteProfile, websiteContent } from '../../modules/booking/website-profile.ts';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
@@ -23,7 +24,7 @@ export function registerTenantPublicBookingRoutes(app: FastifyInstance, db: Kyse
     reply.header('cache-control','no-store');
     const template=process.env.WEBSITE_TEMPLATE||'standard';
     const binding=managed.booking?.sites.find(s=>s.tenantId===tenantId&&(!process.env.BOOTSTRAP_FACILITY_ID||s.facilityId===process.env.BOOTSTRAP_FACILITY_ID));
-    return tenantWebsiteProfile(db, tenantId, content, process.env.BOOTSTRAP_FACILITY_ID||(template==='swastikaa'?binding?.facilityId:undefined), {template,bookingSite:binding?.siteSlug??null});
+    return tenantWebsiteProfile(db, tenantId, content, process.env.BOOTSTRAP_FACILITY_ID||(isHospitalTemplate(template)?binding?.facilityId:undefined), {template,bookingSite:binding?.siteSlug??null});
   });
 
   const caller = (correlationId: string): Caller => ({ tenantId, actor: { kind: 'system' }, correlationId });

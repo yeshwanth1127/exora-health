@@ -64,3 +64,11 @@ it('serves Swastikaa deep routes with the tenant binding and shared dashboard',a
  expect((await app.inject('/public/v1/missing')).statusCode).toBe(404);
  await expect(fixture('swastikaa')).rejects.toThrow('requires a tenant booking site');
 });
+
+it.each(['hospital-pathway','hospital-atlas','hospital-grove'])('serves %s using the shared hospital bundle and explicit runtime identity',async template=>{
+ const app=await fixture(template,'river-hospital');
+ for(const url of ['/','/consultants/dr-one','/clinics/medicine','/treatments/example','/tests-scans/mri','/book','/insurance','/plans','/visit'])expect((await app.inject(url)).body).toBe('Swastikaa website');
+ expect((await app.inject('/website-config.js')).body).toBe('window.HMS_WEBSITE='+JSON.stringify({bookingSite:'river-hospital',template})+';');
+ expect((await app.inject('/staff/appointments')).body).toBe('staff dashboard');
+ await expect(fixture(template)).rejects.toThrow('requires a tenant booking site');
+});

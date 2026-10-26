@@ -32,3 +32,9 @@ it('publishes the connected runtime and saved mode through the public website en
  try{const r=await app.inject('/public/v1/website');expect(r.statusCode,r.body).toBe(200);expect(r.json()).toMatchObject({runtime:{template:'swastikaa',demoEnabled:false,bookingSite:'river-hospital',facilityId:k.tenant.facilityId},content:{headline:'Care close to home'}});expect(r.json().name).not.toBe('Swastikaa Hospital');expect(r.headers['cache-control']).toBe('no-store')}
  finally{await app.close();if(previous===undefined)delete process.env.WEBSITE_TEMPLATE;else process.env.WEBSITE_TEMPLATE=previous;if(facility===undefined)delete process.env.BOOTSTRAP_FACILITY_ID;else process.env.BOOTSTRAP_FACILITY_ID=facility}
 });
+
+it.each(['hospital-pathway','hospital-atlas','hospital-grove'])('publishes %s using the same saved hospital content and explicit identity',async template=>{
+ const profile=await tenantWebsiteProfile(k.db,k.tenant.tenantId,websiteContent(),k.tenant.facilityId,{template,bookingSite:'river-hospital'});
+ expect(profile).toMatchObject({runtime:{template,demoEnabled:false,bookingSite:'river-hospital'},content:{headline:'Care close to home'}});
+ expect(profile.name).not.toBe('Swastikaa Hospital');
+});
