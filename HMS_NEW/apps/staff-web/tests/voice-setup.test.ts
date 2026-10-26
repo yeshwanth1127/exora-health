@@ -15,11 +15,11 @@ test("walks the steps in order from server state", () => {
   assert.equal(voiceStep(base), 2);
   assert.equal(voiceStep({ ...base, agent: { exists: false, request: "declined" } }), 2);
   assert.equal(voiceStep({ ...base, agent: { exists: false, request: "in_setup" } }), 3);
-  assert.equal(voiceStep({ ...base, agent: { exists: true, request: "completed" } }), 4);
-  assert.equal(voiceStep({ ...base, agent: { exists: true, request: null }, live: true }), 5);
+  assert.equal(voiceStep({ ...base, agent: { exists: true, request: "completed" } }), 3);
+  assert.equal(voiceStep({ ...base, agent: { exists: true, request: null }, live: true }), 4);
 });
 
 test("an existing agent or open request is not hidden by an earlier gap", () => {
-  assert.equal(voiceStep({ ...base, doctors: 0, line: null, agent: { exists: true, request: null } }), 4);
+  assert.equal(voiceStep({ ...base, doctors: 0, line: null, agent: { exists: true, request: null } }), 3);
   assert.equal(voiceStep({ ...base, doctors: 0, agent: { exists: false, request: "pending" } }), 3);
 });

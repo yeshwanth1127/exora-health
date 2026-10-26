@@ -44,6 +44,7 @@ import {
 import { fallbackTenantName, fetchTenantName } from "@/hms/tenant-brand";
 import { can, permittedFacilities, practitionersFor } from "@/hms/model";
 import { WorkspaceContext, useQuery } from "@/hms/hooks";
+import { gatedChannel, useReadyChannels } from "@/hms/channel-ready";
 import { hasUnsavedChanges, requestLeave, leaveState } from "@/hms/leave";
 import { useRecoverableCommand } from "@/hms/operational-command";
 import { RecoveryNotice } from "@/hms/OperationalRecovery";
@@ -449,6 +450,11 @@ function StaffApp() {
       oidc?.events.removeAccessTokenExpired(end);
     };
   }, []);
+  const readyChannels = useReadyChannels(
+    me && facilityId ? facilityId : "",
+    me ? navigation.filter((n) => can(me, n.permission, facilityId)).map((n) => n.key) : [],
+    page,
+  );
   if (!me)
     return (
       <TooltipProvider>
@@ -594,6 +600,9 @@ function StaffApp() {
   ];
   const allowed =
     extraPages.includes(page) || visible.some((n) => n.key === page);
+  // Channels show their subpages only once set up; before that the page itself is the setup guide.
+  const children = (key: string) =>
+    gatedChannel(key) && !readyChannels.has(key) ? undefined : workspaceChildren(key);
   const sidebarSections: SidebarSection[] = [...groups, "Workspace"]
     .map((group) => ({
       id: group.toLowerCase(),
@@ -601,13 +610,13 @@ function StaffApp() {
       items: visible
         .filter((item) => item.group === group)
         .map((item) => ({
-          id: workspaceChildren(item.key) ? `${item.key}-group` : item.key,
+          id: children(item.key) ? `${item.key}-group` : item.key,
           label: item.name,
           icon: item.icon,
-          ...(workspaceChildren(item.key)
+          ...(children(item.key)
             ? {
-                children: workspaceChildren(item.key),
-                defaultOpen: workspaceChildren(item.key)!.some(
+                children: children(item.key),
+                defaultOpen: children(item.key)!.some(
                   (child) =>
                     child.id === workspaceActiveRoute(page, location.search),
                 ),
@@ -634,7 +643,7 @@ function StaffApp() {
                 : []),
               { id: "signout", label: "Sign out", icon: LogOut },
             ]}
-            active={workspaceActiveRoute(page, location.search)}
+            active={gatedChannel(page) && !readyChannels.has(page) ? page : workspaceActiveRoute(page, location.search)}
             revealActiveGroup
             brand={{
               name: tenantName,
@@ -676,7 +685,7 @@ function StaffApp() {
                         },
                         ...(item.key === "appointments"
                           ? []
-                          : (workspaceChildren(item.key) ?? []).map(
+                          : (children(item.key) ?? []).map(
                               (child) => ({
                                 id: child.id,
                                 label: `${item.name} · ${child.label}`,

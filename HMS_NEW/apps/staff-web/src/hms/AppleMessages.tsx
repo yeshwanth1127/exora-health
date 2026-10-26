@@ -12,6 +12,8 @@ import {
   TabsTrigger,
 } from '@/components/arc/tabs/tabs';
 import { AppleSetup } from './AppleSetup';
+import { MessageCircle } from 'lucide-react';
+import { PageTitle } from '@/components/workspace';
 import { WorkspaceEmpty } from './WorkspaceEmpty';
 import { useWorkspaceTab } from './use-workspace-tab';
 import {
@@ -56,6 +58,15 @@ function AppleMessagesClinic() {
   const [picked, setPicked] = useState<string | null>(null);
   const selected = picked ?? inbox.data?.items[0]?.id ?? null;
   const live = !!inbox.data?.configured && !inbox.data.localDemo;
+  if (inbox.loading && !inbox.data) return <p className="text-sm text-muted-foreground">Loading Apple Messages…</p>;
+  // Before it is live: the setup guide only, no tabs (WhatsApp's pattern).
+  if (!live)
+    return (
+      <>
+        <PageTitle title="Apple Messages" icon={<MessageCircle className="size-7" />} />
+        <AppleSetup live={false} />
+      </>
+    );
   return (
     <Tabs
       value={tab}
@@ -69,22 +80,16 @@ function AppleMessagesClinic() {
         </TabsList>
       </div>
       <TabsContent value="setup" className="arc-workflow-panel">
-        <AppleSetup live={live} onOpenConversations={() => open("conversations")} />
+        <AppleSetup live />
       </TabsContent>
       <TabsContent value="conversations" className="arc-workflow-panel">
         <div className="space-y-6">
           {inbox.error && <p role="alert">{inbox.error}</p>}
           {inbox.loading && !inbox.data && <p className="text-sm text-muted-foreground">Loading conversations…</p>}
-          {inbox.data?.localDemo && (
-            <p className="text-sm text-muted-foreground">
-              Local demo · synthetic conversations, nothing is sent to Apple.
-            </p>
-          )}
           {inbox.data && !inbox.data.items.length ? (
             <WorkspaceEmpty
               title="No conversations yet"
-              description={live ? "New Apple Messages appear here." : "They appear here once Apple Messages is live."}
-              action={live ? undefined : { label: "Open setup", onClick: () => open("setup") }}
+              description="New Apple Messages appear here."
             />
           ) : (
             <div className="grid gap-6 xl:grid-cols-[260px_minmax(0,1fr)]">

@@ -12,5 +12,5 @@ test("follows the saved request and never treats a request as live", () => {
   assert.equal(appleStep("not_started", false, 4), 1);
   assert.equal(appleStep("draft", false, 0), 2);
   assert.equal(appleStep("requested", false, 0), 3);
-  assert.equal(appleStep("requested", true, 0), 5);
+  assert.equal(appleStep("requested", true, 0), 4);
 });

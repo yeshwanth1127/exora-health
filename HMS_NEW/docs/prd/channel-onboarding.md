@@ -4,6 +4,15 @@ Status: **approved and built** (26 Oct 2026). Branch `codex/admin-dashboard-arc`
 The user asked for empty-state copy to stay small and minimal: one short sentence each.
 Apple Messages opens on Conversations (like Voice opens on Call history); its empty state links to Setup.
 26 Oct: the user asked to hide backend detail. The Apple eligibility notice is removed (criterion 4 is dropped), and Paperwhale and provider steps read only "Application submitted to Paperwhale. Wait for approval."
+26 Oct (later): the user said the step-card empty state was not a guide. Voice and Apple Messages now
+follow WhatsApp's onboarding:
+- a page title, then a Stepper, then numbered step cards (shared `StepList`);
+- a "What patients hear/see" preview built from the clinic's own name, greeting and first doctor;
+- no tabs until the channel is live.
+
+The sidebar hides WhatsApp, Google Business, Voice and Apple Messages subpages until each one is
+connected or live. The Live step left the Stepper, because live channels show their workspace
+instead.
 
 ## Problem
 

@@ -4,7 +4,6 @@ export const VOICE_STEPS = [
   { id: "line", label: "Phone line", description: "How calls reach the agent" },
   { id: "request", label: "Apply", description: "Submit your application" },
   { id: "build", label: "Approval", description: "Wait for approval" },
-  { id: "live", label: "Live", description: "Test it and adjust" },
 ] as const;
 
 export type VoiceSetupInput = {
@@ -15,10 +14,10 @@ export type VoiceSetupInput = {
   live: boolean;
 };
 
-/** Index of the step in progress; VOICE_STEPS.length once patients can call. Later server facts win over earlier steps. */
+/** Index of the step in progress; VOICE_STEPS.length once patients can call. Later server facts win over earlier steps. An approved agent waits on the last step until it is live. */
 export function voiceStep(i: VoiceSetupInput): number {
-  if (i.live) return 5;
-  if (i.agent?.exists) return 4;
+  if (i.live) return VOICE_STEPS.length;
+  if (i.agent?.exists) return 3;
   if (i.agent?.request === "pending" || i.agent?.request === "in_setup") return 3;
   if (!i.doctors) return 0;
   if (i.line !== "requested") return 1;

@@ -6,13 +6,15 @@ import {
   TabsTrigger,
 } from "@/components/arc/tabs/tabs";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChannelOnboarding, useChannelSetup } from "./ChannelOnboarding";
+import { ChannelOnboarding, strategies, useChannelSetup } from "./ChannelOnboarding";
+import { StepList } from "./StepList";
+import { PageTitle } from "@/components/workspace";
 import { Stepper } from "@/components/arc/stepper/stepper";
 import { VOICE_STEPS, voiceStep } from "./voice-setup";
 import {
   ArrowUpRight,
   Bot,
-  Globe2,
+  Headphones,
   LoaderCircle,
   PhoneCall,
   RefreshCw,
@@ -93,24 +95,28 @@ const BOOKING_ACTIONS: [keyof SpokenSettings["actions"], string][] = [
   ["book", "Book"], ["lookup", "Look up"], ["cancel", "Cancel"], ["reschedule", "Reschedule"],
 ];
 
-function AssignedVoiceNumber() {
-  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetch("/public/v1/voice/config", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((runtime: VoiceRuntime | null) => {
-        if (!cancelled) setPhoneNumber(runtime?.phone_number ?? null);
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
+function useVoiceRuntime() {
+  const [runtime, setRuntime] = useState<VoiceRuntime | null>(null);
+  const [busy, setBusy] = useState(true);
+  const refresh = useCallback(async () => {
+    setBusy(true);
+    try {
+      const response = await fetch("/public/v1/voice/config", { cache: "no-store" });
+      setRuntime(response.ok ? ((await response.json()) as VoiceRuntime) : null);
+    } catch {
+      setRuntime(null);
+    } finally {
+      setBusy(false);
+    }
   }, []);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+  return { runtime, busy, refresh };
+}
 
+function AssignedVoiceNumber({ phoneNumber }: { phoneNumber: string | null | undefined }) {
   if (!phoneNumber) return null;
-
   return (
     <Card className="mb-6 border-emerald-200 bg-emerald-50/40">
       <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
@@ -148,7 +154,7 @@ function useAgentSettings() {
   const { facility } = useWorkspace();
   const [poll, setPoll] = useState(0);
   const query = useQuery<AgentSettings>(`/v1/voice/agent-settings?facilityId=${facility.facilityId}`, poll);
-  // While Paperwhale works on a request, refresh now and then so the page turns live without a reload.
+  // While a request waits for approval, refresh now and then so the page turns live without a reload.
   const waiting = !!openRequest(query.data?.request ?? null);
   useEffect(() => {
     setPoll(waiting ? 15000 : 0);
@@ -156,188 +162,204 @@ function useAgentSettings() {
   return query;
 }
 
-function VoiceControl() {
-  const { facility, practitioners, go } = useWorkspace();
+/** Before the agent is live: one guided page, no tabs (WhatsApp's pattern). */
+function VoiceGuide({ runtime }: { runtime: ReturnType<typeof useVoiceRuntime> }) {
+  const { facility, practitioners, go, can } = useWorkspace();
   const agent = useAgentSettings();
   const line = useChannelSetup("voice");
-  const [runtime, setRuntime] = useState<VoiceRuntime | null>(null);
-  const [busy, setBusy] = useState(true);
-  const [picked, setPicked] = useState<number | null>(null);
-
-  const refresh = useCallback(async () => {
-    setBusy(true);
-    try {
-      const response = await fetch("/public/v1/voice/config", { cache: "no-store" });
-      setRuntime(response.ok ? ((await response.json()) as VoiceRuntime) : null);
-    } catch {
-      setRuntime(null);
-    } finally {
-      setBusy(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  const active = runtime?.enabled === true;
-  const doctors = practitioners.filter((p) => p.facilityId === facility.facilityId).length;
-  const current = voiceStep({
-    doctors,
+  const [picked, setPicked] = useState<string | null>(null);
+  const doctors = practitioners.filter((p) => p.facilityId === facility.facilityId);
+  const pending = openRequest(agent.data?.request ?? null);
+  const reached = voiceStep({
+    doctors: doctors.length,
     line: line.data?.state ?? null,
     agent: agent.data ? { exists: !!agent.data.agent, request: agent.data.request?.state ?? null } : null,
-    live: active,
+    live: false,
   });
-  const open = picked !== null && picked < current ? picked : Math.min(current, VOICE_STEPS.length - 1);
-  const step = VOICE_STEPS[open]!.id;
+  const index = (id: string) => VOICE_STEPS.findIndex((s) => s.id === id);
+  const open = picked && index(picked) <= reached ? picked : VOICE_STEPS[Math.min(reached, VOICE_STEPS.length - 1)]!.id;
   // The control plane answers 412 until voice is switched on for this clinic.
   const notEnabled = !!agent.error && /not configured/i.test(agent.error);
-
+  const draft = line.data?.draft?.channel === "voice" ? line.data.draft : null;
+  const { refresh } = runtime;
+  useEffect(() => {
+    if (!pending && !agent.data?.agent) return;
+    const id = setInterval(() => void refresh(), 15000);
+    return () => clearInterval(id);
+  }, [pending, agent.data?.agent, refresh]);
+  const summaries: Record<string, string> = {
+    doctors: `${doctors.length} doctor${doctors.length === 1 ? "" : "s"} can be booked`,
+    line: draft ? (strategies.voice.find(([v]) => v === draft.numberStrategy)?.[1] ?? "") : "",
+    request: pending ? `Submitted ${new Date(pending.requestedAt).toLocaleDateString()}` : "Submitted",
+  };
+  const body = (id: string) =>
+    id === "doctors" ? (
+      <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
+        <p>
+          {doctors.length
+            ? `${doctors.length} doctor${doctors.length === 1 ? "" : "s"} at ${facility.name} can be booked by the agent.`
+            : "Add a doctor with working hours. The agent only offers real open times."}
+        </p>
+        <Button variant={doctors.length ? "outline" : "default"} onClick={() => go("doctors")}>
+          {doctors.length ? "Open Doctors" : "Add a doctor"}
+        </Button>
+      </div>
+    ) : id === "line" ? (
+      <ChannelOnboarding q={line} />
+    ) : id === "request" ? (
+      agent.data ? (
+        <AgentRequest setup={agent.data} refresh={agent.refresh} />
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          {agent.loading
+            ? "Checking status…"
+            : notEnabled
+              ? "Voice isn't available for your clinic yet."
+              : "Couldn't load the status. Try Check status."}
+        </p>
+      )
+    ) : (
+      <p className="text-sm">
+        {agent.data?.agent
+          ? "Approved. Your agent goes live soon."
+          : pending
+            ? `Application submitted to Paperwhale on ${new Date(pending.requestedAt).toLocaleDateString()}. Wait for approval.`
+            : "Submit your application first."}
+      </p>
+    );
   return (
-    <section className="space-y-6" aria-label="Voice setup">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="max-w-2xl">
-          <h2 className="text-xl font-semibold tracking-tight">
-            {active ? "Your voice agent is live" : "Set up your voice agent"}
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Answers patient calls and books appointments.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" disabled={busy} onClick={() => { void refresh(); void agent.refresh(); void line.refresh(); }}>
-            {busy ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
+    <>
+      <PageTitle
+        title="Voice agent"
+        icon={<Headphones className="size-7" />}
+        action={
+          <Button variant="outline" disabled={runtime.busy} onClick={() => { void refresh(); void agent.refresh(); void line.refresh(); }}>
+            {runtime.busy ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
             Check status
           </Button>
-          <Button variant="outline" onClick={() => window.open("/", "_blank", "noopener,noreferrer")}>
-            <Globe2 /> Booking website <ArrowUpRight />
-          </Button>
+        }
+      />
+      <div className="mb-6 max-w-3xl">
+        <h2 className="text-xl font-semibold tracking-tight">Set up your voice agent</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Answers patient calls and books appointments.</p>
+        <div className="arc-demo-scope mt-4">
+          <Stepper
+            label="Voice agent setup"
+            current={reached}
+            completeLabel="Approved"
+            steps={VOICE_STEPS.map((s) => ({
+              id: s.id,
+              label: s.label,
+              error: s.id === "request" && reached === 2 && agent.error ? (notEnabled ? "Not available yet" : "Status unavailable") : undefined,
+            }))}
+          />
         </div>
       </div>
-
-      <div className="arc-demo-scope max-w-3xl">
-        <Stepper
-          label="Voice agent setup"
-          current={current}
-          onStepSelect={setPicked}
-          details="current"
-          completeLabel="Voice agent live"
-          steps={VOICE_STEPS.map((s) => ({
-            ...s,
-            error: s.id === "request" && current === 2 && agent.error ? (notEnabled ? "Not available yet" : "Status unavailable") : undefined,
-          }))}
+      {!can("voice.manage") && (
+        <p className="mb-4 rounded-md border bg-muted/40 p-3 text-sm">
+          Your administrator needs to finish voice setup. You can follow progress here.
+        </p>
+      )}
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <StepList
+          steps={VOICE_STEPS.map((s) => ({ id: s.id, title: s.label, hint: s.description, summary: summaries[s.id] }))}
+          reached={reached}
+          open={open}
+          onOpen={setPicked}
+          body={body}
+          canManage={can("voice.manage")}
         />
+        <div className="xl:sticky xl:top-6">
+          <p className="mb-3 text-xs font-medium text-muted-foreground">What patients hear</p>
+          <CallPreview
+            clinic={facility.name}
+            doctor={doctors[0]?.name ?? null}
+            greeting={agent.data?.settings.greeting || draft?.greeting || `Hello, you've reached ${facility.name}. How can I help?`}
+          />
+        </div>
       </div>
-
-      {step === "doctors" && (
-        <Card>
-          <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5 text-sm">
-            <p>
-              {doctors
-                ? `${doctors} doctor${doctors === 1 ? "" : "s"} at ${facility.name} can be booked by the agent.`
-                : "Add a doctor with working hours first. The agent only offers real open times."}
-            </p>
-            <Button variant={doctors ? "outline" : "default"} onClick={() => go("doctors")}>
-              Open Doctors
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-      {step === "line" && <ChannelOnboarding q={line} />}
-      {(step === "request" || step === "build") && (
-        agent.data ? (
-          <AgentRequestCard setup={agent.data} refresh={agent.refresh} />
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            {agent.loading
-              ? "Checking agent status…"
-              : notEnabled
-                ? "Voice isn't available for your clinic yet."
-                : "Couldn't load the status. Try Check status."}
-          </p>
-        )
-      )}
-      {step === "live" && agent.data?.agent && (
-        <>
-          <Card>
-            <CardContent className="space-y-3 pt-5 text-sm">
-              {active ? (
-                <>
-                  <p>Test it before patients call:</p>
-                  <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
-                    <li>Open the booking website and start a voice call.</li>
-                    <li>Accept the consent notice and allow the microphone.</li>
-                    <li>Book a test appointment, then check Call history.</li>
-                  </ol>
-                  <Button onClick={() => window.open("/#voice", "_blank", "noopener,noreferrer")}>
-                    <Bot /> Test voice call <ArrowUpRight />
-                  </Button>
-                </>
-              ) : (
-                <p className="text-muted-foreground">
-                  Approved. Your agent goes live soon.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-          <SpokenAgentForm key={agent.data.desiredRevision} setup={agent.data} refresh={agent.refresh} />
-        </>
-      )}
-
-    </section>
+    </>
   );
 }
 
-function AgentRequestCard({ setup, refresh }: { setup: AgentSettings; refresh: () => Promise<boolean> }) {
+/** An example call using this clinic's name, greeting and first doctor; the times are illustrative. */
+function CallPreview({ clinic, doctor, greeting }: { clinic: string; doctor: string | null; greeting: string }) {
+  const line = (text: string, patient = false) => (
+    <div className={`flex ${patient ? "justify-end" : "justify-start"}`}>
+      <p className={`max-w-[85%] rounded-2xl px-3 py-2 ${patient ? "bg-primary text-primary-foreground" : "bg-muted"}`}>{text}</p>
+    </div>
+  );
+  return (
+    <div className="mx-auto w-full max-w-[340px] overflow-hidden rounded-[28px] border-[6px] border-foreground/85 bg-background shadow-sm">
+      <div className="flex flex-col items-center gap-1.5 bg-foreground px-4 pb-5 pt-7 text-background">
+        <div className="grid size-14 place-items-center rounded-full bg-background/15 text-lg font-semibold">
+          {clinic.slice(0, 1)}
+        </div>
+        <p className="font-medium">{clinic}</p>
+        <p className="flex items-center gap-1.5 text-xs opacity-70">
+          <PhoneCall className="size-3" /> Voice agent
+        </p>
+      </div>
+      <div className="space-y-2 p-3 text-[13px] leading-snug">
+        {line(greeting)}
+        {line("I'd like to see a doctor tomorrow.", true)}
+        {line(doctor ? `${doctor} is free at 10:30 or 11:00. Which suits you?` : "Which doctor would you like to see?")}
+        {line("10:30, please.", true)}
+        {line(`You're booked${doctor ? ` with ${doctor}` : ""} for tomorrow at 10:30.`)}
+      </div>
+    </div>
+  );
+}
+
+function AgentRequest({ setup, refresh }: { setup: AgentSettings; refresh: () => Promise<boolean> }) {
   const { facility, can } = useWorkspace();
   const canManage = can("voice.manage");
   const cmd = useCommand();
-  const pending = openRequest(setup.request);
   const declined = setup.request?.kind === "create" && setup.request.state === "declined" ? setup.request : null;
   async function create() {
     const result = await cmd.run(`/v1/voice/agent-request`, { facilityId: facility.facilityId }, true);
     if (result) await refresh();
   }
+  if (!setup.entitled)
+    return <p className="text-sm text-muted-foreground">Voice agent isn&apos;t in your plan. Contact Paperwhale to add it.</p>;
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Bot className="size-4" /> Voice agent
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 text-sm">
-        {!setup.entitled ? (
-          <p className="text-muted-foreground">
-            Voice agent isn&apos;t in your plan. Contact Paperwhale to add it.
-          </p>
-        ) : pending ? (
-          <>
-            <Badge variant="secondary">
-              Submitted
-            </Badge>
-            <p>Application submitted to Paperwhale on {when(pending.requestedAt)}. Wait for approval.</p>
-          </>
-        ) : (
-          <>
-            <p className="text-muted-foreground">
-              Your agent books from your doctors and their open times.
-            </p>
-            {declined?.reason && (
-              <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900">
-                Your last request was declined: {declined.reason}
-              </p>
-            )}
-            {cmd.error && <p className="text-destructive">{cmd.error}</p>}
-            <Button type="button" disabled={!canManage || cmd.busy} onClick={() => void create()}>
-              {cmd.busy ? <LoaderCircle className="animate-spin" /> : <Bot />} Submit application
-            </Button>
-            {!canManage && (
-              <p className="text-xs text-muted-foreground">Only a clinic administrator can submit this.</p>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+    <div className="space-y-3 text-sm">
+      <p className="text-muted-foreground">Your agent books from your doctors and their open times.</p>
+      {declined?.reason && (
+        <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900">
+          Your last application was declined: {declined.reason}
+        </p>
+      )}
+      {cmd.error && <p className="text-destructive">{cmd.error}</p>}
+      <Button type="button" disabled={!canManage || cmd.busy} onClick={() => void create()}>
+        {cmd.busy ? <LoaderCircle className="animate-spin" /> : <Bot />} Submit application
+      </Button>
+      {!canManage && <p className="text-xs text-muted-foreground">Only a clinic administrator can submit this.</p>}
+    </div>
+  );
+}
+
+/** After the agent is live: test it and change how it speaks. */
+function VoiceSettings() {
+  const agent = useAgentSettings();
+  return (
+    <section className="space-y-6" aria-label="Voice settings">
+      <Card>
+        <CardContent className="space-y-3 pt-5 text-sm">
+          <p>Test it before patients call:</p>
+          <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
+            <li>Open the booking website and start a voice call.</li>
+            <li>Accept the consent notice and allow the microphone.</li>
+            <li>Book a test appointment, then check Call history.</li>
+          </ol>
+          <Button onClick={() => window.open("/#voice", "_blank", "noopener,noreferrer")}>
+            <Bot /> Test voice call <ArrowUpRight />
+          </Button>
+        </CardContent>
+      </Card>
+      {agent.error && <p role="alert" className="text-sm text-destructive">Couldn&apos;t load the agent settings.</p>}
+      {agent.data && <SpokenAgentForm key={agent.data.desiredRevision} setup={agent.data} refresh={agent.refresh} />}
+    </section>
   );
 }
 
@@ -476,10 +498,14 @@ function SpokenAgentForm({ setup, refresh }: { setup: AgentSettings; refresh: ()
   );
 }
 
+
 export function Voice() {
   const [tab, open] = useWorkspaceTab("voice");
   const { me, facility } = useWorkspace();
   const source = useMemo(() => voiceSource(me, facility), [me, facility]);
+  const runtime = useVoiceRuntime();
+  if (runtime.busy && !runtime.runtime) return <p className="text-sm text-muted-foreground">Loading voice…</p>;
+  if (runtime.runtime?.enabled !== true) return <VoiceGuide runtime={runtime} />;
   return (
     <OriginalResourceContext.Provider value={source}>
       <Tabs
@@ -493,9 +519,9 @@ export function Voice() {
             <TabsTrigger value="setup">Call setup</TabsTrigger>
           </TabsList>
         </div>
-        <AssignedVoiceNumber />
+        <AssignedVoiceNumber phoneNumber={runtime.runtime.phone_number} />
         <TabsContent value="setup" className="arc-workflow-panel">
-          <VoiceControl />
+          <VoiceSettings />
         </TabsContent>
         <TabsContent value="history" className="arc-workflow-panel">
           <VoiceModule

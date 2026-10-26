@@ -4,7 +4,6 @@ export const APPLE_STEPS = [
   { id: "hours", label: "Support hours", description: "When reception replies" },
   { id: "submit", label: "Submit", description: "Send your application" },
   { id: "review", label: "Approval", description: "Wait for approval" },
-  { id: "live", label: "Live", description: "Patients can message you" },
 ] as const;
 
 /**

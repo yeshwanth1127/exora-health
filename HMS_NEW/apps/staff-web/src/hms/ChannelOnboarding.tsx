@@ -8,13 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { WorkspaceChoice } from "@/components/WorkspaceChoice";
 import { useCommand, useQuery, useWorkspace } from "./hooks";
 import { useUnsaved } from "./leave";
@@ -28,7 +21,7 @@ const parseSetup = (value: unknown) => {
     throw new Error("This setup form supports voice and WhatsApp.");
   return { ...setup, channel: setup.channel, draft: setup.draft };
 };
-const strategies = {
+export const strategies = {
   voice: [
     ["existing_forwarded", "Keep clinic number · forward unanswered calls"],
     ["company_number", "New managed number · ring reception first"],
@@ -143,22 +136,7 @@ function OnboardingForm({
     }
   }
   return (
-    <Card>
-      <CardHeader className="space-y-3">
-        <div className="flex items-center justify-between gap-4">
-          <CardTitle>
-            {setup.channel === "voice" ? "Phone line" : "WhatsApp setup"}
-          </CardTitle>
-          <Badge variant="outline">
-            {setup.state === "requested"
-              ? "Submitted"
-              : setup.state === "draft"
-                ? "Draft saved"
-                : "Not started"}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <div className="space-y-6 text-sm">
         <fieldset
           disabled={!canManage || cmd.busy || cmd.unknown}
           className="space-y-6"
@@ -326,7 +304,7 @@ function OnboardingForm({
                 (!dirty && setup.version > 0) || cmd.busy || cmd.unknown
               }
             >
-              Save preferences
+              Save
             </Button>
             <Button
               variant="outline"
@@ -346,18 +324,13 @@ function OnboardingForm({
                 if (result) await refresh();
               }}
             >
-              Submit
+              Continue
             </Button>
             <span className="text-muted-foreground">
-              {dirty
-                ? "Save before submitting."
-                : setup.state === "requested"
-                  ? "Submitted to Paperwhale. Wait for approval."
-                  : ""}
+              {dirty ? "Save before continuing." : ""}
             </span>
           </div>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }
