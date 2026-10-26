@@ -78,7 +78,7 @@ export function WebsiteSettingsPanel() {
         }}
       >
         <div>
-          <h2 className="text-lg font-semibold">Swastikaa template</h2>
+          <h2 className="text-lg font-semibold">Hospital website</h2>
           <p className="text-sm text-muted-foreground">
             The hospital name, address and phone come from this clinic’s saved
             details. These settings apply when this template is deployed.

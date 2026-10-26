@@ -7,8 +7,8 @@ const profile={name:'River Hospital',city:'Pune',address:'Hospital Road, Pune',p
 const doctor={slug:'dr-published',name:'Dr Published',specialty:'Medicine',acceptsVirtual:false,qualifications:['MBBS'],languages:['English'],departments:['Medicine'],bio:'Published biography',experienceYears:12,photoUrl:null,websiteIds:[]};
 const catalog={siteSlug:'river-hospital',clinicName:profile.name,timezone:profile.timezone,today:'2026-10-26',bookingUntil:'2026-11-26',doctors:[doctor]};
 const calls:{url:string;options?:RequestInit}[]=[];
-let catalogFails=false,enquiryFails=false;
-beforeEach(()=>{history.replaceState({},'','/');calls.length=0;catalogFails=false;enquiryFails=false;Object.assign(window,{HMS_WEBSITE:{bookingSite:'river-hospital'}});vi.stubGlobal('scrollTo',vi.fn());vi.stubGlobal('fetch',vi.fn(async(input:RequestInfo|URL,options?:RequestInit)=>{const url=String(input);calls.push({url,options});if(url==='/public/v1/website')return Response.json(profile);if(url.endsWith('/catalog'))return Response.json(catalog,{status:catalogFails?503:200});if(url.includes('/slots?'))return Response.json({timezone:profile.timezone,slots:[{startsAt:'2026-10-26T04:00:00Z',endsAt:'2026-10-26T04:15:00Z',feeMinor:80000,slotToken:'signed-token'}],unpricedSlots:[]});if(url.endsWith('/voice/config'))return Response.json({enabled:false});if(url.endsWith('/enquiries')){if(enquiryFails){enquiryFails=false;throw Error('Connection lost. Retry the same enquiry.')}return Response.json({id:'receipt-one',status:'received'},{status:201})}throw Error('Unexpected request: '+url)}))});
+let catalogFails=false,enquiryFails=false,activeTemplate='swastikaa';
+beforeEach(()=>{history.replaceState({},'','/');calls.length=0;activeTemplate='swastikaa';catalogFails=false;enquiryFails=false;Object.assign(window,{HMS_WEBSITE:{bookingSite:'river-hospital'}});vi.stubGlobal('scrollTo',vi.fn());vi.stubGlobal('fetch',vi.fn(async(input:RequestInfo|URL,options?:RequestInit)=>{const url=String(input);calls.push({url,options});if(url==='/public/v1/website')return Response.json({...profile,runtime:{...profile.runtime,template:activeTemplate}});if(url.endsWith('/catalog'))return Response.json(catalog,{status:catalogFails?503:200});if(url.includes('/slots?'))return Response.json({timezone:profile.timezone,slots:[{startsAt:'2026-10-26T04:00:00Z',endsAt:'2026-10-26T04:15:00Z',feeMinor:80000,slotToken:'signed-token'}],unpricedSlots:[]});if(url.endsWith('/voice/config'))return Response.json({enabled:false});if(url.endsWith('/enquiries')){if(enquiryFails){enquiryFails=false;throw Error('Connection lost. Retry the same enquiry.')}return Response.json({id:'receipt-one',status:'received'},{status:201})}throw Error('Unexpected request: '+url)}))});
 afterEach(()=>{delete (window as any).HMS_WEBSITE;vi.unstubAllGlobals()});
 it('uses persisted identity and published slots without an appointment form or false confirmation',async()=>{
  history.replaceState({},'','/consultants/dr-published');render(<WebsiteRuntimeProvider><App/></WebsiteRuntimeProvider>);
@@ -26,4 +26,17 @@ it('recovers an enquiry using the same body and idempotency key after a lost res
  for(const [label,value] of [['Your name','Example Visitor'],['Email address','visitor@example.test'],['Your message','Which entrance?']])fireEvent.change(screen.getByRole('textbox',{name:label}),{target:{value}});
  fireEvent.click(screen.getByRole('button',{name:'Send enquiry'}));await screen.findByRole('alert');fireEvent.click(screen.getByRole('button',{name:'Send enquiry'}));
  expect(await screen.findByRole('heading',{name:'Enquiry received'})).toBeInTheDocument();const posted=calls.filter(c=>c.url.endsWith('/enquiries'));expect(posted).toHaveLength(2);expect(posted[0].options?.body).toBe(posted[1].options?.body);expect(posted[0].options?.headers).toEqual(posted[1].options?.headers);
+});
+
+it.each(['hospital-pathway','hospital-atlas','hospital-grove'])('%s binds to the real profile and published roster without demo records',async template=>{
+ activeTemplate=template;Object.assign(window,{HMS_WEBSITE:{bookingSite:'river-hospital',template}});
+ history.replaceState({},'','/consultants/dr-published?template=swastikaa');
+ render(<WebsiteRuntimeProvider><App/></WebsiteRuntimeProvider>);
+ expect(await screen.findByRole('heading',{level:1,name:'Dr Published'})).toBeInTheDocument();
+ expect(screen.getAllByRole('link',{name:'River Hospital home'})).toHaveLength(2);expect(document.querySelector('[data-template]')).toHaveAttribute('data-template',template);
+ expect(screen.queryByText('Dr Karthik Shah')).not.toBeInTheDocument();expect(document.querySelector('main form')).toBeNull();
+});
+it('rejects a profile for another template before rendering clinical data',async()=>{
+ Object.assign(window,{HMS_WEBSITE:{bookingSite:'river-hospital',template:'hospital-atlas'}});render(<WebsiteRuntimeProvider><App/></WebsiteRuntimeProvider>);
+ expect(await screen.findByText('The hospital booking connection does not match this website.')).toBeInTheDocument();expect(screen.queryByText('Dr Published')).not.toBeInTheDocument();
 });

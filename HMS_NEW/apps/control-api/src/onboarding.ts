@@ -1,3 +1,4 @@
+import {websiteTemplateIds} from '@hms/website-templates';
 import { z } from 'zod';
 
 export const Onboarding = z.object({
@@ -13,6 +14,6 @@ export const Onboarding = z.object({
   plan: z.enum(['launch', 'connect', 'scale']),
   voice: z.boolean(),
   whatsapp: z.boolean(),
-  websiteTemplate: z.enum(['standard', 'sri-lakshmi', 'hospital-editorial', 'swastikaa']).default('standard'),
+  websiteTemplate: z.enum(websiteTemplateIds).default('standard'),
   termsAccepted: z.literal(true),
 }).refine((value) => !value.voice || value.plan !== 'launch', { path: ['voice'], message: 'Voice requires the Connect or Scale plan.' });

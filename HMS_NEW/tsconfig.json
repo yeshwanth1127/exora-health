@@ -31,6 +31,7 @@
     "apps/sri-lakshmi-web",
     "apps/hospital-editorial-web",
     "apps/platform-web",
-    "apps/hospital-community-web"
+    "apps/hospital-community-web",
+    "packages/hospital-web"
   ]
 }

@@ -93,3 +93,9 @@ describe('website choice through the real control API and provisioning queue', (
   });
 
 });
+
+it.each(['hospital-pathway','hospital-atlas','hospital-grove'])('persists %s and the entered hospital name in the provisioning claim',async websiteTemplate=>{
+ const {response,body}=await submit({facilityName:'Riverbend Hospital',websiteTemplate});expect(response.status).toBe(202);
+ const claim=await fetch(`${origin}/control/v1/internal/provisioning/claim`,{method:'POST',headers:{authorization:`Bearer ${provisionerToken}`}});
+ expect(await claim.json()).toMatchObject({id:body.onboardingId,payload:{websiteTemplate,facilityName:'Riverbend Hospital'}});
+});

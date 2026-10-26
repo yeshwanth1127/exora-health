@@ -1,3 +1,4 @@
+import {isHospitalTemplate} from '@hms/website-templates';
 import { z } from 'zod';
 import type { DB, Kysely } from '@hms/db';
 import { runQuery, notFound } from '@hms/platform';
@@ -28,11 +29,11 @@ export async function tenantWebsiteProfile(db: Kysely<DB>, tenantId: string, con
     if (preferredFacilityId) facilities = facilities.where('id','=',preferredFacilityId);
     const facility = await facilities.orderBy('created_at').orderBy('id').executeTakeFirst();
     let publishedContent=content, runtimeInfo:Record<string,unknown>={};
-    if(runtime?.template==='swastikaa'){
+    if(runtime&&isHospitalTemplate(runtime.template)){
       const {readWebsiteSettings}=await import('./website-settings.ts');
       const saved=facility?await readWebsiteSettings(tx,facility.id):null;
       if(saved?.version)publishedContent=saved.content;
-      runtimeInfo={runtime:{template:'swastikaa',demoEnabled:saved?.demoEnabled??true,bookingSite:runtime.bookingSite,facilityId:facility?.id??null}};
+      runtimeInfo={runtime:{template:runtime.template,demoEnabled:saved?.demoEnabled??true,bookingSite:runtime.bookingSite,facilityId:facility?.id??null}};
     }
     return {
       ...runtimeInfo,
