@@ -10,7 +10,7 @@ import { clock, type Caller } from '../../caller.ts';
 import { practitionerResourceId } from './calendar.ts';
 
 type Priority = 'normal' | 'senior_citizen' | 'emergency' | 'vip';
-type Channel = 'web' | 'portal' | 'whatsapp' | 'voice' | 'front_desk' | 'walk_in' | 'referral';
+type Channel = 'web' | 'portal' | 'whatsapp' | 'voice' | 'front_desk' | 'walk_in' | 'referral' | 'apple_messages';
 type VisitType = 'new' | 'follow_up' | 'review' | 'procedure';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O, 1/I
@@ -162,13 +162,14 @@ export interface AppointmentResult {
 interface ResolvedFee {
   priceListItemId: string;
   unitPriceMinor: number;
+  currency: string;
 }
 
 /** Consultation fee from the active default price list: doctor-specific price first, then the generic one. */
 export async function consultationFee(tx: Transaction<DB>, healthcareServiceId: string | null, staffId: string, on: string, visitMode: string): Promise<ResolvedFee | null> {
   if (!healthcareServiceId) return null;
-  const { rows: [fee] } = await sql<{ id: string; unit_price_minor: number }>`
-    SELECT pli.id, pli.unit_price_minor
+  const { rows: [fee] } = await sql<{ id: string; unit_price_minor: number; currency: string }>`
+    SELECT pli.id, pli.unit_price_minor, btrim(pl.currency) AS currency
     FROM catalog.healthcare_service hs
     JOIN catalog.price_list_item pli ON pli.service_item_id = hs.consultation_service_item_id
     JOIN catalog.price_list pl ON pl.id = pli.price_list_id
@@ -181,7 +182,7 @@ export async function consultationFee(tx: Transaction<DB>, healthcareServiceId: 
       AND (pli.encounter_class IS NULL OR pli.encounter_class = ${visitMode === 'virtual' ? 'virtual' : 'outpatient'})
     ORDER BY (pli.staff_id IS NOT NULL) DESC, (pli.encounter_class IS NOT NULL) DESC
     LIMIT 1`.execute(tx);
-  return fee ? { priceListItemId: fee.id, unitPriceMinor: fee.unit_price_minor } : null;
+  return fee ? { priceListItemId: fee.id, unitPriceMinor: fee.unit_price_minor, currency: fee.currency } : null;
 }
 
 export async function activePatient(tx: Transaction<DB>, patientId: string): Promise<void> {
@@ -294,6 +295,7 @@ async function createAppointment(
       origin_channel: details.originChannel,
       priority: details.priority,
       fee_snapshot_minor: fee?.unitPriceMinor ?? null,
+      currency: fee?.currency ?? 'INR',
       price_list_item_id: fee?.priceListItemId ?? null,
       reason_text: details.reason,
       rescheduled_from_id: details.rescheduledFromId,

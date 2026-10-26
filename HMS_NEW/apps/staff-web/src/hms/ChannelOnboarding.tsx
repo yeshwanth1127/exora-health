@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   ChannelOnboardingSchema,
   ChannelOnboardingDraftSchema,
-  type ChannelOnboardingDraft,
+  type ChannelOnboardingDraft as AnyChannelOnboardingDraft,
 } from "@hms/contracts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,14 @@ import { useCommand, useQuery, useWorkspace } from "./hooks";
 import { useUnsaved } from "./leave";
 import { CommandReceiptRecovery } from "./CommandReceiptRecovery";
 type Channel = "voice" | "whatsapp";
-const parseSetup = (value: unknown) => ChannelOnboardingSchema.parse(value);
+type ChannelOnboardingDraft = Exclude<AnyChannelOnboardingDraft, { channel: "apple_messages" }>;
+const parseSetup = (value: unknown) => {
+  const setup = ChannelOnboardingSchema.parse(value);
+  // This existing form contains phone-number strategies for voice and WhatsApp only.
+  if (setup.channel === "apple_messages" || setup.draft?.channel === "apple_messages")
+    throw new Error("This setup form supports voice and WhatsApp.");
+  return { ...setup, channel: setup.channel, draft: setup.draft };
+};
 const strategies = {
   voice: [
     ["existing_forwarded", "Keep clinic number · forward unanswered calls"],

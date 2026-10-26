@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Bell,
   Headphones,
+  MessageCircle,
   ChartNoAxesCombined,
   ScrollText,
   Ticket,
@@ -64,6 +65,7 @@ import {
 } from "@/hms/WorkflowWorkspace";
 import { Doctors } from "@/hms/Doctors";
 import { WhatsApp } from "@/hms/WhatsApp";
+import { AppleMessages } from '@/hms/AppleMessages';
 import { Voice } from "@/hms/Voice";
 import { GoogleBusiness } from "@/hms/GoogleBusiness";
 import { WebsiteAnalytics } from "@/hms/WebsiteAnalytics";
@@ -136,6 +138,13 @@ const navigation = [
     name: "Voice",
     icon: Headphones,
     permission: "voice.read",
+  },
+  {
+    group: "Messages",
+    key: "apple_messages",
+    name: "Apple Messages",
+    icon: MessageCircle,
+    permission: "comms.read",
   },
   {
     group: "Growth",
@@ -950,6 +959,8 @@ function DirectoryContent({
           <Doctors />
         ) : page === "whatsapp" ? (
           <WhatsApp />
+        ) : page === 'apple_messages' ? (
+          <AppleMessages />
         ) : page === "voice" ? (
           <Voice />
         ) : page === "google_business" ? (

@@ -86,3 +86,8 @@
 :global(.dark) .whatsapp{--wa-canvas:#0b141a;--wa-incoming:#202c33;--wa-outgoing:#005c4b;--wa-ink:#e9edef;--wa-muted:#aebac1}
 
 .whatsapp .composer{height:auto;min-height:44px;align-items:flex-end}
+
+/* Shared multiline composer binding; WhatsApp retains its existing override. */
+.composer textarea{flex:1;min-width:0;resize:none;max-height:144px;border:0;background:transparent;color:var(--foreground);font:inherit;outline:none;line-height:1.5}
+
+.messageBody p{white-space:pre-wrap}
