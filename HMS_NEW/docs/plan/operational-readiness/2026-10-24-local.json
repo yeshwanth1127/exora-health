@@ -1,0 +1,163 @@
+{
+  "checkedAt": "2026-10-24T10:39:51.017Z",
+  "environment": "local synthetic demonstration database",
+  "checkout": "/Users/deepakonda/.codex/worktrees/admin-dashboard-arc/HMS_NEW/HMS_NEW",
+  "sourceCommit": "930526f",
+  "dashboard": "http://127.0.0.1:5198/staff/",
+  "api": "http://127.0.0.1:3080",
+  "databasePort": 54339,
+  "facilities": 2,
+  "developmentLogin": true,
+  "whatsappSendingEnabled": false,
+  "checks": [
+    {
+      "path": "/v1/me",
+      "httpStatus": 200
+    },
+    {
+      "path": "/v1/session-context",
+      "httpStatus": 200
+    },
+    {
+      "path": "/v1/me/alerts",
+      "httpStatus": 200
+    },
+    {
+      "path": "/v1/facilities/:facilityId/directory",
+      "httpStatus": 200
+    },
+    {
+      "path": "/v1/appointments",
+      "httpStatus": 200,
+      "recordCount": 1
+    },
+    {
+      "path": "/v1/operations/summary",
+      "httpStatus": 200
+    },
+    {
+      "path": "/v1/operations/kpis",
+      "httpStatus": 200
+    },
+    {
+      "path": "/v1/whatsapp-workspace",
+      "httpStatus": 200,
+      "available": false,
+      "connected": false,
+      "capabilities": {
+        "sending": false,
+        "booking": false,
+        "automations": false,
+        "campaigns": false,
+        "uploads": true
+      }
+    },
+    {
+      "path": "/v1/google-business",
+      "httpStatus": 200,
+      "available": false,
+      "status": "not_connected",
+      "capabilities": {
+        "profile": true,
+        "reviews": true,
+        "posts": true,
+        "photos": false,
+        "insights": false,
+        "reviewRequests": false
+      }
+    },
+    {
+      "path": "/v1/website-analytics",
+      "httpStatus": 200,
+      "available": false,
+      "status": "unavailable"
+    },
+    {
+      "path": "/v1/staff-accounts",
+      "httpStatus": 200,
+      "recordCount": 7
+    },
+    {
+      "path": "/v1/voice-calls",
+      "httpStatus": 200,
+      "recordCount": 0
+    },
+    {
+      "path": "/v1/patients",
+      "httpStatus": 200,
+      "recordCount": 10
+    },
+    {
+      "path": "/v1/queue",
+      "httpStatus": 200,
+      "recordCount": 0
+    },
+    {
+      "path": "/v1/teleconsults",
+      "httpStatus": 200,
+      "recordCount": 0
+    }
+  ],
+  "assetChecks": {
+    "html": 200,
+    "css": 200,
+    "font": 200,
+    "fontObserved": true
+  },
+  "providerDelivery": "not performed",
+  "visualParity": "not checked",
+  "validation": {
+    "frozenLockfileInstall": "pass",
+    "rootTypecheck": "pass",
+    "backendTests": {
+      "passed": 453,
+      "files": 44
+    },
+    "staffTests": {
+      "passed": 246,
+      "failed": 0
+    },
+    "staffProductionBuild": "pass with existing chunk-size advisory",
+    "diffWhitespaceCheck": "pass"
+  },
+  "configurationReadiness": {
+    "ready": false,
+    "database": true,
+    "secureConnections": false,
+    "whatsapp": false,
+    "whatsappSending": false,
+    "whatsappBooking": false,
+    "googleBusiness": false,
+    "websiteAnalytics": false,
+    "posthogOptional": false,
+    "productionSignIn": false,
+    "bookingIdentity": false,
+    "exitCode": 2,
+    "liveProviderVerification": "not performed"
+  },
+  "metaInspection": {
+    "appId": "1132802439734841",
+    "appName": "Hospital-WA-booking",
+    "isLive": false,
+    "contactEmailVerified": false,
+    "privacyPolicyConfigured": false,
+    "dataDeletionConfigured": false,
+    "allowedLoginDomainsExposed": false,
+    "oauthRedirectsExposed": false,
+    "reviewStatus": "NO_SUBMISSION",
+    "privilegesReturned": 0,
+    "businessVerificationPasses": false,
+    "genericCanSubmit": true,
+    "owningPortfolioGrantedToConnector": false,
+    "subscription": {
+      "enabled": true,
+      "topic": "whatsapp_business_account",
+      "fields": [
+        "messages"
+      ],
+      "callbackOrigin": "https://avocado.exora.solutions",
+      "fullCallbackPath": "masked by connector"
+    }
+  },
+  "googleAccountInspection": "not available; local runtime credentials absent, existing project and approval state unknown"
+}

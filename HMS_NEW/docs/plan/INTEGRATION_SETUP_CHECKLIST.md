@@ -3,6 +3,10 @@
 Status: local implementation and permission testing; live customer/provider acceptance is pending.
 Use this for the current HMS_NEW tenant runtime, not the separate Avocado application.
 
+Current local verification, provider registration steps and ordered blockers:
+[24 October 2026 operational readiness](OPERATIONAL_READINESS_2026-10-24.md).
+The dated Meta inspection below is historical; consult the current report before activation.
+
 ## What you need to arrange
 
 | Item | Company setup | Clinic user does |
@@ -100,6 +104,7 @@ request them in clinic forms or put provider secrets in `VITE_*` variables.
 | Public browser build | `VITE_HMS_DEV_LOGIN=false`, `VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`, `VITE_OIDC_AUDIENCE`, `VITE_OIDC_SCOPE` matching the runtime |
 | Private connections | `INTEGRATIONS_PUBLIC_ORIGIN`, persistent `INTEGRATIONS_ENCRYPTION_KEY` |
 | Meta | `WA_APP_ID`, `WA_APP_SECRET`, `META_SIGNUP_CONFIG_ID`, `WA_GRAPH_VERSION`, `WA_VERIFY_TOKEN`; explicitly set `WA_MANAGED_SENDING_ENABLED=true` only for the intended pilot/live runtime |
+| Google Business | `GOOGLE_BUSINESS_CLIENT_ID`, `GOOGLE_BUSINESS_CLIENT_SECRET`; exact OAuth web-client redirect is `<INTEGRATIONS_PUBLIC_ORIGIN>/integrations/google/callback` |
 | Analytics | `UMAMI_ORIGIN`, `UMAMI_API_KEY`, optional `UMAMI_TEAM_ID` |
 | Optional mirror | `MANAGED_POSTHOG_ORIGIN`, `MANAGED_POSTHOG_KEY` |
 | Booking authority (generated) | `MANAGED_BOOKING_STAFF_ID`, `BOOTSTRAP_FACILITY_ID`, `PUBLIC_BOOKING_ENABLED`, `PUBLIC_BOOKING_SIGNING_SECRET`, `PUBLIC_BOOKING_SITES_JSON` |
