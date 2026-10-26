@@ -27,6 +27,52 @@ sees "not available". The code path already counts visits through Umami; it has 
 
 **Out:** clinic-owned PostHog projects, GA4 and Plausible.
 
+### How to get Umami working (plan, not started)
+
+What already exists in code:
+- the tracker (`/a.js`) and the collector (`/a/collect`), which forwards each visit to Umami's `/api/send`;
+- the readers that turn Umami stats into the dashboard numbers;
+- the `analytics.compose.yml` stack (Umami v3 plus its own Postgres, bound to `127.0.0.1:3001`).
+
+What is missing, in order:
+
+1. **Run Umami on the data host (`10.0.0.1`), next to the other Postgres containers.**
+   - Pin `UMAMI_IMAGE` to an official v3 Postgres image digest.
+   - Generate `UMAMI_DATABASE_PASSWORD` and `UMAMI_APP_SECRET` and keep them in the host's
+     secrets file, not git.
+   - `docker compose -f analytics.compose.yml up -d`.
+2. **Make it reachable by the API only.**
+   - The API runs on `10.0.0.5`, so expose Umami on the VPN address (`10.0.0.1:3001`), not a
+     public hostname.
+   - `managed-config` requires an `https` origin, so either put a company-only nginx/TLS ingress on
+     the VPN (`analytics.internal`), or allow `http://` for VPN addresses only (small code change).
+     **Recommended: the VPN ingress with TLS; no code change.**
+3. **Create the API key.**
+   - Sign in to the Umami console once over the VPN and change the default `admin` password.
+   - Create a team for Paperwhale (gives `UMAMI_TEAM_ID`) and an API key.
+4. **Configure HMS.**
+   - Set `UMAMI_ORIGIN`, `UMAMI_API_KEY` and `UMAMI_TEAM_ID` for the platform and every tenant
+     `app`. `compose.tenant.yml` already passes them through.
+   - Add them to `provision-tenant-production` so new clinics get them.
+   - Restart the tenant apps.
+5. **Turn on the booking page automatically** (code gap; the PRD promises "on from day one"):
+   - today only "Add a website" creates a site row (`kind='own'`) and nothing creates `kind='booking'`;
+   - add one idempotent step at tenant start that registers the clinic's public booking origin as
+     a `booking` site.
+6. **Remove PostHog** (see Changes above), then delete the `MANAGED_POSTHOG_*` and `POSTHOG_*`
+   env vars from the hosts.
+7. **Back up the Umami database** with the same nightly job as the tenant databases.
+8. **Verify.**
+   - Open a clinic's booking page in a private window.
+   - The site's `last_event_at` updates.
+   - Within a minute, Website analytics shows one visitor.
+   - The Umami console shows the event under that clinic's site.
+
+Local development:
+- Docker isn't installed on this Mac, so Umami can't run here as-is.
+- Either install Docker Desktop (or OrbStack) and run the same compose file, or point a local API
+  at a staging Umami.
+
 **Acceptance:** with Umami configured, a visit to a clinic booking page shows on Website analytics
 within a minute; `git grep -i posthog` finds nothing outside lockfiles and this PRD's history.
 
