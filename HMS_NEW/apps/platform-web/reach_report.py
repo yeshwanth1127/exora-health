@@ -222,7 +222,7 @@ def audit_website(url, fetcher=fetch_public):
             continue
         try:
             if target not in destinations:
-                destinations[target] = retrieve(target, max_bytes=262144)
+                destinations[target] = retrieve(target, max_bytes=1024 * 1024)
             destination = destinations[target]
             blocked = destination.status in (401, 403, 429)
             ok = 200 <= destination.status < 300
