@@ -212,8 +212,8 @@ describe('managed booking operations',()=>{
   });
   let chatId:string;
   const phone='777777777777777',waba='888888888888888';
-  async function inbound(text:string,id=randomUUID()) {
-    const value={metadata:{phone_number_id:phone},messages:[{id,from:'919999887766',timestamp:String(Math.floor(Date.now()/1000)),type:'text',text:{body:text}}]};
+  async function inbound(text:string|Record<string,unknown>,id=randomUUID()) {
+    const value={metadata:{phone_number_id:phone},messages:[{id,from:'919999887766',timestamp:String(Math.floor(Date.now()/1000)),...(typeof text==='string'?{type:'text',text:{body:text}}:text)}]};
     const raw=JSON.stringify({object:'whatsapp_business_account',entry:[{id:waba,changes:[{field:'messages',value}]}]});
     const response=await app.inject({method:'POST',url:'/v1/integrations/whatsapp/webhook',headers:{'content-type':'application/json','x-hub-signature-256':'sha256='+createHmac('sha256',managed.meta!.appSecret).update(raw).digest('hex')},payload:raw});
     expect(response.statusCode,response.body).toBe(200);await k.dispatch();
@@ -223,15 +223,17 @@ describe('managed booking operations',()=>{
     return latest?.text_content as string|undefined;
   }
   it('persists the real consent -> doctor -> time -> name -> confirmation conversation exactly once',async()=>{
+    managed.whatsappBranding=[{tenantId:site.tenantId,facilityId:site.facilityId,welcomeImageUrl:'https://hospital.example/brand/logo.png'}];
     const credential=seal(managed,{token:'test-never-return-token'},`${site.tenantId}:${site.facilityId}:whatsapp`);
     await k.admin.query("INSERT INTO comms.channel_account(tenant_id,facility_id,phone_number_id) VALUES($1,$2,$3)",[site.tenantId,site.facilityId,phone]);
-    await k.admin.query("INSERT INTO comms.managed_connection(tenant_id,facility_id,provider,external_id,credential,metadata,created_by)VALUES($1,$2,'whatsapp',$3,$4,$5,$6)",[site.tenantId,site.facilityId,phone,credential,JSON.stringify({subscribed:true,businessAccountId:waba}),admin.staffId]);
+    await k.admin.query("INSERT INTO comms.managed_connection(tenant_id,facility_id,provider,external_id,credential,metadata,created_by)VALUES($1,$2,'whatsapp',$3,$4,$5,$6)",[site.tenantId,site.facilityId,phone,credential,JSON.stringify({subscribed:true,businessAccountId:waba,testMode:true,testRecipients:['+919999887766']}),admin.staffId]);
     await k.admin.query("INSERT INTO comms.whatsapp_workspace(tenant_id,facility_id,draft,preferences,created_by,booking_enabled_at)VALUES($1,$2,$3,$4,$5,now()-interval '1 minute')",[site.tenantId,site.facilityId,JSON.stringify({live:false,paused:false}),JSON.stringify({quiet:{on:false,from:'21:00',to:'08:00'}}),admin.staffId]);
     const workspace=await app.inject({method:'GET',url:`/v1/whatsapp-workspace?facilityId=${site.facilityId}`,headers:{authorization:`Bearer ${admin.token}`}});
     expect(workspace.statusCode).toBe(200);const stored=workspace.json(),{connected,...draft}=stored.setup;
     const activation=await app.inject({method:'PUT',url:'/v1/whatsapp-workspace',headers:{authorization:`Bearer ${admin.token}`,'idempotency-key':randomUUID()},payload:{facilityId:site.facilityId,version:stored.version,draft:{...draft,live:true},preferences:stored.data.settings}});
     expect(activation.statusCode,activation.body).toBe(200);
-    expect(await inbound('HI')).toContain('reply YES');
+    const welcome=await inbound('HI');
+    expect(welcome).toMatch(/^TEST CHAT — /);expect(welcome).toContain('reply YES');
     expect(await inbound('YES')).toContain('Reply REMIND');
     expect(await inbound('REMIND')).toContain('Dr Real');
     expect(await inbound('1')).toContain('visit type');
@@ -246,8 +248,28 @@ describe('managed booking operations',()=>{
     expect((await k.admin.query("SELECT comms.has_consent(p.id,'reminders') ok FROM comms.contact_point p JOIN booking.appointment a ON a.booking_party_id=p.booking_party_id WHERE a.id=$1",[appointments[0].id])).rows[0].ok).toBe(true);expect(appointments[0]).toMatchObject({patient_id:null,origin_channel:'whatsapp',phone:'+919999887766'});
     expect((await k.admin.query("SELECT count(*)::int n FROM comms.outbound_message m JOIN comms.inbound_message i ON i.id=m.managed_inbound_id WHERE i.provider_message_id=$1",[id])).rows[0].n).toBe(1);
     await Promise.all([dispatchManagedWhatsApp(k.db,managed),dispatchManagedWhatsApp(k.db,managed)]);
+    expect(sent.filter(m=>m.type==='image')).toHaveLength(1);
+    expect(sent.find(m=>m.type==='image')).toMatchObject({image:{link:'https://hospital.example/brand/logo.png',caption:expect.stringContaining('reply YES')}});
     expect(sent.filter(m=>m.text?.body?.includes('Your appointment is confirmed.'))).toHaveLength(1);
     expect((await k.admin.query("SELECT count(*)::int n FROM comms.outbound_message WHERE conversation_id=$1 AND status='sent'",[chatId])).rows[0].n).toBe(8);
+  });
+  it('does not release a queued hospital image after its tenant binding changes',async()=>{
+    await inbound('RESTART');
+    const before=sent.length,branding=managed.whatsappBranding;
+    managed.whatsappBranding=[];
+    await dispatchManagedWhatsApp(k.db,managed);
+    expect(sent).toHaveLength(before);
+    managed.whatsappBranding=branding;
+  });
+  it('blocks unapproved recipients before automation and rechecks pending sends',async()=>{
+    await k.admin.query("UPDATE comms.managed_connection SET metadata=jsonb_set(metadata,'{testRecipients}','[]'::jsonb) WHERE facility_id=$1",[site.facilityId]);
+    expect(await inbound('RESTART')).toBeUndefined();
+    await k.admin.query("UPDATE comms.managed_connection SET metadata=jsonb_set(metadata,'{testRecipients}',$2::jsonb) WHERE facility_id=$1",[site.facilityId,JSON.stringify(['+919999887766'])]);
+    expect(await inbound('RESTART')).toMatch(/^TEST CHAT — /);
+    const before=sent.length;
+    await k.admin.query("UPDATE comms.managed_connection SET metadata=jsonb_set(metadata,'{testRecipients}','[]'::jsonb) WHERE facility_id=$1",[site.facilityId]);
+    await dispatchManagedWhatsApp(k.db,managed);expect(sent).toHaveLength(before);
+    await k.admin.query("UPDATE comms.managed_connection SET metadata=jsonb_set(metadata,'{testRecipients}',$2::jsonb) WHERE facility_id=$1",[site.facilityId,JSON.stringify(['+919999887766'])]);
   });
   it('human handoff and STOP block queued automated sends and do not create bookings',async()=>{
     await inbound('RESTART');
@@ -258,6 +280,55 @@ describe('managed booking operations',()=>{
     await inbound('RESTART');await inbound('STOP');
     await dispatchManagedWhatsApp(k.db,managed);expect(sent).toHaveLength(before);
     expect((await k.admin.query("SELECT comms.has_consent(contact_point_id,'care') ok FROM comms.conversation WHERE id=$1",[chatId])).rows[0].ok).toBe(false);
+  });
+  it('books with native buttons, lists and a scoped form, rejecting typed commands and stale selections',async()=>{
+    await k.admin.query("UPDATE comms.managed_connection SET metadata=metadata||$2::jsonb WHERE facility_id=$1",[site.facilityId,JSON.stringify({bookingUI:'interactive',detailsFlowId:'999999999999999',detailsFlowMode:'draft'})]);
+    await k.admin.query("UPDATE comms.outbound_message SET created_at=created_at-interval '11 minutes' WHERE conversation_id=$1",[chatId]);
+    const state=async()=>(await k.admin.query('SELECT state FROM comms.booking_chat WHERE conversation_id=$1',[chatId])).rows[0].state;
+    const tap=async(command:string,token?:string)=>{
+      const current=await state();
+      return inbound({type:'interactive',interactive:{type:'button_reply',button_reply:{id:`pw.${token??current.menuToken}.${command}`,title:'Display title is not authority'}}});
+    };
+    const flush=async()=>{await dispatchManagedWhatsApp(k.db,managed);return sent.at(-1);};
+    await inbound('HI');let welcome=await flush();
+    expect(welcome).toMatchObject({type:'interactive',interactive:{type:'button',header:{type:'image',image:{link:'https://hospital.example/brand/logo.png'}}}});
+    expect(welcome.interactive.action.buttons.map((b:any)=>b.reply.title)).toEqual(['Book appointment','Reception','No thanks']);
+    const stale=(await state()).menuToken;
+    await inbound('YES');expect((await state()).step).toBe('consent');expect((await flush()).interactive.body.text).not.toContain('Reply YES');
+    await tap('YES');expect((await state()).step).toBe('reminders');await flush();
+    await tap('SKIP');expect((await state()).step).toBe('doctor');expect((await flush()).interactive.type).toBe('list');
+    await tap('1',stale);expect((await state()).step).toBe('doctor');await flush();
+    await tap('1');expect((await state()).step).toBe('mode');expect((await flush()).interactive.type).toBe('button');
+    await tap('1');expect((await state()).step).toBe('slot');expect((await flush()).interactive.action.sections[0].rows.length).toBeLessThanOrEqual(10);
+    await tap('DATE');expect((await state()).step).toBe('date');await flush();
+    await tap('TIMES');expect((await state()).step).toBe('slot');await flush();
+    await tap('1');expect((await state()).step).toBe('name');expect((await flush()).interactive).toMatchObject({type:'flow',action:{parameters:{flow_id:'999999999999999',mode:'draft'}}});
+    const submit=async(token:string)=>inbound({type:'interactive',interactive:{type:'nfm_reply',nfm_reply:{response_json:JSON.stringify({flow_token:token,patient_name:'Native Form Visitor'})}}});
+    await submit(randomUUID());expect((await state()).step).toBe('name');await flush();
+    await submit((await state()).formToken);expect((await state()).step).toBe('confirm');await flush();
+    const before=(await k.admin.query("SELECT count(*)::int n FROM booking.appointment WHERE origin_channel='whatsapp' AND tenant_id=$1",[site.tenantId])).rows[0].n;
+    await inbound('CONFIRM');expect((await state()).step).toBe('confirm');expect((await flush()).interactive.body.text).not.toContain('Reply CONFIRM');
+    const id=randomUUID(),current=await state();
+    await inbound({type:'interactive',interactive:{type:'button_reply',button_reply:{id:`pw.${current.menuToken}.CONFIRM`,title:'Confirm booking'}}},id);
+    await inbound({type:'interactive',interactive:{type:'button_reply',button_reply:{id:`pw.${current.menuToken}.CONFIRM`,title:'Confirm booking'}}},id);
+    expect((await flush()).interactive.body.text).toContain('Your appointment is confirmed.');
+    expect((await k.admin.query("SELECT count(*)::int n FROM booking.appointment WHERE origin_channel='whatsapp' AND tenant_id=$1",[site.tenantId])).rows[0].n).toBe(before+1);
+  });
+  it('matches Sri Lakshmi using tapped choices and one patient-name entry without a Meta Flow',async()=>{
+    await k.admin.query("UPDATE comms.managed_connection SET metadata=metadata||'{\"bookingUI\":\"interactive\",\"detailsMode\":\"chat\"}'::jsonb WHERE facility_id=$1",[site.facilityId]);
+    await k.admin.query("UPDATE comms.outbound_message SET created_at=created_at-interval '11 minutes' WHERE conversation_id=$1",[chatId]);
+    const state=async()=>(await k.admin.query('SELECT state FROM comms.booking_chat WHERE conversation_id=$1',[chatId])).rows[0].state;
+    const tap=async(command:string)=>{const current=await state();await inbound({type:'interactive',interactive:{type:'list_reply',list_reply:{id:`pw.${current.menuToken}.${command}`,title:'Selected option'}}});await dispatchManagedWhatsApp(k.db,managed);return sent.at(-1);};
+    await inbound('HI');await dispatchManagedWhatsApp(k.db,managed);
+    expect((await state()).step).toBe('menu');expect(sent.at(-1).interactive.type).toBe('button');
+    expect((await tap('BOOK_VISIT')).interactive.type).toBe('list');
+    await tap('1');await tap('1');
+    const details=await tap('1');expect((await state()).step).toBe('name');expect(details.type).toBe('text');
+    expect(details.text.body).toContain('name');
+    await inbound('Sandbox Name Visitor');await dispatchManagedWhatsApp(k.db,managed);
+    expect((await state()).step).toBe('confirm');expect(sent.at(-1).interactive.type).toBe('button');
+    const confirmation=await tap('CONFIRM');expect(confirmation.interactive.body.text).toContain('Your appointment is confirmed.');
+    expect((await k.admin.query("SELECT count(*)::int n FROM booking.appointment WHERE origin_channel='whatsapp' AND tenant_id=$1",[site.tenantId])).rows[0].n).toBe(3);
   });
   it('attributes only committed, origin-matched website bookings once and mirrors no personal data',async()=>{
     const id=randomUUID();await k.admin.query("INSERT INTO comms.analytics_site(id,tenant_id,facility_id,origin,kind,umami_id,enabled,created_by)VALUES($1,$2,$3,$4,'booking',$5,true,$6)",[id,site.tenantId,site.facilityId,origin,randomUUID(),admin.staffId]);
