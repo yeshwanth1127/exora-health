@@ -65,15 +65,17 @@ class ReachReportTests(unittest.TestCase):
         self.assertEqual(result['coverage'], 40)
         self.assertIsNone(result['websiteIssue'])  # Bot blocking is not proof of a broken customer website.
 
-    def test_robots_disallow_skips_homepage(self):
+    def test_robots_disallow_is_a_search_issue_not_an_audit_block(self):
         calls = []
         def disallowed(url, **kwargs):
             calls.append(url)
-            return page('User-agent: *\nDisallow: /', url=url)
+            return page('User-agent: *\nDisallow: /', url=url) if url.endswith('/robots.txt') else page(url=url)
         site, checks = report.audit_website(PROFILE['website'], disallowed)
-        self.assertEqual(len(calls), 1)
-        self.assertEqual(site['state'], 'robots_blocked')
-        self.assertTrue(all(c['status'] == 'unknown' for c in checks))
+        self.assertEqual(site['state'], 'checked')
+        self.assertEqual(calls[0], PROFILE['website'])
+        self.assertTrue(all(c['status'] != 'unknown' for c in checks))
+        self.assertEqual(next(c for c in checks if c['id']=='indexing')['status'], 'review')
+        self.assertEqual(next(c for c in checks if c['id']=='title')['status'], 'pass')
 
     def test_googlebot_specific_block_is_observed(self):
         def fetch(url, **kwargs):
@@ -245,23 +247,36 @@ class OperationalAuditTests(unittest.TestCase):
     def test_later_index_tag_does_not_erase_an_earlier_noindex(self):
         html=GOOD_HTML.replace('<head>','<head><meta name="robots" content="noindex"><meta name="robots" content="index">')
         self.assertEqual(next(c for c in report.assess_html(page(html),'allowed') if c['id']=='indexing')['status'],'review')
-    def test_redirect_hosts_are_checked_for_robots_before_homepage(self):
+    def test_redirected_public_page_is_audited_and_final_robots_is_a_signal(self):
         fetched=[]
         def fetch(url,**kwargs):
             fetched.append(url)
             if url=='https://example.invalid':
-                kwargs['redirect_check']('https://redirect.example/')
-                self.fail('Blocked redirect must not be followed')
+                return page(url='https://redirect.example/')
             if url=='https://redirect.example/robots.txt':
                 return page('User-agent: *\nDisallow: /',url=url)
             return sample_fetch(url,**kwargs)
         website,checks=report.audit_website(PROFILE['website'],fetch)
-        self.assertEqual(website['state'],'robots_blocked')
-        self.assertNotIn('https://redirect.example/',fetched)
-    def test_robot_failure_does_not_turn_into_an_indexability_pass(self):
-        def fetch(url,**kwargs):return page(status=503,url=url)
+        self.assertEqual(website['state'],'checked')
+        self.assertIn('https://redirect.example/robots.txt',fetched)
+        self.assertEqual(next(c for c in checks if c['id']=='indexing')['status'],'review')
+        self.assertEqual(next(c for c in checks if c['id']=='title')['status'],'pass')
+
+    def test_robot_failure_does_not_turn_into_an_indexability_pass_or_block_html(self):
+        def fetch(url,**kwargs):return page(status=503,url=url) if url.endswith('/robots.txt') else sample_fetch(url,**kwargs)
         website,checks=report.audit_website(PROFILE['website'],fetch)
-        self.assertTrue(all(c['status']=='unknown' for c in checks))
+        self.assertEqual(website['state'],'checked')
+        self.assertEqual(next(c for c in checks if c['id']=='indexing')['status'],'unknown')
+        self.assertEqual(next(c for c in checks if c['id']=='title')['status'],'pass')
+
+    def test_robot_network_failure_preserves_other_website_checks(self):
+        def fetch(url,**kwargs):
+            if url.endswith('/robots.txt'):raise web.WebsiteFetchError('TIMEOUT','Timed out')
+            return sample_fetch(url,**kwargs)
+        website,checks=report.audit_website(PROFILE['website'],fetch)
+        self.assertEqual(website['state'],'checked')
+        self.assertEqual(next(c for c in checks if c['id']=='indexing')['status'],'unknown')
+        self.assertEqual(sum(c['status']=='unknown' for c in checks),1)
 
 class CompressedFetchTests(unittest.TestCase):
     def test_compression_bomb_cannot_bypass_decoded_size_limit(self):

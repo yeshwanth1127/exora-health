@@ -18,9 +18,8 @@ the inaccessible website checks stay unassessed. Severity precedes weight when
 ordering issues. The page shows at most four issues; the existing Arc sheet
 contains the full checklist, source filters, evidence and fixes.
 
-Website checks retrieve robots.txt, bounded homepage HTML and at most one
-booking/enquiry and one contact destination. Redirected hosts/paths receive a
-robots check before being followed. Valid gzip/deflate responses are decoded
+Website checks retrieve bounded homepage HTML, robots.txt as a Googlebot visibility signal, and at most one
+booking/enquiry and one contact destination. Robots rules and robots retrieval failures do not block public HTML or destination audits. Redirects retain public-address and TLS validation. Valid gzip/deflate responses are decoded
 under the same output size limit. SSL failures, broken destinations, noindex,
 Googlebot restrictions and invalid call links are flagged. Requests cannot use
 private IPs, credentials, nonstandard ports, ambient cookies or proxy settings.

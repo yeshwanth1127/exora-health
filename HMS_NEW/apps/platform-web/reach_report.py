@@ -7,9 +7,9 @@ import sqlite3
 import audit_cache
 from urllib.parse import parse_qs, urljoin, urlsplit, urlunsplit
 from urllib.robotparser import RobotFileParser
-from website_fetch import fetch_public, WebsiteFetchError, USER_AGENT
+from website_fetch import fetch_public, WebsiteFetchError
 
-RUBRIC_VERSION = "reach-readiness-1.2"
+RUBRIC_VERSION = "reach-readiness-1.3"
 CATEGORIES = [("google", "Google profile", 40), ("website", "Website basics", 20), ("search", "Search signals", 20), ("contact", "Contact paths", 20)]
 WEBSITE_RULES = [
     ("https", "website", "HTTPS connection", 5, "Serve the website over HTTPS with a valid certificate."),
@@ -162,37 +162,33 @@ def audit_website(url, fetcher=fetch_public):
     if not url:
         return {"state": "not_linked", "url": "", "finalUrl": "", "message": "Google did not return a linked website. This report assesses the public profile only."}, unknown_website("No linked website was returned by Google.")
     deadline = time.monotonic() + 24
-    robots_cache, destinations = {}, {}
+    destinations = {}
 
-    def permission(target):
+    def google_crawl_status(target):
         parts = urlsplit(target)
         origin = urlunsplit((parts.scheme, parts.netloc, "", "", ""))
-        if origin not in robots_cache:
-            robots = fetcher(origin + "/robots.txt", deadline=deadline, max_bytes=65536)
+        try:
+            robots = fetcher(origin + "/robots.txt", deadline=min(deadline, time.monotonic()+4), max_bytes=65536)
             parser = RobotFileParser()
             if robots.status == 200:
                 parser.parse(robots.text().splitlines())
             elif robots.status in (404, 410):
-                parser.parse(["User-agent: *", "Allow: /"])
-            elif robots.status in (401, 403):
-                parser.parse(["User-agent: *", "Disallow: /"])
+                return "allowed"
             else:
-                raise WebsiteFetchError("ROBOTS_UNAVAILABLE", "robots.txt could not be checked. Automated inspection was paused.")
-            robots_cache[origin] = parser
-        parser = robots_cache[origin]
-        if not parser.can_fetch(USER_AGENT, target):
-            raise WebsiteFetchError("ROBOTS_BLOCKED", "The website's robots.txt disallows this audit. The blocked page was not fetched.")
-        return "allowed" if parser.can_fetch("Googlebot", target) else "blocked_google"
+                return "unavailable"
+            return "allowed" if parser.can_fetch("Googlebot", target) else "blocked_google"
+        except WebsiteFetchError:
+            return "unavailable"
 
     def retrieve(target, max_bytes=1024 * 1024):
-        permission(target)
-        # Every redirected host/path gets its own robots check before following it.
-        return fetcher(target, deadline=deadline, max_bytes=max_bytes, redirect_check=permission)
+        # Public pages can be audited regardless of crawler preferences. The
+        # fetcher still validates public addresses, TLS and every redirect.
+        return fetcher(target, deadline=deadline, max_bytes=max_bytes)
 
     try:
         page = retrieve(url)
     except WebsiteFetchError as error:
-        state = "robots_blocked" if error.code == "ROBOTS_BLOCKED" else "unavailable"
+        state = "unavailable"
         checks = unknown_website(error.message, url)
         if error.code in ("TLS_ERROR", "INSECURE_REDIRECT"):
             checks[0].update(status="review", severity="high", evidence=error.message)
@@ -205,7 +201,7 @@ def audit_website(url, fetcher=fetch_public):
         if not 200 <= page.status < 300:
             checks[1].update(status="review", severity="high", evidence=f"Homepage returned HTTP {page.status}.")
         return {"state": "unavailable", "url": url, "finalUrl": page.url, "message": "Usable homepage HTML was not returned."}, checks
-    checks = assess_html(page, permission(page.url))
+    checks = assess_html(page, google_crawl_status(page.url))
     parser = PageSignals()
     parser.feed(page.text())
     # Validate at most one booking destination and one contact destination. Never
