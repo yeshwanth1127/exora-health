@@ -62,7 +62,7 @@ function ChecksSheet({ report, trigger, initialStatus = "review", initialScope =
   const [scope, setScope] = useState<IssueScope>(initialScope);
   const checks = report.checks.filter(item => (status === "all" || item.status === status) && inScope(item, scope)).sort(byImpact);
   return <BottomSheet trigger={trigger} title="Your full checklist" description="Google profile and linked homepage" detents={[.68]} className="business-arc-scope reach-issues-sheet" onOpenChange={open => { if (open) { setStatus(initialStatus); setScope(initialScope); } }}>
-    <div className="reach-result-filters" role="group" aria-label="Filter checks by result">{(["review", "pass", "unknown", "all"] as const).map(value => <button type="button" key={value} aria-pressed={status === value} onClick={() => setStatus(value)}>{value === "all" ? "All checks" : value === "unknown" ? "Unavailable" : labels[value]}<span>{value === "all" ? report.totalChecks : report.counts[value]}</span></button>)}</div>
+    <div className="reach-result-filters" role="group" aria-label="Filter checks by result">{(["review", "pass", ...(report.counts.unknown ? ["unknown" as const] : []), "all"] as const).map(value => <button type="button" key={value} aria-pressed={status === value} onClick={() => setStatus(value)}>{value === "all" ? "All checks" : value === "unknown" ? "Unavailable" : labels[value]}<span>{value === "all" ? report.totalChecks : report.counts[value]}</span></button>)}</div>
     <IssueScopes scope={scope} onChange={setScope} checks={report.checks.filter(item => status === "all" || item.status === status)} />
     {status === "unknown" && <div className="reach-unassessed-note"><p>{report.website.state !== "checked" ? report.website.message.replace(/^Example: the /, "The ") : "These signals were unavailable in the returned public data. Each row explains why."}</p><span>Excluded from your score · {report.coverage}% of the weighted checklist checked</span></div>}
     <ul className="reach-check-list">{checks.map(item => <EvidenceRow key={item.id} item={item} example={report.example} />)}</ul>
@@ -70,13 +70,26 @@ function ChecksSheet({ report, trigger, initialStatus = "review", initialScope =
   </BottomSheet>;
 }
 function ScoreHelp({ report }: { report: ReachReport }) {
-  return <div className="reach-score-caption">{report.scoreLabel.startsWith("Google profile") ? "Google profile completeness" : "Reach readiness"} <Popover><PopoverTrigger className="reach-help-trigger" aria-label="How this score is calculated"><CircleHelp size={16} aria-hidden="true" /></PopoverTrigger><PopoverContent className="business-arc-scope reach-score-help" aria-label="How this score is calculated"><h2>How this score is calculated</h2><p>{report.methodology}</p><p>Unassessed checks are excluded. {report.coverage}% of the weighted checklist was checked.</p><p>Actual Google indexing is not verified.</p>{report.website.checkedAt && <p>Website checked {new Date(report.website.checkedAt).toLocaleString("en-GB", { timeZone: "Asia/Kolkata" })} IST. {report.website.cacheStatus === "hit" ? "Reused from the shared seven-day website audit cache." : "Live website audit."} Google profile and area observations are fetched live.</p>}<p className="reach-help-date">Rubric {report.version} · Checked {new Date(report.checkedAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" })} IST</p></PopoverContent></Popover></div>;
+  return <div className="reach-score-caption">{report.scoreLabel.startsWith("Google profile") ? "Google profile completeness" : "Reach readiness"} <Popover><PopoverTrigger className="reach-help-trigger" aria-label="How this score is calculated"><CircleHelp size={16} aria-hidden="true" /></PopoverTrigger><PopoverContent className="business-arc-scope reach-score-help" aria-label="How this score is calculated"><h2>How this score is calculated</h2><p>{report.website.state === "not_linked" ? "Your Google profile score covers its name, category, address, phone, hours, business status and website link. A missing website link lowers this score. Add your website below to check it too." : report.methodology}</p>{report.partial && <p>Checks that could not be completed are excluded from the score.</p>}<p>Actual Google indexing is not verified.</p>{report.website.checkedAt && <p>Website checked {new Date(report.website.checkedAt).toLocaleString("en-GB", { timeZone: "Asia/Kolkata" })} IST. {report.website.cacheStatus === "hit" ? "Reused from the shared seven-day website audit cache." : "Live website audit."} Google profile and area observations are fetched live.</p>}<p className="reach-help-date">Rubric {report.version} · Checked {new Date(report.checkedAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" })} IST</p></PopoverContent></Popover></div>;
 }
 
 export default function BusinessReport({ initialReport, rankPreview }: { initialReport?: ReachReport; rankPreview?: RankPreview }) {
   const [report, setReport] = useState<ReachReport | null>(initialReport || null);
   const [error, setError] = useState("");
   const [scope, setScope] = useState<IssueScope>("all");
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [websiteBusy, setWebsiteBusy] = useState(false);
+  const [websiteError, setWebsiteError] = useState("");
+  async function checkWebsite(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (!report || websiteBusy) return;
+    setWebsiteBusy(true); setWebsiteError("");
+    try {
+      const data = await businessLookup({mode:"website", id:report.profile.id, website:websiteUrl});
+      if (!data.report) throw new Error("Please try checking your website again.");
+      setReport({...data.report, ranking:report.ranking}); setScope("all");
+    } catch(cause) { setWebsiteError(cause instanceof Error ? cause.message : "Please try again."); }
+    finally { setWebsiteBusy(false); }
+  }
   useEffect(() => {
     if (initialReport) return;
     const params = new URLSearchParams(window.location.search);
@@ -105,10 +118,15 @@ export default function BusinessReport({ initialReport, rankPreview }: { initial
         <p className="reach-eyebrow">Your public presence, at a glance</p>
         <h1 id="reach-report-name">{profile.name}</h1>
         <p className="reach-report-location">{profile.address}</p>
-        <div className="reach-report-scope"><span>{profile.category || "Public business profile"}</span><span>{report.website.state === "not_linked" ? "Google profile only" : "Google profile + linked website"}</span></div>
+        <div className="reach-report-scope"><span>{profile.category || "Public business profile"}</span><span>{report.website.source === "provided" ? "Google profile + your website" : report.website.state === "not_linked" ? "Google profile" : "Google profile + linked website"}</span></div>
       </section>
       {report.websiteIssue && <aside className="reach-website-priority" aria-labelledby="reach-website-priority-title">
-        <div><h2 id="reach-website-priority-title">{report.websiteIssue.title}</h2><p>{report.website.state === "not_linked" ? "Customers may miss a direct route to your services and booking." : "Review the linked homepage so customers can take the next step."}</p><details><summary>Why this matters</summary><p>{report.websiteIssue.message}</p><p>{report.websiteIssue.action}</p>{!report.example && <a href={profile.mapsUrl || "https://business.google.com/"} target="_blank" rel="noreferrer">Review your Google profile<ArrowUpRight size={13} aria-hidden="true" /></a>}</details></div>
+        <div><h2 id="reach-website-priority-title">{report.websiteIssue.title}</h2><p>{report.website.state === "not_linked" ? "Customers may miss a direct route to your services and booking." : "Review the linked homepage so customers can take the next step."}</p><details><summary>Why this matters</summary><p>{report.websiteIssue.message}</p><p>{report.websiteIssue.action}</p>{!report.example && <a href={profile.mapsUrl || "https://business.google.com/"} target="_blank" rel="noreferrer">Review your Google profile<ArrowUpRight size={13} aria-hidden="true" /></a>}</details>{!profile.website && !report.example && <form className="reach-website-form" onSubmit={checkWebsite}>
+          <label htmlFor="reach-website-url">{report.website.source === "provided" ? "Check another website link" : "Have a website? Add the link to check it."}</label>
+          <div><input id="reach-website-url" type="url" required maxLength={2048} placeholder="https://yourclinic.com" value={websiteUrl} onChange={event=>setWebsiteUrl(event.target.value)} disabled={websiteBusy}/><button type="submit" disabled={websiteBusy}>{websiteBusy ? "Checking…" : "Check website"}</button></div>
+          {websiteError && <p role="alert">{websiteError}</p>}
+          {report.website.source === "provided" && <p role="status">Your website has been added to this report. Add it to Google too.</p>}
+        </form>}</div>
       </aside>}
       <section className="reach-total" aria-label="Overall reach readiness">
         <ScoreHelp report={report} />
@@ -116,15 +134,15 @@ export default function BusinessReport({ initialReport, rankPreview }: { initial
         {report.partial ? <div className="reach-audit-coverage" role="note"><strong>Partial audit · {report.coverage}% of the checklist assessed</strong><p>{report.website.state === "not_linked" ? "Google returned no website link, so the 11 website checks could not run. This is a Google profile score, not a complete reach assessment." : report.website.state !== "checked" ? `${report.website.message} The score covers the checks we could assess only.` : "Unavailable checks are excluded from this score. Review them before treating this as a complete assessment."}</p></div> : <p className="reach-total-note">How easy is it to find your business and take the next step?</p>}
         {report.partial && <ChecksSheet report={report} initialStatus="unknown" trigger={<button className="reach-unassessed-link" type="button"><CircleDashed size={14} aria-hidden="true" />{report.counts.unknown} checks unavailable <span>See why<ArrowUpRight size={12} aria-hidden="true" /></span></button>} />}
       </section>
-      <section className="reach-category-progress" aria-label="Category scores">
-        {report.categories.map(category => <ProgressDonut key={category.key} value={category.score} label={category.label} detail={category.score === null ? "Not checked" : `${category.assessedChecks}/${category.totalChecks} checks completed`} />)}
-      </section>
+      {report.categories.filter(category => category.totalChecks > 0).length > 1 && <section className="reach-category-progress" aria-label="Category scores">
+        {report.categories.filter(category => category.totalChecks > 0).map(category => <ProgressDonut key={category.key} value={category.score} label={category.label} detail={category.score === null ? "Not checked" : `${category.assessedChecks}/${category.totalChecks} checks completed`} />)}
+      </section>}
       <div className="reach-findings">
         <section className="reach-evidence" aria-labelledby="reach-evidence-title">
           <div className="reach-evidence-heading"><div><h2 id="reach-evidence-title">{issues.length ? "What to improve" : "Your assessed checks look good"}</h2><p>{issues.length > 4 ? `Top 4 of ${issues.length} issues. Highest impact first.` : "Highest impact first. Expand a row for the evidence."}</p></div><ChecksSheet report={report} initialScope={scope} trigger={<button type="button">Read all</button>} /></div>
           <IssueScopes scope={scope} onChange={setScope} checks={issues} />
           <ul className="reach-check-list">{shownChecks.map(item => <EvidenceRow key={item.id} item={item} example={report.example} />)}</ul>
-          {!shownChecks.length && <p className="reach-empty">{scope === "website" && report.website.state !== "checked" ? "Website checks were unavailable. Open the full checklist to see why." : "No issues found in the assessed checks in this group."}</p>}
+          {!shownChecks.length && <p className="reach-empty">{scope === "website" && report.website.state !== "checked" ? "Add your website link above to check it." : "No issues found in the assessed checks in this group."}</p>}
           {scope === "website" && <p className="reach-indexing-note">Indexing checks detect visible crawl or noindex restrictions; actual Google index status needs Search Console access.</p>}
         </section>
         <ClinicWidget profile={profile} preview={report.example} />

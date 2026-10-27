@@ -1,7 +1,7 @@
 {
-  "version": "reach-readiness-1.1",
+  "version": "reach-readiness-1.2",
   "example": true,
-  "checkedAt": "2026-10-24T08:10:24.444957+00:00",
+  "checkedAt": "2026-10-27T06:55:23.466936+00:00",
   "profile": {
     "id": "example-clinic",
     "name": "Example Clinic",
@@ -20,24 +20,24 @@
     "state": "not_linked",
     "url": "",
     "finalUrl": "",
-    "message": "Google did not return a linked website. The website checks could not be completed."
+    "message": "Google did not return a linked website. This report assesses the public profile only."
   },
   "score": 65,
   "scoreLabel": "Google profile score",
-  "partial": true,
+  "partial": false,
   "coverage": 40,
   "websiteIssue": {
     "severity": "high",
-    "title": "No website link found on your Google profile",
-    "message": "Google did not return a website link. Customers may be missing a direct route to your services, booking information and contact options, which can cost website visits and enquiries.",
+    "title": "Website linked on Google: No",
+    "message": "Your Google profile has no website link. Customers miss a direct route to your services, booking and contact information.",
     "action": "Add your clinic\u2019s website to Google Business Profile, or verify the existing link if one is already set."
   },
   "assessedChecks": 7,
-  "totalChecks": 18,
+  "totalChecks": 7,
   "counts": {
     "pass": 5,
     "review": 2,
-    "unknown": 11
+    "unknown": 0
   },
   "categories": [
     {
@@ -49,36 +49,6 @@
       "earnedWeight": 26,
       "assessedChecks": 7,
       "totalChecks": 7
-    },
-    {
-      "key": "website",
-      "label": "Website basics",
-      "score": null,
-      "weight": 20,
-      "assessedWeight": 0,
-      "earnedWeight": 0,
-      "assessedChecks": 0,
-      "totalChecks": 4
-    },
-    {
-      "key": "search",
-      "label": "Search signals",
-      "score": null,
-      "weight": 20,
-      "assessedWeight": 0,
-      "earnedWeight": 0,
-      "assessedChecks": 0,
-      "totalChecks": 4
-    },
-    {
-      "key": "contact",
-      "label": "Contact paths",
-      "score": null,
-      "weight": 20,
-      "assessedWeight": 0,
-      "earnedWeight": 0,
-      "assessedChecks": 0,
-      "totalChecks": 3
     }
   ],
   "checks": [
@@ -157,127 +127,6 @@
       "severity": "normal",
       "evidence": "Google marks the business operational.",
       "fix": "",
-      "sourceUrl": ""
-    },
-    {
-      "id": "https",
-      "category": "website",
-      "label": "HTTPS connection",
-      "weight": 5,
-      "status": "unknown",
-      "severity": "normal",
-      "evidence": "Google did not return a linked website. The website checks could not be completed.",
-      "fix": "Serve the website over HTTPS with a valid certificate.",
-      "sourceUrl": ""
-    },
-    {
-      "id": "available",
-      "category": "website",
-      "label": "Homepage available",
-      "weight": 5,
-      "status": "unknown",
-      "severity": "normal",
-      "evidence": "Google did not return a linked website. The website checks could not be completed.",
-      "fix": "Check the homepage response and remove access errors for visitors.",
-      "sourceUrl": ""
-    },
-    {
-      "id": "viewport",
-      "category": "website",
-      "label": "Mobile viewport declared",
-      "weight": 5,
-      "status": "unknown",
-      "severity": "normal",
-      "evidence": "Google did not return a linked website. The website checks could not be completed.",
-      "fix": "Add a viewport meta tag with width=device-width.",
-      "sourceUrl": ""
-    },
-    {
-      "id": "content",
-      "category": "website",
-      "label": "Page text in HTML",
-      "weight": 5,
-      "status": "unknown",
-      "severity": "normal",
-      "evidence": "Google did not return a linked website. The website checks could not be completed.",
-      "fix": "Make key clinic information available in the page HTML and verify that visitors can read it.",
-      "sourceUrl": ""
-    },
-    {
-      "id": "title",
-      "category": "search",
-      "label": "Page title",
-      "weight": 5,
-      "status": "unknown",
-      "severity": "normal",
-      "evidence": "Google did not return a linked website. The website checks could not be completed.",
-      "fix": "Add a descriptive title with the clinic name and location.",
-      "sourceUrl": ""
-    },
-    {
-      "id": "description",
-      "category": "search",
-      "label": "Search description",
-      "weight": 5,
-      "status": "unknown",
-      "severity": "normal",
-      "evidence": "Google did not return a linked website. The website checks could not be completed.",
-      "fix": "Add a concise meta description that explains the clinic and its services.",
-      "sourceUrl": ""
-    },
-    {
-      "id": "heading",
-      "category": "search",
-      "label": "Main page heading",
-      "weight": 5,
-      "status": "unknown",
-      "severity": "normal",
-      "evidence": "Google did not return a linked website. The website checks could not be completed.",
-      "fix": "Add a clear H1 describing this clinic or its main service.",
-      "sourceUrl": ""
-    },
-    {
-      "id": "indexing",
-      "category": "search",
-      "label": "No explicit indexing block",
-      "weight": 5,
-      "status": "unknown",
-      "severity": "normal",
-      "evidence": "Google did not return a linked website. The website checks could not be completed.",
-      "fix": "Review robots rules, noindex meta tags and X-Robots-Tag headers.",
-      "sourceUrl": ""
-    },
-    {
-      "id": "phone_link",
-      "category": "contact",
-      "label": "Direct call or WhatsApp link",
-      "weight": 8,
-      "status": "unknown",
-      "severity": "normal",
-      "evidence": "Google did not return a linked website. The website checks could not be completed.",
-      "fix": "Add a visible tap-to-call or WhatsApp link.",
-      "sourceUrl": ""
-    },
-    {
-      "id": "booking",
-      "category": "contact",
-      "label": "Booking or enquiry destination",
-      "weight": 6,
-      "status": "unknown",
-      "severity": "normal",
-      "evidence": "Google did not return a linked website. The website checks could not be completed.",
-      "fix": "Add a clearly labelled booking or enquiry link and make sure its destination loads.",
-      "sourceUrl": ""
-    },
-    {
-      "id": "contact",
-      "category": "contact",
-      "label": "Contact destination",
-      "weight": 6,
-      "status": "unknown",
-      "severity": "normal",
-      "evidence": "Google did not return a linked website. The website checks could not be completed.",
-      "fix": "Add a contact page that loads, or a valid email link.",
       "sourceUrl": ""
     }
   ],

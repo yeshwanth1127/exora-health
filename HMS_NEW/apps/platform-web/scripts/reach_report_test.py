@@ -34,14 +34,26 @@ class ReachReportTests(unittest.TestCase):
 
     def test_missing_website_is_profile_only_not_a_website_zero(self):
         result = report.build_report({**PROFILE, 'website': ''})
-        self.assertTrue(result['partial'])
+        self.assertFalse(result['partial'])
+        self.assertEqual(result['counts']['unknown'], 0)
+        self.assertEqual(result['totalChecks'], 7)
+        self.assertEqual(len(result['categories']), 1)
         self.assertEqual(result['scoreLabel'], 'Google profile score')
         self.assertEqual(result['coverage'], 40)
         self.assertTrue(all(c['score'] is None for c in result['categories'][1:]))
         self.assertEqual(result['websiteIssue']['severity'], 'high')
-        self.assertIn('No website link', result['websiteIssue']['title'])
+        self.assertEqual('Website linked on Google: No', result['websiteIssue']['title'])
         self.assertEqual(result['score'], 80)
         self.assertEqual(next(c for c in result['checks'] if c['id']=='google_website')['status'], 'review')
+
+    def test_provided_website_keeps_missing_google_link_as_an_issue(self):
+        with patch.object(report, 'cached_website', return_value=report.audit_website(PROFILE['website'], sample_fetch)):
+            result = report.build_report({**PROFILE, 'website': ''}, PROFILE['website'])
+        self.assertEqual(result['website']['source'], 'provided')
+        self.assertEqual(result['totalChecks'], 18)
+        self.assertEqual(result['score'], 92)
+        self.assertEqual(next(c for c in result['checks'] if c['id']=='google_website')['status'], 'review')
+        self.assertEqual(result['websiteIssue']['title'], 'Website linked on Google: No')
 
     def test_blocked_website_does_not_masquerade_as_failed_checks(self):
         def blocked(url, **kwargs): return sample_fetch(url, **kwargs) if url.endswith('/robots.txt') else page(status=403, url=url)
@@ -110,6 +122,22 @@ class ReachReportTests(unittest.TestCase):
             self.assertEqual(business_lookup.lookup('mode=report&id=example123'), {'report':{'score':80,'ranking':{'status':'unsupported'}}})
             self.assertEqual(google.call_count, 1)
             self.assertEqual(build.call_args.args[0]['name'], 'Example')
+
+    def test_website_submission_audits_without_repeating_area_scan(self):
+        with patch.object(business_lookup, 'google_request', return_value={'id':'example123','displayName':{'text':'Clinic'}}), patch.object(business_lookup, 'scan') as scan, patch.object(business_lookup, 'build_report', return_value={'score':92}) as build:
+            result = business_lookup.lookup('mode=website&id=example123&website=https%3A%2F%2Fclinic.com')
+            self.assertEqual(result, {'report': {'score':92}})
+            self.assertEqual(build.call_args.args[1], 'https://clinic.com')
+            self.assertEqual(build.call_args.args[0]['website'], '')
+            scan.assert_not_called()
+
+    def test_website_submission_rejects_invalid_links_before_google_call(self):
+        with patch.object(business_lookup, 'google_request') as google:
+            for url in ['file:///etc/passwd', 'https://user:password@clinic.com', '']:
+                from urllib.parse import urlencode
+                with self.assertRaises(business_lookup.LookupError):
+                    business_lookup.lookup(urlencode({'mode':'website','id':'example123','website':url}))
+            google.assert_not_called()
 
     def test_quota_error_does_not_run_or_fabricate_a_report(self):
         with patch.object(business_lookup, 'google_request', side_effect=business_lookup.LookupError('QUOTA_EXCEEDED','Quota reached',429)), patch.object(business_lookup, 'build_report') as build:

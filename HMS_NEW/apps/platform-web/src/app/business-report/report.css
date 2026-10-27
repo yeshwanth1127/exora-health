@@ -87,3 +87,5 @@
 .reach-website-priority a { display:inline-flex; align-items:center; gap:6px; color:#997646; font-size:11px; margin-top:10px; text-underline-offset:4px; }
 
 .reach-audit-coverage { max-width:560px; margin:18px auto 0; text-align:center; font-size:12px; line-height:1.65; color:#73736f; }.reach-audit-coverage strong { display:block; font-weight:500; color:#41413e; }.reach-audit-coverage p { margin:5px 0 0; }
+
+.reach-website-form { margin-top:14px; }.reach-website-form label { display:block; font-size:12px; color:#594d3d; margin-bottom:8px; }.reach-website-form>div { display:flex; gap:8px; }.reach-website-form input { flex:1; min-width:0; border:1px solid #dedbd3; border-radius:8px; background:white; padding:11px 12px; font:inherit; font-size:13px; color:#292d28; }.reach-website-form button { border:0; border-radius:8px; padding:10px 15px; background:#283b32; color:white; font-size:12px; cursor:pointer; }.reach-website-form button:disabled { opacity:.6; cursor:wait; }.reach-website-form input:focus-visible,.reach-website-form button:focus-visible { outline:2px solid #148565; outline-offset:3px; }

@@ -11,7 +11,7 @@ export type ReachCategory = {
 };
 export type ReachReport = {
   version: string; example: boolean; checkedAt: string; profile: PublicBusiness;
-  website: { state: string; url: string; finalUrl: string; message: string; checkedAt?: string; cacheStatus?: string; cacheTtlDays?: number };
+  website: { source?: "provided"; state: string; url: string; finalUrl: string; message: string; checkedAt?: string; cacheStatus?: string; cacheTtlDays?: number };
   websiteIssue?: { severity: "high"; title: string; message: string; action: string } | null;
   score: number | null; scoreLabel: string; partial: boolean; coverage: number;
   assessedChecks: number; totalChecks: number;

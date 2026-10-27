@@ -122,12 +122,17 @@ def lookup(query_string):
         query = params.get("q", [""])[0].strip()
         if len(query) < 2 or len(query) > 220 or any(ord(c) < 32 for c in query):
             raise LookupError("INVALID_QUERY", "Enter a business name and city, or a supported listing link.", 400)
-    elif mode in ("details", "report"):
+    elif mode in ("details", "report", "website"):
         place_id = params.get("id", [""])[0]
         if not re.fullmatch(r"[A-Za-z0-9_-]{5,250}", place_id):
             raise LookupError("INVALID_PLACE", "Choose a business from the search results.", 400)
     else:
         raise LookupError("INVALID_REQUEST", "Choose a search or a business result.", 400)
+    website_url = params.get("website", [""])[0].strip() if mode == "website" else ""
+    if mode == "website":
+        target = urlsplit(website_url)
+        if len(website_url) > 2048 or target.scheme not in ("https", "http") or not target.hostname or target.username or target.password or any(ord(c) < 33 for c in website_url):
+            raise LookupError("INVALID_WEBSITE", "Enter your full website link, starting with https://.", 400)
     session = params.get("session", [""])[0]
     if session and not re.fullmatch(r"[A-Za-z0-9_-]{1,36}", session):
         raise LookupError("INVALID_SESSION", "Please start a new search.", 400)
@@ -154,7 +159,7 @@ def lookup(query_string):
     if mode == "search":
         response = google_request("places:searchText", "places.id,places.displayName,places.formattedAddress,places.primaryTypeDisplayName,places.googleMapsUri,places.attributions", {"textQuery": query, "pageSize": 5, "languageCode": "en"})
         return {"places": [normalise(place) for place in response.get("places", [])]}
-    report_mode = mode == "report"
+    report_mode = mode in ("report", "website")
     if report_mode and not _report_slots.acquire(blocking=False):
         raise LookupError("AUDIT_BUSY", "Two reports are being checked. Please try again shortly.", 429)
     try:
@@ -162,6 +167,8 @@ def lookup(query_string):
         place = normalise(response)
         if not report_mode:
             return {"place": place}
+        if mode == "website":
+            return {"report": build_report(place, website_url)}
         with ThreadPoolExecutor(max_workers=2) as workers:
             audit = workers.submit(build_report, place)
             ranks = workers.submit(scan, place, google_request)

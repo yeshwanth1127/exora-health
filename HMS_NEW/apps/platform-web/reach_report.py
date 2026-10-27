@@ -9,7 +9,7 @@ from urllib.parse import parse_qs, urljoin, urlsplit, urlunsplit
 from urllib.robotparser import RobotFileParser
 from website_fetch import fetch_public, WebsiteFetchError, USER_AGENT
 
-RUBRIC_VERSION = "reach-readiness-1.1"
+RUBRIC_VERSION = "reach-readiness-1.2"
 CATEGORIES = [("google", "Google profile", 40), ("website", "Website basics", 20), ("search", "Search signals", 20), ("contact", "Contact paths", 20)]
 WEBSITE_RULES = [
     ("https", "website", "HTTPS connection", 5, "Serve the website over HTTPS with a valid certificate."),
@@ -242,12 +242,16 @@ def audit_website(url, fetcher=fetch_public):
 
 
 def summarise(place, website, checks, *, example=False):
+    if website.get("state") == "not_linked":
+        checks = [item for item in checks if item["category"] == "google"]
     assessed = [item for item in checks if item["status"] != "unknown"]
     earned = sum(item["weight"] for item in assessed if item["status"] == "pass")
     maximum = sum(item["weight"] for item in assessed)
     categories = []
     for key, label, weight in CATEGORIES:
         items = [item for item in checks if item["category"] == key]
+        if not items:
+            continue
         tested = [item for item in items if item["status"] != "unknown"]
         possible = sum(item["weight"] for item in tested)
         points = sum(item["weight"] for item in tested if item["status"] == "pass")
@@ -255,7 +259,9 @@ def summarise(place, website, checks, *, example=False):
     counts = {key: sum(item["status"] == key for item in checks) for key in ("pass", "review", "unknown")}
     website_issue = None
     if website.get("state") == "not_linked":
-        website_issue = {"severity": "high", "title": "No website link found on your Google profile", "message": "Google did not return a website link. Customers may be missing a direct route to your services, booking information and contact options, which can cost website visits and enquiries.", "action": "Add your clinic’s website to Google Business Profile, or verify the existing link if one is already set."}
+        website_issue = {"severity": "high", "title": "Website linked on Google: No", "message": "Your Google profile has no website link. Customers miss a direct route to your services, booking and contact information.", "action": "Add your clinic’s website to Google Business Profile, or verify the existing link if one is already set."}
+    elif not place.get("website"):
+        website_issue = {"severity": "high", "title": "Website linked on Google: No", "message": "Your website is being checked here, but it is still missing from your Google profile.", "action": "Add your website to Google Business Profile so customers can find it."}
     elif website.get("state") == "unavailable":
         failed = next((item for item in checks if item["id"] == "available" and item["status"] == "review"), None)
         website_issue = {"severity": "high", "title": "Your linked homepage needs urgent review" if failed else "We couldn’t reach your linked website", "message": "The homepage returned an access error. Customers following the website link may reach a dead end instead of your clinic." if failed else "The website could not be verified from this check. If customers have the same problem, you may lose website visits and booking enquiries. This does not prove the website is down for everyone.", "action": "Open the website on another connection, check the homepage and HTTPS, and confirm that the link on Google is correct."}
@@ -304,6 +310,8 @@ def cached_website(url):
                 pass
 
 
-def build_report(place):
-    website, checks = cached_website(place.get("website", ""))
+def build_report(place, website_url=""):
+    website, checks = cached_website(website_url or place.get("website", ""))
+    if website_url:
+        website["source"] = "provided"
     return summarise(place, website, google_checks(place) + checks)
