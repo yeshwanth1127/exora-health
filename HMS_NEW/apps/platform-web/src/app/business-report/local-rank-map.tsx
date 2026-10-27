@@ -6,7 +6,7 @@ import { motionTokens } from "../components/arc-business/motion-tokens";
 import { createTerrain, type TerrainHandle, type TerrainTile } from "./rank-terrain";
 import RankWards from "./rank-wards";
 import type { RankScan } from "../../lib/local-ranking";
-import { observedSpots, observationHexes, mapWorld } from "../../lib/rank-explorer-model";
+import { observedSpots, observationHexes, mapWorld, regionContains } from "../../lib/rank-explorer-model";
 import geometry from "./bengaluru-regions.json";
 import "./local-rank-map.css";
 
@@ -57,7 +57,7 @@ function buildHexes({ hospitals, targetId, areas = [] }: RankPreview) {
     spot.area = near && near.km < 1.6 ? near.name : spot.km < 0.75 ? center.name : `Spot ${spot.km.toFixed(1)} km ${bearing(center, spot)}`;
     cells.push({ x, z, q, r, ...spot });
   }
-  return { center, cells, home: cells.findIndex(c => c.q === 0 && c.r === 0) };
+  return { center, cells, home: cells.findIndex(c => c.q === 0 && c.r === 0), spacing:SPACING };
 }
 function buildAreas({ hospitals, targetId, city }: RankPreview) {
   if (!city) return null;
@@ -73,7 +73,14 @@ const rankText = (rank:number|null|undefined) => rank === undefined ? "Not check
 export default function LocalRankMap({ preview, scan, onCheck, busy = false }: { preview: RankPreview; scan?:RankScan; onCheck?(ids:string[]):void; busy?:boolean }) {
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const liveSpots = useMemo(() => scan ? observedSpots(scan) : null, [scan]);
-  const hexes = useMemo(() => liveSpots ? {center:preview.hospitals.find(h=>h.id===preview.targetId)!,cells:observationHexes(liveSpots),home:0} : buildHexes(preview), [preview,liveSpots]);
+  const hexes = useMemo(() => {
+    if(!liveSpots)return buildHexes(preview);
+    const center=preview.hospitals.find(h=>h.id===preview.targetId)!;
+    const {lat0,minx,miny,scale}=geometry.projection;
+    const x=(center.lng*Math.cos(lat0*Math.PI/180)-minx)*scale,y=(-center.lat-miny)*scale;
+    const homeId=scan?.city==='bengaluru'?geometry.regions.find(region=>regionContains(region.path,x,y))?.id:undefined;
+    return {center,...observationHexes(liveSpots,center,homeId)};
+  }, [preview,liveSpots,scan?.city]);
   const areas = useMemo(() => {
     if (!scan) return buildAreas(preview);
     if (!scan.map || scan.city !== "bengaluru" || !liveSpots) return null;
@@ -145,7 +152,7 @@ export default function LocalRankMap({ preview, scan, onCheck, busy = false }: {
     <header className="rank-terrain-top">
       <div className="rank-terrain-header">
         <h2 id={`${id}-title`}>Where patients can find you</h2>
-        <p>{scan ? view === "areas" ? `Places search sample for “${preview.query}”. The Google map is a static overview; unchecked areas have no rank.` : `Each tile represents one neighbourhood observation for “${preview.query}”. This is a heatmap chart, not a geographic grid.` : view === "areas" && areas ? `Design preview · illustrative rankings. Each area previews a search for “${preview.query}” from its centre.` : `Design preview · illustrative rankings. Each tile previews a search for “${preview.query}” from that spot, ${SPACING} km apart.`} Colour shows where {focusHospital.name} appears.</p>
+        <p>{scan ? view === "areas" ? `Places search sample for “${preview.query}”. The Google map is a static overview; unchecked areas have no rank.` : `Each tile represents one neighbourhood observation for “${preview.query}”. North is up. The centre hex is your hospital’s neighbourhood; surrounding hexes follow their geographic locations.` : view === "areas" && areas ? `Design preview · illustrative rankings. Each area previews a search for “${preview.query}” from its centre.` : `Design preview · illustrative rankings. Each tile previews a search for “${preview.query}” from that spot, ${SPACING} km apart.`} Colour shows where {focusHospital.name} appears.</p>
       </div>
       {views.length > 1 && <div className="rank-switch" role="group" aria-label="Map view"><div className="rank-switch-track">
         {views.map(option => <button key={option.id} type="button" className="rank-switch-button" aria-pressed={view === option.id} onClick={() => setView(option.id)}>
@@ -181,7 +188,7 @@ export default function LocalRankMap({ preview, scan, onCheck, busy = false }: {
         </ol>
         {ranks[i] === null && <p className="rank-wards-detail-text">{focusHospital.name} is not in the top {DEPTH} in this response.{near !== null && ` Nearest area where ${you ? "you" : "they"} appear: ${spots[near].area} (#${ranks[near]}).`}</p>}
       </>; }}
-    /> : <HexView cells={cells} home={home} ranks={ranks} summary={summary} card={card} counts={counts}
+    /> : <HexView cells={cells} home={home} spacing={hexes.spacing} ranks={ranks} summary={summary} card={card} counts={counts}
       label={`Hex heatmap of ${cells.length} ${scan ? "neighbourhood observations" : "illustrative searches"} for “${preview.query}” for ${center.name}, coloured by where ${focusHospital.name} ranks. ${levels.map((level, i) => `${counts[i]} ${level.label}`).join(", ")}. The table that follows ranks hospitals across all spots.`} />}
 
     <div className="rank-board" aria-labelledby={`${id}-board`}>
@@ -205,7 +212,7 @@ export default function LocalRankMap({ preview, scan, onCheck, busy = false }: {
 }
 
 type Cell = Spot & { x: number; z: number; q: number; r: number };
-function HexView({ cells, home, ranks, summary, card, counts, label }: { cells: Cell[]; home: number; ranks: (number | null | undefined)[]; summary: ReactNode; card(i: number): ReactNode; counts: number[]; label: string }) {
+function HexView({ cells, home, spacing, ranks, summary, card, counts, label }: { cells: Cell[]; home: number; spacing:number; ranks: (number | null | undefined)[]; summary: ReactNode; card(i: number): ReactNode; counts: number[]; label: string }) {
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const [hover, setHover] = useState<number | null>(null);
   const [focus, setFocus] = useState<number | null>(null);
@@ -227,13 +234,13 @@ function HexView({ cells, home, ranks, summary, card, counts, label }: { cells: 
   useEffect(() => { pick.current = fly; });
   useEffect(() => {
     if (!plot.current || !canvas.current || !panel.current) return;
-    const handle = createTerrain({ plot: plot.current, canvas: canvas.current, panel: panel.current }, cells, firstTiles.current, home, SPACING, {
+    const handle = createTerrain({ plot: plot.current, canvas: canvas.current, panel: panel.current }, cells, firstTiles.current, home, spacing, {
       onHover(i) { setHover(i); if (i !== null) setShown(i); },
       onPick(i) { pick.current(i); },
     });
     engine.current = handle;
     return () => { handle.destroy(); engine.current = null; };
-  }, [cells, home]);
+  }, [cells, home, spacing]);
   const seeded = useRef(false);
   useEffect(() => { if (!seeded.current) { seeded.current = true; return; } engine.current?.setTiles(tiles, focus ?? hover); }, [tiles]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -247,8 +254,8 @@ function HexView({ cells, home, ranks, summary, card, counts, label }: { cells: 
     event.preventDefault();
     const from = hover ?? focus ?? home, here = cells[from];
     // The neighbour whose direction best matches the arrow.
-    const next = cells.map((c, i) => ({ i, dx: c.x - here.x, dz: c.z - here.z })).filter(c => c.i !== from && Math.hypot(c.dx, c.dz) < SPACING * 1.1)
-      .sort((a, b) => (b.dx * move[0] + b.dz * move[1]) - (a.dx * move[0] + a.dz * move[1]))[0];
+    const next = cells.map((c, i) => ({ i, dx: c.x - here.x, dz: c.z - here.z })).filter(c => c.i !== from && (c.dx * move[0] + c.dz * move[1]) > 0)
+      .sort((a,b)=> Math.hypot(a.dx,a.dz)**2/(a.dx*move[0]+a.dz*move[1])-Math.hypot(b.dx,b.dz)**2/(b.dx*move[0]+b.dz*move[1]))[0];
     if (next && next.dx * move[0] + next.dz * move[1] > 0) { activate(next.i); setLive(describe(next.i)); }
   };
 

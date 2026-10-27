@@ -1,7 +1,7 @@
 "use client";
 // Ward choropleth adapted from Arc's choropleth explorer: stepped fills that sweep west to east, a legend whose steps
 // light their regions, a ranked list synced with the map both ways, and a spring camera that zooms into one area.
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { animate, useMotionValue, useReducedMotion } from "motion/react";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 
@@ -17,6 +17,7 @@ const CAMERA = { type: "spring", visualDuration: 0.62, bounce: 0 } as const;
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 export default function RankWards({ mapImage, viewBox: [width, height], home, noun, label, shapes, fills, bins, values, norms, order, legend, legendNote, listMeta, summary, openSummary, card, detail }: Props) {
+  const clipId = "coverage-"+useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const still = useReducedMotion();
   const [hover, setHover] = useState<{ i: number; source: "map" | "list" } | null>(null);
   const [open, setOpen] = useState<number | null>(null);
@@ -120,8 +121,9 @@ export default function RankWards({ mapImage, viewBox: [width, height], home, no
         onPointerLeave={() => { setTip(false); setHover(current => current?.source === "map" ? null : current); }}
         onClick={event => { const i = wardAt(event.target); if (i === null) { if (open !== null) zoom(null); return; } zoom(i === open ? null : i); }}>
         <svg className="rank-wards-map" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={label}>
+          <defs><clipPath id={clipId}>{shapes.map(shape=><path key={shape.name} d={shape.path}/>)}</clipPath></defs>
           <g ref={camera}>
-            {mapImage && <image href={mapImage} x={0} y={0} width={width} height={height} />}
+            {mapImage && <image href={mapImage} x={0} y={0} width={width} height={height} clipPath={`url(#${clipId})`} />}
             <g className="rank-wards-area" data-enter="">
               {shapes.map((shape, i) => <path key={shape.name} ref={el => { paths.current[i] = el; }} data-i={i} d={shape.path} className="rank-wards-region"
                 data-context={open !== null && open !== i ? "" : undefined} data-dim={lit !== null && bins[i] !== lit ? "" : undefined}
