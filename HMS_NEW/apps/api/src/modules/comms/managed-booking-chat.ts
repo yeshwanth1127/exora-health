@@ -16,6 +16,7 @@ import { readSlot, type PublicBookingSite } from "../booking/public-config.ts";
 import { addressLock } from "./notifications.ts";
 import { assertWhatsAppActive } from "./whatsapp.ts";
 import type { ManagedSettings } from "./managed-config.ts";
+import { testRecipientAllowed, welcomeImage } from './whatsapp-branding.ts';
 
 type Tx = Transaction<DB>;
 type State = {
@@ -160,7 +161,7 @@ export async function dispatchBookingChats(
         const {
           rows: [live],
         } =
-          await sql<any>`SELECT w.draft,w.preferences,w.booking_enabled_at,c.automation_state,c.status,c.last_inbound_at,comms.has_consent(p.id,'care') AS consent
+          await sql<any>`SELECT mc.metadata,w.draft,w.preferences,w.booking_enabled_at,c.automation_state,c.status,c.last_inbound_at,comms.has_consent(p.id,'care') AS consent
           FROM comms.whatsapp_workspace w JOIN comms.conversation c ON c.facility_id=w.facility_id AND c.tenant_id=w.tenant_id
           JOIN comms.contact_point p ON p.id=c.contact_point_id AND p.tenant_id=c.tenant_id
           JOIN comms.managed_connection mc ON mc.facility_id=w.facility_id AND mc.tenant_id=w.tenant_id AND mc.provider='whatsapp' AND mc.enabled
@@ -170,6 +171,7 @@ export async function dispatchBookingChats(
           );
         if (
           !live ||
+          !testRecipientAllowed(live.metadata, input.address) ||
           live.status !== "open" ||
           live.automation_state !== "automation"
         )
@@ -210,6 +212,7 @@ export async function dispatchBookingChats(
           ).trim();
         let body = "",
           prompt = false;
+        let welcome = false;
         const showDoctors = () => {
           const available = state.department
             ? catalog.doctors.filter((d) =>
@@ -295,6 +298,7 @@ export async function dispatchBookingChats(
         if (["RESTART", "BOOK", "HI", "HELLO", "START"].includes(command))
           state = {};
         if (!state.step || (!live.consent && state.step !== "consent")) {
+          welcome = true;
           if (live.consent) showDirectory();
           else {
             state = { step: "consent" };
@@ -468,9 +472,11 @@ export async function dispatchBookingChats(
             ["RESTART", "BOOK", "HI", "HELLO", "START"].includes(command))
         )
           body = String(away.text).slice(0, 1024) + "\n" + body;
+        if (body && live.metadata.testMode === true) body = "TEST CHAT — " + body;
+        const image = welcome ? welcomeImage(settings.whatsappBranding, r.tenant_id, input.facility_id) : undefined;
         if (body)
           await sql`INSERT INTO comms.outbound_message(tenant_id,facility_id,conversation_id,contact_point_id,text_content,managed_send_requested,managed_purpose,managed_inbound_id,managed_details)
-          VALUES(${r.tenant_id},${input.facility_id},${input.conversation_id},${input.contact_point_id},${body.slice(0, 3000)},true,${prompt ? "booking_prompt" : "booking"},${input.id},${JSON.stringify({ phoneNumberId: input.phone_number_id })}::jsonb) ON CONFLICT DO NOTHING`.execute(
+          VALUES(${r.tenant_id},${input.facility_id},${input.conversation_id},${input.contact_point_id},${body.slice(0, 3000)},true,${prompt ? "booking_prompt" : "booking"},${input.id},${JSON.stringify({ phoneNumberId: input.phone_number_id, ...(image ? { welcomeImageUrl: image } : {}) })}::jsonb) ON CONFLICT DO NOTHING`.execute(
             tx,
           );
         await sql`INSERT INTO comms.booking_chat(tenant_id,conversation_id,state,expires_at) VALUES(${r.tenant_id},${input.conversation_id},${JSON.stringify({ ...state, phoneNumberId: input.phone_number_id })}::jsonb,now()+interval '15 minutes')

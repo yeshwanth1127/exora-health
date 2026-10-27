@@ -2,6 +2,7 @@ import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { preconditionFailed } from "@hms/platform";
 
 import { loadPublicBookingConfig, type PublicBookingConfig } from "../booking/public-config.ts";
+import { loadWhatsAppBranding, type WhatsAppBranding } from './whatsapp-branding.ts';
 
 export interface ManagedSettings {
   booking?: PublicBookingConfig;
@@ -17,6 +18,7 @@ export interface ManagedSettings {
   };
   umami?: { origin: string; key: string; teamId?: string };
   whatsappSending?: boolean;
+  whatsappBranding?: WhatsAppBranding;
   webhookVerifyToken?: string;
   posthog?: { origin: string; key: string };
 }
@@ -29,6 +31,7 @@ export function loadManagedSettings(
     booking: loadPublicBookingConfig(env),
     whatsappSending: env.WA_MANAGED_SENDING_ENABLED === "true",
   };
+  settings.whatsappBranding = loadWhatsAppBranding(env.WA_CLINIC_BRANDING_JSON, settings.booking);
   const origin = (value: string, local = false) => {
     const u = new URL(value);
     if (
@@ -71,7 +74,7 @@ export function loadManagedSettings(
       clientSecret: env.GOOGLE_BUSINESS_CLIENT_SECRET,
     };
   }
-  if (env.META_SIGNUP_CONFIG_ID) {
+  if (env.META_SIGNUP_CONFIG_ID || env.WA_APP_ID || env.WA_MANAGED_SENDING_ENABLED === "true") {
     if (
       !env.WA_APP_ID ||
       !env.WA_APP_SECRET ||
@@ -84,7 +87,7 @@ export function loadManagedSettings(
     settings.meta = {
       appId: env.WA_APP_ID,
       appSecret: env.WA_APP_SECRET,
-      configId: env.META_SIGNUP_CONFIG_ID,
+      configId: env.META_SIGNUP_CONFIG_ID ?? "",
       graphVersion: env.WA_GRAPH_VERSION!,
     };
   }

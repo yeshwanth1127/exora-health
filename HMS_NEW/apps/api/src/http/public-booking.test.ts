@@ -223,15 +223,17 @@ describe('managed booking operations',()=>{
     return latest?.text_content as string|undefined;
   }
   it('persists the real consent -> doctor -> time -> name -> confirmation conversation exactly once',async()=>{
+    managed.whatsappBranding=[{tenantId:site.tenantId,facilityId:site.facilityId,welcomeImageUrl:'https://hospital.example/brand/logo.png'}];
     const credential=seal(managed,{token:'test-never-return-token'},`${site.tenantId}:${site.facilityId}:whatsapp`);
     await k.admin.query("INSERT INTO comms.channel_account(tenant_id,facility_id,phone_number_id) VALUES($1,$2,$3)",[site.tenantId,site.facilityId,phone]);
-    await k.admin.query("INSERT INTO comms.managed_connection(tenant_id,facility_id,provider,external_id,credential,metadata,created_by)VALUES($1,$2,'whatsapp',$3,$4,$5,$6)",[site.tenantId,site.facilityId,phone,credential,JSON.stringify({subscribed:true,businessAccountId:waba}),admin.staffId]);
+    await k.admin.query("INSERT INTO comms.managed_connection(tenant_id,facility_id,provider,external_id,credential,metadata,created_by)VALUES($1,$2,'whatsapp',$3,$4,$5,$6)",[site.tenantId,site.facilityId,phone,credential,JSON.stringify({subscribed:true,businessAccountId:waba,testMode:true,testRecipients:['+919999887766']}),admin.staffId]);
     await k.admin.query("INSERT INTO comms.whatsapp_workspace(tenant_id,facility_id,draft,preferences,created_by,booking_enabled_at)VALUES($1,$2,$3,$4,$5,now()-interval '1 minute')",[site.tenantId,site.facilityId,JSON.stringify({live:false,paused:false}),JSON.stringify({quiet:{on:false,from:'21:00',to:'08:00'}}),admin.staffId]);
     const workspace=await app.inject({method:'GET',url:`/v1/whatsapp-workspace?facilityId=${site.facilityId}`,headers:{authorization:`Bearer ${admin.token}`}});
     expect(workspace.statusCode).toBe(200);const stored=workspace.json(),{connected,...draft}=stored.setup;
     const activation=await app.inject({method:'PUT',url:'/v1/whatsapp-workspace',headers:{authorization:`Bearer ${admin.token}`,'idempotency-key':randomUUID()},payload:{facilityId:site.facilityId,version:stored.version,draft:{...draft,live:true},preferences:stored.data.settings}});
     expect(activation.statusCode,activation.body).toBe(200);
-    expect(await inbound('HI')).toContain('reply YES');
+    const welcome=await inbound('HI');
+    expect(welcome).toMatch(/^TEST CHAT — /);expect(welcome).toContain('reply YES');
     expect(await inbound('YES')).toContain('Reply REMIND');
     expect(await inbound('REMIND')).toContain('Dr Real');
     expect(await inbound('1')).toContain('visit type');
@@ -246,8 +248,28 @@ describe('managed booking operations',()=>{
     expect((await k.admin.query("SELECT comms.has_consent(p.id,'reminders') ok FROM comms.contact_point p JOIN booking.appointment a ON a.booking_party_id=p.booking_party_id WHERE a.id=$1",[appointments[0].id])).rows[0].ok).toBe(true);expect(appointments[0]).toMatchObject({patient_id:null,origin_channel:'whatsapp',phone:'+919999887766'});
     expect((await k.admin.query("SELECT count(*)::int n FROM comms.outbound_message m JOIN comms.inbound_message i ON i.id=m.managed_inbound_id WHERE i.provider_message_id=$1",[id])).rows[0].n).toBe(1);
     await Promise.all([dispatchManagedWhatsApp(k.db,managed),dispatchManagedWhatsApp(k.db,managed)]);
+    expect(sent.filter(m=>m.type==='image')).toHaveLength(1);
+    expect(sent.find(m=>m.type==='image')).toMatchObject({image:{link:'https://hospital.example/brand/logo.png',caption:expect.stringContaining('reply YES')}});
     expect(sent.filter(m=>m.text?.body?.includes('Your appointment is confirmed.'))).toHaveLength(1);
     expect((await k.admin.query("SELECT count(*)::int n FROM comms.outbound_message WHERE conversation_id=$1 AND status='sent'",[chatId])).rows[0].n).toBe(8);
+  });
+  it('does not release a queued hospital image after its tenant binding changes',async()=>{
+    await inbound('RESTART');
+    const before=sent.length,branding=managed.whatsappBranding;
+    managed.whatsappBranding=[];
+    await dispatchManagedWhatsApp(k.db,managed);
+    expect(sent).toHaveLength(before);
+    managed.whatsappBranding=branding;
+  });
+  it('blocks unapproved recipients before automation and rechecks pending sends',async()=>{
+    await k.admin.query("UPDATE comms.managed_connection SET metadata=jsonb_set(metadata,'{testRecipients}','[]'::jsonb) WHERE facility_id=$1",[site.facilityId]);
+    expect(await inbound('RESTART')).toBeUndefined();
+    await k.admin.query("UPDATE comms.managed_connection SET metadata=jsonb_set(metadata,'{testRecipients}',$2::jsonb) WHERE facility_id=$1",[site.facilityId,JSON.stringify(['+919999887766'])]);
+    expect(await inbound('RESTART')).toMatch(/^TEST CHAT — /);
+    const before=sent.length;
+    await k.admin.query("UPDATE comms.managed_connection SET metadata=jsonb_set(metadata,'{testRecipients}','[]'::jsonb) WHERE facility_id=$1",[site.facilityId]);
+    await dispatchManagedWhatsApp(k.db,managed);expect(sent).toHaveLength(before);
+    await k.admin.query("UPDATE comms.managed_connection SET metadata=jsonb_set(metadata,'{testRecipients}',$2::jsonb) WHERE facility_id=$1",[site.facilityId,JSON.stringify(['+919999887766'])]);
   });
   it('human handoff and STOP block queued automated sends and do not create bookings',async()=>{
     await inbound('RESTART');
