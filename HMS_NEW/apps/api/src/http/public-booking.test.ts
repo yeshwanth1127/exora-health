@@ -294,7 +294,7 @@ describe('managed booking operations',()=>{
     expect(welcome).toMatchObject({type:'interactive',interactive:{type:'button',header:{type:'image',image:{link:'https://hospital.example/brand/logo.png'}}}});
     expect(welcome.interactive.action.buttons.map((b:any)=>b.reply.title)).toEqual(['Book appointment','Reception','No thanks']);
     const stale=(await state()).menuToken;
-    await inbound('YES');expect((await state()).step).toBe('consent');await flush();
+    await inbound('YES');expect((await state()).step).toBe('consent');expect((await flush()).interactive.body.text).not.toContain('Reply YES');
     await tap('YES');expect((await state()).step).toBe('reminders');await flush();
     await tap('SKIP');expect((await state()).step).toBe('doctor');expect((await flush()).interactive.type).toBe('list');
     await tap('1',stale);expect((await state()).step).toBe('doctor');await flush();
@@ -307,7 +307,7 @@ describe('managed booking operations',()=>{
     await submit(randomUUID());expect((await state()).step).toBe('name');await flush();
     await submit((await state()).formToken);expect((await state()).step).toBe('confirm');await flush();
     const before=(await k.admin.query("SELECT count(*)::int n FROM booking.appointment WHERE origin_channel='whatsapp' AND tenant_id=$1",[site.tenantId])).rows[0].n;
-    await inbound('CONFIRM');expect((await state()).step).toBe('confirm');await flush();
+    await inbound('CONFIRM');expect((await state()).step).toBe('confirm');expect((await flush()).interactive.body.text).not.toContain('Reply CONFIRM');
     const id=randomUUID(),current=await state();
     await inbound({type:'interactive',interactive:{type:'button_reply',button_reply:{id:`pw.${current.menuToken}.CONFIRM`,title:'Confirm booking'}}},id);
     await inbound({type:'interactive',interactive:{type:'button_reply',button_reply:{id:`pw.${current.menuToken}.CONFIRM`,title:'Confirm booking'}}},id);

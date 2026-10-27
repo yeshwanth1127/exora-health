@@ -38,7 +38,7 @@ export function bookingUi(state:any,body:string,metadata:any,image?:string) {
   switch(state.step){
     case 'menu':options=[row('BOOK_VISIT','Book appointment'),row('FIND_DOCTOR','View doctors'),reception];break;
     case 'consent':
-      text=body.replace(/To book, reply YES[\s\S]*/, 'Choose Book appointment to allow WhatsApp messages about this booking. Promotions are not included.');
+      text=(body.includes('To book, reply YES')?body.split('To book, reply YES')[0]:'')+'Choose Book appointment to allow WhatsApp messages about this booking. Promotions are not included.';
       options=[row('YES','Book appointment'),reception,row('STOP','No thanks')];break;
     case 'reminders':text='Would you like appointment reminders? Promotions are not included.';options=[row('REMIND','With reminders'),row('SKIP','Booking only'),reception];break;
     case 'department':text='Choose a speciality.';list=true;button='Choose speciality';options=(state.choices??[]).map((d:string,i:number)=>row(String(i+1),d));if(state.hasMore)options.push(row('NEXT','More specialities'));break;
@@ -51,7 +51,7 @@ export function bookingUi(state:any,body:string,metadata:any,image?:string) {
       state.formToken=randomUUID();state.menuCommands=[];
       return {type:'flow',body:{text:(metadata.testMode?'TEST CHAT — ':'')+'Enter the patient name in the booking form. No medical records or symptoms are needed.'},action:{name:'flow',parameters:{flow_message_version:'3',flow_id:metadata.detailsFlowId,flow_token:state.formToken,flow_cta:'Enter patient details',flow_action:'navigate',mode:metadata.detailsFlowMode==='draft'?'draft':'published',flow_action_payload:{screen:'DETAILS'}}}};
     }
-    case 'confirm':text=body.replace(/Reply CONFIRM to book, or RESTART\./,'Confirm your appointment below.');options=[row('CONFIRM','Confirm booking'),restart,reception];break;
+    case 'confirm':text=`Patient: ${state.name}\n${state.doctorName}, ${new Intl.DateTimeFormat('en-IN',{timeZone:state.timezone,dateStyle:'medium',timeStyle:'short'}).format(new Date(state.selected.startsAt))}\n${state.mode==='virtual'?'Video consultation':'In person'} · ₹${(state.selected.feeMinor/100).toFixed(2)}\nConfirm your appointment below. No payment is collected in this chat.`;options=[row('CONFIRM','Confirm booking'),restart,reception];break;
     default:options=[row('BOOK','Book another visit'),reception];
   }
   if(list){
