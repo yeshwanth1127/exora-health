@@ -314,6 +314,22 @@ describe('managed booking operations',()=>{
     expect((await flush()).interactive.body.text).toContain('Your appointment is confirmed.');
     expect((await k.admin.query("SELECT count(*)::int n FROM booking.appointment WHERE origin_channel='whatsapp' AND tenant_id=$1",[site.tenantId])).rows[0].n).toBe(before+1);
   });
+  it('matches Sri Lakshmi using tapped choices and one patient-name entry without a Meta Flow',async()=>{
+    await k.admin.query("UPDATE comms.managed_connection SET metadata=metadata||'{\"bookingUI\":\"interactive\",\"detailsMode\":\"chat\"}'::jsonb WHERE facility_id=$1",[site.facilityId]);
+    await k.admin.query("UPDATE comms.outbound_message SET created_at=created_at-interval '11 minutes' WHERE conversation_id=$1",[chatId]);
+    const state=async()=>(await k.admin.query('SELECT state FROM comms.booking_chat WHERE conversation_id=$1',[chatId])).rows[0].state;
+    const tap=async(command:string)=>{const current=await state();await inbound({type:'interactive',interactive:{type:'list_reply',list_reply:{id:`pw.${current.menuToken}.${command}`,title:'Selected option'}}});await dispatchManagedWhatsApp(k.db,managed);return sent.at(-1);};
+    await inbound('HI');await dispatchManagedWhatsApp(k.db,managed);
+    expect((await state()).step).toBe('menu');expect(sent.at(-1).interactive.type).toBe('button');
+    expect((await tap('BOOK_VISIT')).interactive.type).toBe('list');
+    await tap('1');await tap('1');
+    const details=await tap('1');expect((await state()).step).toBe('name');expect(details.type).toBe('text');
+    expect(details.text.body).toContain('name');
+    await inbound('Sandbox Name Visitor');await dispatchManagedWhatsApp(k.db,managed);
+    expect((await state()).step).toBe('confirm');expect(sent.at(-1).interactive.type).toBe('button');
+    const confirmation=await tap('CONFIRM');expect(confirmation.interactive.body.text).toContain('Your appointment is confirmed.');
+    expect((await k.admin.query("SELECT count(*)::int n FROM booking.appointment WHERE origin_channel='whatsapp' AND tenant_id=$1",[site.tenantId])).rows[0].n).toBe(3);
+  });
   it('attributes only committed, origin-matched website bookings once and mirrors no personal data',async()=>{
     const id=randomUUID();await k.admin.query("INSERT INTO comms.analytics_site(id,tenant_id,facility_id,origin,kind,umami_id,enabled,created_by)VALUES($1,$2,$3,$4,'booking',$5,true,$6)",[id,site.tenantId,site.facilityId,origin,randomUUID(),admin.staffId]);
     const [slot]=await slots(),key=randomUUID(),input={...payload(slot!.slotToken),phone:'+919988770009'};

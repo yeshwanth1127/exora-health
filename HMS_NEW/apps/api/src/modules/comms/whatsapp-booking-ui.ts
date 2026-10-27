@@ -47,6 +47,7 @@ export function bookingUi(state:any,body:string,metadata:any,image?:string) {
     case 'slot':text=(state.choices?.length?'Choose an available time.':'No priced times are available in this range.')+' Your time is reserved only after confirmation.';list=true;button='Choose time';options=(state.choices??[]).map((s:any,i:number)=>row(String(i+1),new Intl.DateTimeFormat('en-IN',{timeZone:state.timezone,dateStyle:'medium',timeStyle:'short'}).format(new Date(s.startsAt)),`Consultation ₹${(s.feeMinor/100).toFixed(2)}`));if(state.hasMore)options.push(row('NEXT','More times'));options.push(row('DATE','Choose another date'));break;
     case 'date':text='Choose your appointment date.';list=true;button='Choose date';options=(state.dateChoices??[]).map((d:string)=>row(d,d));if(state.moreDates)options.push(row('NEXT','Next week'));options.push(row('TIMES','Back to times'));break;
     case 'name':{
+      if(metadata.detailsMode==='chat')return undefined;
       if(!/^\d{5,40}$/.test(metadata.detailsFlowId??''))throw Error('Native booking details form is not configured');
       state.formToken=randomUUID();state.menuCommands=[];
       return {type:'flow',body:{text:(metadata.testMode?'TEST CHAT — ':'')+'Enter the patient name in the booking form. No medical records or symptoms are needed.'},action:{name:'flow',parameters:{flow_message_version:'3',flow_id:metadata.detailsFlowId,flow_token:state.formToken,flow_cta:'Enter patient details',flow_action:'navigate',mode:metadata.detailsFlowMode==='draft'?'draft':'published',flow_action_payload:{screen:'DETAILS'}}}};

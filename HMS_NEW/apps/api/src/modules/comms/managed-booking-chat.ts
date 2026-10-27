@@ -201,7 +201,7 @@ export async function dispatchBookingChats(
             ? saved.state
             : {};
         const interactive=live.metadata.bookingUI==='interactive';
-        if(interactive && !['RESTART','BOOK','HI','HELLO','START','STOP','HUMAN'].includes(command)){
+        if(interactive && !(state.step==='name'&&live.metadata.detailsMode==='chat'&&!input.interactive_reply) && !['RESTART','BOOK','HI','HELLO','START','STOP','HUMAN'].includes(command)){
           text=resolveBookingReply(input.interactive_reply,state)??'';command=text.toUpperCase();
         }
         const pageSize=interactive?7:10;
