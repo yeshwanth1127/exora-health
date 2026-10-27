@@ -1,30 +1,55 @@
 {
-  "verified_date": "2026-10-23",
+  "verified_date": "2026-10-24",
   "project": "capture-512419",
   "key_name": "Maps Platform API Key",
-  "key_allowed_apis": ["Places API (New)"],
+  "key_allowed_apis": [
+    "Places API (New)",
+    "Maps Static API"
+  ],
   "daily_project_quotas": {
-    "AutocompletePlacesRequest": 2,
-    "GetPlaceRequest": 1,
-    "SearchTextRequest": 0,
+    "AutocompletePlacesRequest": 250,
+    "GetPlaceRequest": 25,
+    "SearchTextRequest": 125,
     "GetPhotoMediaRequest": 0,
     "LookupMediaRequest": 0,
     "LookupReviewPostsRequest": 0,
     "LookupUserContentSummaryRequest": 0,
     "SearchMediaRequest": 0,
     "SearchNearbyRequest": 0,
-    "SearchReviewPostsRequest": 0
+    "SearchReviewPostsRequest": 0,
+    "StaticMapsSignedRequests": 25,
+    "StaticMapsUnsignedRequests": 25
   },
-  "provider_confirmation": "Google Cloud confirmed all ten quota decreases; saved credential list shows Places API (New) as the only permitted API.",
-  "cost_estimate": "At most 62 autocomplete requests and 31 details requests per 31-day month: USD 0.95046 before taxes using current global first paid-tier rates of 0.00283 per autocomplete and the highest details tier of 0.025 per request, ignoring free allowances. This is an estimate, not a dollar-denominated billing cap or protection against existing charges.",
+  "provider_confirmation": "Google Cloud confirmed Text Search at 125/day, both Static Maps request types at 25/day, and the saved key restriction list shows 2 APIs.",
+  "cost_estimate": "Caps target current global monthly free allowances: autocomplete 10,000; highest details session tier 1,000; Text Search Pro 5,000; Static Maps 10,000. Application counters persist atomically and fail closed. This is not a dollar billing cap; other project usage, changed pricing, taxes or existing charges can affect the bill.",
   "budget_alert_created": false,
   "sources": [
     "https://developers.google.com/maps/billing-and-pricing/pricing",
     "https://developers.google.com/maps/billing-and-pricing/manage-costs"
   ],
   "notes": [
-    "Quotas apply across all keys in this project; API restriction applies to the named key.",
-    "Typing and pausing can consume both daily autocomplete requests quickly.",
-    "Do not raise quotas or broaden API permissions without user authorization."
-  ]
+    "Quotas apply across keys in this project; the API restriction applies to the named key.",
+    "Text Search uses only Pro fields, no pagination or per-competitor details. Nine initial area queries per report; further scans are user-triggered.",
+    "Provider observations are live and are not stored in the weekly cache. Only independent website audit findings are cached seven days.",
+    "Daily and monthly counters require persistent private storage shared by all application workers on one host.",
+    "Google Cloud also displays an account verification warning; the account administrator must resolve it."
+  ],
+  "application_caps": {
+    "autocomplete": {
+      "daily": 250,
+      "monthly": 7750
+    },
+    "details": {
+      "daily": 25,
+      "monthly": 775
+    },
+    "search": {
+      "daily": 125,
+      "monthly": 3875
+    },
+    "map": {
+      "daily": 25,
+      "monthly": 775
+    }
+  }
 }

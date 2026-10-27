@@ -1,0 +1,26 @@
+# Merge with the existing deployment: no published port, secrets stay outside Git.
+services:
+  lookup:
+    image: paperwhale-lookup:${PAPERWHALE_RELEASE:?Set the source commit}
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 100
+    mem_limit: 192m
+    cpus: 0.5
+    volumes:
+      - /opt/paperwhale-platform/private/reach/maps.env:/app/.env.maps.local:ro
+      - /opt/paperwhale-platform/private/reach/state:/state
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    networks: [website]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4500/business-lookup?mode=status', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: json-file
+      options: {max-size: 5m, max-file: "2"}

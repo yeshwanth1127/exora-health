@@ -1,7 +1,7 @@
 {
-  "version": "reach-readiness-1.0",
+  "version": "reach-readiness-1.1",
   "example": true,
-  "checkedAt": "2026-10-23T12:48:45.938773+00:00",
+  "checkedAt": "2026-10-24T08:10:24.444957+00:00",
   "profile": {
     "id": "example-clinic",
     "name": "Example Clinic",
@@ -22,7 +22,7 @@
     "finalUrl": "",
     "message": "Google did not return a linked website. The website checks could not be completed."
   },
-  "score": 80,
+  "score": 65,
   "scoreLabel": "Google profile score",
   "partial": true,
   "coverage": 40,
@@ -32,23 +32,23 @@
     "message": "Google did not return a website link. Customers may be missing a direct route to your services, booking information and contact options, which can cost website visits and enquiries.",
     "action": "Add your clinic\u2019s website to Google Business Profile, or verify the existing link if one is already set."
   },
-  "assessedChecks": 6,
-  "totalChecks": 17,
+  "assessedChecks": 7,
+  "totalChecks": 18,
   "counts": {
     "pass": 5,
-    "review": 1,
+    "review": 2,
     "unknown": 11
   },
   "categories": [
     {
       "key": "google",
       "label": "Google profile",
-      "score": 80,
+      "score": 65,
       "weight": 40,
       "assessedWeight": 40,
-      "earnedWeight": 32,
-      "assessedChecks": 6,
-      "totalChecks": 6
+      "earnedWeight": 26,
+      "assessedChecks": 7,
+      "totalChecks": 7
     },
     {
       "key": "website",
@@ -88,6 +88,7 @@
       "label": "Business name returned",
       "weight": 4,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Business name was returned by Google.",
       "fix": "",
       "sourceUrl": ""
@@ -98,6 +99,7 @@
       "label": "Business category returned",
       "weight": 4,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Primary category was returned by Google.",
       "fix": "",
       "sourceUrl": ""
@@ -106,8 +108,9 @@
       "id": "google_address",
       "category": "google",
       "label": "Public address returned",
-      "weight": 8,
+      "weight": 6,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Public address was returned by Google.",
       "fix": "",
       "sourceUrl": ""
@@ -116,8 +119,9 @@
       "id": "google_phone",
       "category": "google",
       "label": "Public phone returned",
-      "weight": 8,
+      "weight": 6,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Phone number was returned by Google.",
       "fix": "",
       "sourceUrl": ""
@@ -126,18 +130,31 @@
       "id": "google_hours",
       "category": "google",
       "label": "Opening hours returned",
-      "weight": 8,
+      "weight": 6,
       "status": "review",
+      "severity": "normal",
       "evidence": "Regular opening hours was not returned. It may be missing, hidden or unsupported; verify it with the listing owner.",
       "fix": "Review the regular opening hours in Google Business Profile.",
+      "sourceUrl": ""
+    },
+    {
+      "id": "google_website",
+      "category": "google",
+      "label": "Website linked on Google",
+      "weight": 8,
+      "status": "review",
+      "severity": "high",
+      "evidence": "Website link was not returned. It may be missing, hidden or unsupported; verify it with the listing owner.",
+      "fix": "Add your website to Google Business Profile so customers can reach your services and booking information.",
       "sourceUrl": ""
     },
     {
       "id": "google_status",
       "category": "google",
       "label": "Listing marked operational",
-      "weight": 8,
+      "weight": 6,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Google marks the business operational.",
       "fix": "",
       "sourceUrl": ""
@@ -148,6 +165,7 @@
       "label": "HTTPS connection",
       "weight": 5,
       "status": "unknown",
+      "severity": "normal",
       "evidence": "Google did not return a linked website. The website checks could not be completed.",
       "fix": "Serve the website over HTTPS with a valid certificate.",
       "sourceUrl": ""
@@ -158,6 +176,7 @@
       "label": "Homepage available",
       "weight": 5,
       "status": "unknown",
+      "severity": "normal",
       "evidence": "Google did not return a linked website. The website checks could not be completed.",
       "fix": "Check the homepage response and remove access errors for visitors.",
       "sourceUrl": ""
@@ -168,6 +187,7 @@
       "label": "Mobile viewport declared",
       "weight": 5,
       "status": "unknown",
+      "severity": "normal",
       "evidence": "Google did not return a linked website. The website checks could not be completed.",
       "fix": "Add a viewport meta tag with width=device-width.",
       "sourceUrl": ""
@@ -178,6 +198,7 @@
       "label": "Page text in HTML",
       "weight": 5,
       "status": "unknown",
+      "severity": "normal",
       "evidence": "Google did not return a linked website. The website checks could not be completed.",
       "fix": "Make key clinic information available in the page HTML and verify that visitors can read it.",
       "sourceUrl": ""
@@ -188,6 +209,7 @@
       "label": "Page title",
       "weight": 5,
       "status": "unknown",
+      "severity": "normal",
       "evidence": "Google did not return a linked website. The website checks could not be completed.",
       "fix": "Add a descriptive title with the clinic name and location.",
       "sourceUrl": ""
@@ -198,6 +220,7 @@
       "label": "Search description",
       "weight": 5,
       "status": "unknown",
+      "severity": "normal",
       "evidence": "Google did not return a linked website. The website checks could not be completed.",
       "fix": "Add a concise meta description that explains the clinic and its services.",
       "sourceUrl": ""
@@ -208,6 +231,7 @@
       "label": "Main page heading",
       "weight": 5,
       "status": "unknown",
+      "severity": "normal",
       "evidence": "Google did not return a linked website. The website checks could not be completed.",
       "fix": "Add a clear H1 describing this clinic or its main service.",
       "sourceUrl": ""
@@ -218,6 +242,7 @@
       "label": "No explicit indexing block",
       "weight": 5,
       "status": "unknown",
+      "severity": "normal",
       "evidence": "Google did not return a linked website. The website checks could not be completed.",
       "fix": "Review robots rules, noindex meta tags and X-Robots-Tag headers.",
       "sourceUrl": ""
@@ -228,6 +253,7 @@
       "label": "Direct call or WhatsApp link",
       "weight": 8,
       "status": "unknown",
+      "severity": "normal",
       "evidence": "Google did not return a linked website. The website checks could not be completed.",
       "fix": "Add a visible tap-to-call or WhatsApp link.",
       "sourceUrl": ""
@@ -235,35 +261,49 @@
     {
       "id": "booking",
       "category": "contact",
-      "label": "Booking or enquiry link",
+      "label": "Booking or enquiry destination",
       "weight": 6,
       "status": "unknown",
+      "severity": "normal",
       "evidence": "Google did not return a linked website. The website checks could not be completed.",
-      "fix": "Add a clearly labelled booking, appointment or reservation link.",
+      "fix": "Add a clearly labelled booking or enquiry link and make sure its destination loads.",
       "sourceUrl": ""
     },
     {
       "id": "contact",
       "category": "contact",
-      "label": "Contact route",
+      "label": "Contact destination",
       "weight": 6,
       "status": "unknown",
+      "severity": "normal",
       "evidence": "Google did not return a linked website. The website checks could not be completed.",
-      "fix": "Add a clearly labelled contact page or email link.",
+      "fix": "Add a contact page that loads, or a valid email link.",
       "sourceUrl": ""
     }
   ],
   "priorities": [
     {
+      "id": "google_website",
+      "category": "google",
+      "label": "Website linked on Google",
+      "weight": 8,
+      "status": "review",
+      "severity": "high",
+      "evidence": "Website link was not returned. It may be missing, hidden or unsupported; verify it with the listing owner.",
+      "fix": "Add your website to Google Business Profile so customers can reach your services and booking information.",
+      "sourceUrl": ""
+    },
+    {
       "id": "google_hours",
       "category": "google",
       "label": "Opening hours returned",
-      "weight": 8,
+      "weight": 6,
       "status": "review",
+      "severity": "normal",
       "evidence": "Regular opening hours was not returned. It may be missing, hidden or unsupported; verify it with the listing owner.",
       "fix": "Review the regular opening hours in Google Business Profile.",
       "sourceUrl": ""
     }
   ],
-  "methodology": "A weighted checklist of public profile fields (40%), website basics (20%), search signals (20%) and contact paths (20%). Unassessed checks are excluded; missing public fields lower the observed-profile score, but do not prove those details are absent from the business. This does not measure traffic, Google rank, revenue, accessibility compliance or completed bookings."
+  "methodology": "A weighted checklist of public profile fields including the website link (40%), website basics (20%), search signals (20%) and contact paths (20%). Link checks inspect public destinations without submitting forms. Unassessed checks are excluded; missing public fields lower the observed-profile score, but do not prove those details are absent from the business. This does not measure traffic, Google rank, revenue, accessibility compliance or completed bookings."
 }

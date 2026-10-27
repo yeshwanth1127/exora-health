@@ -9,10 +9,11 @@ import { ProgressDonut } from "../components/arc-report/progress-donut/progress-
 import { BottomSheet } from "../components/arc-report/bottom-sheet/bottom-sheet";
 import { Popover, PopoverTrigger, PopoverContent } from "../components/arc-report/popover/popover";
 import type { ReactNode } from "react";
-import HomeClosingCta from "../components/home-closing-cta";
+import PracticeCta from "../components/practice-cta";
 import { ClinicWidget } from "./clinic-widget";
 import "../components/arc-business/scope.css";
 import LocalRankMap, { type RankPreview } from "./local-rank-map";
+import LiveRankExplorer from "./live-rank-explorer";
 import "./report.css";
 
 const labels = { pass: "Passed", review: "Needs attention", unknown: "Unassessed" };
@@ -20,6 +21,7 @@ const issueLabels: Record<string, string> = {
   google_name: "Business name not returned", google_category: "Business category not returned",
   google_address: "Public address not returned", google_phone: "Public phone not returned",
   google_hours: "Opening hours not returned", google_status: "Listing marked closed",
+  google_website: "Website not linked on Google",
   https: "Website does not use HTTPS", available: "Homepage needs review",
   viewport: "No mobile viewport found", content: "Little readable text in homepage HTML",
   title: "No page title found", description: "No search description found",
@@ -37,7 +39,7 @@ function EvidenceRow({ item, example }: { item: ReachCheck; example: boolean }) 
     <details>
       <summary>
         <span className="reach-check-icon"><StatusIcon status={item.status} /></span>
-        <span className="reach-check-copy"><small className="reach-check-source">{item.category === "google" ? "Google profile" : "Website"}</small><strong>{item.status === "review" ? issueLabels[item.id] || item.label : item.label}</strong><span>{item.status === "review" ? item.fix : item.status === "unknown" ? "Not checked" : evidence}</span></span>
+        <span className="reach-check-copy"><small className="reach-check-source">{item.category === "google" ? "Google profile" : "Website"}</small><strong>{item.status === "review" ? item.issueTitle || issueLabels[item.id] || item.label : item.label}</strong><span>{item.status === "review" ? item.fix : item.status === "unknown" ? "Not checked" : evidence}</span></span>
         <ChevronDown className="reach-check-chevron" size={16} aria-hidden="true" />
       </summary>
       <div className="reach-check-detail">
@@ -51,7 +53,7 @@ function EvidenceRow({ item, example }: { item: ReachCheck; example: boolean }) 
 type IssueScope = "all" | "google" | "website";
 const scopeLabels = { all: "All sources", google: "Google profile", website: "Website" };
 const inScope = (item: ReachCheck, scope: IssueScope) => scope === "all" || (scope === "google" ? item.category === "google" : item.category !== "google");
-const byImpact = (a: ReachCheck, b: ReachCheck) => b.weight - a.weight;
+const byImpact = (a: ReachCheck, b: ReachCheck) => Number(b.severity === "high") - Number(a.severity === "high") || b.weight - a.weight;
 function IssueScopes({ scope, onChange, checks }: { scope: IssueScope; onChange: (scope: IssueScope) => void; checks: ReachCheck[] }) {
   return <div className="reach-result-filters" role="group" aria-label="Filter checks by source">{(["all", "google", "website"] as IssueScope[]).map(value => <button key={value} type="button" aria-pressed={scope === value} onClick={() => onChange(value)}>{scopeLabels[value]}<span>{checks.filter(check => inScope(check, value)).length}</span></button>)}</div>;
 }
@@ -68,7 +70,7 @@ function ChecksSheet({ report, trigger, initialStatus = "review", initialScope =
   </BottomSheet>;
 }
 function ScoreHelp({ report }: { report: ReachReport }) {
-  return <div className="reach-score-caption">Reach readiness <Popover><PopoverTrigger className="reach-help-trigger" aria-label="How this score is calculated"><CircleHelp size={16} aria-hidden="true" /></PopoverTrigger><PopoverContent className="business-arc-scope reach-score-help" aria-label="How this score is calculated"><h2>How this score is calculated</h2><p>{report.methodology}</p><p>Unassessed checks are excluded. {report.coverage}% of the weighted checklist was checked.</p><p>Actual Google indexing is not verified.</p><p className="reach-help-date">Rubric {report.version} · Checked {new Date(report.checkedAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" })} IST</p></PopoverContent></Popover></div>;
+  return <div className="reach-score-caption">{report.scoreLabel.startsWith("Google profile") ? "Google profile completeness" : "Reach readiness"} <Popover><PopoverTrigger className="reach-help-trigger" aria-label="How this score is calculated"><CircleHelp size={16} aria-hidden="true" /></PopoverTrigger><PopoverContent className="business-arc-scope reach-score-help" aria-label="How this score is calculated"><h2>How this score is calculated</h2><p>{report.methodology}</p><p>Unassessed checks are excluded. {report.coverage}% of the weighted checklist was checked.</p><p>Actual Google indexing is not verified.</p>{report.website.checkedAt && <p>Website checked {new Date(report.website.checkedAt).toLocaleString("en-GB", { timeZone: "Asia/Kolkata" })} IST. {report.website.cacheStatus === "hit" ? "Reused from the shared seven-day website audit cache." : "Live website audit."} Google profile and area observations are fetched live.</p>}<p className="reach-help-date">Rubric {report.version} · Checked {new Date(report.checkedAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" })} IST</p></PopoverContent></Popover></div>;
 }
 
 export default function BusinessReport({ initialReport, rankPreview }: { initialReport?: ReachReport; rankPreview?: RankPreview }) {
@@ -110,14 +112,13 @@ export default function BusinessReport({ initialReport, rankPreview }: { initial
       </aside>}
       <section className="reach-total" aria-label="Overall reach readiness">
         <ScoreHelp report={report} />
-        {report.score !== null ? <Gauge variant="scale" value={report.score} label={report.scoreLabel} detail={`${report.assessedChecks} checks completed`} thresholds={[{ from: 0, tone: "danger", label: "Needs work" }, { from: 50, tone: "warning", label: "Room to improve" }, { from: 80, tone: "success", label: "Good foundations" }]} /> : <p className="reach-score-unknown">Score unavailable</p>}
-        <p className="reach-total-note">How easy is it to find your business and take the next step?</p>
+        {report.score !== null ? <Gauge variant="scale" value={report.score} label={report.scoreLabel} detail={`${report.assessedChecks} of ${report.totalChecks} checks completed`} thresholds={[{ from: 0, tone: "danger", label: "Needs work" }, { from: 50, tone: "warning", label: "Room to improve" }, { from: 80, tone: "success", label: "Good foundations" }]} /> : <p className="reach-score-unknown">Score unavailable</p>}
+        {report.partial ? <div className="reach-audit-coverage" role="note"><strong>Partial audit · {report.coverage}% of the checklist assessed</strong><p>{report.website.state === "not_linked" ? "Google returned no website link, so the 11 website checks could not run. This is a Google profile score, not a complete reach assessment." : report.website.state !== "checked" ? `${report.website.message} The score covers the checks we could assess only.` : "Unavailable checks are excluded from this score. Review them before treating this as a complete assessment."}</p></div> : <p className="reach-total-note">How easy is it to find your business and take the next step?</p>}
         {report.partial && <ChecksSheet report={report} initialStatus="unknown" trigger={<button className="reach-unassessed-link" type="button"><CircleDashed size={14} aria-hidden="true" />{report.counts.unknown} checks unavailable <span>See why<ArrowUpRight size={12} aria-hidden="true" /></span></button>} />}
       </section>
       <section className="reach-category-progress" aria-label="Category scores">
         {report.categories.map(category => <ProgressDonut key={category.key} value={category.score} label={category.label} detail={category.score === null ? "Not checked" : `${category.assessedChecks}/${category.totalChecks} checks completed`} />)}
       </section>
-      {rankPreview && <LocalRankMap preview={rankPreview} example={report.example} />}
       <div className="reach-findings">
         <section className="reach-evidence" aria-labelledby="reach-evidence-title">
           <div className="reach-evidence-heading"><div><h2 id="reach-evidence-title">{issues.length ? "What to improve" : "Your assessed checks look good"}</h2><p>{issues.length > 4 ? `Top 4 of ${issues.length} issues. Highest impact first.` : "Highest impact first. Expand a row for the evidence."}</p></div><ChecksSheet report={report} initialScope={scope} trigger={<button type="button">Read all</button>} /></div>
@@ -128,9 +129,9 @@ export default function BusinessReport({ initialReport, rankPreview }: { initial
         </section>
         <ClinicWidget profile={profile} preview={report.example} />
       </div>
-
-
+      {rankPreview && <LocalRankMap preview={rankPreview} />}
+      {report.ranking && <LiveRankExplorer scan={report.ranking} profile={profile} />}
     </div>}
-    {report && profile && <HomeClosingCta demoOnly />}
+    {report && profile && <PracticeCta text={`See how ${BRAND_NAME} fits your patients, your team and your everyday workflow.`} className="max-w-240 mx-auto mt-16 rounded-2xl" />}
   </main>;
 }

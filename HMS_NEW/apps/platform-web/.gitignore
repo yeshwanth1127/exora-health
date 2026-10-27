@@ -5,3 +5,5 @@ artifacts/
 .playwright-cli/
 .env*.local
 __pycache__/
+
+.state/

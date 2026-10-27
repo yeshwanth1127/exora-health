@@ -77,12 +77,13 @@ class ExportHandler(SimpleHTTPRequestHandler):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, default=4488)
+    parser.add_argument('--host', default='127.0.0.1')
     parser.add_argument('--api-only', action='store_true')
     args = parser.parse_args()
     output = Path(__file__).resolve().parent / 'dist'
     if not args.api_only and not (output / 'index.html').exists():
         raise SystemExit('Run npm run build:public first.')
-    server = PreviewServer(('127.0.0.1', args.port), partial(ExportHandler, directory=str(output)))
+    server = PreviewServer((args.host, args.port), partial(ExportHandler, directory=str(output)))
     server.api_only = args.api_only
     print(f'Website: http://127.0.0.1:{args.port}', flush=True)
     server.serve_forever()

@@ -1,6 +1,8 @@
+import type { RankPoint } from "./local-ranking";
 import type { ReachReport } from "./reach-report";
 export type PublicBusiness = {
   id: string; name: string; address: string; category: string;
+  primaryType?: string; types?: string[];
   mapsUrl: string; website: string; phone: string; hours: string[];
   rating?: number | null; reviewCount?: number | null; businessStatus: string;
   location?: { latitude: number; longitude: number } | null;
@@ -13,5 +15,5 @@ export async function businessLookup(params: Record<string, string>, signal?: Ab
   if (!response.headers.get("content-type")?.includes("application/json")) throw new Error("Google lookup is not connected on this deployment.");
   const data = await response.json();
   if (!response.ok) throw new Error(data.error?.message || "Google lookup is unavailable. Try again later.");
-  return data as { report?: ReachReport; predictions?: { id: string; label: string }[]; configured?: boolean; places?: PublicBusiness[]; place?: PublicBusiness };
+  return data as { report?: ReachReport; points?: RankPoint[]; predictions?: { id: string; label: string }[]; configured?: boolean; places?: PublicBusiness[]; place?: PublicBusiness };
 }

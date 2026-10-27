@@ -1,3 +1,4 @@
+import RegionSwitcher from "../components/regional/region-switcher";
 import SiteImage from "../components/site-image";
 import { BRAND_NAME } from "../../lib/brand";
 import CaptureBrand from "../components/brand";
@@ -130,7 +131,7 @@ export default function Page() {
                       <a className="h-8.5 flex max-h-9 items-center col-start-1 text-foreground cursor-pointer" data-ditto-id="style-site-home" data-component="link" aria-label={(BRAND_NAME + " – Home")} href="/">
                         <CaptureBrand />
                       </a>
-                    </div>
+                    </div><div className="col-start-3 justify-self-end"><RegionSwitcher/></div>
                   </div>
                 </nav>
               </div>

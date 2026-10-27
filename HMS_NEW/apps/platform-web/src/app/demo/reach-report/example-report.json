@@ -1,7 +1,7 @@
 {
-  "version": "reach-readiness-1.0",
+  "version": "reach-readiness-1.1",
   "example": true,
-  "checkedAt": "2026-10-23T12:48:45.938410+00:00",
+  "checkedAt": "2026-10-24T08:10:24.444310+00:00",
   "profile": {
     "id": "example-clinic",
     "name": "Example Clinic",
@@ -22,15 +22,15 @@
     "finalUrl": "https://example.invalid/",
     "message": "Fictional HTML fixture, not a live website."
   },
-  "score": 76,
+  "score": 78,
   "scoreLabel": "Reach readiness score",
   "partial": false,
   "coverage": 100,
   "websiteIssue": null,
-  "assessedChecks": 17,
-  "totalChecks": 17,
+  "assessedChecks": 18,
+  "totalChecks": 18,
   "counts": {
-    "pass": 13,
+    "pass": 14,
     "review": 4,
     "unknown": 0
   },
@@ -38,12 +38,12 @@
     {
       "key": "google",
       "label": "Google profile",
-      "score": 80,
+      "score": 85,
       "weight": 40,
       "assessedWeight": 40,
-      "earnedWeight": 32,
-      "assessedChecks": 6,
-      "totalChecks": 6
+      "earnedWeight": 34,
+      "assessedChecks": 7,
+      "totalChecks": 7
     },
     {
       "key": "website",
@@ -83,6 +83,7 @@
       "label": "Business name returned",
       "weight": 4,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Business name was returned by Google.",
       "fix": "",
       "sourceUrl": ""
@@ -93,6 +94,7 @@
       "label": "Business category returned",
       "weight": 4,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Primary category was returned by Google.",
       "fix": "",
       "sourceUrl": ""
@@ -101,8 +103,9 @@
       "id": "google_address",
       "category": "google",
       "label": "Public address returned",
-      "weight": 8,
+      "weight": 6,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Public address was returned by Google.",
       "fix": "",
       "sourceUrl": ""
@@ -111,8 +114,9 @@
       "id": "google_phone",
       "category": "google",
       "label": "Public phone returned",
-      "weight": 8,
+      "weight": 6,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Phone number was returned by Google.",
       "fix": "",
       "sourceUrl": ""
@@ -121,18 +125,31 @@
       "id": "google_hours",
       "category": "google",
       "label": "Opening hours returned",
-      "weight": 8,
+      "weight": 6,
       "status": "review",
+      "severity": "normal",
       "evidence": "Regular opening hours was not returned. It may be missing, hidden or unsupported; verify it with the listing owner.",
       "fix": "Review the regular opening hours in Google Business Profile.",
+      "sourceUrl": ""
+    },
+    {
+      "id": "google_website",
+      "category": "google",
+      "label": "Website linked on Google",
+      "weight": 8,
+      "status": "pass",
+      "severity": "normal",
+      "evidence": "Website link was returned by Google.",
+      "fix": "",
       "sourceUrl": ""
     },
     {
       "id": "google_status",
       "category": "google",
       "label": "Listing marked operational",
-      "weight": 8,
+      "weight": 6,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Google marks the business operational.",
       "fix": "",
       "sourceUrl": ""
@@ -143,6 +160,7 @@
       "label": "HTTPS connection",
       "weight": 5,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Final homepage connection uses HTTPS.",
       "fix": "",
       "sourceUrl": "https://example.invalid/"
@@ -153,6 +171,7 @@
       "label": "Homepage available",
       "weight": 5,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Homepage returned HTTP 200.",
       "fix": "",
       "sourceUrl": "https://example.invalid/"
@@ -163,6 +182,7 @@
       "label": "Mobile viewport declared",
       "weight": 5,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Mobile viewport declaration found.",
       "fix": "",
       "sourceUrl": "https://example.invalid/"
@@ -173,6 +193,7 @@
       "label": "Page text in HTML",
       "weight": 5,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Retrieved HTML contains 58 non-script text words. Rendering and visual visibility are not inspected.",
       "fix": "",
       "sourceUrl": "https://example.invalid/"
@@ -183,6 +204,7 @@
       "label": "Page title",
       "weight": 5,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Title: Example Clinic \u00b7 Care close to home",
       "fix": "",
       "sourceUrl": "https://example.invalid/"
@@ -193,6 +215,7 @@
       "label": "Search description",
       "weight": 5,
       "status": "review",
+      "severity": "normal",
       "evidence": "No non-empty meta description found in the retrieved HTML.",
       "fix": "Add a concise meta description that explains the clinic and its services.",
       "sourceUrl": "https://example.invalid/"
@@ -203,6 +226,7 @@
       "label": "Main page heading",
       "weight": 5,
       "status": "pass",
+      "severity": "normal",
       "evidence": "H1: Care close to home",
       "fix": "",
       "sourceUrl": "https://example.invalid/"
@@ -213,6 +237,7 @@
       "label": "No explicit indexing block",
       "weight": 5,
       "status": "review",
+      "severity": "high",
       "evidence": "Explicit noindex instruction found.",
       "fix": "Review robots rules, noindex meta tags and X-Robots-Tag headers.",
       "sourceUrl": "https://example.invalid/"
@@ -223,6 +248,7 @@
       "label": "Direct call or WhatsApp link",
       "weight": 8,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Tap-to-call or WhatsApp link found.",
       "fix": "",
       "sourceUrl": "https://example.invalid/"
@@ -230,19 +256,21 @@
     {
       "id": "booking",
       "category": "contact",
-      "label": "Booking or enquiry link",
+      "label": "Booking or enquiry destination",
       "weight": 6,
       "status": "review",
+      "severity": "normal",
       "evidence": "No recognisable booking or enquiry link found in the retrieved HTML.",
-      "fix": "Add a clearly labelled booking, appointment or reservation link.",
+      "fix": "Add a clearly labelled booking or enquiry link and make sure its destination loads.",
       "sourceUrl": "https://example.invalid/"
     },
     {
       "id": "contact",
       "category": "contact",
-      "label": "Contact route",
+      "label": "Contact destination",
       "weight": 6,
       "status": "pass",
+      "severity": "normal",
       "evidence": "Contact or email link found; its destination has not been tested.",
       "fix": "",
       "sourceUrl": "https://example.invalid/"
@@ -250,11 +278,23 @@
   ],
   "priorities": [
     {
+      "id": "indexing",
+      "category": "search",
+      "label": "No explicit indexing block",
+      "weight": 5,
+      "status": "review",
+      "severity": "high",
+      "evidence": "Explicit noindex instruction found.",
+      "fix": "Review robots rules, noindex meta tags and X-Robots-Tag headers.",
+      "sourceUrl": "https://example.invalid/"
+    },
+    {
       "id": "google_hours",
       "category": "google",
       "label": "Opening hours returned",
-      "weight": 8,
+      "weight": 6,
       "status": "review",
+      "severity": "normal",
       "evidence": "Regular opening hours was not returned. It may be missing, hidden or unsupported; verify it with the listing owner.",
       "fix": "Review the regular opening hours in Google Business Profile.",
       "sourceUrl": ""
@@ -262,11 +302,12 @@
     {
       "id": "booking",
       "category": "contact",
-      "label": "Booking or enquiry link",
+      "label": "Booking or enquiry destination",
       "weight": 6,
       "status": "review",
+      "severity": "normal",
       "evidence": "No recognisable booking or enquiry link found in the retrieved HTML.",
-      "fix": "Add a clearly labelled booking, appointment or reservation link.",
+      "fix": "Add a clearly labelled booking or enquiry link and make sure its destination loads.",
       "sourceUrl": "https://example.invalid/"
     },
     {
@@ -275,20 +316,11 @@
       "label": "Search description",
       "weight": 5,
       "status": "review",
+      "severity": "normal",
       "evidence": "No non-empty meta description found in the retrieved HTML.",
       "fix": "Add a concise meta description that explains the clinic and its services.",
       "sourceUrl": "https://example.invalid/"
-    },
-    {
-      "id": "indexing",
-      "category": "search",
-      "label": "No explicit indexing block",
-      "weight": 5,
-      "status": "review",
-      "evidence": "Explicit noindex instruction found.",
-      "fix": "Review robots rules, noindex meta tags and X-Robots-Tag headers.",
-      "sourceUrl": "https://example.invalid/"
     }
   ],
-  "methodology": "A weighted checklist of public profile fields (40%), website basics (20%), search signals (20%) and contact paths (20%). Unassessed checks are excluded; missing public fields lower the observed-profile score, but do not prove those details are absent from the business. This does not measure traffic, Google rank, revenue, accessibility compliance or completed bookings."
+  "methodology": "A weighted checklist of public profile fields including the website link (40%), website basics (20%), search signals (20%) and contact paths (20%). Link checks inspect public destinations without submitting forms. Unassessed checks are excluded; missing public fields lower the observed-profile score, but do not prove those details are absent from the business. This does not measure traffic, Google rank, revenue, accessibility compliance or completed bookings."
 }

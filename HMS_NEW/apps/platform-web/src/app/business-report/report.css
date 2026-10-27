@@ -85,3 +85,5 @@
 .reach-website-priority details { margin-top:7px; color:#997646; font-size:11px; }
 .reach-website-priority summary { cursor:pointer; width:fit-content; }
 .reach-website-priority a { display:inline-flex; align-items:center; gap:6px; color:#997646; font-size:11px; margin-top:10px; text-underline-offset:4px; }
+
+.reach-audit-coverage { max-width:560px; margin:18px auto 0; text-align:center; font-size:12px; line-height:1.65; color:#73736f; }.reach-audit-coverage strong { display:block; font-weight:500; color:#41413e; }.reach-audit-coverage p { margin:5px 0 0; }

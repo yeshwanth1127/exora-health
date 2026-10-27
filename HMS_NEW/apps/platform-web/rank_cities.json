@@ -1,0 +1,752 @@
+{
+  "bengaluru": {
+    "name": "Bengaluru",
+    "aliases": [
+      "Bangalore",
+      "Bengaluru"
+    ],
+    "country": "IN",
+    "language": "en",
+    "bounds": [
+      12.72,
+      77.36,
+      13.2,
+      77.9
+    ],
+    "radiusMetres": 5000,
+    "points": [
+      {
+        "id": "puttenahalli",
+        "label": "Puttenahalli",
+        "latitude": 13.11486,
+        "longitude": 77.5795
+      },
+      {
+        "id": "kogilu",
+        "label": "Kogilu",
+        "latitude": 13.10791,
+        "longitude": 77.6279
+      },
+      {
+        "id": "yelahanka",
+        "label": "Yelahanka",
+        "latitude": 13.11367,
+        "longitude": 77.601
+      },
+      {
+        "id": "doddabettahalli",
+        "label": "Doddabettahalli",
+        "latitude": 13.10051,
+        "longitude": 77.56042
+      },
+      {
+        "id": "sampigehalli",
+        "label": "Sampigehalli",
+        "latitude": 13.08383,
+        "longitude": 77.6259
+      },
+      {
+        "id": "judicial-layout",
+        "label": "Judicial Layout",
+        "latitude": 13.08702,
+        "longitude": 77.58791
+      },
+      {
+        "id": "abbigere",
+        "label": "Abbigere",
+        "latitude": 13.07847,
+        "longitude": 77.5202
+      },
+      {
+        "id": "singapura",
+        "label": "Singapura",
+        "latitude": 13.08129,
+        "longitude": 77.5461
+      },
+      {
+        "id": "thindlu",
+        "label": "Thindlu",
+        "latitude": 13.0773,
+        "longitude": 77.57037
+      },
+      {
+        "id": "jakkur-layout",
+        "label": "Jakkur Layout",
+        "latitude": 13.06762,
+        "longitude": 77.5946
+      },
+      {
+        "id": "arkavathy-layout",
+        "label": "Arkavathy Layout",
+        "latitude": 13.06881,
+        "longitude": 77.61434
+      },
+      {
+        "id": "sahakaranagara",
+        "label": "Sahakaranagara",
+        "latitude": 13.05209,
+        "longitude": 77.58515
+      },
+      {
+        "id": "kammagondanahalli",
+        "label": "Kammagondanahalli",
+        "latitude": 13.06534,
+        "longitude": 77.53347
+      },
+      {
+        "id": "kothanur",
+        "label": "Kothanur",
+        "latitude": 13.06397,
+        "longitude": 77.64437
+      },
+      {
+        "id": "hanumanthanagar",
+        "label": "Hanumanthanagar",
+        "latitude": 13.05391,
+        "longitude": 77.6671
+      },
+      {
+        "id": "bagalagunte",
+        "label": "Bagalagunte",
+        "latitude": 13.05592,
+        "longitude": 77.50555
+      },
+      {
+        "id": "thanisandra",
+        "label": "Thanisandra",
+        "latitude": 13.05283,
+        "longitude": 77.63212
+      },
+      {
+        "id": "kempapura",
+        "label": "Kempapura",
+        "latitude": 13.04717,
+        "longitude": 77.6106
+      },
+      {
+        "id": "nagashettyhalli",
+        "label": "Nagashettyhalli",
+        "latitude": 13.04795,
+        "longitude": 77.57302
+      },
+      {
+        "id": "jalahalli",
+        "label": "Jalahalli",
+        "latitude": 13.04949,
+        "longitude": 77.54899
+      },
+      {
+        "id": "nagasandra",
+        "label": "Nagasandra",
+        "latitude": 13.03625,
+        "longitude": 77.4969
+      },
+      {
+        "id": "agara",
+        "label": "Agara",
+        "latitude": 13.04318,
+        "longitude": 77.65663
+      },
+      {
+        "id": "hebbal",
+        "label": "Hebbal",
+        "latitude": 13.03065,
+        "longitude": 77.59288
+      },
+      {
+        "id": "kanaka-nagar",
+        "label": "Kanaka Nagar",
+        "latitude": 13.0337,
+        "longitude": 77.61038
+      },
+      {
+        "id": "kalkere",
+        "label": "Kalkere",
+        "latitude": 13.03433,
+        "longitude": 77.67707
+      },
+      {
+        "id": "mathikere",
+        "label": "Mathikere",
+        "latitude": 13.02996,
+        "longitude": 77.55808
+      },
+      {
+        "id": "peenya",
+        "label": "Peenya",
+        "latitude": 13.03064,
+        "longitude": 77.53231
+      },
+      {
+        "id": "hbr-layout",
+        "label": "HBR Layout",
+        "latitude": 13.03432,
+        "longitude": 77.631
+      },
+      {
+        "id": "geddalahalli",
+        "label": "Geddalahalli",
+        "latitude": 13.03678,
+        "longitude": 77.57797
+      },
+      {
+        "id": "shivapura",
+        "label": "Shivapura",
+        "latitude": 13.02226,
+        "longitude": 77.50621
+      },
+      {
+        "id": "bhattarahalli",
+        "label": "Bhattarahalli",
+        "latitude": 13.02024,
+        "longitude": 77.71427
+      },
+      {
+        "id": "kaval-byrasandra",
+        "label": "Kaval Byrasandra",
+        "latitude": 13.01778,
+        "longitude": 77.60923
+      },
+      {
+        "id": "t-c-palya",
+        "label": "T.C Palya",
+        "latitude": 13.01429,
+        "longitude": 77.69238
+      },
+      {
+        "id": "banaswadi",
+        "label": "Banaswadi",
+        "latitude": 13.01945,
+        "longitude": 77.65362
+      },
+      {
+        "id": "hrbr-layout",
+        "label": "HRBR Layout",
+        "latitude": 13.01564,
+        "longitude": 77.63508
+      },
+      {
+        "id": "mahalakshmi-layout",
+        "label": "Mahalakshmi Layout",
+        "latitude": 13.01256,
+        "longitude": 77.54176
+      },
+      {
+        "id": "sadashivanagar",
+        "label": "Sadashivanagar",
+        "latitude": 13.01299,
+        "longitude": 77.57927
+      },
+      {
+        "id": "laggere",
+        "label": "Laggere",
+        "latitude": 13.01334,
+        "longitude": 77.51945
+      },
+      {
+        "id": "andrahalli",
+        "label": "Andrahalli",
+        "latitude": 13.0179,
+        "longitude": 77.48385
+      },
+      {
+        "id": "dooravaninagar",
+        "label": "Dooravaninagar",
+        "latitude": 13.01006,
+        "longitude": 77.6714
+      },
+      {
+        "id": "malleshwaram",
+        "label": "Malleshwaram",
+        "latitude": 13.00531,
+        "longitude": 77.56209
+      },
+      {
+        "id": "ramaswamy-palya",
+        "label": "Ramaswamy Palya",
+        "latitude": 13.00598,
+        "longitude": 77.60202
+      },
+      {
+        "id": "devasandra",
+        "label": "Devasandra",
+        "latitude": 13.00461,
+        "longitude": 77.70634
+      },
+      {
+        "id": "belathur",
+        "label": "Belathur",
+        "latitude": 12.99891,
+        "longitude": 77.7438
+      },
+      {
+        "id": "kadugodi",
+        "label": "Kadugodi",
+        "latitude": 12.99428,
+        "longitude": 77.76475
+      },
+      {
+        "id": "baiyyappanahalli",
+        "label": "Baiyyappanahalli",
+        "latitude": 12.99877,
+        "longitude": 77.65137
+      },
+      {
+        "id": "cox-town",
+        "label": "Cox Town",
+        "latitude": 12.99856,
+        "longitude": 77.62382
+      },
+      {
+        "id": "sunkadakatte",
+        "label": "Sunkadakatte",
+        "latitude": 12.9993,
+        "longitude": 77.50885
+      },
+      {
+        "id": "basaveshwaranagar",
+        "label": "Basaveshwaranagar",
+        "latitude": 12.99468,
+        "longitude": 77.53965
+      },
+      {
+        "id": "vasanth-nagar",
+        "label": "Vasanth Nagar",
+        "latitude": 12.99274,
+        "longitude": 77.59588
+      },
+      {
+        "id": "hoodi",
+        "label": "Hoodi",
+        "latitude": 12.99496,
+        "longitude": 77.71956
+      },
+      {
+        "id": "mahadevapura",
+        "label": "Mahadevapura",
+        "latitude": 12.99313,
+        "longitude": 77.6881
+      },
+      {
+        "id": "herohalli",
+        "label": "Herohalli",
+        "latitude": 12.99602,
+        "longitude": 77.48665
+      },
+      {
+        "id": "rajajinagar",
+        "label": "Rajajinagar",
+        "latitude": 12.9863,
+        "longitude": 77.5595
+      },
+      {
+        "id": "c-v-raman-nagar",
+        "label": "C V Raman Nagar",
+        "latitude": 12.98621,
+        "longitude": 77.66531
+      },
+      {
+        "id": "kamakshipalya",
+        "label": "Kamakshipalya",
+        "latitude": 12.98428,
+        "longitude": 77.52151
+      },
+      {
+        "id": "channasandra",
+        "label": "Channasandra",
+        "latitude": 12.98167,
+        "longitude": 77.76841
+      },
+      {
+        "id": "bharath-nagara",
+        "label": "Bharath Nagara",
+        "latitude": 12.97882,
+        "longitude": 77.48413
+      },
+      {
+        "id": "srigandhakavalu",
+        "label": "Srigandhakavalu",
+        "latitude": 12.97656,
+        "longitude": 77.50223
+      },
+      {
+        "id": "pattanduru-agrahara",
+        "label": "Pattanduru Agrahara",
+        "latitude": 12.97859,
+        "longitude": 77.74025
+      },
+      {
+        "id": "halasuru",
+        "label": "Halasuru",
+        "latitude": 12.98225,
+        "longitude": 77.61924
+      },
+      {
+        "id": "gandhinagar",
+        "label": "Gandhinagar",
+        "latitude": 12.9771,
+        "longitude": 77.5746
+      },
+      {
+        "id": "indiranagar",
+        "label": "Indiranagar",
+        "latitude": 12.97293,
+        "longitude": 77.64154
+      },
+      {
+        "id": "doddanekundi",
+        "label": "Doddanekundi",
+        "latitude": 12.97352,
+        "longitude": 77.69568
+      },
+      {
+        "id": "vignananagara",
+        "label": "Vignananagara",
+        "latitude": 12.9693,
+        "longitude": 77.67846
+      },
+      {
+        "id": "whitefield",
+        "label": "Whitefield",
+        "latitude": 12.9643,
+        "longitude": 77.75468
+      },
+      {
+        "id": "hosahalli",
+        "label": "Hosahalli",
+        "latitude": 12.97001,
+        "longitude": 77.54323
+      },
+      {
+        "id": "jeevan-bhima-nagar",
+        "label": "Jeevan Bhima Nagar",
+        "latitude": 12.96568,
+        "longitude": 77.6577
+      },
+      {
+        "id": "sampangirama-nagar",
+        "label": "Sampangirama Nagar",
+        "latitude": 12.9718,
+        "longitude": 77.58949
+      },
+      {
+        "id": "nagarabhavi",
+        "label": "Nagarabhavi",
+        "latitude": 12.9671,
+        "longitude": 77.5142
+      },
+      {
+        "id": "aecs-layout",
+        "label": "AECS Layout",
+        "latitude": 12.97257,
+        "longitude": 77.71021
+      },
+      {
+        "id": "austin-town",
+        "label": "Austin Town",
+        "latitude": 12.96379,
+        "longitude": 77.60955
+      },
+      {
+        "id": "chamarajapete",
+        "label": "Chamarajapete",
+        "latitude": 12.96139,
+        "longitude": 77.56249
+      },
+      {
+        "id": "bcc-layout",
+        "label": "BCC Layout",
+        "latitude": 12.95454,
+        "longitude": 77.53287
+      },
+      {
+        "id": "marathahalli",
+        "label": "Marathahalli",
+        "latitude": 12.95273,
+        "longitude": 77.70264
+      },
+      {
+        "id": "siddapura",
+        "label": "Siddapura",
+        "latitude": 12.95995,
+        "longitude": 77.72426
+      },
+      {
+        "id": "mavalli",
+        "label": "Mavalli",
+        "latitude": 12.95082,
+        "longitude": 77.58107
+      },
+      {
+        "id": "yemaluru",
+        "label": "Yemaluru",
+        "latitude": 12.94621,
+        "longitude": 77.67033
+      },
+      {
+        "id": "agaram",
+        "label": "Agaram",
+        "latitude": 12.9451,
+        "longitude": 77.63957
+      },
+      {
+        "id": "srinagar",
+        "label": "Srinagar",
+        "latitude": 12.94613,
+        "longitude": 77.55358
+      },
+      {
+        "id": "sir-mv-layout",
+        "label": "Sir MV Layout",
+        "latitude": 12.95718,
+        "longitude": 77.48183
+      },
+      {
+        "id": "jnana-bharathi",
+        "label": "Jnana Bharathi",
+        "latitude": 12.94755,
+        "longitude": 77.50693
+      },
+      {
+        "id": "lakkasandra",
+        "label": "Lakkasandra",
+        "latitude": 12.94452,
+        "longitude": 77.59497
+      },
+      {
+        "id": "varthur",
+        "label": "Varthur",
+        "latitude": 12.94127,
+        "longitude": 77.74501
+      },
+      {
+        "id": "n-r-colony",
+        "label": "N.R Colony",
+        "latitude": 12.94382,
+        "longitude": 77.57006
+      },
+      {
+        "id": "nagadevanahalli",
+        "label": "Nagadevanahalli",
+        "latitude": 12.94,
+        "longitude": 77.49266
+      },
+      {
+        "id": "koramangala",
+        "label": "Koramangala",
+        "latitude": 12.93748,
+        "longitude": 77.61954
+      },
+      {
+        "id": "panathur",
+        "label": "Panathur",
+        "latitude": 12.93455,
+        "longitude": 77.70807
+      },
+      {
+        "id": "hosakerehalli",
+        "label": "Hosakerehalli",
+        "latitude": 12.93135,
+        "longitude": 77.54271
+      },
+      {
+        "id": "jayanagar",
+        "label": "Jayanagar",
+        "latitude": 12.92875,
+        "longitude": 77.58074
+      },
+      {
+        "id": "shbcs-layout",
+        "label": "SHBCS Layout",
+        "latitude": 12.93038,
+        "longitude": 77.63102
+      },
+      {
+        "id": "banashankari",
+        "label": "Banashankari",
+        "latitude": 12.92766,
+        "longitude": 77.5565
+      },
+      {
+        "id": "rajarajeshwari-nagar",
+        "label": "Rajarajeshwari Nagar",
+        "latitude": 12.92038,
+        "longitude": 77.52223
+      },
+      {
+        "id": "devarabeesanahalli",
+        "label": "Devarabeesanahalli",
+        "latitude": 12.9244,
+        "longitude": 77.68288
+      },
+      {
+        "id": "nal-layout",
+        "label": "NAL Layout",
+        "latitude": 12.92941,
+        "longitude": 77.60282
+      },
+      {
+        "id": "kengeri",
+        "label": "Kengeri",
+        "latitude": 12.92511,
+        "longitude": 77.4841
+      },
+      {
+        "id": "iblur",
+        "label": "Iblur",
+        "latitude": 12.91579,
+        "longitude": 77.65639
+      },
+      {
+        "id": "gunjur",
+        "label": "Gunjur",
+        "latitude": 12.91967,
+        "longitude": 77.72455
+      },
+      {
+        "id": "mylasandra",
+        "label": "Mylasandra",
+        "latitude": 12.91591,
+        "longitude": 77.49976
+      },
+      {
+        "id": "btm-layout",
+        "label": "BTM Layout",
+        "latitude": 12.91406,
+        "longitude": 77.60791
+      },
+      {
+        "id": "hsr-layout",
+        "label": "HSR Layout",
+        "latitude": 12.91206,
+        "longitude": 77.63915
+      },
+      {
+        "id": "jp-nagar",
+        "label": "JP Nagar",
+        "latitude": 12.91217,
+        "longitude": 77.58399
+      },
+      {
+        "id": "kumaraswamy-layout",
+        "label": "Kumaraswamy Layout",
+        "latitude": 12.90861,
+        "longitude": 77.56018
+      },
+      {
+        "id": "bilekahalli",
+        "label": "Bilekahalli",
+        "latitude": 12.90352,
+        "longitude": 77.60954
+      },
+      {
+        "id": "kasavanahalli",
+        "label": "Kasavanahalli",
+        "latitude": 12.90536,
+        "longitude": 77.67141
+      },
+      {
+        "id": "hongasandra",
+        "label": "Hongasandra",
+        "latitude": 12.89797,
+        "longitude": 77.62492
+      },
+      {
+        "id": "subramanyapura",
+        "label": "Subramanyapura",
+        "latitude": 12.89831,
+        "longitude": 77.53623
+      },
+      {
+        "id": "mico-arekere-layout",
+        "label": "Mico Arekere Layout",
+        "latitude": 12.89034,
+        "longitude": 77.59133
+      },
+      {
+        "id": "kudlu",
+        "label": "Kudlu",
+        "latitude": 12.89103,
+        "longitude": 77.65549
+      },
+      {
+        "id": "bheereshwara-nagar",
+        "label": "Bheereshwara Nagar",
+        "latitude": 12.88709,
+        "longitude": 77.57489
+      },
+      {
+        "id": "hemmigepura",
+        "label": "Hemmigepura",
+        "latitude": 12.8958,
+        "longitude": 77.48725
+      },
+      {
+        "id": "wellington-paradise-layout",
+        "label": "Wellington Paradise Layout",
+        "latitude": 12.88136,
+        "longitude": 77.63998
+      },
+      {
+        "id": "hulimavu",
+        "label": "Hulimavu",
+        "latitude": 12.8816,
+        "longitude": 77.60638
+      },
+      {
+        "id": "naganathapura",
+        "label": "Naganathapura",
+        "latitude": 12.87649,
+        "longitude": 77.66569
+      },
+      {
+        "id": "vajrahalli",
+        "label": "Vajrahalli",
+        "latitude": 12.86752,
+        "longitude": 77.52753
+      },
+      {
+        "id": "beguru",
+        "label": "Beguru",
+        "latitude": 12.86802,
+        "longitude": 77.61257
+      },
+      {
+        "id": "kothnur",
+        "label": "Kothnur",
+        "latitude": 12.87118,
+        "longitude": 77.57703
+      },
+      {
+        "id": "chikkathoguru",
+        "label": "Chikkathoguru",
+        "latitude": 12.86349,
+        "longitude": 77.6464
+      },
+      {
+        "id": "anjanapura",
+        "label": "Anjanapura",
+        "latitude": 12.86514,
+        "longitude": 77.55945
+      },
+      {
+        "id": "doddakammanahalli",
+        "label": "Doddakammanahalli",
+        "latitude": 12.84964,
+        "longitude": 77.5907
+      }
+    ],
+    "initialAreas": [
+      "sampangirama-nagar",
+      "indiranagar",
+      "koramangala",
+      "hsr-layout",
+      "jayanagar",
+      "rajajinagar",
+      "whitefield",
+      "marathahalli",
+      "yelahanka"
+    ],
+    "geometryAttribution": "OpenStreetMap contributors (ODbL); ward groups approximated as neighbourhoods. Search origins are representative points, not verified neighbourhood boundaries."
+  }
+}

@@ -1,3 +1,5 @@
+> Current operational implementation: [operational-report.md](./operational-report.md), 24 October 2026. The notes below describe the original implementation and old quota snapshot.
+
 # Reach readiness backend
 
 Implemented in `business_lookup.py`, `reach_report.py` and `website_fetch.py`. The local Python service now handles `GET /business-lookup?mode=report&id=<place-id>&session=<autocomplete-session>`. The existing search selection opens `/business-report` in a separate window; that page requests the combined report once.
