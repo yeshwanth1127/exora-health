@@ -792,7 +792,11 @@ export async function dispatchManagedWhatsApp(
           // Recheck the current hospital binding before releasing its public artwork.
           const image = claim.managed_details.welcomeImageUrl;
           if (image && image !== welcomeImage(settings.whatsappBranding, row.tenant_id, claim.facility_id)) throw Error();
-          templateBody = bookingMessage(claim.text_content, image);
+          const nativeUi=claim.managed_details.interactive;
+          if(nativeUi && (currentConnection.metadata.bookingUI!=='interactive' || !['button','list','flow'].includes(nativeUi.type)))throw Error();
+          if(nativeUi?.header?.image?.link && nativeUi.header.image.link!==image)throw Error();
+          if(nativeUi?.type==='flow' && nativeUi.action?.parameters?.flow_id!==currentConnection.metadata.detailsFlowId)throw Error();
+          templateBody = nativeUi?{type:'interactive',interactive:nativeUi}:bookingMessage(claim.text_content, image);
         }
         const tokens = unseal<{ token: string }>(
           settings,
