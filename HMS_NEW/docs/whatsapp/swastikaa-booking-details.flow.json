@@ -1,0 +1,50 @@
+{
+  "version": "7.3",
+  "screens": [
+    {
+      "id": "DETAILS",
+      "title": "Swastikaa booking",
+      "terminal": true,
+      "success": true,
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "form",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "Patient details"
+              },
+              {
+                "type": "TextBody",
+                "text": "Enter the name for this appointment. Your WhatsApp number will be used for booking updates."
+              },
+              {
+                "type": "TextInput",
+                "name": "patient_name",
+                "label": "Patient full name",
+                "input-type": "text",
+                "required": true,
+                "min-chars": 2,
+                "max-chars": 100
+              },
+              {
+                "type": "Footer",
+                "label": "Review appointment",
+                "on-click-action": {
+                  "name": "complete",
+                  "payload": {
+                    "patient_name": "${form.patient_name}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

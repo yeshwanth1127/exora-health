@@ -35,6 +35,7 @@ import {
   bookingSite,
   verifyChatActivation,
 } from "./managed-booking-chat.ts";
+import { bookingMessage, testRecipientAllowed, welcomeImage } from './whatsapp-branding.ts';
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 const aad = (t: string, f: string) => `${t}:${f}:whatsapp`;
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
@@ -101,7 +102,7 @@ const preferences = () => ({
   askConsent: false,
 });
 function meta(settings: ManagedSettings) {
-  if (!settings.meta || !settings.encryptionKey)
+  if (!settings.meta?.configId || !settings.encryptionKey)
     throw preconditionFailed(
       "WhatsApp connection is being prepared. Please try again later.",
     );
@@ -738,11 +739,12 @@ export async function dispatchManagedWhatsApp(
         const {
           rows: [currentConnection],
         } =
-          await sql`SELECT id FROM comms.managed_connection WHERE id=${claim.connection_id} AND enabled AND credential=${claim.credential} AND external_id=${claim.external_id} AND metadata->>'subscribed'='true' FOR SHARE`.execute(
+          await sql<{id:string;metadata:any}>`SELECT id,metadata FROM comms.managed_connection WHERE id=${claim.connection_id} AND enabled AND credential=${claim.credential} AND external_id=${claim.external_id} AND metadata->>'subscribed'='true' FOR SHARE`.execute(
             tx,
           );
         if (
           !currentConnection ||
+          !testRecipientAllowed(currentConnection.metadata, contact.address) ||
           claim.managed_details.phoneNumberId !== claim.external_id
         )
           throw Error();
@@ -787,6 +789,14 @@ export async function dispatchManagedWhatsApp(
             db,
             bookingSite(settings, row.tenant_id, claim.facility_id),
           );
+          // Recheck the current hospital binding before releasing its public artwork.
+          const image = claim.managed_details.welcomeImageUrl;
+          if (image && image !== welcomeImage(settings.whatsappBranding, row.tenant_id, claim.facility_id)) throw Error();
+          const nativeUi=claim.managed_details.interactive;
+          if(nativeUi && (currentConnection.metadata.bookingUI!=='interactive' || !['button','list','flow'].includes(nativeUi.type)))throw Error();
+          if(nativeUi?.header?.image?.link && nativeUi.header.image.link!==image)throw Error();
+          if(nativeUi?.type==='flow' && nativeUi.action?.parameters?.flow_id!==currentConnection.metadata.detailsFlowId)throw Error();
+          templateBody = nativeUi?{type:'interactive',interactive:nativeUi}:bookingMessage(claim.text_content, image);
         }
         const tokens = unseal<{ token: string }>(
           settings,

@@ -168,8 +168,13 @@ export async function publicBook(db:Kysely<DB>,caller:Caller,site:PublicBookingS
       const {rows:[proof]}=await sql<{ok:boolean}>`SELECT EXISTS(SELECT 1 FROM comms.contact_point p JOIN comms.conversation c ON c.contact_point_id=p.id AND c.tenant_id=p.tenant_id
         JOIN comms.inbound_message i ON i.conversation_id=c.id AND i.tenant_id=c.tenant_id
         WHERE p.id=${whatsappContactId??null} AND p.facility_id=${site.facilityId} AND p.address=${input.phone} AND p.status='active'
-        AND c.automation_state='automation' AND c.status='open' AND i.id=${key}::uuid AND upper(btrim(i.text_content))='CONFIRM'
-        AND EXISTS(SELECT 1 FROM comms.managed_connection mc WHERE mc.facility_id=p.facility_id AND mc.tenant_id=p.tenant_id AND mc.provider='whatsapp' AND mc.enabled AND mc.external_id=i.phone_number_id AND mc.metadata->>'subscribed'='true')
+        AND c.automation_state='automation' AND c.status='open' AND i.id=${key}::uuid
+        AND EXISTS(SELECT 1 FROM comms.managed_connection mc WHERE mc.facility_id=p.facility_id AND mc.tenant_id=p.tenant_id AND mc.provider='whatsapp' AND mc.enabled AND mc.external_id=i.phone_number_id AND mc.metadata->>'subscribed'='true'
+          AND ((coalesce(mc.metadata->>'bookingUI','')<>'interactive' AND upper(btrim(i.text_content))='CONFIRM')
+            OR (mc.metadata->>'bookingUI'='interactive' AND i.interactive_reply->>'type'='choice' AND EXISTS(
+              SELECT 1 FROM comms.booking_chat bc WHERE bc.tenant_id=c.tenant_id AND bc.conversation_id=c.id
+              AND bc.state->>'step'='confirm' AND bc.state->>'name'=${input.name} AND bc.state->'selected'->>'slotToken'=${input.slotToken}
+              AND i.interactive_reply->>'id'='pw.'||(bc.state->>'menuToken')||'.CONFIRM'))))
         AND i.received_at>now()-interval '24 hours' AND comms.has_consent(p.id,'care')) AS ok`.execute(ctx.tx);
       if(!proof?.ok)throw forbidden('WhatsApp booking requires a verified, consented confirmation.');verifiedWhatsApp=true;
     }

@@ -1,3 +1,4 @@
+import {bookingUi,resolveBookingReply} from './whatsapp-booking-ui.ts';
 import { sql, type DB, type Kysely, type Transaction } from "@hms/db";
 import {
   forbidden,
@@ -16,12 +17,16 @@ import { readSlot, type PublicBookingSite } from "../booking/public-config.ts";
 import { addressLock } from "./notifications.ts";
 import { assertWhatsAppActive } from "./whatsapp.ts";
 import type { ManagedSettings } from "./managed-config.ts";
+import { testRecipientAllowed, welcomeImage } from './whatsapp-branding.ts';
 
 type Tx = Transaction<DB>;
 type State = {
+  dateExact?:boolean;menuToken?:string;menuCommands?:string[];formToken?:string;hasMore?:boolean;timezone?:string;dateChoices?:string[];moreDates?:boolean;dateFrom?:string;
   phoneNumberId?: string;
   department?: string;
   step?:
+    | "menu"
+    | "date"
     | "consent"
     | "reminders"
     | "department"
@@ -160,7 +165,7 @@ export async function dispatchBookingChats(
         const {
           rows: [live],
         } =
-          await sql<any>`SELECT w.draft,w.preferences,w.booking_enabled_at,c.automation_state,c.status,c.last_inbound_at,comms.has_consent(p.id,'care') AS consent
+          await sql<any>`SELECT mc.metadata,w.draft,w.preferences,w.booking_enabled_at,c.automation_state,c.status,c.last_inbound_at,comms.has_consent(p.id,'care') AS consent
           FROM comms.whatsapp_workspace w JOIN comms.conversation c ON c.facility_id=w.facility_id AND c.tenant_id=w.tenant_id
           JOIN comms.contact_point p ON p.id=c.contact_point_id AND p.tenant_id=c.tenant_id
           JOIN comms.managed_connection mc ON mc.facility_id=w.facility_id AND mc.tenant_id=w.tenant_id AND mc.provider='whatsapp' AND mc.enabled
@@ -170,13 +175,13 @@ export async function dispatchBookingChats(
           );
         if (
           !live ||
+          !testRecipientAllowed(live.metadata, input.address) ||
           live.status !== "open" ||
           live.automation_state !== "automation"
         )
           return true;
         await assertWhatsAppActive(tx);
-        const text = String(input.text_content).trim(),
-          command = text.toUpperCase();
+        let text = String(input.text_content).trim(), command = text.toUpperCase();
         if (command === "STOP" || command === "[UNSUPPORTED MESSAGE CONTENT]")
           return true;
         const site = bookingSite(settings, r.tenant_id, input.facility_id),
@@ -195,6 +200,11 @@ export async function dispatchBookingChats(
           saved.state.phoneNumberId === input.phone_number_id
             ? saved.state
             : {};
+        const interactive=live.metadata.bookingUI==='interactive';
+        if(interactive && !(state.step==='name'&&live.metadata.detailsMode==='chat'&&!input.interactive_reply) && !['RESTART','BOOK','HI','HELLO','START','STOP','HUMAN'].includes(command)){
+          text=resolveBookingReply(input.interactive_reply,state)??'';command=text.toUpperCase();
+        }
+        const pageSize=interactive?7:10;
         const {
           rows: [recent],
         } = await sql<{
@@ -210,6 +220,7 @@ export async function dispatchBookingChats(
           ).trim();
         let body = "",
           prompt = false;
+        let welcome = false;
         const showDoctors = () => {
           const available = state.department
             ? catalog.doctors.filter((d) =>
@@ -217,9 +228,9 @@ export async function dispatchBookingChats(
               )
             : catalog.doctors;
           const page = state.page ?? 0,
-            choices = available.slice(page * 10, page * 10 + 10);
+            choices = available.slice(page * pageSize, page * pageSize + pageSize);
           state = {
-            step: "doctor",
+            step: "doctor",hasMore:available.length>(page+1)*pageSize,
             department: state.department,
             page,
             choices: choices.map((d) => ({
@@ -237,7 +248,7 @@ export async function dispatchBookingChats(
                     `${i + 1}. ${d.name}${d.specialty ? " · " + d.specialty : ""}`,
                 )
                 .join("\n") +
-              (available.length > (page + 1) * 10
+              (available.length > (page + 1) * pageSize
                 ? "\nReply NEXT for more doctors."
                 : "")
             : "No doctors are available for online booking. Reply HUMAN to contact reception.";
@@ -250,7 +261,8 @@ export async function dispatchBookingChats(
             live.draft.steps?.some((s: any) => s.id === "department" && s.on) &&
             departments.length > 1
           ) {
-            state = { step: "department", choices: departments };
+            const page=interactive&&state.step==='department'?(state.page??0):0;
+            state = { step: "department",page,hasMore:interactive&&departments.length>(page+1)*7, choices: interactive?departments.slice(page*7,page*7+7):departments };
             body =
               (custom("department") || "Choose a speciality.") +
               "\n" +
@@ -259,7 +271,7 @@ export async function dispatchBookingChats(
         };
         const showSlots = async () => {
           const from = state.from ?? catalog.today,
-            to = new Date(Date.parse(from) + 13 * 86400000)
+            to = state.dateExact?from:new Date(Date.parse(from) + 13 * 86400000)
               .toISOString()
               .slice(0, 10);
           const report = await publicSlots(
@@ -274,9 +286,9 @@ export async function dispatchBookingChats(
               to: to > catalog.bookingUntil ? catalog.bookingUntil : to,
             },
           );
-          const offset = (state.page ?? 0) * 10,
-            choices = report.slots.slice(offset, offset + 10);
-          state = { ...state, step: "slot", choices };
+          const offset = (state.page ?? 0) * pageSize,
+            choices = report.slots.slice(offset, offset + pageSize);
+          state = { ...state, step: "slot", choices,timezone:report.timezone,hasMore:report.slots.length>offset+pageSize };
           body = choices.length
             ? "Choose an available time by replying with a number:\n" +
               choices
@@ -286,21 +298,31 @@ export async function dispatchBookingChats(
                 )
                 .join("\n") +
               "\nTimes are held only after confirmation." +
-              (report.slots.length > offset + 10
+              (report.slots.length > offset + pageSize
                 ? " Reply NEXT for more."
                 : "") +
               " Reply with YYYY-MM-DD for another date."
             : "No priced times are available in this date range. Reply with YYYY-MM-DD for another date or HUMAN for reception.";
         };
+        const showDates=()=>{
+          const start=state.dateFrom??catalog.today;
+          const dates=Array.from({length:7},(_,i)=>new Date(Date.parse(start)+i*86400000).toISOString().slice(0,10)).filter(d=>d<=catalog.bookingUntil);
+          state={...state,step:'date',dateChoices:dates,dateFrom:start,moreDates:!!dates[6]&&dates[6]<catalog.bookingUntil};body='Choose an appointment date.';
+        };
         if (["RESTART", "BOOK", "HI", "HELLO", "START"].includes(command))
           state = {};
         if (!state.step || (!live.consent && state.step !== "consent")) {
-          if (live.consent) showDirectory();
+          welcome = true;
+          if (live.consent && interactive){state={step:'menu'};body=(custom('welcome')||`Welcome to ${catalog.clinicName}.`)+' What can we help you with today?';}
+          else if (live.consent) showDirectory();
           else {
             state = { step: "consent" };
             prompt = true;
             body = `${custom("welcome") || `Welcome to ${catalog.clinicName}.`} To book, reply YES to receive WhatsApp messages about this booking. Reply HUMAN for reception or STOP to opt out. This does not subscribe you to promotions.`;
           }
+        } else if(state.step==='menu'){
+          if(['BOOK_VISIT','FIND_DOCTOR'].includes(command))showDirectory();
+          else body='Choose an option to continue.';
         } else if (state.step === "consent") {
           if (command !== "YES") {
             prompt = true;
@@ -326,14 +348,15 @@ export async function dispatchBookingChats(
               "Reply REMIND to receive appointment reminders, or SKIP to continue without them.";
         } else if (state.step === "department") {
           const department = choice(text, state.choices);
-          if (typeof department === "string") {
+          if(interactive && command==='NEXT' && state.hasMore){state.page=(state.page??0)+1;showDirectory();}
+          else if (typeof department === "string") {
             state = { department };
             showDoctors();
           } else body = "Reply with a speciality number or RESTART.";
         } else if (state.step === "doctor") {
           if (
             command === "NEXT" &&
-            catalog.doctors.length > ((state.page ?? 0) + 1) * 10
+            catalog.doctors.length > ((state.page ?? 0) + 1) * pageSize
           ) {
             state.page = (state.page ?? 0) + 1;
             showDoctors();
@@ -365,8 +388,14 @@ export async function dispatchBookingChats(
             state.mode = text === "2" ? "virtual" : "in_person";
             await showSlots();
           }
+        } else if(state.step==='date'){
+          if(command==='NEXT'&&state.moreDates){state.dateFrom=new Date(Date.parse(state.dateFrom!)+7*86400000).toISOString().slice(0,10);showDates();}
+          else if(command==='TIMES')await showSlots();
+          else if(state.dateChoices?.includes(text)){state.from=text;state.page=0;state.dateExact=true;await showSlots();}
+          else showDates();
         } else if (state.step === "slot") {
-          if (command === "NEXT") {
+          if (command === "DATE")showDates();
+          else if (command === "NEXT") {
             state.page = (state.page ?? 0) + 1;
             await showSlots();
           } else if (
@@ -408,7 +437,7 @@ export async function dispatchBookingChats(
             body = "Please enter a name between 2 and 100 characters.";
           else {
             state = { ...state, step: "confirm", name: text };
-            body = `Confirm: ${state.doctorName}, ${localTime(state.selected.startsAt, catalog.timezone)}, ${state.mode === "virtual" ? "video" : "in person"}, ₹${(state.selected.feeMinor / 100).toFixed(2)}. Reply CONFIRM to book, or RESTART. No payment is collected in this chat.`;
+            body = `Patient: ${state.name}.\nConfirm: ${state.doctorName}, ${localTime(state.selected.startsAt, catalog.timezone)}, ${state.mode === "virtual" ? "video" : "in person"}, ₹${(state.selected.feeMinor / 100).toFixed(2)}. Reply CONFIRM to book, or RESTART. No payment is collected in this chat.`;
           }
         } else if (state.step === "confirm") {
           if (command !== "CONFIRM")
@@ -468,9 +497,13 @@ export async function dispatchBookingChats(
             ["RESTART", "BOOK", "HI", "HELLO", "START"].includes(command))
         )
           body = String(away.text).slice(0, 1024) + "\n" + body;
+        if (body && live.metadata.testMode === true && !interactive) body = "TEST CHAT — " + body;
+        const image = welcome ? welcomeImage(settings.whatsappBranding, r.tenant_id, input.facility_id) : undefined;
+        const nativeUi=body&&interactive?bookingUi(state,body,live.metadata,image):undefined;
+        if(nativeUi)body=nativeUi.body.text;
         if (body)
           await sql`INSERT INTO comms.outbound_message(tenant_id,facility_id,conversation_id,contact_point_id,text_content,managed_send_requested,managed_purpose,managed_inbound_id,managed_details)
-          VALUES(${r.tenant_id},${input.facility_id},${input.conversation_id},${input.contact_point_id},${body.slice(0, 3000)},true,${prompt ? "booking_prompt" : "booking"},${input.id},${JSON.stringify({ phoneNumberId: input.phone_number_id })}::jsonb) ON CONFLICT DO NOTHING`.execute(
+          VALUES(${r.tenant_id},${input.facility_id},${input.conversation_id},${input.contact_point_id},${body.slice(0, 3000)},true,${prompt ? "booking_prompt" : "booking"},${input.id},${JSON.stringify({ phoneNumberId: input.phone_number_id, ...(image ? { welcomeImageUrl: image } : {}),...(nativeUi?{interactive:nativeUi}:{}) })}::jsonb) ON CONFLICT DO NOTHING`.execute(
             tx,
           );
         await sql`INSERT INTO comms.booking_chat(tenant_id,conversation_id,state,expires_at) VALUES(${r.tenant_id},${input.conversation_id},${JSON.stringify({ ...state, phoneNumberId: input.phone_number_id })}::jsonb,now()+interval '15 minutes')

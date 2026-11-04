@@ -259,6 +259,12 @@ describe("server-held provider credentials", () => {
       }),
     ).toThrow("HTTPS origins");
   });
+  it("allows server-managed test sending without advertising embedded signup", () => {
+    const loaded = loadManagedSettings({WA_APP_ID:"123456", WA_APP_SECRET:"test-only", WA_VERIFY_TOKEN:"verify", WA_GRAPH_VERSION:"v25.0", WA_MANAGED_SENDING_ENABLED:"true", INTEGRATIONS_ENCRYPTION_KEY:"08".repeat(32), INTEGRATIONS_PUBLIC_ORIGIN:"https://hospital.example"});
+    expect(loaded.meta?.configId).toBe("");
+    expect(loaded.whatsappSending).toBe(true);
+    expect(() => loadManagedSettings({WA_MANAGED_SENDING_ENABLED:"true"})).toThrow("incomplete");
+  });
   it("hides provider error bodies and network exceptions", async () => {
     await expect(
       providerJson(

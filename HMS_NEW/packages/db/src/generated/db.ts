@@ -1630,6 +1630,7 @@ export interface CommsGoogleScheduledPost {
 }
 
 export interface CommsInboundMessage {
+  interactive_reply: Json | null;
   account_id: string;
   conversation_id: string;
   created_at: Generated<Timestamp>;

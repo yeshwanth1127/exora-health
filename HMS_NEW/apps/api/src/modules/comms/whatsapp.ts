@@ -1,3 +1,4 @@
+import {bookingReply} from './whatsapp-booking-ui.ts';
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile, unlink } from "node:fs/promises";
 import path from "node:path";
@@ -1790,11 +1791,8 @@ export async function handleWhatsAppCallback(
       !/^[1-9][0-9]{7,14}$/.test(inbound.from)
     )
       continue;
-    const address = "+" + inbound.from,
-      body =
-        typeof inbound.text?.body === "string"
-          ? inbound.text.body.slice(0, 3000)
-          : "[Unsupported message content]";
+    const address = "+" + inbound.from;
+    const {body,interaction}=bookingReply(inbound);
     const stop = body.trim().toUpperCase() === "STOP";
     const {rows:[workspace]}=await sql<any>`SELECT preferences FROM comms.whatsapp_workspace WHERE facility_id=${r.facility_id}`.execute(tx);
     const handoffWords=String(workspace?.preferences?.handoffWords??'').split(',').map(w=>w.trim().toLowerCase()).filter(Boolean);
@@ -1846,7 +1844,7 @@ export async function handleWhatsAppCallback(
     }>`INSERT INTO comms.conversation(tenant_id,facility_id,contact_point_id,last_inbound_at,automation_state) VALUES(${event.tenantId},${r.facility_id},${contact.id},${received},${humanRequested ? "handoff_requested" : "automation"}) ON CONFLICT(tenant_id,contact_point_id) DO UPDATE SET automation_state=CASE WHEN ${humanRequested} AND comms.conversation.automation_state='automation' THEN 'handoff_requested' ELSE comms.conversation.automation_state END,last_inbound_at=greatest(comms.conversation.last_inbound_at,EXCLUDED.last_inbound_at) RETURNING id`.execute(
       tx,
     );
-    await sql`INSERT INTO comms.inbound_message(tenant_id,conversation_id,account_id,provider_message_id,text_content,received_at,phone_number_id) VALUES(${event.tenantId},${c!.id},${r.account_id},${inbound.id},${body},${received},${r.phone_number_id}) ON CONFLICT DO NOTHING`.execute(
+    await sql`INSERT INTO comms.inbound_message(tenant_id,conversation_id,account_id,provider_message_id,text_content,received_at,phone_number_id,interactive_reply) VALUES(${event.tenantId},${c!.id},${r.account_id},${inbound.id},${body},${received},${r.phone_number_id},${interaction?JSON.stringify(interaction):null}::jsonb) ON CONFLICT DO NOTHING`.execute(
       tx,
     );
     if (stop) {
