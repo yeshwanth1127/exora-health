@@ -1,3 +1,4 @@
+import {locales,localizedPath,supportsTranslation} from './i18n/config.ts';
 import type { Metadata } from 'next';
 import { BRAND_NAME } from './brand.ts';
 import { SEARCH_ENABLED, SITE_ORIGIN } from './site.ts';
@@ -28,7 +29,7 @@ export function pageMetadata(path:string,title?:string,description?:string): Met
  const pageTitle=title||page?.title||`${BRAND_NAME} · Care, connected`;
  const summary=description||page?.description||'Reception, appointments and patient communication for healthcare providers.';
  const url=SITE_ORIGIN ? SITE_ORIGIN+path : undefined;
- return {title:pageTitle,description:summary,alternates:url?{canonical:url}:undefined,
+ return {title:pageTitle,description:summary,alternates:url?{canonical:url,...(supportsTranslation(path)?{languages:Object.fromEntries([...locales.map(l=>[l.tag,SITE_ORIGIN+localizedPath(l.code,path)]),['x-default',url]])}:{})}:undefined,
   robots:{index:SEARCH_ENABLED,follow:true,'max-image-preview':'large','max-snippet':-1,'max-video-preview':-1},
   openGraph:{type:'website',title:pageTitle,description:summary,url,siteName:BRAND_NAME,locale:'en_IN',images:SITE_ORIGIN?[{url:SITE_ORIGIN+'/social-card.png',width:1200,height:630,alt:`${BRAND_NAME} — A clearer clinic day`}]:undefined},
   twitter:{card:'summary_large_image',title:pageTitle,description:summary,images:SITE_ORIGIN?[SITE_ORIGIN+'/social-card.png']:undefined}};

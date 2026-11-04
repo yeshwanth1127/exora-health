@@ -1,0 +1,98 @@
+{
+  "en": {
+    "language": "Language",
+    "country": "Country",
+    "region": "Language & country",
+    "apply": "Apply",
+    "close": "Close",
+    "marketNote": "Language and pricing country are independent. Your choice is saved on this device."
+  },
+  "bn": {
+    "language": "ভাষা",
+    "country": "দেশ",
+    "region": "ভাষা ও দেশ",
+    "apply": "প্রয়োগ করুন",
+    "close": "বন্ধ করুন",
+    "marketNote": "ভাষা ও মূল্য নির্ধারণের দেশ আলাদা করে বেছে নিন। আপনার পছন্দ এই ডিভাইসে সংরক্ষিত থাকবে।"
+  },
+  "ms": {
+    "language": "Bahasa",
+    "country": "Negara",
+    "region": "Bahasa & negara",
+    "apply": "Gunakan",
+    "close": "Tutup",
+    "marketNote": "Bahasa dan negara harga dipilih secara berasingan. Pilihan disimpan pada peranti ini."
+  },
+  "de": {
+    "language": "Sprache",
+    "country": "Land",
+    "region": "Sprache und Land",
+    "apply": "Übernehmen",
+    "close": "Schließen",
+    "marketNote": "Sprache und Preisland sind unabhängig. Ihre Auswahl wird auf diesem Gerät gespeichert."
+  },
+  "ta": {
+    "language": "மொழி",
+    "country": "நாடு",
+    "region": "மொழி மற்றும் நாடு",
+    "apply": "பயன்படுத்து",
+    "close": "மூடு",
+    "marketNote": "மொழியையும் விலைக்கான நாட்டையும் தனித்தனியாகத் தேர்ந்தெடுக்கலாம். உங்கள் விருப்பம் இச்சாதனத்தில் சேமிக்கப்படும்."
+  },
+  "fr": {
+    "language": "Langue",
+    "country": "Pays",
+    "region": "Langue et pays",
+    "apply": "Appliquer",
+    "close": "Fermer",
+    "marketNote": "La langue et le pays de tarification sont indépendants. Votre choix est enregistré sur cet appareil."
+  },
+  "hi": {
+    "language": "भाषा",
+    "country": "देश",
+    "region": "भाषा और देश",
+    "apply": "लागू करें",
+    "close": "बंद करें",
+    "marketNote": "भाषा और कीमतों का देश अलग-अलग चुनें। आपकी पसंद इस डिवाइस पर सहेजी जाती है।"
+  },
+  "vi": {
+    "language": "Ngôn ngữ",
+    "country": "Quốc gia",
+    "region": "Ngôn ngữ và quốc gia",
+    "apply": "Áp dụng",
+    "close": "Đóng",
+    "marketNote": "Ngôn ngữ và quốc gia tính giá được chọn riêng. Lựa chọn được lưu trên thiết bị này."
+  },
+  "te": {
+    "language": "భాష",
+    "country": "దేశం",
+    "region": "భాష మరియు దేశం",
+    "apply": "వర్తింపజేయి",
+    "close": "మూసివేయి",
+    "marketNote": "భాషను, ధరల కోసం దేశాన్ని విడివిడిగా ఎంచుకోవచ్చు. మీ ఎంపిక ఈ పరికరంలో సేవ్ అవుతుంది."
+  },
+  "id": {
+    "language": "Bahasa",
+    "country": "Negara",
+    "region": "Bahasa & negara",
+    "apply": "Terapkan",
+    "close": "Tutup",
+    "marketNote": "Bahasa dan negara untuk harga dipilih terpisah. Pilihan disimpan di perangkat ini."
+  },
+  "th": {
+    "language": "ภาษา",
+    "country": "ประเทศ",
+    "region": "ภาษาและประเทศ",
+    "apply": "บันทึก",
+    "close": "ปิด",
+    "marketNote": "เลือกภาษาและประเทศสำหรับราคาแยกกัน ระบบจะบันทึกตัวเลือกไว้ในอุปกรณ์นี้"
+  },
+  "es": {
+    "language": "Idioma",
+    "country": "País",
+    "region": "Idioma y país",
+    "apply": "Aplicar",
+    "close": "Cerrar",
+    "marketNote": "El idioma y el país de precios son independientes. Tu elección se guarda en este dispositivo."
+  }
+}

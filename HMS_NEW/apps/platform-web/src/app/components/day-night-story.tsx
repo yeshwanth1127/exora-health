@@ -2,8 +2,6 @@
 
 import { useEffect, useRef, type CSSProperties } from "react";
 import { CalendarClock, ClipboardList, MessageCircle, PhoneIncoming, Sunrise, Sunset } from "lucide-react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { BRAND_NAME } from "../../lib/brand";
 import "./day-night-story.css";
 
@@ -53,6 +51,13 @@ export default function DayNightStory() {
   useEffect(() => {
     const section = root.current;
     if (!section) return;
+    let disposed=false,started=false,disposeMotion:(()=>void)|undefined;
+    const desktop=matchMedia('(min-width: 900px) and (min-height: 620px) and (prefers-reduced-motion: no-preference)');
+    const start=async()=>{
+    if(!desktop.matches||started)return;
+    started=true;
+    const [{gsap},{ScrollTrigger}]=await Promise.all([import('gsap'),import('gsap/ScrollTrigger')]);
+    if(disposed)return;
     gsap.registerPlugin(ScrollTrigger);
     const media = gsap.matchMedia();
     media.add("(min-width: 900px) and (min-height: 620px) and (prefers-reduced-motion: no-preference)", () => {
@@ -93,7 +98,7 @@ export default function DayNightStory() {
         stage.style.setProperty("--story-muted", luminance > 0.6 ? "#65615c" : luminance < 0.06 ? "#bbc8da" : luminance > 0.179 ? "#000000" : "#ffffff");
         stage.style.setProperty("--story-line", luminance > 0.179 ? "#283c3228" : "#ffffff30");
       };
-      let timeline: gsap.core.Timeline;
+      let timeline: ReturnType<typeof gsap.timeline>;
       timeline = gsap.timeline({
         defaults: { ease: "none" },
         onUpdate: updateContrast,
@@ -150,7 +155,10 @@ export default function DayNightStory() {
         ["--story-ink", "--story-muted", "--story-line"].forEach(name => stage.style.removeProperty(name));
       };
     });
-    return () => media.revert();
+    disposeMotion=()=>media.revert();
+    };
+    void start();desktop.addEventListener('change',start);
+    return()=>{disposed=true;desktop.removeEventListener('change',start);disposeMotion?.();};
   }, []);
 
   return <section ref={root} id="day-and-night" className="day-night-story" aria-labelledby="day-night-title">

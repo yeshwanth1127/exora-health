@@ -30,19 +30,33 @@ class ReachReportTests(unittest.TestCase):
         result = report.summarise(PROFILE, website, report.google_checks(PROFILE) + checks)
         self.assertEqual(result['score'], 100)
         self.assertEqual(result['coverage'], 100)
-        self.assertEqual(result['counts'], {'pass': 17, 'review': 0, 'unknown': 0})
+        self.assertEqual(result['counts'], {'pass': 18, 'review': 0, 'unknown': 0})
 
     def test_missing_website_is_profile_only_not_a_website_zero(self):
         result = report.build_report({**PROFILE, 'website': ''})
-        self.assertTrue(result['partial'])
+        self.assertFalse(result['partial'])
+        self.assertEqual(result['counts']['unknown'], 0)
+        self.assertEqual(result['totalChecks'], 7)
+        self.assertEqual(len(result['categories']), 1)
         self.assertEqual(result['scoreLabel'], 'Google profile score')
         self.assertEqual(result['coverage'], 40)
         self.assertTrue(all(c['score'] is None for c in result['categories'][1:]))
         self.assertEqual(result['websiteIssue']['severity'], 'high')
-        self.assertIn('No website link', result['websiteIssue']['title'])
+        self.assertEqual('Website linked on Google: No', result['websiteIssue']['title'])
+        self.assertEqual(result['score'], 80)
+        self.assertEqual(next(c for c in result['checks'] if c['id']=='google_website')['status'], 'review')
+
+    def test_provided_website_keeps_missing_google_link_as_an_issue(self):
+        with patch.object(report, 'cached_website', return_value=report.audit_website(PROFILE['website'], sample_fetch)):
+            result = report.build_report({**PROFILE, 'website': ''}, PROFILE['website'])
+        self.assertEqual(result['website']['source'], 'provided')
+        self.assertEqual(result['totalChecks'], 18)
+        self.assertEqual(result['score'], 92)
+        self.assertEqual(next(c for c in result['checks'] if c['id']=='google_website')['status'], 'review')
+        self.assertEqual(result['websiteIssue']['title'], 'Website linked on Google: No')
 
     def test_blocked_website_does_not_masquerade_as_failed_checks(self):
-        def blocked(url, **kwargs): return page(status=403, url=url)
+        def blocked(url, **kwargs): return sample_fetch(url, **kwargs) if url.endswith('/robots.txt') else page(status=403, url=url)
         site, checks = report.audit_website(PROFILE['website'], blocked)
         self.assertEqual(site['state'], 'blocked')
         self.assertTrue(all(c['status'] == 'unknown' for c in checks))
@@ -51,15 +65,17 @@ class ReachReportTests(unittest.TestCase):
         self.assertEqual(result['coverage'], 40)
         self.assertIsNone(result['websiteIssue'])  # Bot blocking is not proof of a broken customer website.
 
-    def test_robots_disallow_skips_homepage(self):
+    def test_robots_disallow_is_a_search_issue_not_an_audit_block(self):
         calls = []
         def disallowed(url, **kwargs):
             calls.append(url)
-            return page('User-agent: *\nDisallow: /', url=url)
+            return page('User-agent: *\nDisallow: /', url=url) if url.endswith('/robots.txt') else page(url=url)
         site, checks = report.audit_website(PROFILE['website'], disallowed)
-        self.assertEqual(len(calls), 1)
-        self.assertEqual(site['state'], 'robots_blocked')
-        self.assertTrue(all(c['status'] == 'unknown' for c in checks))
+        self.assertEqual(site['state'], 'checked')
+        self.assertEqual(calls[0], PROFILE['website'])
+        self.assertTrue(all(c['status'] != 'unknown' for c in checks))
+        self.assertEqual(next(c for c in checks if c['id']=='indexing')['status'], 'review')
+        self.assertEqual(next(c for c in checks if c['id']=='title')['status'], 'pass')
 
     def test_googlebot_specific_block_is_observed(self):
         def fetch(url, **kwargs):
@@ -104,10 +120,26 @@ class ReachReportTests(unittest.TestCase):
         self.assertTrue(all(c['status']=='unknown' for c in checks))
 
     def test_report_adapter_fetches_google_once_and_propagates_result(self):
-        with patch.object(business_lookup, 'google_request', return_value={'id':'example123','displayName':{'text':'Example'}}) as google, patch.object(business_lookup, 'build_report', return_value={'score':80}) as build:
-            self.assertEqual(business_lookup.lookup('mode=report&id=example123'), {'report':{'score':80}})
+        with patch.object(business_lookup, 'google_request', return_value={'id':'example123','displayName':{'text':'Example'}}) as google, patch.object(business_lookup, 'scan', return_value={'status':'unsupported'}), patch.object(business_lookup, 'build_report', return_value={'score':80}) as build:
+            self.assertEqual(business_lookup.lookup('mode=report&id=example123'), {'report':{'score':80,'ranking':{'status':'unsupported'}}})
             self.assertEqual(google.call_count, 1)
             self.assertEqual(build.call_args.args[0]['name'], 'Example')
+
+    def test_website_submission_audits_without_repeating_area_scan(self):
+        with patch.object(business_lookup, 'google_request', return_value={'id':'example123','displayName':{'text':'Clinic'}}), patch.object(business_lookup, 'scan') as scan, patch.object(business_lookup, 'build_report', return_value={'score':92}) as build:
+            result = business_lookup.lookup('mode=website&id=example123&website=https%3A%2F%2Fclinic.com')
+            self.assertEqual(result, {'report': {'score':92}})
+            self.assertEqual(build.call_args.args[1], 'https://clinic.com')
+            self.assertEqual(build.call_args.args[0]['website'], '')
+            scan.assert_not_called()
+
+    def test_website_submission_rejects_invalid_links_before_google_call(self):
+        with patch.object(business_lookup, 'google_request') as google:
+            for url in ['file:///etc/passwd', 'https://user:password@clinic.com', '']:
+                from urllib.parse import urlencode
+                with self.assertRaises(business_lookup.LookupError):
+                    business_lookup.lookup(urlencode({'mode':'website','id':'example123','website':url}))
+            google.assert_not_called()
 
     def test_quota_error_does_not_run_or_fabricate_a_report(self):
         with patch.object(business_lookup, 'google_request', side_effect=business_lookup.LookupError('QUOTA_EXCEEDED','Quota reached',429)), patch.object(business_lookup, 'build_report') as build:
@@ -196,4 +228,74 @@ class PublicFetchTests(unittest.TestCase):
         self.assertEqual(error.exception.code,'PAGE_TOO_LARGE')
 
 
-if __name__=='__main__': unittest.main()
+
+
+class OperationalAuditTests(unittest.TestCase):
+    def test_broken_booking_destination_is_flagged_even_when_homepage_link_exists(self):
+        def fetch(url,**kwargs):
+            return page(status=404,url=url) if url.endswith('/book') else sample_fetch(url,**kwargs)
+        _,checks=report.audit_website(PROFILE['website'],fetch)
+        booking=next(c for c in checks if c['id']=='booking')
+        self.assertEqual(booking['status'],'review')
+        self.assertIn('404',booking['evidence'])
+        self.assertTrue(booking['fix'])
+        self.assertEqual(next(c for c in checks if c['id']=='contact')['status'],'pass')
+    def test_invalid_phone_and_whatsapp_links_do_not_pass(self):
+        html=GOOD_HTML.replace('tel:08000000000','tel:invalid').replace('</body>','<a href="https://wa.me/">WhatsApp</a></body>')
+        checks=report.assess_html(page(html),'allowed')
+        self.assertEqual(next(c for c in checks if c['id']=='phone_link')['status'],'review')
+    def test_later_index_tag_does_not_erase_an_earlier_noindex(self):
+        html=GOOD_HTML.replace('<head>','<head><meta name="robots" content="noindex"><meta name="robots" content="index">')
+        self.assertEqual(next(c for c in report.assess_html(page(html),'allowed') if c['id']=='indexing')['status'],'review')
+    def test_redirected_public_page_is_audited_and_final_robots_is_a_signal(self):
+        fetched=[]
+        def fetch(url,**kwargs):
+            fetched.append(url)
+            if url=='https://example.invalid':
+                return page(url='https://redirect.example/')
+            if url=='https://redirect.example/robots.txt':
+                return page('User-agent: *\nDisallow: /',url=url)
+            return sample_fetch(url,**kwargs)
+        website,checks=report.audit_website(PROFILE['website'],fetch)
+        self.assertEqual(website['state'],'checked')
+        self.assertIn('https://redirect.example/robots.txt',fetched)
+        self.assertEqual(next(c for c in checks if c['id']=='indexing')['status'],'review')
+        self.assertEqual(next(c for c in checks if c['id']=='title')['status'],'pass')
+
+    def test_robot_failure_does_not_turn_into_an_indexability_pass_or_block_html(self):
+        def fetch(url,**kwargs):return page(status=503,url=url) if url.endswith('/robots.txt') else sample_fetch(url,**kwargs)
+        website,checks=report.audit_website(PROFILE['website'],fetch)
+        self.assertEqual(website['state'],'checked')
+        self.assertEqual(next(c for c in checks if c['id']=='indexing')['status'],'unknown')
+        self.assertEqual(next(c for c in checks if c['id']=='title')['status'],'pass')
+
+    def test_robot_network_failure_preserves_other_website_checks(self):
+        def fetch(url,**kwargs):
+            if url.endswith('/robots.txt'):raise web.WebsiteFetchError('TIMEOUT','Timed out')
+            return sample_fetch(url,**kwargs)
+        website,checks=report.audit_website(PROFILE['website'],fetch)
+        self.assertEqual(website['state'],'checked')
+        self.assertEqual(next(c for c in checks if c['id']=='indexing')['status'],'unknown')
+        self.assertEqual(sum(c['status']=='unknown' for c in checks),1)
+
+class CompressedFetchTests(unittest.TestCase):
+    def test_compression_bomb_cannot_bypass_decoded_size_limit(self):
+        import gzip
+        import io
+        class Response:
+            status=200
+            def __init__(self):self.body=io.BytesIO(gzip.compress(b'a'*2000))
+            def getheaders(self):return [('Content-Encoding','gzip')]
+            def read1(self,size):return self.body.read(size)
+        class Connection:
+            sock=None
+            def __init__(self,*args):pass
+            def request(self,*args,**kwargs):pass
+            def getresponse(self):return Response()
+            def close(self):pass
+        with patch.object(web,'public_target',return_value=('https://example.com/','example.com',443,'8.8.8.8')), patch.object(web,'PinnedHTTPS',Connection), self.assertRaises(web.WebsiteFetchError) as error:
+            web.fetch_public('https://example.com/',max_bytes=1024)
+        self.assertEqual(error.exception.code,'PAGE_TOO_LARGE')
+
+
+if __name__=="__main__": unittest.main()

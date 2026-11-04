@@ -1,3 +1,5 @@
+> Current operational implementation: [operational-report.md](./operational-report.md), 24 October 2026. The notes below describe the original implementation and old quota snapshot.
+
 # Reach readiness backend
 
 Implemented in `business_lookup.py`, `reach_report.py` and `website_fetch.py`. The local Python service now handles `GET /business-lookup?mode=report&id=<place-id>&session=<autocomplete-session>`. The existing search selection opens `/business-report` in a separate window; that page requests the combined report once.
@@ -17,9 +19,9 @@ Omitted Google fields lower the score for *observed public-profile completeness*
 
 ## Website requests and safety
 
-Only a website returned by Google's selected place lookup can reach this audit through the public endpoint. There is no arbitrary-URL audit endpoint. The fetcher uses a named audit user agent, checks the linked host's robots.txt, and inspects just the homepage HTML. It follows at most three redirects, revalidating every target. Private, loopback, metadata, multicast, reserved and mixed public/private DNS targets are rejected. Only default HTTP/HTTPS ports are accepted; credentials, control characters, backslashes and HTTPS downgrades are rejected. DNS answers are pinned to the actual connection while HTTPS retains original-host certificate verification. No ambient proxies, cookies, credentials, JavaScript, forms or embedded assets are used. Responses are bounded to 1 MiB, robots to 64 KiB, with connection/read timeouts and a shared network deadline. DNS resolution itself depends on the operating system resolver timeout. Two reports may run concurrently; excess work returns a busy error.
+The selected Google website or a website link supplied from the report can be audited. A supplied link never clears the missing Google website issue. The fetcher uses a named audit user agent, reads robots.txt only as a Googlebot visibility signal, and inspects the homepage HTML. It follows at most three redirects, revalidating every target. Private, loopback, metadata, multicast, reserved and mixed public/private DNS targets are rejected. Only default HTTP/HTTPS ports are accepted; credentials, control characters, backslashes and HTTPS downgrades are rejected. DNS answers are pinned to the actual connection while HTTPS retains original-host certificate verification. No ambient proxies, cookies, credentials, JavaScript, forms or embedded assets are used. Responses are bounded to 1 MiB, robots to 64 KiB, with connection/read timeouts and a shared network deadline. DNS resolution itself depends on the operating system resolver timeout. Two reports may run concurrently; excess work returns a busy error.
 
-Website denial, bot protection, timeout, unsupported content or unsafe redirects produce unassessed checks. An observed HTTP error is reported as an availability issue, not as proof that every site feature fails. A robots rule blocking this audit is not treated as proof that Googlebot is blocked.
+Website denial, bot protection, timeout, unsupported content or unsafe redirects produce unassessed checks. An observed HTTP error is reported as an availability issue, not as proof that every site feature fails. Robots rules do not prevent the public-page audit. Googlebot-specific restrictions remain an indexing issue; robots retrieval failure affects only that signal.
 
 ## Data and cost boundaries
 

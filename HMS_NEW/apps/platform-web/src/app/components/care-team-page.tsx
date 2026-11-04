@@ -4,6 +4,7 @@ import MarketingAsset from "./marketing-asset";
 import { audiencePages, type AudienceKey } from "../../lib/audience-pages";
 import IllustrationSlot from "./illustration-slot";
 import FaqSection from "./faq";
+import PracticeCta from "./practice-cta";
 import AudienceExplorer from "./audience-explorer";
 import ResearchBenchmarks from "./research-benchmarks";
 import "./care-team-page.css";
@@ -178,7 +179,7 @@ export default function CareTeamPage({audience}:{audience:AudienceKey}) {
                 </article>
               </div>
             </section>
-<section className="block relative pb-20 bg-background max-lg:pb-10" data-ditto-id="style-div-142" aria-labelledby="_R_ckkbm_">
+<section className="audience-starters block relative pb-20 bg-background max-lg:pb-10" data-ditto-id="style-div-142" aria-labelledby="_R_ckkbm_">
               <div className="flex mb-8 flex-col-reverse justify-center items-center gap-6 text-center max-lg:mb-6">
                 <div className="flex min-w-0 flex-col items-center">
                   <h2 className="block max-w-[693.7px] text-foreground text-[2.625rem] font-bold leading-12 tracking-[-1.5px] text-balance [font-feature-settings:'lnum',_'locl'_0] max-lg:max-w-[528.5px] max-lg:text-[2rem] max-lg:leading-10 max-lg:tracking-[-0.75px]" data-ditto-id="style-r-ckkbm" data-component="heading" id="_R_ckkbm_">
@@ -249,21 +250,6 @@ export default function CareTeamPage({audience}:{audience:AudienceKey}) {
 </section>
 {copy.faqs && <FaqSection className="audience-faq" id="audience-faq-title" items={copy.faqs}/>}
 <AudienceExplorer compact />
-<section className="min-h-140 flex -mx-32 py-16 px-8 flex-col justify-center items-center gap-3 text-center bg-border max-md:-mx-4 max-lg:min-h-0 md:max-lg:-mx-16.5 2xl:min-h-180 2xl:-mx-112" data-ditto-id="style-blockquote" aria-labelledby="_R_ekkbm_">
-              <h2 className="block mb-1 text-foreground text-[2.625rem] font-bold leading-12 tracking-[-1.5px] text-balance [font-feature-settings:'lnum',_'locl'_0] max-lg:text-[1.625rem] max-lg:leading-8 max-lg:tracking-[-0.62px]" data-ditto-id="style-br-2" data-component="heading" id="_R_ekkbm_">
-                See {BRAND_NAME} at your practice.
-              </h2>
-              <p className="block mb-3 text-xl leading-7 tracking-[-0.12px] [font-feature-settings:'lnum',_'locl'_0] max-md:[font-size:inherit] max-md:leading-[inherit] max-md:tracking-[inherit]" data-ditto-id="style-figcaption-2">
-                {copy.cta}
-              </p>
-              <div className="flex justify-start items-stretch gap-2" data-ditto-id="style-span-50">
-                <a className="border border-solid border-clr-0 flex py-1.5 px-[0.9375rem] rounded-lg justify-center items-center gap-3 text-background font-medium [font-feature-settings:'lnum',_'locl'_0] bg-primary cursor-pointer" data-ditto-id="style-footer-3" data-component="button" href="/product/features">
-                  Explore the product
-                </a>
-                <a className="border border-solid border-clr-0 flex py-1.5 px-[0.9375rem] rounded-lg justify-center items-center gap-3 text-accent font-medium [font-feature-settings:'lnum',_'locl'_0] bg-background cursor-pointer" data-ditto-id="style-ul-3" data-component="button" href="/contact-sales">
-                  Request a demo
-                </a>
-              </div>
-            </section>
+<PracticeCta text={copy.cta} className="min-h-140 -mx-32 max-md:-mx-4 max-lg:min-h-0 md:max-lg:-mx-16.5 2xl:min-h-180 2xl:-mx-112" />
 </main>;
 }

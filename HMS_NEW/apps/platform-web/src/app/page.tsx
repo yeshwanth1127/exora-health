@@ -1,3 +1,4 @@
+import RegionSwitcher from "./components/regional/region-switcher";
 import SiteImage from "./components/site-image";
 import { pageMetadata } from "../lib/seo";
 import { BRAND_NAME } from "../lib/brand";
@@ -957,7 +958,7 @@ export default function Page() {
                         </span>
                       </a>
                     </div>
-                    <div className="flex items-center gap-4 col-start-3">
+                    <div className="flex items-center gap-4 col-start-3"><RegionSwitcher/>
                       <span className="flex items-center gap-3 max-lg:hidden" data-ditto-id="style-footer-2">
                         <a className="w-[60.5px] h-7.5 flex py-[0.3125rem] px-2.5 rounded-sm justify-center items-center content-center shrink-0 gap-2 justify-items-center whitespace-nowrap [text-wrap:nowrap_pretty] cursor-pointer" data-ditto-id="style-div-8" data-component="link" href={"/contact-sales"}>
                           <span className="block text-sm font-medium leading-5 [font-feature-settings:normal]" data-ditto-id="style-div-19">

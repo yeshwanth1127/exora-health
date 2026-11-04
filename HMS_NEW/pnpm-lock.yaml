@@ -296,9 +296,6 @@ importers:
       lucide-react:
         specifier: 1.49.0
         version: 1.49.0(@types/react@19.2.17)(react@19.2.7)
-      maplibre-gl:
-        specifier: ^5.24.0
-        version: 5.24.0
       motion:
         specifier: 14.1.0
         version: 14.1.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)

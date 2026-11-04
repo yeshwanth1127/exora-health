@@ -4,6 +4,7 @@ import ipaddress
 import socket
 import ssl
 import time
+import zlib
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
@@ -90,7 +91,7 @@ class PinnedHTTPS(http.client.HTTPSConnection):
             raise
 
 
-def fetch_public(url, *, deadline=None, max_bytes=MAX_BODY):
+def fetch_public(url, *, deadline=None, max_bytes=MAX_BODY, redirect_check=None):
     """No ambient proxies, cookies, credentials, automatic redirects or second DNS lookup."""
     started = time.monotonic()
     deadline = deadline or started + 12
@@ -107,9 +108,12 @@ def fetch_public(url, *, deadline=None, max_bytes=MAX_BODY):
         try:
             parts = urlsplit(current)
             path = urlunsplit(("", "", parts.path, parts.query, ""))
-            connection.request("GET", path, headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml,text/plain;q=0.9", "Accept-Encoding": "identity", "Connection": "close"})
+            connection.request("GET", path, headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml,text/plain;q=0.9", "Accept-Encoding": "gzip, deflate", "Connection": "close"})
             response = connection.getresponse()
-            headers = {key.lower(): value for key, value in response.getheaders()}
+            headers = {}
+            for key, value in response.getheaders():
+                key = key.lower()
+                headers[key] = headers[key] + ", " + value if key in headers else value
             if response.status in (301, 302, 303, 307, 308):
                 location = headers.get("location", "")
                 if not location:
@@ -117,9 +121,12 @@ def fetch_public(url, *, deadline=None, max_bytes=MAX_BODY):
                 next_url = urljoin(current, location)
                 if current.startswith("https:") and not next_url.startswith("https:"):
                     raise WebsiteFetchError("INSECURE_REDIRECT", "The HTTPS website redirects to an insecure address.")
+                if redirect_check:
+                    redirect_check(next_url)
                 current = next_url
                 continue
-            if headers.get("content-encoding", "identity").lower() not in ("", "identity"):
+            encoding = headers.get("content-encoding", "identity").lower()
+            if encoding not in ("", "identity", "gzip", "deflate"):
                 raise WebsiteFetchError("ENCODING_UNSUPPORTED", "The website returned a compressed response the lightweight audit cannot assess.")
             try:
                 if int(headers.get("content-length", "0")) > max_bytes:
@@ -140,9 +147,22 @@ def fetch_public(url, *, deadline=None, max_bytes=MAX_BODY):
                 length += len(chunk)
                 if length > max_bytes:
                     raise WebsiteFetchError("PAGE_TOO_LARGE", "The page exceeds the lightweight audit size limit.")
-            return Page(current, response.status, headers, b"".join(chunks), round((time.monotonic() - started) * 1000))
+            body = b"".join(chunks)
+            if encoding in ("gzip", "deflate"):
+                try:
+                    decoder = zlib.decompressobj(16 + zlib.MAX_WBITS if encoding == "gzip" else zlib.MAX_WBITS)
+                    body = decoder.decompress(body, max_bytes + 1)
+                    if len(body) > max_bytes or decoder.unconsumed_tail:
+                        raise WebsiteFetchError("PAGE_TOO_LARGE", "The decoded page exceeds the audit size limit.")
+                    if not decoder.eof or decoder.unused_data:
+                        raise WebsiteFetchError("INVALID_RESPONSE", "The website returned an incomplete or unsupported compressed page.")
+                except zlib.error:
+                    raise WebsiteFetchError("INVALID_RESPONSE", "The website returned invalid compressed content.") from None
+            return Page(current, response.status, headers, body, round((time.monotonic() - started) * 1000))
         except WebsiteFetchError:
             raise
+        except ssl.SSLCertVerificationError:
+            raise WebsiteFetchError("TLS_ERROR", "The website's HTTPS certificate could not be verified.") from None
         except (OSError, http.client.HTTPException, ValueError):
             raise WebsiteFetchError("UNAVAILABLE", "The website could not be retrieved securely. It may block automated checks or be temporarily unavailable.") from None
         finally:

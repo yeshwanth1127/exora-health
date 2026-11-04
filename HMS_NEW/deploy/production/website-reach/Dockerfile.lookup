@@ -1,0 +1,10 @@
+FROM python:3.14-alpine
+RUN apk add --no-cache tzdata && addgroup -g 10001 lookup && adduser -D -u 10001 -G lookup lookup
+WORKDIR /app
+COPY apps/platform-web/preview.py apps/platform-web/business_lookup.py apps/platform-web/reach_report.py apps/platform-web/website_fetch.py apps/platform-web/lookup_errors.py apps/platform-web/maps_budget.py apps/platform-web/audit_cache.py apps/platform-web/local_rank.py apps/platform-web/rank_cities.json apps/platform-web/rank_map.py ./
+ARG SOURCE_COMMIT
+LABEL org.opencontainers.image.revision=$SOURCE_COMMIT
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 CAPTURE_USAGE_DB=/state/maps-usage.sqlite3 CAPTURE_AUDIT_CACHE_DB=/state/audit-cache.sqlite3 CAPTURE_WEB_ORIGIN=https://paperwhale.health
+USER lookup
+EXPOSE 4500
+CMD ["python", "preview.py", "--host", "0.0.0.0", "--port", "4500", "--api-only"]
