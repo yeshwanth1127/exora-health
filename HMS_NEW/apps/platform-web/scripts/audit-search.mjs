@@ -12,7 +12,8 @@ for(const url of urls){
  const canonical=[...html.matchAll(/<link\b[^>]*rel="canonical"[^>]*>/g)].map(m=>m[0].match(/href="([^"]+)"/)?.[1]);
  if(canonical.length!==1||new URL(canonical[0]).href!==url.href)issues.push(url.pathname+': invalid canonical');
  if(/<meta[^>]*name="robots"[^>]*content="[^"]*noindex/.test(html))issues.push(url.pathname+': noindex');
- const title=html.match(/<title>(.*?)<\/title>/s)?.[1];if(!title||titles.has(title))issues.push(url.pathname+': missing/duplicate title');titles.add(title);
+ const title=html.match(/<title>(.*?)<\/title>/s)?.[1],titleKey=(url.pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1]??'en')+title; // Language versions may share a title: hreflang links them, and Indonesian and Malay share many words.
+ if(!title||titles.has(titleKey))issues.push(url.pathname+': missing/duplicate title');titles.add(titleKey);
  if(!/<meta[^>]*name="description"/.test(html))issues.push(url.pathname+': missing description');
  if((html.match(/<h1\b/g)||[]).length!==1)issues.push(url.pathname+': expected one H1');
  for(const script of html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>(.*?)<\/script>/gs)){try{JSON.parse(script[1]);}catch{issues.push(url.pathname+': invalid structured data');}}
