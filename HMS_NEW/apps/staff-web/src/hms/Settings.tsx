@@ -10,7 +10,6 @@ import {
   Palette,
   CircleUser,
 } from "lucide-react";
-import { ModePicker } from "@/components/ModePicker";
 import {
   Card,
   CardContent,
@@ -96,7 +95,6 @@ export function SettingsPage({
     ...((me.permissions["consent_documents.manage"] ?? []).includes("*")
       ? (["consent-documents"] as SettingsSection[])
       : []),
-    "appearance",
     "account",
   ];
   const requested = new URLSearchParams(location.search).get("section"),
@@ -276,7 +274,6 @@ export function SettingsPage({
             modules: SlidersHorizontal,
             registrations: Stethoscope,
             "consent-documents": FileCheck,
-            appearance: Palette,
             account: CircleUser,
           };
           const descriptions = {
@@ -289,7 +286,6 @@ export function SettingsPage({
             registrations:
               "Review professional registrations and verification.",
             "consent-documents": "Manage the organisation’s consent documents.",
-            appearance: "Choose the colour theme for this browser.",
             account: "Your account and current clinic workspace.",
           };
           const Icon = icons[id];
@@ -329,19 +325,6 @@ export function SettingsPage({
           />
         )}
         {section === "website" && <WebsiteSettingsPanel key={facility.facilityId} />}
-        {section === "appearance" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Appearance</CardTitle>
-              <CardDescription>
-                Choose the colour theme for this browser.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ModePicker />
-            </CardContent>
-          </Card>
-        )}
         {section === "modules" && <ModuleSwitches />}
         {section === "registrations" && <Registrations />}
         {section === "consent-documents" && <ConsentDocuments />}

@@ -571,3 +571,28 @@ body {
   --foreground: var(--guide-now);
   --background: #fff;
 }
+
+/* Brand colours, rolled out screen by screen (docs/prd/dashboard-colour.md): App.tsx sets data-brand on finished screens.
+   The sidebar keeps its own palette so its icon colours stay at full strength. */
+:root {
+  --brand: var(--guide-now);
+  --brand-strong: oklch(44% 0.18 262);
+  --background: oklch(97.6% 0.007 262);
+  --primary: var(--brand);
+  --ring: var(--brand);
+}
+:root .arc-demo-scope,
+:root .arc-scope {
+  --accent: var(--brand);
+  --accent-strong: var(--brand-strong);
+  --accent-subtle: color-mix(in oklab, var(--brand) 10%, transparent);
+  --control-on: var(--brand);
+  --foreground: oklch(22% 0.03 262);
+  --text-secondary: oklch(44% 0.03 262);
+  --text-muted: oklch(53% 0.025 262);
+  --border: oklch(92.5% 0.012 262);
+  --border-strong: oklch(82% 0.02 262);
+  --surface-muted: oklch(97% 0.01 262);
+}
+:root .arc-demo-scope :focus-visible, :root .arc-scope :focus-visible { outline-color: var(--brand); }
+:root .appointment-search:focus-within { --border-strong: var(--brand); }

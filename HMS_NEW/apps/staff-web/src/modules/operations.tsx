@@ -4,6 +4,7 @@ import { BarChart as ArcBarChart } from "@/components/arc/bar-chart/bar-chart";
 import type { ReactNode } from "react";
 import { SplitBar } from "@/components/arc/split-bar/split-bar";
 import { splitSegments } from "./split-segments";
+import { Status } from "@/hms/ui";
 import { MorphBlock, SkeletonMorph } from "@/components/arc/skeleton-morph/skeleton-morph";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -252,7 +253,7 @@ function ActivityPage({
                         {(r.data?.by_status ?? []).map((d) => (
                           <TableRow key={d.label}>
                             <TableCell>
-                              <StateBadge value={d.label} />
+                              <Status value={d.label} />
                             </TableCell>
                             <TableCell>{d.value}</TableCell>
                           </TableRow>
@@ -320,7 +321,7 @@ function ActivityPage({
                           <StateBadge value={a.origin_channel} />
                         </TableCell>
                         <TableCell>
-                          <StateBadge value={a.status} />
+                          <Status value={a.status} />
                         </TableCell>
                         <TableCell>{a.confirmation_code}</TableCell>
                       </TableRow>

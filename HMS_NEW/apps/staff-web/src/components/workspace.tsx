@@ -16,8 +16,8 @@ import { toast } from "@/components/toast-events";
 import { api } from "@/lib/api";
 import { OriginalResourceContext, isDraft } from "./resource-source";
 import { Button } from "@/components/ui/button";
+import { Status } from "@/hms/ui";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { WorkspaceLoading } from "./WorkspaceLoading";
 import { Alert } from "@/components/arc/alert/alert";
 import { SharedField, type SharedFieldProps } from "./shared-field";
@@ -252,30 +252,7 @@ export function Choice({
 }
 
 export function StateBadge({ value }: { value: string }) {
-  const positive = [
-    "confirmed",
-    "completed",
-    "delivered",
-    "read",
-    "active",
-    "approved",
-    "enabled",
-  ].includes(value.toLowerCase());
-  const warning = ["uncertain", "failed", "no_show"].includes(value);
-  return (
-    <Badge
-      variant="secondary"
-      className={
-        positive
-          ? "bg-foreground/5 text-foreground border border-border"
-          : warning
-            ? "bg-background text-foreground border border-foreground/40"
-            : "text-muted-foreground"
-      }
-    >
-      {value.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase())}
-    </Badge>
-  );
+  return <Status value={value.toLowerCase()} text={value.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase())} />;
 }
 export function Notice({
   title,

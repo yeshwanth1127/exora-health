@@ -6,7 +6,6 @@ export const SETTINGS_SECTIONS = [
   ["modules", "Modules"],
   ["registrations", "Professional registrations"],
   ["consent-documents", "Consent documents"],
-  ["appearance", "Appearance"],
   ["account", "My account"],
 ] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number][0];
