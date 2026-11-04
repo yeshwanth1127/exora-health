@@ -96,3 +96,4 @@
   .shape, .shape::after, .check, .slot, .control { transition-duration: 0ms; }
 }
 @media (prefers-contrast: more) { .shape::after { border-color: var(--border-strong); } }
+:global(:root) .control:has(.number:focus) { border-color: var(--brand); }

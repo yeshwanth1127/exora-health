@@ -493,7 +493,6 @@ function PatientRecord({
             <div className="flex items-center gap-3">
               {d.status === "active" && can("appointments.book") && (
                 <Button
-                  variant="outline"
                   onClick={() => go(`appointments?book=1&patient=${patientId}`)}
                 >
                   Book appointment
@@ -523,7 +522,7 @@ function PatientRecord({
           >
             <TabsTrigger
               value="overview"
-              className="h-auto min-h-16 flex-col items-start justify-center rounded-lg border border-border px-5 py-3 text-left text-foreground data-active:border-foreground data-active:bg-foreground data-active:text-background"
+              className="h-auto min-h-16 flex-col items-start justify-center rounded-lg border border-border px-5 py-3 text-left text-foreground data-active:border-primary data-active:bg-primary data-active:text-primary-foreground"
             >
               <span className="font-semibold">Overview</span>
               <span className="text-sm font-normal opacity-80">
@@ -533,7 +532,7 @@ function PatientRecord({
             {can("clinical.read") && (
               <TabsTrigger
                 value="history"
-                className="h-auto min-h-16 flex-col items-start justify-center rounded-lg border border-border px-5 py-3 text-left text-foreground data-active:border-foreground data-active:bg-foreground data-active:text-background"
+                className="h-auto min-h-16 flex-col items-start justify-center rounded-lg border border-border px-5 py-3 text-left text-foreground data-active:border-primary data-active:bg-primary data-active:text-primary-foreground"
               >
                 <span className="font-semibold">Medical history</span>
                 <span className="text-sm font-normal opacity-80">

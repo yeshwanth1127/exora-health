@@ -14,10 +14,10 @@ export function Hint({ children }: { children: ReactNode }) {
   return <div className="arc-demo-scope"><Alert tone="info" title="Please note">{children}</Alert></div>;
 }
 export function Status({ value, text }: { value: string; text?: string }) {
-  const tone = ["completed", "finished", "active"].includes(value) ? "success"
-    : ["confirmed", "in_progress", "checked_in", "called", "in_service"].includes(value) ? "info"
-    : ["no_show", "cancelled", "entered_in_error"].includes(value) ? "danger"
-    : ["attention", "invited"].includes(value) ? "warning" : "neutral";
+  const tone = ["completed", "finished", "active", "signed", "ready", "connected", "delivered", "read", "approved", "enabled"].includes(value) ? "success"
+    : ["confirmed", "scheduled", "in_progress", "called", "in_service"].includes(value) ? "info"
+    : ["cancelled", "entered_in_error", "failed"].includes(value) ? "danger"
+    : ["attention", "invited", "checked_in", "waiting", "uncertain"].includes(value) ? "warning" : "neutral";
   return <span className="arc-demo-scope"><Badge tone={tone} size="sm">{text ?? label(value)}</Badge></span>;
 }
 export function Field({

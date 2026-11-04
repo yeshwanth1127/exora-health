@@ -46,7 +46,8 @@ test("team directory maps staff rows truthfully", () => {
 
 test("appointment health split bar humanizes server labels and keeps raw ids", () => {
   const segments = splitSegments([{ label: "no_show", value: 2 }, { label: "confirmed", value: 6 }]);
-  assert.deepEqual(segments[0], { id: "no_show", label: "No show", value: 2 });
+  assert.deepEqual(segments[0], { id: "no_show", label: "No show", value: 2, color: "var(--text-muted)" });
+  assert.equal(splitSegments([{ label: "whatsapp", value: 1 }])[0].color, undefined);
   const html = render(h(SplitBar, { title: "By status", segments, unit: "appointments" }));
   assert.ok(html.includes("No show") && html.includes("Confirmed"));
 });

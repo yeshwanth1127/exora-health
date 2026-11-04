@@ -102,6 +102,7 @@ export function Teleconsultations() {
                   ? {
                       label: "Book video appointment",
                       onClick: () => go("appointments?book=1&mode=virtual"),
+                      primary: true,
                     }
                   : { label: "View schedules", onClick: () => go("schedules") }
               }

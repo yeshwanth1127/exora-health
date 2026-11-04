@@ -75,3 +75,4 @@
 
 @media (max-width: 420px) { .control { padding-left: 14px; } .group { font-size: var(--text-2xl); } }
 @media (prefers-reduced-motion: reduce) { .control, .column, .check, .chip, .range { transition-duration: 0ms; } .chip:active:not(:disabled) { transform: none; } }
+:global(:root) .control[data-focused] { border-color: var(--brand); }

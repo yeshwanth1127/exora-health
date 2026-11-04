@@ -19,3 +19,4 @@
 /* User-requested appointment variant; the default reference skin remains unchanged. */
 .soft { border-color: var(--border); box-shadow: var(--shadow-resting); }
 .soft:focus-within { border-color: var(--foreground); box-shadow: 0 0 0 3px var(--surface-muted); }
+:global(:root) .shell:focus-within, :global(:root) .soft:focus-within { border-color: var(--brand); }

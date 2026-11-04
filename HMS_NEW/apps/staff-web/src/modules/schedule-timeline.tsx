@@ -92,7 +92,7 @@ const states = {
 };
 const classes = {
   available:
-    "bg-background border-foreground/30 text-foreground hover:bg-muted",
+    "bg-card border-primary/40 text-foreground hover:bg-primary/5",
   booked:
     "bg-primary border-primary text-primary-foreground hover:bg-primary/85",
   blocked:
@@ -926,7 +926,7 @@ export function ScheduleTimeline({
                       {row.blocks.map((b, i) => (
                         <div
                           key={i}
-                          className="absolute top-1 h-2 rounded-sm bg-foreground/15"
+                          className="absolute top-1 h-2 rounded-sm bg-primary/20"
                           style={{
                             left: pct(minute(b.starts_at_local)),
                             width: `${((minute(b.ends_at_local) - minute(b.starts_at_local)) / (end - start)) * 100}%`,
@@ -942,10 +942,10 @@ export function ScheduleTimeline({
                         </p>
                       )}
                       {row.spans.map((span, i) => (
-                        <Button
+                        <button
                           key={i}
-                          variant="outline"
-                          className={`absolute h-14 rounded-md justify-start overflow-hidden px-3 text-xs shadow-none ${classes[span.kind]} ${span.kind === "available" && canPlan ? "cursor-crosshair" : ""}`}
+                          type="button"
+                          className={`absolute flex h-14 items-center justify-start overflow-hidden rounded-md border px-3 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${classes[span.kind]} ${span.kind === "available" && canPlan ? "cursor-crosshair" : "cursor-pointer"}`}
                           data-span={i}
                           data-no-range={
                             span.kind === "available" ? undefined : "true"
@@ -984,17 +984,17 @@ export function ScheduleTimeline({
                               {clock(span.start)}–{clock(span.end)}
                             </span>
                           </span>
-                        </Button>
+                        </button>
                       ))}
                       {highlight?.doctor === row.doctor_id && (
                         <div
-                          className="absolute inset-y-0 z-20 bg-foreground/10 border-2 border-foreground rounded-sm pointer-events-none"
+                          className="absolute inset-y-0 z-20 bg-primary/10 border-2 border-primary rounded-sm pointer-events-none"
                           style={{
                             left: pct(highlight.start),
                             width: `${((highlight.end - highlight.start) / (end - start)) * 100}%`,
                           }}
                         >
-                          <span className="absolute top-0 left-0 bg-foreground text-background text-xs whitespace-nowrap px-2 py-1 tabular-nums">
+                          <span className="absolute top-0 left-0 bg-primary text-primary-foreground text-xs whitespace-nowrap px-2 py-1 tabular-nums">
                             {clock(highlight.start)}–{clock(highlight.end)}
                           </span>
                         </div>
